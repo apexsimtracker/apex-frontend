@@ -2,7 +2,6 @@ import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { readFileSync } from "node:fs";
-import { createServer } from "./server";
 
 const pkg = JSON.parse(
   readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
@@ -39,10 +38,11 @@ function expressPlugin(): Plugin {
     name: "express-plugin",
     apply: "serve", // Only apply during development (serve mode)
     configureServer(server) {
-      const app = createServer();
-
-      // Add Express app as middleware to Vite dev server
-      server.middlewares.use(app);
+      // Lazy-load server so DATABASE_URL is not required during `vite build` (client-only)
+      return import("./server").then(({ createServer }) => {
+        const app = createServer();
+        server.middlewares.use(app);
+      });
     },
   };
 }

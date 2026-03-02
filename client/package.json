@@ -1,0 +1,8 @@
+{
+  "name": "apex-frontend-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  }
+}

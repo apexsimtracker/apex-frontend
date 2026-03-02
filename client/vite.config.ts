@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { readFileSync } from "node:fs";
 
+// Client-only config: no server imports (so DATABASE_URL is not required in CI).
 const rootPkg = JSON.parse(
   readFileSync(path.resolve(__dirname, "../package.json"), "utf-8")
 ) as { version?: string };
@@ -15,6 +16,10 @@ export default defineConfig({
 
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+  },
+
+  build: {
+    outDir: path.resolve(__dirname, "../dist/spa"),
   },
 
   resolve: {
