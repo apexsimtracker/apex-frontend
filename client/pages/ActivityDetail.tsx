@@ -193,9 +193,9 @@ export default function ActivityDetail() {
         </button>
 
         {/* Main Activity Card */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-8">
+        <div className="bg-card rounded-2xl border border overflow-hidden mb-8">
           {/* Header with user info */}
-          <div className="px-6 py-4 border-b border-border">
+          <div className="px-6 py-4 border-b border">
             <div className="flex items-center gap-3">
               <button
                 onClick={() =>
@@ -244,7 +244,7 @@ export default function ActivityDetail() {
                     ? "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/20 dark:to-gray-900/10 border-gray-200 dark:border-gray-800/30"
                     : activity.position === 3
                       ? "bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/10 border-orange-200 dark:border-orange-800/30"
-                      : "bg-secondary border-border"
+                      : "bg-secondary border"
               }`}
             >
               <div className="flex items-center gap-4 mb-4">
@@ -338,7 +338,7 @@ export default function ActivityDetail() {
           </div>
 
           {/* Actions */}
-          <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+          <div className="px-6 py-4 border-t border flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors group">
                 <Heart className="w-4 h-4 group-hover:fill-primary" />
@@ -356,7 +356,7 @@ export default function ActivityDetail() {
         </div>
 
         {/* Lap History Section */}
-        <div className="bg-card rounded-2xl border border-border p-6 mb-8">
+        <div className="bg-card rounded-2xl border border p-6 mb-8">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Lap History</h2>
@@ -366,7 +366,7 @@ export default function ActivityDetail() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="border-b border">
                   <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
                     Lap
                   </th>
@@ -425,7 +425,7 @@ export default function ActivityDetail() {
                 ].map((lap) => (
                   <tr
                     key={lap.lap}
-                    className={`border-b border-border hover:bg-secondary transition-colors`}
+                    className={`border-b border hover:bg-secondary transition-colors`}
                     style={
                       lap.isFastest
                         ? { backgroundColor: "rgba(240, 28, 28, 0.05)" }
@@ -465,7 +465,7 @@ export default function ActivityDetail() {
         </div>
 
         {/* Light Analysis Section */}
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-2xl border border p-6">
           <h2 className="text-xl font-bold text-foreground mb-6">
             Analysis & Highlights
           </h2>

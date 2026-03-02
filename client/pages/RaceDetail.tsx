@@ -150,7 +150,7 @@ export default function RaceDetail() {
         </button>
 
         {/* Race Header */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden mb-8">
+        <div className="bg-card rounded-2xl border border overflow-hidden mb-8">
           <div className="px-6 py-8">
             <div className="flex items-start justify-between mb-6">
               <div>
@@ -219,7 +219,7 @@ export default function RaceDetail() {
         {/* Detailed Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           {/* Race Metrics */}
-          <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="bg-card rounded-2xl border border p-6">
             <div className="flex items-center gap-2 mb-6">
               <Gauge className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold text-foreground">
@@ -228,25 +228,25 @@ export default function RaceDetail() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border-border">
+              <div className="flex justify-between items-center py-3 border-b border">
                 <span className="text-muted-foreground">Race Time</span>
                 <span className="font-semibold text-foreground">
                   {race.raceTime}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-border">
+              <div className="flex justify-between items-center py-3 border-b border">
                 <span className="text-muted-foreground">Avg Lap Time</span>
                 <span className="font-semibold text-foreground">
                   {race.avgLapTime}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-border">
+              <div className="flex justify-between items-center py-3 border-b border">
                 <span className="text-muted-foreground">Top Speed</span>
                 <span className="font-semibold text-foreground">
                   {race.topSpeed}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border-border">
+              <div className="flex justify-between items-center py-3 border-b border">
                 <span className="text-muted-foreground">Lowest Speed</span>
                 <span className="font-semibold text-foreground">
                   {race.lowestSpeed}
@@ -262,7 +262,7 @@ export default function RaceDetail() {
           </div>
 
           {/* Tire & Car Status */}
-          <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="bg-card rounded-2xl border border p-6">
             <div className="flex items-center gap-2 mb-6">
               <Droplet className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold text-foreground">Tire Wear</h2>
@@ -305,7 +305,7 @@ export default function RaceDetail() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border">
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-3">
                   Performance Analysis
                 </p>
@@ -321,7 +321,7 @@ export default function RaceDetail() {
         </div>
 
         {/* Lap Chart */}
-        <div className="bg-card rounded-2xl border border-border p-6 mb-8">
+        <div className="bg-card rounded-2xl border border p-6 mb-8">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Lap Times</h2>
@@ -334,7 +334,7 @@ export default function RaceDetail() {
                 className={`p-3 rounded-lg text-center border ${
                   time === race.bestLap
                     ? "bg-purple-500/10 border-purple-500/30 text-purple-500"
-                    : "bg-secondary border-border"
+                    : "bg-secondary border"
                 }`}
               >
                 <p className="text-xs font-bold text-muted-foreground mb-1">
@@ -356,7 +356,7 @@ export default function RaceDetail() {
         </div>
 
         {/* Position History */}
-        <div className="bg-card rounded-2xl border border-border p-6">
+        <div className="bg-card rounded-2xl border border p-6">
           <div className="flex items-center gap-2 mb-6">
             <Target className="w-5 h-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Race Progress</h2>

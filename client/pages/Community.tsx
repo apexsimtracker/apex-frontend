@@ -316,7 +316,7 @@ export default function Community() {
         </div>
 
         {/* Placeholder Section */}
-        <div className="bg-card rounded-2xl border border-border border-dashed p-8 text-center">
+        <div className="bg-card rounded-2xl border border border-dashed p-8 text-center">
           <Zap
             className="w-12 h-12 mx-auto mb-4"
             style={{ color: "rgba(240, 28, 28, 0.2)" }}
@@ -334,7 +334,7 @@ export default function Community() {
       {/* New Discussion Modal */}
       {showNewDiscussionModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-2xl border border-border max-w-2xl w-full p-8">
+          <div className="bg-card rounded-2xl border border max-w-2xl w-full p-8">
             <h2 className="text-2xl font-bold text-foreground mb-6">
               Create New Discussion
             </h2>
@@ -357,7 +357,7 @@ export default function Community() {
                     className={`p-3 rounded-lg border transition-all text-sm font-medium ${
                       newDiscussionCategory === cat.value
                         ? "border-2 text-foreground"
-                        : "border-border text-foreground hover:border-white/10"
+                        : "border text-foreground hover:border-white/10"
                     }`}
                     style={
                       newDiscussionCategory === cat.value
@@ -384,7 +384,7 @@ export default function Community() {
                 placeholder="What's your question or topic?"
                 value={newDiscussionTitle}
                 onChange={(e) => setNewDiscussionTitle(e.target.value)}
-                className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors"
               />
               {validationErrors.title && (
                 <p className="mt-1 text-xs text-neutral-400">{validationErrors.title}</p>
@@ -400,7 +400,7 @@ export default function Community() {
                 placeholder="Describe your discussion in detail..."
                 value={newDiscussionContent}
                 onChange={(e) => setNewDiscussionContent(e.target.value)}
-                className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none h-32"
+                className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none h-32"
               />
               {validationErrors.description && (
                 <p className="mt-1 text-xs text-neutral-400">{validationErrors.description}</p>

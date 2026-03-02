@@ -373,7 +373,7 @@ export function ProfileView({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="border-b border">
                   <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
                     Date
                   </th>
@@ -413,7 +413,7 @@ export function ProfileView({
                     <tr
                       key={race.id}
                       onClick={() => navigate(`/sessions/${race.id}`)}
-                      className="border-b border-border hover:bg-secondary transition-colors cursor-pointer"
+                      className="border-b border hover:bg-secondary transition-colors cursor-pointer"
                     >
                       <td className="py-3 px-4 text-sm text-muted-foreground">
                         {new Date(race.date).toLocaleDateString()}
@@ -478,7 +478,7 @@ export function ProfileView({
                 <div
                   key={race.id}
                   onClick={() => navigate(`/sessions/${race.id}`)}
-                  className="border border-border/40 rounded-lg p-4 hover:bg-secondary/20 transition-colors cursor-pointer"
+                  className="border border/40 rounded-lg p-4 hover:bg-secondary/20 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -567,7 +567,7 @@ export function ProfileView({
           </div>
 
           {/* Game Stats Summary */}
-          <div className="mt-10 pt-10 border-t border-border/20">
+          <div className="mt-10 pt-10 border-t border/20">
             <h3 className="text-xl font-bold text-foreground mb-6">
               Stats by Game
             </h3>
@@ -623,7 +623,7 @@ export function ProfileView({
                           {game.fastestLaps}
                         </span>
                       </div>
-                      <div className="border-t border-border pt-2 mt-2">
+                      <div className="border-t border pt-2 mt-2">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Win %</span>
                           <span className="font-semibold text-foreground">

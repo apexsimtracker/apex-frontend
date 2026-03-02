@@ -212,8 +212,8 @@ export default function DiscussionDetail() {
           <span className="font-medium">Back</span>
         </button>
 
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          <div className="px-6 py-4 border-b border-border">
+        <div className="bg-card rounded-2xl border border overflow-hidden">
+          <div className="px-6 py-4 border-b border">
             <button
               onClick={() => navigate(`/user/${userNameToSlug(authorDisplay)}`)}
               className="w-full flex items-center gap-3 mb-4 hover:opacity-80 transition-opacity group text-left"
@@ -254,7 +254,7 @@ export default function DiscussionDetail() {
             </p>
           </div>
 
-          <div className="px-6 py-4 border-t border-border flex items-center gap-6">
+          <div className="px-6 py-4 border-t border flex items-center gap-6">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Heart className="w-4 h-4" />
               <span className="text-xs font-medium">
@@ -303,7 +303,7 @@ export default function DiscussionDetail() {
               {(comments ?? []).map((c) => (
                 <div
                   key={c.id}
-                  className="bg-card rounded-2xl border border-border p-6"
+                  className="bg-card rounded-2xl border border p-6"
                 >
                   <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1">
@@ -323,12 +323,12 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          <div className="mt-8 bg-card rounded-2xl border border-border p-6">
+          <div className="mt-8 bg-card rounded-2xl border border p-6">
             {replyError && (
               <p className="mb-3 text-sm text-neutral-400">{replyError}</p>
             )}
             <textarea
-              className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary resize-none"
+              className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary resize-none"
               rows={4}
               placeholder="Write a reply…"
               value={replyBody}
