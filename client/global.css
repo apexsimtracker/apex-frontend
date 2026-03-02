@@ -99,6 +99,10 @@
 }
 
 @layer base {
+  * {
+    @apply border;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
