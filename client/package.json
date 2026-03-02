@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "pnpm exec vite build"
+  },
+  "devDependencies": {
+    "vite": "^7.1.2",
+    "@vitejs/plugin-react": "^5.1.4"
   }
 }
