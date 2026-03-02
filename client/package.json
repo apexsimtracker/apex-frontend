@@ -6,6 +6,7 @@
     "build": "pnpm exec vite build"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
