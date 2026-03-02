@@ -1,0 +1,107 @@
+import { useState, useEffect, useCallback } from "react";
+import { apiGet } from "@/lib/api";
+import { getSimDisplayName } from "@/lib/sim";
+
+export type RecentManualItem = {
+  sim: string;
+  trackId: string;
+  trackName: string;
+  carId: string | null;
+  carName: string;
+  /** Dedupe key */
+  key: string;
+};
+
+type ActivitySession = {
+  id?: string;
+  sim?: string | null;
+  track?: string | null;
+  trackId?: string | null;
+  car?: string | null;
+  carId?: string | null;
+  vehicleDisplay?: string | null;
+  source?: string | null;
+  createdAt?: string | Date;
+};
+
+const RECENT_LIMIT = 5;
+
+function normalizeSim(s: string | null | undefined): string {
+  if (!s || !s.trim()) return "";
+  return s.trim().toUpperCase();
+}
+
+export function useRecentManualSessions(): {
+  recent: RecentManualItem[];
+  loading: boolean;
+  refetch: () => void;
+} {
+  const [recent, setRecent] = useState<RecentManualItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRecent = useCallback(async () => {
+    setLoading(true);
+    try {
+      const raw = await apiGet<ActivitySession[] | { sessions?: ActivitySession[]; activity?: ActivitySession[] }>(
+        "/api/activity"
+      );
+      const list = Array.isArray(raw)
+        ? raw
+        : (raw as { sessions?: ActivitySession[] }).sessions ??
+          (raw as { activity?: ActivitySession[] }).activity ??
+          [];
+      const sessions = (Array.isArray(list) ? list : []) as ActivitySession[];
+
+      const manual = sessions.filter(
+        (s) => (s.source ?? "").toString().toUpperCase() === "MANUAL_ACTIVITY"
+      );
+
+      const seen = new Set<string>();
+      const items: RecentManualItem[] = [];
+
+      for (const s of manual) {
+        const sim = normalizeSim(s.sim);
+        if (!sim) continue;
+        const trackId = (s.trackId ?? s.track ?? "").toString().trim();
+        const trackName = (s.track ?? "").toString().trim() || trackId;
+        const carId = (s.carId ?? "").toString().trim() || null;
+        const carName = (s.vehicleDisplay ?? s.car ?? "").toString().trim() || "—";
+
+        const key = `${sim}|${trackId}|${carId ?? ""}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        if (!trackId && !trackName) continue;
+
+        items.push({
+          sim,
+          trackId: trackId || trackName,
+          trackName,
+          carId,
+          carName,
+          key,
+        });
+        if (items.length >= RECENT_LIMIT) break;
+      }
+
+      setRecent(items);
+    } catch {
+      setRecent([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchRecent();
+  }, [fetchRecent]);
+
+  return { recent, loading, refetch: fetchRecent };
+}
+
+export function getRecentChipLabel(item: RecentManualItem): string {
+  const simLabel = getSimDisplayName(item.sim);
+  const parts = [simLabel, item.trackName];
+  if (item.carName && item.carName !== "—") parts.push(item.carName);
+  return parts.join(" • ");
+}
