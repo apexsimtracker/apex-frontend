@@ -63,7 +63,7 @@ export default function App() {
                   <Route path="/challenges" element={<Challenges />} />
                   <Route path="/challenge/:id" element={<ChallengeDetail />} />
                   <Route path="/leaderboards" element={<Leaderboards />} />
-                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/upload" element={<Upload />} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
 import { authMe, updateMe, API_BASE } from "@/lib/api";
@@ -186,13 +186,14 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground mb-4">
             Sign in to manage your settings.
           </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium text-white px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:opacity-90 transition-opacity"
+          <Button
+            type="button"
+            onClick={() => navigate("/login", { replace: true })}
+            className="text-white focus-visible:ring-ring"
             style={{ backgroundColor: PRIMARY_RED }}
           >
             Log in
-          </Link>
+          </Button>
         </div>
       </div>
     );
