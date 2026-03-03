@@ -55,16 +55,28 @@ export default function QAPage() {
             </h2>
             <ul className="space-y-1.5 text-sm">
               <li>
-                <Link to="/settings" className="text-white/80 hover:text-white underline underline-offset-2">
+                <Link to="/signup" className="text-white/80 hover:text-white underline underline-offset-2">
                   Signup
                 </Link>
-                <span className="text-white/40 ml-1">(Settings, when logged out)</span>
+                <span className="text-white/40 ml-1">(/signup)</span>
+              </li>
+              <li>
+                <Link to="/login" className="text-white/80 hover:text-white underline underline-offset-2">
+                  Login
+                </Link>
+                <span className="text-white/40 ml-1">(/login)</span>
+              </li>
+              <li>
+                <Link to="/profile" className="text-white/80 hover:text-white underline underline-offset-2">
+                  Profile (when signed in)
+                </Link>
+                <span className="text-white/40 ml-1">(/profile)</span>
               </li>
               <li>
                 <Link to="/settings" className="text-white/80 hover:text-white underline underline-offset-2">
-                  Login / Logout
+                  Logout
                 </Link>
-                <span className="text-white/40 ml-1">(Settings)</span>
+                <span className="text-white/40 ml-1">(Settings → Log out)</span>
               </li>
               <li>
                 <a href="/settings#change-password" className="text-white/80 hover:text-white underline underline-offset-2">

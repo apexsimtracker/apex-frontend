@@ -6,6 +6,7 @@ import TrackMapSmall from "./TrackMapSmall";
 import SimBadge from "./SimBadge";
 import { formatLapMs, formatCarName } from "@/lib/utils";
 import { apiGet, apiPost, API_BASE } from "@/lib/api";
+import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
 
 const userNameToSlug = (name: string) => {
@@ -79,9 +80,12 @@ function CommentsModal({
     setCommentsLoading(true);
     setCommentsError(null);
     const controller = new AbortController();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     fetch(`${API_BASE}/api/sessions/${sid}/comments`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers,
       credentials: "include",
       signal: controller.signal,
     })
@@ -509,8 +513,18 @@ function RaceCardContent({
           </div>
           <button
             type="button"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (typeof navigator !== "undefined" && navigator.share) {
+                navigator.share({
+                  title: `${cleanTitle(item)} – ${item.userName}`,
+                  url: `${window.location.origin}/sessions/${item.id}`,
+                }).catch(() => {});
+              }
+            }}
             className="text-white/40 hover:text-white/60 transition-colors p-1"
+            aria-label="Share"
           >
             <Share2 className="w-3.5 h-3.5" />
           </button>
@@ -624,9 +638,12 @@ export default function ActivityCard(props: ActivityCardProps) {
   const refreshSessionSocial = useCallback(
     async (sid: string) => {
       try {
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        const token = getToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
         const res = await fetch(`${API_BASE}/api/sessions/${sid}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers,
           credentials: "include",
         });
         if (!res.ok) return;

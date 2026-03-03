@@ -8,21 +8,89 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+function ApexLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 140 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Apex Logo"
+    >
+      {/* Triangle outline - two white lines meeting at apex */}
+      <path
+        d="M12 40L24 8L36 40"
+        fill="none"
+        stroke="white"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Red/orange swooshes inside triangle */}
+      <path
+        d="M14 36 Q20 20 28 14 Q32 12 34 10"
+        fill="none"
+        stroke="url(#apex-swoosh)"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16 34 Q22 22 30 16"
+        fill="none"
+        stroke="url(#apex-swoosh2)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      {/* Glowing dot at top right */}
+      <circle cx="33" cy="11" r="3" fill="url(#apex-glow)" />
+      <circle cx="33" cy="11" r="1.5" fill="#ff6b35" />
+      {/* Light line from dot */}
+      <path d="M33 11 L28 16" stroke="rgba(255,255,255,0.9)" strokeWidth="0.8" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="apex-swoosh" x1="14" y1="36" x2="34" y2="10" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#b91c1c" />
+          <stop offset="0.5" stopColor="#dc2626" />
+          <stop offset="1" stopColor="#ea580c" />
+        </linearGradient>
+        <linearGradient id="apex-swoosh2" x1="16" y1="34" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#dc2626" />
+          <stop offset="1" stopColor="#f97316" />
+        </linearGradient>
+        <radialGradient id="apex-glow" cx="33" cy="11" r="3" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ff8c5a" />
+          <stop offset="0.6" stopColor="#ea580c" />
+          <stop offset="1" stopColor="#c2410c" />
+        </radialGradient>
+      </defs>
+      {/* APEX text below */}
+      <text x="48" y="32" fill="white" fontFamily="system-ui, sans-serif" fontWeight="700" fontSize="20" letterSpacing="0.08em">
+        APEX
+      </text>
+    </svg>
+  );
+}
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileCreateOpen, setIsMobileCreateOpen] = useState(false);
+  const [logoImgFailed, setLogoImgFailed] = useState(false);
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border">
+    <header className="sticky top-0 z-50 border-b border bg-[hsl(var(--background))] bg-opacity-100 shadow-[0_1px_0_0_hsl(var(--border))]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-2 group">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets%2F28a62c25c1b348f89516f18f1616bb52%2F5c6067b014264622a90319386ee8f54e?format=webp&width=800&height=1200"
-              alt="Apex Logo"
-              className="w-8 h-8"
-            />
+          <Link to="/" className="flex items-center flex-shrink-0 group">
+            {logoImgFailed ? (
+              <ApexLogo className="h-9 w-auto min-w-[72px]" />
+            ) : (
+              <img
+                src="/logo.png?v=4"
+                alt="Apex Logo"
+                className="h-9 w-auto max-w-[100px] object-contain object-center"
+                onError={() => setLogoImgFailed(true)}
+              />
+            )}
           </Link>
 
           {/* Desktop Navigation */}

@@ -2,21 +2,82 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getMe, type MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
-import { ApiError } from "@/lib/api";
+import { ApiError, getProfileSummary, type ProfileSummary } from "@/lib/api";
+import { ProfileView } from "@/components/ProfileView";
+
+const emptyBuckets = {
+  Mon: 0,
+  Tue: 0,
+  Wed: 0,
+  Thu: 0,
+  Fri: 0,
+  Sat: 0,
+  Sun: 0,
+};
+
+/** Resolve display name for the current account (works for any account: displayName, name, or email). */
+function getAccountDisplayName(user: { displayName?: string; name?: string; email?: string }): string {
+  const n = (user.displayName ?? user.name)?.trim();
+  if (n && n.length > 0) return n;
+  const e = user.email?.trim();
+  if (e && e.length > 0) return e;
+  return "User";
+}
+
+function profileSummaryFromMe(me: MeResponse): ProfileSummary {
+  const u = me.user;
+  return {
+    user: {
+      id: u.id,
+      displayName: getAccountDisplayName(u),
+      streakDays: 0,
+      tagline: undefined,
+      level: undefined,
+      levelProgressPct: undefined,
+    },
+    totals: {
+      races: 0,
+      wins: null,
+      podiums: null,
+      poles: null,
+      fastestLaps: 0,
+      avgFinish: null,
+    },
+    weekly: {
+      buckets: emptyBuckets,
+      totalRaces: 0,
+      wins: null,
+      avgFinish: null,
+      totalKm: null,
+    },
+    mostPlayed: [],
+    raceHistory: [],
+    statsByGame: [],
+    insight: null,
+  };
+}
 
 export default function Profile() {
   const navigate = useNavigate();
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
 
-  const loadMe = useCallback(async () => {
+  const loadProfile = useCallback(async () => {
     setLoading(true);
     setUnauthorized(false);
     setMe(null);
+    setProfile(null);
     try {
       const data = await getMe();
       setMe(data);
+      try {
+        const summary = await getProfileSummary();
+        setProfile(summary);
+      } catch {
+        setProfile(profileSummaryFromMe(data));
+      }
     } catch (err) {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
         setUnauthorized(true);
@@ -29,8 +90,8 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    loadMe();
-  }, [loadMe]);
+    loadProfile();
+  }, [loadProfile]);
 
   const handleSignOut = () => {
     clearToken();
@@ -45,7 +106,8 @@ export default function Profile() {
     );
   }
 
-  if (unauthorized || !me) {
+  const user = me?.user;
+  if (unauthorized || !me || !user) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center p-6">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center max-w-md">
@@ -62,20 +124,39 @@ export default function Profile() {
     );
   }
 
+  const accountName = getAccountDisplayName(user);
+  const displayProfile: ProfileSummary = profile
+    ? { ...profile, user: { ...profile.user, displayName: accountName } }
+    : profileSummaryFromMe(me);
+
+  const memberSince =
+    user.createdAt &&
+    (() => {
+      try {
+        const d = new Date(user.createdAt);
+        return isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
+      } catch {
+        return null;
+      }
+    })();
+
   return (
-    <div className="bg-background min-h-screen flex items-center justify-center p-6">
-      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 max-w-md w-full">
-        <h1 className="text-xl font-semibold text-white mb-1">
-          {me.user.displayName || "User"}
-        </h1>
-        <p className="text-white/60 text-sm mb-6">{me.user.email}</p>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="w-full px-4 py-2 rounded-lg border border-white/20 text-white/80 text-sm font-medium hover:bg-white/10 transition-colors"
-        >
-          Sign out
-        </button>
+    <div className="bg-background min-h-screen flex flex-col">
+      <ProfileView profile={displayProfile} />
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col items-end gap-2">
+          {memberSince && (
+            <p className="text-sm text-white/50">Member since {memberSince}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: "rgb(240, 28, 28)" }}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   );

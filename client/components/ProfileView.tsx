@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import type { ProfileSummary } from "../lib/api";
 import { formatLapMs, formatCarName } from "../lib/utils";
 import SimBadge from "./SimBadge";
 import { getSimDisplayName } from "../lib/sim";
 
-const DEFAULT_AVATAR =
-  "https://cdn.builder.io/api/v1/image/assets%2F28a62c25c1b348f89516f18f1616bb52%2F812578f1c02240b4968d1ce152fff8ab?format=webp&width=120&height=120";
-
 type ProfileViewProps = {
   profile: ProfileSummary;
   onBack?: () => void;
-  avatarUrl?: string;
+  /** Profile picture URL; when empty or not set, a blank placeholder is shown (customizable via this prop). */
+  avatarUrl?: string | null;
 };
 
 export function ProfileView({
   profile,
   onBack,
-  avatarUrl = DEFAULT_AVATAR,
+  avatarUrl,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -34,7 +32,10 @@ export function ProfileView({
     setDisplayedRaces(6);
   };
 
-  const displayName = profile.user.displayName || "Local Driver";
+  const user = profile.user as { displayName?: string; name?: string; email?: string };
+  const raw = (user.displayName ?? user.name)?.trim();
+  const isPlaceholder = raw && /^Local\s+(Driver|user)$/i.test(raw);
+  const displayName = (raw && !isPlaceholder) ? raw : (user.email?.trim() || "User");
   const safeValue = (v: number | null | undefined) =>
     v === null || v === undefined ? "—" : v;
 
@@ -65,7 +66,7 @@ export function ProfileView({
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 sm:pt-4 sm:pb-16">
         {onBack && (
           <button
             onClick={onBack}
@@ -80,11 +81,20 @@ export function ProfileView({
         <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 p-5 sm:p-8 mb-8 sm:mb-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-7 justify-between">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1">
-              <img
-                src={avatarUrl}
-                alt="Profile"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-1 ring-white/5 flex-shrink-0"
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-1 ring-white/5 flex-shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted border border-white/10 flex items-center justify-center flex-shrink-0 text-muted-foreground"
+                  aria-label="Profile picture placeholder"
+                >
+                  <User className="w-8 h-8 sm:w-10 sm:h-10" />
+                </div>
+              )}
               <div className="text-center sm:text-left flex-1">
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">
                   {displayName}

@@ -21,6 +21,7 @@ import RaceDetail from "./pages/RaceDetail";
 import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import RequireAuth from "./auth/RequireAuth";
 import Upload from "./pages/Upload";
 import ManualActivity from "./pages/ManualActivity";
@@ -64,6 +65,7 @@ export default function App() {
                   <Route path="/leaderboards" element={<Leaderboards />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/manual" element={<ManualActivity />} />
                   <Route path="/manual/:sessionId/edit" element={<EditManualActivity />} />

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { authSignup, authLogin, authLogout, updateProfile, getSystemStatus, type SystemStatusResponse } from "@/lib/api";
+import { clearToken } from "@/auth/token";
+import { authSignup, authLogin, authLogout, updateProfile, changePassword, deleteAccount, getSystemStatus, type SystemStatusResponse } from "@/lib/api";
 import { APP_VERSION } from "@/lib/appConfig";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import { RefreshCw, User, Key, Trash2 } from "lucide-react";
@@ -13,6 +15,7 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { user, setUser } = useAuth();
 
   // Profile settings state
@@ -43,6 +46,18 @@ export default function Settings() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
+
+  // Change password
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState(false);
+
+  // Delete account
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
 
   // System status (GET /api/system/status)
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
@@ -194,6 +209,49 @@ export default function Settings() {
     if (trimmed.length < 2 || trimmed.length > 32) return true;
     return savingProfile;
   })();
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword.trim() || !newPassword.trim()) return;
+    if (newPassword.length < 8) {
+      setChangePasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    setChangePasswordLoading(true);
+    setChangePasswordError(null);
+    setChangePasswordSuccess(false);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setChangePasswordSuccess(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setTimeout(() => setChangePasswordSuccess(false), 3000);
+    } catch (e) {
+      setChangePasswordError(e instanceof Error ? e.message : "Failed to change password.");
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deletePassword.trim()) {
+      setDeleteAccountError("Enter your password to confirm.");
+      return;
+    }
+    setDeleteAccountLoading(true);
+    setDeleteAccountError(null);
+    try {
+      await deleteAccount(deletePassword);
+      clearToken();
+      setUser(null);
+      navigate("/login");
+    } catch (e) {
+      setDeleteAccountError(e instanceof Error ? e.message : "Failed to delete account.");
+    } finally {
+      setDeleteAccountLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -536,11 +594,59 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div id="change-password" className="scroll-mt-4">
-                <p className="text-xs text-muted-foreground">Change password — use your account provider or contact support.</p>
+              <div id="change-password" className="scroll-mt-4 space-y-3">
+                <p className="text-xs font-medium text-foreground">Change password</p>
+                <form onSubmit={handleChangePassword} className="space-y-2 max-w-xs">
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setChangePasswordError(null); }}
+                    placeholder="Current password"
+                    disabled={changePasswordLoading}
+                    className="w-full px-3 py-1.5 sm:py-2 bg-card/15 rounded-lg border border-white/4 text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/50 text-xs sm:text-sm"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setChangePasswordError(null); }}
+                    placeholder="New password (min 8 characters)"
+                    disabled={changePasswordLoading}
+                    className="w-full px-3 py-1.5 sm:py-2 bg-card/15 rounded-lg border border-white/4 text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/50 text-xs sm:text-sm"
+                  />
+                  {changePasswordError && <p className="text-xs text-[rgb(240,28,28)]">{changePasswordError}</p>}
+                  {changePasswordSuccess && <p className="text-xs text-green-400">Password updated.</p>}
+                  <button
+                    type="submit"
+                    disabled={changePasswordLoading || !currentPassword.trim() || !newPassword.trim()}
+                    className="px-3 py-1.5 rounded-lg text-white text-sm font-medium disabled:opacity-50"
+                    style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                  >
+                    {changePasswordLoading ? "Updating…" : "Update password"}
+                  </button>
+                </form>
               </div>
-              <div id="delete-account" className="scroll-mt-4">
-                <p className="text-xs text-muted-foreground">Delete account — contact support to request account deletion.</p>
+              <div id="delete-account" className="scroll-mt-4 space-y-3">
+                <p className="text-xs font-medium text-foreground">Delete account</p>
+                <p className="text-xs text-muted-foreground">Permanently delete your account and data. This cannot be undone.</p>
+                <form onSubmit={handleDeleteAccount} className="space-y-2 max-w-xs">
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => { setDeletePassword(e.target.value); setDeleteAccountError(null); }}
+                    placeholder="Enter your password to confirm"
+                    disabled={deleteAccountLoading}
+                    className="w-full px-3 py-1.5 sm:py-2 bg-card/15 rounded-lg border border-white/4 text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/50 text-xs sm:text-sm"
+                  />
+                  {deleteAccountError && <p className="text-xs text-[rgb(240,28,28)]">{deleteAccountError}</p>}
+                  <button
+                    type="submit"
+                    disabled={deleteAccountLoading || !deletePassword.trim()}
+                    className="px-3 py-1.5 rounded-lg text-white text-sm font-medium disabled:opacity-50 border border-[rgba(240,28,28,0.5)]"
+                    style={{ backgroundColor: "rgba(240, 28, 28, 0.2)" }}
+                  >
+                    {deleteAccountLoading ? "Deleting…" : "Delete my account"}
+                  </button>
+                </form>
               </div>
 
               <button

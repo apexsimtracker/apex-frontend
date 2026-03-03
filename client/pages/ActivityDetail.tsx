@@ -217,7 +217,12 @@ export default function ActivityDetail() {
                   </p>
                 </div>
               </button>
-              <button className="text-muted-foreground hover:text-primary transition-colors">
+              <button
+                type="button"
+                onClick={() => id && navigate(`/sessions/${id}`)}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="View session detail"
+              >
                 •••
               </button>
             </div>
@@ -340,16 +345,36 @@ export default function ActivityDetail() {
           {/* Actions */}
           <div className="px-6 py-4 border-t border flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors group">
+              <button
+                type="button"
+                onClick={() => id && navigate(`/sessions/${id}`)}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors group"
+              >
                 <Heart className="w-4 h-4 group-hover:fill-primary" />
                 <span className="text-xs font-medium">{activity.likes}</span>
               </button>
-              <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+              <button
+                type="button"
+                onClick={() => id && navigate(`/sessions/${id}`)}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+              >
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-xs font-medium">{activity.comments}</span>
               </button>
             </div>
-            <button className="text-muted-foreground hover:text-primary transition-colors">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.share && id) {
+                  navigator.share({
+                    title: `${activity.track} – ${activity.userName}`,
+                    url: window.location.href,
+                  }).catch(() => {});
+                }
+              }}
+              className="text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Share"
+            >
               <Share2 className="w-4 h-4" />
             </button>
           </div>

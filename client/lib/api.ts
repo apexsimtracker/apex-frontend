@@ -1,7 +1,9 @@
 import { getToken, clearToken } from "@/auth/token";
 
+const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 const API_BASE =
-  import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
 
 export { API_BASE };
 
@@ -84,12 +86,19 @@ export async function fetchApi<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const base =
+    import.meta.env.VITE_API_URL ??
+    (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
+  const url =
+    path.startsWith("http")
+      ? path
+      : `${base}${path.startsWith("/") ? path : `/${path}`}`;
+
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetch(url, {
       method,
       headers,
-      credentials: "include",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
@@ -395,6 +404,17 @@ export async function authLogout(): Promise<void> {
 
 export async function updateProfile(displayName: string): Promise<AuthUser> {
   return fetchApi<AuthUser>("PATCH", "/api/settings/profile", { displayName: displayName.trim() });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ ok?: boolean }> {
+  return fetchApi<{ ok?: boolean }>("POST", "/api/settings/change-password", {
+    currentPassword,
+    newPassword,
+  });
+}
+
+export async function deleteAccount(password: string): Promise<{ ok?: boolean }> {
+  return fetchApi<{ ok?: boolean }>("DELETE", "/api/settings/account", { password }, true);
 }
 
 export async function apiGet<T>(path: string): Promise<T> {

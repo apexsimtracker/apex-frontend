@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/utils";
 
 function TrendChip({
@@ -41,6 +42,7 @@ export default function WeeklySnapshot({
   lapsDelta,
   trackTimeDelta,
 }: WeeklySnapshotProps) {
+  const navigate = useNavigate();
   const sessionImprovement =
     sessionDelta === 0 ? null : sessionDelta > 0;
   const sessionDisplay =
@@ -67,6 +69,7 @@ export default function WeeklySnapshot({
         </h2>
         <button
           type="button"
+          onClick={() => navigate("/sessions")}
           className="text-xs font-medium text-[rgb(240,28,28)] hover:opacity-90"
         >
           See More

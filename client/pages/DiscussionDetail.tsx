@@ -100,7 +100,7 @@ export default function DiscussionDetail() {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         if (msg.includes("404")) {
-          // TODO: Remove when GET /api/community/discussions/:id exists — stopgap: fetch list and select by id
+          // Fallback when GET /api/community/discussions/:id is not implemented: fetch list and select by id. Remove this block once the backend exposes GET by id.
           try {
             const raw = await getDiscussions({ category: "all" });
             const list = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
