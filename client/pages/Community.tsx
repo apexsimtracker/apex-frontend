@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Search, Zap } from "lucide-react";
+import { Search } from "lucide-react";
 import DiscussionCard from "@/components/DiscussionCard";
 import {
   getDiscussions,
@@ -315,20 +315,6 @@ export default function Community() {
           )}
         </div>
 
-        {/* Placeholder Section */}
-        <div className="bg-card rounded-2xl border border border-dashed p-8 text-center">
-          <Zap
-            className="w-12 h-12 mx-auto mb-4"
-            style={{ color: "rgba(240, 28, 28, 0.2)" }}
-          />
-          <h3 className="text-lg font-bold text-foreground mb-2">
-            More community features coming
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            Keep building! Ask me to add user profiles, achievements, community
-            leaderboards, and more.
-          </p>
-        </div>
       </div>
 
       {/* New Discussion Modal */}

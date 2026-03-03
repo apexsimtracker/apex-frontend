@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authLogin } from "@/lib/api";
-import { setToken } from "@/auth/token";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,10 +14,10 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      const response = await authLogin(email.trim(), password);
-      if (response.accessToken) {
-        setToken(response.accessToken);
-      }
+      const data = await authLogin(email.trim(), password) as { accessToken?: string; token?: string };
+      const token = data.accessToken ?? data.token;
+      if (!token) throw new Error("No token returned");
+      localStorage.setItem("apex_token", token);
       navigate("/profile", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");
