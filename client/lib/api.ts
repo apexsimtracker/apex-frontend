@@ -352,17 +352,22 @@ export async function getLeaderboards(
   return Array.isArray(rows) ? rows : [];
 }
 
-// Auth
+// Auth — backend may return { id, email, displayName?, createdAt? } at top level (no user wrapper)
 export type AuthUser = {
   id: string;
   email: string;
-  displayName: string;
-  hasPro: boolean;
+  displayName?: string;
+  name?: string;
+  createdAt?: string;
+  hasPro?: boolean;
 };
 
-// authMe skips auth expired check to avoid infinite loops during session verification
+// authMe skips auth expired check to avoid infinite loops during session verification.
+// Normalize response: backend may return { user: {...} } or {...} at top level.
 export async function authMe(): Promise<AuthUser> {
-  return fetchApi<AuthUser>("GET", "/api/auth/me", undefined, true);
+  const data = await fetchApi<AuthUser | { user?: AuthUser }>("GET", "/api/auth/me", undefined, true);
+  const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
+  return user;
 }
 
 export async function authSignup(

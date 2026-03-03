@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
-import { API_BASE, getProfileSummary, type ProfileSummary } from "@/lib/api";
+import { getProfileSummary, type ProfileSummary } from "@/lib/api";
 import { ProfileView } from "@/components/ProfileView";
 
 const emptyBuckets = {
@@ -58,35 +59,15 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
 }
 
 export default function Profile() {
-  const [me, setMe] = useState<MeResponse | null>(null);
+  const { user, loading } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    const token = localStorage.getItem("apex_token");
-    fetch(`${API_BASE}/api/auth/me`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    })
-      .then(async (r) => {
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .then((data: MeResponse | null) => {
-        setMe(data);
-        if (data?.user) {
-          getProfileSummary()
-            .then(setProfile)
-            .catch(() => setProfile(profileSummaryFromMe(data)));
-        }
-      })
-      .catch(() => setMe(null))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!user) return;
+    getProfileSummary()
+      .then(setProfile)
+      .catch(() => setProfile(profileSummaryFromMe({ user })));
+  }, [user]);
 
   const handleSignOut = () => {
     clearToken();
@@ -100,9 +81,7 @@ export default function Profile() {
       </div>
     );
   }
-
-  const user = me?.user;
-  if (!me || !user) {
+  if (!user) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center p-6">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center max-w-md">
@@ -120,6 +99,7 @@ export default function Profile() {
   }
 
   const accountName = getAccountDisplayName(user);
+  const me: MeResponse = { user };
   const displayProfile: ProfileSummary = profile
     ? { ...profile, user: { ...profile.user, displayName: accountName } }
     : profileSummaryFromMe(me);
