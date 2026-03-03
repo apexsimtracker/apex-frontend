@@ -370,6 +370,13 @@ export async function authMe(): Promise<AuthUser> {
   return user;
 }
 
+/** PATCH /api/auth/me — update current user (e.g. displayName). Returns updated user. */
+export async function updateMe(body: { displayName: string }): Promise<AuthUser> {
+  const data = await fetchApi<AuthUser | { user?: AuthUser }>("PATCH", "/api/auth/me", body, true);
+  const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
+  return user;
+}
+
 export async function authSignup(
   email: string,
   password: string,
