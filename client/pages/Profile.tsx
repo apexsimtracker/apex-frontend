@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { getMe, type MeResponse } from "@/auth/api";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
-import { ApiError, getProfileSummary, type ProfileSummary } from "@/lib/api";
+import { API_BASE, getProfileSummary, type ProfileSummary } from "@/lib/api";
 import { ProfileView } from "@/components/ProfileView";
 
 const emptyBuckets = {
@@ -58,44 +58,39 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
 }
 
 export default function Profile() {
-  const navigate = useNavigate();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
-
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
-    setUnauthorized(false);
-    setMe(null);
-    setProfile(null);
-    try {
-      const data = await getMe();
-      setMe(data);
-      try {
-        const summary = await getProfileSummary();
-        setProfile(summary);
-      } catch {
-        setProfile(profileSummaryFromMe(data));
-      }
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        setUnauthorized(true);
-      } else {
-        setUnauthorized(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    setLoading(true);
+    const token = localStorage.getItem("apex_token");
+    fetch(`${API_BASE}/api/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then(async (r) => {
+        if (!r.ok) return null;
+        return r.json();
+      })
+      .then((data: MeResponse | null) => {
+        setMe(data);
+        if (data?.user) {
+          getProfileSummary()
+            .then(setProfile)
+            .catch(() => setProfile(profileSummaryFromMe(data)));
+        }
+      })
+      .catch(() => setMe(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSignOut = () => {
     clearToken();
-    navigate("/login");
+    window.location.href = "/login";
   };
 
   if (loading) {
@@ -107,7 +102,7 @@ export default function Profile() {
   }
 
   const user = me?.user;
-  if (unauthorized || !me || !user) {
+  if (!me || !user) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center p-6">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center max-w-md">

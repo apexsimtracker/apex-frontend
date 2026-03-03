@@ -1,4 +1,4 @@
-import { getToken, clearToken } from "@/auth/token";
+import { getToken } from "@/auth/token";
 
 const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 const API_BASE =
@@ -105,13 +105,6 @@ export async function fetchApi<T>(
     throw new ApiError(0, "Connection lost. Please try again.");
   }
 
-  if (res.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-      window.location.href = "/login";
-    }
-  }
-
   if (res.ok) {
     const text = await res.text();
     if (!text) return undefined as T;
@@ -123,11 +116,6 @@ export async function fetchApi<T>(
   }
 
   const { message, code } = await extractErrorInfo(res);
-
-  // Handle 401 globally (unless skipped for auth endpoints)
-  if (res.status === 401 && !skipAuthExpiredCheck && authExpiredHandler) {
-    authExpiredHandler();
-  }
 
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {
