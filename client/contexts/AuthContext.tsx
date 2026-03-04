@@ -65,6 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
+  // Re-run auth when apex_token changes (e.g. login in another tab, or token cleared).
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "apex_token") {
+        refreshUser();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [refreshUser]);
+
   return (
     <AuthContext.Provider value={{ user, loading, error, refreshUser, setUser }}>
       {children}
