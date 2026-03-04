@@ -81,11 +81,11 @@ export async function fetchApi<T>(
   body?: unknown,
   skipAuthExpiredCheck = false
 ): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
   const base =
     import.meta.env.VITE_API_URL ??
