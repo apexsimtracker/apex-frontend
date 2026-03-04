@@ -25,6 +25,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const handlingExpiry = useRef(false);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await authMe();
+      setUser(data);
+    } catch (e) {
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        setUser(null);
+      } else if (e instanceof ApiError && e.status === 0) {
+        setError(e.message);
+      } else {
+        const msg = e instanceof Error ? e.message : "Failed to fetch user.";
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Register global auth expired handler
   useEffect(() => {
     registerAuthExpiredHandler(async () => {
@@ -42,51 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const refreshUser = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await authMe();
-      setUser(data);
-    } catch (e) {
-      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-        setUser(null);
-      } else if (e instanceof ApiError && e.status === 0) {
-        setError(e.message);
-      } else {
-        const msg = e instanceof Error ? e.message : "Failed to fetch user.";
-        setError(msg);
-      }
-    }
-  }, []);
-
-  // Strict loading gate: call /api/auth/me on mount, set loading=false only in finally, alive flag to avoid setState after unmount
   useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        setError(null);
-        const data = await authMe();
-        if (alive) setUser(data);
-      } catch (e) {
-        if (!alive) return;
-        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-          setUser(null);
-        } else if (e instanceof ApiError && e.status === 0) {
-          setError(e.message);
-        } else {
-          const msg = e instanceof Error ? e.message : "Failed to fetch user.";
-          setError(msg);
-        }
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
+    refreshUser();
+  }, [refreshUser]);
 
   return (
     <AuthContext.Provider value={{ user, loading, error, refreshUser, setUser }}>
