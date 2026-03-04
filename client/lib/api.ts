@@ -73,7 +73,8 @@ async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
   }
 }
 
-// Central fetch handler (exported for auth/api and other modules that need it)
+// Central fetch handler (exported for auth/api and other modules that need it).
+// Token is always read from localStorage "apex_token"; we do NOT clear it on 401.
 export async function fetchApi<T>(
   method: string,
   path: string,
@@ -81,8 +82,8 @@ export async function fetchApi<T>(
   skipAuthExpiredCheck = false
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token && !headers["Authorization"]) {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+  if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 

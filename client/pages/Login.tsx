@@ -16,8 +16,9 @@ export default function Login() {
     try {
       const data = await authLogin(email.trim(), password) as { accessToken?: string; token?: string };
       const token = data.accessToken ?? data.token;
-      if (!token || typeof token !== "string" || !token.startsWith("eyJ")) {
-        throw new Error("Login succeeded but token missing/invalid");
+      if (!token || typeof token !== "string") {
+        setError("No token returned. Please try again.");
+        return;
       }
       localStorage.setItem("apex_token", token);
       navigate("/profile", { replace: true });
