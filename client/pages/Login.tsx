@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { authLogin } from "@/lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +21,7 @@ export default function Login() {
         return;
       }
       localStorage.setItem("apex_token", token);
-      await refreshUser();
+      window.dispatchEvent(new Event("apex:auth"));
       navigate("/profile", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.");

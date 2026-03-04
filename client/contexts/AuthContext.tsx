@@ -14,6 +14,7 @@ type AuthContextType = {
   loading: boolean;
   error: string | null;
   refreshUser: () => Promise<void>;
+  refreshMe: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
 };
 
@@ -39,6 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const msg = e instanceof Error ? e.message : "Failed to fetch user.";
         setError(msg);
       }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshMe = useCallback(async () => {
+    setLoading(true);
+    try {
+      setError(null);
+      const data = await authMe();
+      setUser(data);
+    } catch {
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -76,8 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, [refreshUser]);
 
+  // Same-tab auth update: when token is set (e.g. after login), refresh user and loading state.
+  useEffect(() => {
+    const handler = () => refreshMe();
+    window.addEventListener("apex:auth", handler);
+    return () => window.removeEventListener("apex:auth", handler);
+  }, [refreshMe]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, refreshUser, setUser }}>
+    <AuthContext.Provider value={{ user, loading, error, refreshUser, refreshMe, setUser }}>
       {children}
     </AuthContext.Provider>
   );
