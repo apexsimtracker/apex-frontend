@@ -13,6 +13,38 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function() {
+        function reload() {
+          var url = new URL(location.href);
+          url.searchParams.set("__r", String(Date.now()));
+          location.replace(url.toString());
+        }
+        function showAndReload() {
+          var overlay = document.createElement("div");
+          overlay.id = "apex-reload-overlay";
+          overlay.style.cssText = "position:fixed;inset:0;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:18px;z-index:999999;";
+          overlay.textContent = "Reloading (app failed to mount)...";
+          document.body.appendChild(overlay);
+          reload();
+        }
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) { regs.forEach(function(reg) { reg.unregister(); }); }).catch(function() {});
+        }
+        if ("caches" in window) {
+          caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); }).catch(function() {});
+        }
+        var moduleScript = document.currentScript && document.currentScript.nextElementSibling;
+        if (moduleScript && moduleScript.tagName === "SCRIPT") {
+          moduleScript.addEventListener("error", function() { showAndReload(); });
+        }
+        setTimeout(function() {
+          if (window.__APEX_MOUNTED__ !== true) {
+            showAndReload();
+          }
+        }, 2000);
+      })();
+    </script>
     <script type="module" src="/main.tsx"></script>
   </body>
 </html>
