@@ -11,17 +11,7 @@ import {
   type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
-import { timeAgo } from "@/lib/utils";
-
-// Use backend author only; no mock fallback.
-function getAuthorDisplay(author: unknown): string {
-  if (typeof author === "string") return author.trim();
-  if (author && typeof author === "object" && "name" in author) {
-    const n = (author as { name?: unknown }).name;
-    return typeof n === "string" ? (n.trim() || "") : "";
-  }
-  return "";
-}
+import { timeAgo, getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
 
 function userNameToSlug(name: string) {
   return name.toLowerCase().replace(/\s+/g, "-");
@@ -196,11 +186,11 @@ export default function DiscussionDetail() {
     );
   }
 
-  const authorDisplay = getAuthorDisplay(discussion.author) || "User";
+  const authorDisplay = getDiscussionAuthorDisplay(discussion.author);
   const description =
     discussion.description ?? discussion.excerpt ?? discussion.title;
   const hasAvatar = discussion.authorAvatar && typeof discussion.authorAvatar === "string" && discussion.authorAvatar.trim().length > 0;
-  const initials = authorDisplay !== "User" ? authorDisplay.slice(0, 2).toUpperCase() : "?";
+  const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
     <div className="bg-background min-h-screen">
@@ -318,7 +308,7 @@ export default function DiscussionDetail() {
                   <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">
-                        {getAuthorDisplay(c.author) || "User"}
+                        {getDiscussionAuthorDisplay(c.author)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {timeAgo(c.createdAt)}

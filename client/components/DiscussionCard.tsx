@@ -1,26 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle, Eye } from "lucide-react";
+import { getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
 
 // Helper to convert username to URL slug
 const userNameToSlug = (name: string) => {
   return name.toLowerCase().replace(/\s+/g, "-");
 };
 
-// Use backend author only; no mock fallback. Empty string when missing.
-function getAuthorDisplay(author: unknown): string {
-  if (typeof author === "string") return author.trim();
-  if (author && typeof author === "object" && "name" in author) {
-    const n = (author as { name?: unknown }).name;
-    return typeof n === "string" ? (n.trim() || "") : "";
-  }
-  return "";
-}
-
 interface DiscussionCardProps {
   id: string;
   title: string;
   excerpt: string;
-  author: string | { name?: string } | unknown;
+  author: string | { displayName?: string; name?: string; email?: string } | unknown;
   authorAvatar?: string | null;
   category: string;
   timestamp: string;
@@ -42,9 +33,12 @@ export default function DiscussionCard({
   isPinned,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
-  const authorDisplay = getAuthorDisplay(author) || "User";
+  if (import.meta.env.DEV && author && typeof author === "object") {
+    console.log("[DiscussionCard] author object from backend:", author);
+  }
+  const authorDisplay = getDiscussionAuthorDisplay(author);
   const hasAvatar = authorAvatar && typeof authorAvatar === "string" && authorAvatar.trim().length > 0;
-  const initials = authorDisplay !== "User" ? authorDisplay.slice(0, 2).toUpperCase() : "?";
+  const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
     <Link to={`/discussion/${id}`}>

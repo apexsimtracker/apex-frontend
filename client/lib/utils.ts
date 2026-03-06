@@ -5,6 +5,35 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Backend author can be string or { displayName?, name?, email? }. Fallback order: displayName → name → email (before @) → "User". */
+export function getDiscussionAuthorDisplay(author: unknown): string {
+  if (typeof author === "string") {
+    const s = author.trim();
+    return s || "User";
+  }
+  if (author && typeof author === "object") {
+    const o = author as { displayName?: string; name?: string; email?: string };
+    const displayName = typeof o.displayName === "string" ? o.displayName.trim() : "";
+    if (displayName) return displayName;
+    const name = typeof o.name === "string" ? o.name.trim() : "";
+    if (name) return name;
+    const email = typeof o.email === "string" ? o.email.trim() : "";
+    if (email) {
+      const beforeAt = email.split("@")[0]?.trim();
+      if (beforeAt) return beforeAt;
+    }
+  }
+  return "User";
+}
+
+/** Initials from the final display name: first 2 chars, or single char for short names (e.g. "User" → "U"). */
+export function getDiscussionAuthorInitials(displayName: string): string {
+  const s = displayName.trim();
+  if (!s) return "?";
+  if (s.length >= 2) return s.slice(0, 2).toUpperCase();
+  return s.slice(0, 1).toUpperCase();
+}
+
 export const formatLapMs = (ms: number | null | undefined): string => {
   if (!ms || !Number.isFinite(ms)) return "—";
   const minutes = Math.floor(ms / 60000);

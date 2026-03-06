@@ -277,12 +277,16 @@ export const DISCUSSION_CATEGORIES = [
 
 export type DiscussionCategory = (typeof DISCUSSION_CATEGORIES)[number]["value"];
 
+export type DiscussionAuthor =
+  | string
+  | { displayName?: string; name?: string; email?: string };
+
 export type Discussion = {
   id: string;
   title: string;
   description?: string;
   excerpt?: string;
-  author: string;
+  author: DiscussionAuthor;
   authorAvatar?: string | null;
   category: string;
   createdAt: string;
