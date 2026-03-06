@@ -7,7 +7,7 @@ import DiscussionCard from "@/components/DiscussionCard";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import { apiGet, isNetworkError } from "@/lib/api";
+import { apiGet, isNetworkError, getDiscussions, type Discussion } from "@/lib/api";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,77 +29,6 @@ function deltaNumber(curr: number, prev: number) {
   return curr - prev;
 }
 
-// Mock data for discussions only (activities come from API)
-const discussionItems = [
-  {
-    type: "discussion",
-    data: {
-      id: "d1",
-      title: "Tips for improving consistency on street circuits",
-      excerpt:
-        "Hey everyone! Just finished my analysis on why consistency matters more than raw pace. Here are my top 5 tips...",
-      author: "Jordan Park",
-      authorAvatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop",
-      category: "Tips & Guides",
-      timestamp: "4h ago",
-      replies: 24,
-      views: 312,
-      isPinned: true,
-    },
-  },
-  {
-    type: "discussion",
-    data: {
-      id: "d2",
-      title: "New F1 24 patch discussion - brake balance changes",
-      excerpt:
-        "Did anyone else notice the brake balance changes in the latest patch? The cars feel completely different now...",
-      author: "Mike Racing",
-      authorAvatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop",
-      category: "Game Discussion",
-      timestamp: "6h ago",
-      replies: 57,
-      views: 892,
-    },
-  },
-  {
-    type: "discussion",
-    data: {
-      id: "d3",
-      title: "Community championship season 3 - registration open!",
-      excerpt:
-        "We're excited to announce the registration for our community championship season 3! Details and sign-up form below...",
-      author: "Admin Team",
-      authorAvatar:
-        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=40&h=40&fit=crop",
-      category: "Community Event",
-      timestamp: "1d ago",
-      replies: 143,
-      views: 2341,
-      isPinned: true,
-    },
-  },
-  {
-    type: "discussion",
-    data: {
-      id: "d4",
-      title: "Best setups for wet weather racing",
-      excerpt:
-        "Looking for recommendations on wet weather setups. What adjustments do you all make for rain?",
-      author: "Casey Williams",
-      authorAvatar:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=40&h=40&fit=crop",
-      category: "Setups",
-      timestamp: "2d ago",
-      replies: 38,
-      views: 521,
-    },
-  },
-];
-
-const ITEMS_PER_PAGE = 4;
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
 
@@ -138,13 +67,11 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedError, setFeedError] = useState<string | null>(null);
-  const [displayedDiscussions, setDisplayedDiscussions] = useState(
-    discussionItems.slice(0, ITEMS_PER_PAGE),
-  );
-  const [hasMore, setHasMore] = useState(
-    discussionItems.length > ITEMS_PER_PAGE,
-  );
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [discussionsLoading, setDiscussionsLoading] = useState(true);
   const [showUploadBanner, setShowUploadBanner] = useState(false);
+
+  const feedLoading = loading || discussionsLoading;
 
   useEffect(() => {
     if (searchParams.get("uploaded") === "1") {
@@ -193,16 +120,13 @@ export default function Index() {
     loadFeed();
   }, [loadFeed]);
 
-
-  const handleLoadMore = () => {
-    const currentCount = displayedDiscussions.length;
-    const nextItems = discussionItems.slice(
-      currentCount,
-      currentCount + ITEMS_PER_PAGE,
-    );
-    setDisplayedDiscussions([...displayedDiscussions, ...nextItems]);
-    setHasMore(currentCount + ITEMS_PER_PAGE < discussionItems.length);
-  };
+  useEffect(() => {
+    setDiscussionsLoading(true);
+    getDiscussions()
+      .then((list) => setDiscussions(Array.isArray(list) ? list : []))
+      .catch(() => setDiscussions([]))
+      .finally(() => setDiscussionsLoading(false));
+  }, []);
 
   // Group sessions into bundled activities
   const groupedActivity = useMemo<GroupedActivityItem[]>(() => {
@@ -313,8 +237,9 @@ export default function Index() {
             </div>
           )}
 
-          {loading ? (
+          {feedLoading ? (
             <div className="space-y-0">
+              <p className="text-sm text-muted-foreground mb-3">Loading activity...</p>
               <FeedSkeletonCard />
               <FeedSkeletonCard />
               <FeedSkeletonCard />
@@ -338,8 +263,8 @@ export default function Index() {
                   Failed to load activity
                 </p>
               )}
-              {!error && !feedError && groupedActivity.length === 0 && user && (
-                <OnboardingEmptyState />
+              {!error && !feedError && groupedActivity.length === 0 && discussions.length === 0 && (
+                <p className="text-sm text-muted-foreground py-8">No activity yet.</p>
               )}
               {!error && !feedError &&
                 groupedActivity.map((item) => {
@@ -398,23 +323,22 @@ export default function Index() {
                 })}
             </>
           )}
-          {displayedDiscussions.map((item, index) => (
-            <DiscussionCard key={item.data.id} {...item.data} />
+          {discussions.map((d) => (
+            <DiscussionCard
+              key={d.id}
+              id={d.id}
+              title={d.title}
+              excerpt={d.excerpt ?? (d.description ? (d.description.slice(0, 160) + (d.description.length > 160 ? "…" : "")) : "")}
+              author={d.author}
+              authorAvatar={d.authorAvatar ?? null}
+              category={d.category}
+              timestamp={timeAgo(d.createdAt)}
+              replies={d.replies ?? d.commentCount ?? 0}
+              views={d.views ?? 0}
+              isPinned={d.isPinned}
+            />
           ))}
         </div>
-
-        {/* Load More */}
-        {hasMore && (
-          <div className="mt-12 sm:mt-16 text-center">
-            <button
-              onClick={handleLoadMore}
-              className="px-4 py-1.5 sm:px-5 sm:py-2 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2 text-xs sm:text-sm"
-              style={{ backgroundColor: "rgb(240, 28, 28)" }}
-            >
-              Load more activities
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

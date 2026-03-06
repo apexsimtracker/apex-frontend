@@ -111,6 +111,10 @@ export default function Settings() {
     setDisplayNameError(null);
     setDisplayNameSuccess(false);
     setSavingDisplayName(true);
+    // Update auth user immediately so the new name shows even if the request fails (e.g. connection lost).
+    if (user) {
+      setUser({ ...user, displayName: trimmed });
+    }
     try {
       const updated = await updateMe({ displayName: trimmed });
       setUser(updated);
@@ -121,7 +125,7 @@ export default function Settings() {
     } finally {
       setSavingDisplayName(false);
     }
-  }, [displayNameInput, currentDisplayName, savingDisplayName, setUser]);
+  }, [displayNameInput, currentDisplayName, savingDisplayName, setUser, user]);
 
   useEffect(() => {
     setApexSettings(settings);

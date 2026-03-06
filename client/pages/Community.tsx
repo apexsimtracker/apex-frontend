@@ -320,7 +320,7 @@ export default function Community() {
       {/* New Discussion Modal */}
       {showNewDiscussionModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-2xl border border max-w-2xl w-full p-8">
+          <div className="bg-background rounded-2xl border border border-white/10 max-w-2xl w-full p-8 shadow-xl">
             <h2 className="text-2xl font-bold text-foreground mb-6">
               Create New Discussion
             </h2>
