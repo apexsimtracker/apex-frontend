@@ -7,21 +7,20 @@ import {
   getDiscussionComments,
   createDiscussionComment,
   DISCUSSION_CATEGORIES,
+  ApiError,
   type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
 import { timeAgo } from "@/lib/utils";
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
-
+// Use backend author only; no mock fallback.
 function getAuthorDisplay(author: unknown): string {
-  if (typeof author === "string") return author.trim() || "Local Driver";
+  if (typeof author === "string") return author.trim();
   if (author && typeof author === "object" && "name" in author) {
     const n = (author as { name?: unknown }).name;
-    return typeof n === "string" ? (n.trim() || "Local Driver") : "Local Driver";
+    return typeof n === "string" ? (n.trim() || "") : "";
   }
-  return "Local Driver";
+  return "";
 }
 
 function userNameToSlug(name: string) {
@@ -98,29 +97,27 @@ export default function DiscussionDetail() {
       try {
         disc = await getDiscussion(id);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (msg.includes("404")) {
-          // Fallback when GET /api/community/discussions/:id is not implemented: fetch list and select by id. Remove this block once the backend exposes GET by id.
-          try {
-            const raw = await getDiscussions({ category: "all" });
-            const list = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
-            disc = list.find((d) => d.id === id) ?? null;
-          } catch {
-            disc = null;
-          }
+        const is404 = e instanceof ApiError && e.status === 404;
+        const isNetwork = e instanceof ApiError && e.status === 0;
+        try {
+          const raw = await getDiscussions();
+          const list = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
+          disc = list.find((d) => d.id === id) ?? null;
+        } catch {
+          disc = null;
         }
-        if (!disc) {
-          if (cancelled) return;
-          setDiscussionError(msg.includes("404") ? "Post not found" : msg);
+        if (!disc && !cancelled) {
           setDiscussion(null);
           setComments([]);
-          setLoading(false);
-          return;
+          setDiscussionError(is404 ? "Post not found." : isNetwork ? "Failed to load post." : "Post not found.");
         }
       }
 
       if (cancelled) return;
-      setDiscussion(disc);
+      if (disc) {
+        setDiscussion(disc);
+        setDiscussionError(null);
+      }
 
       let cmts: DiscussionComment[] = [];
       try {
@@ -128,10 +125,12 @@ export default function DiscussionDetail() {
         cmts = Array.isArray(raw) ? raw : (raw as { comments?: DiscussionComment[] })?.comments ?? [];
         setCommentsError(null);
       } catch (e) {
-        setCommentsError(e instanceof Error ? e.message : "Failed to load comments.");
+        if (!cancelled) setCommentsError(e instanceof Error ? e.message : "Failed to load comments.");
       }
-      setComments(cmts);
-      setLoading(false);
+      if (!cancelled) {
+        setComments(cmts);
+        setLoading(false);
+      }
     }
 
     load();
@@ -168,13 +167,13 @@ export default function DiscussionDetail() {
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          <p className="text-muted-foreground">Loading…</p>
+          <p className="text-muted-foreground">Loading post...</p>
         </div>
       </div>
     );
   }
 
-  if (discussionError === "Post not found" || !discussion) {
+  if (discussionError || !discussion) {
     return (
       <div className="bg-background min-h-screen">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -185,7 +184,7 @@ export default function DiscussionDetail() {
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          <p className="text-muted-foreground">Post not found.</p>
+          <p className="text-muted-foreground">{discussionError ?? "Post not found."}</p>
           <button
             onClick={() => navigate("/community")}
             className="mt-4 text-primary hover:underline font-medium"
@@ -197,9 +196,11 @@ export default function DiscussionDetail() {
     );
   }
 
-  const authorDisplay = getAuthorDisplay(discussion.author);
+  const authorDisplay = getAuthorDisplay(discussion.author) || "User";
   const description =
     discussion.description ?? discussion.excerpt ?? discussion.title;
+  const hasAvatar = discussion.authorAvatar && typeof discussion.authorAvatar === "string" && discussion.authorAvatar.trim().length > 0;
+  const initials = authorDisplay !== "User" ? authorDisplay.slice(0, 2).toUpperCase() : "?";
 
   return (
     <div className="bg-background min-h-screen">
@@ -218,11 +219,20 @@ export default function DiscussionDetail() {
               onClick={() => navigate(`/user/${userNameToSlug(authorDisplay)}`)}
               className="w-full flex items-center gap-3 mb-4 hover:opacity-80 transition-opacity group text-left"
             >
-              <img
-                src={discussion.authorAvatar ?? DEFAULT_AVATAR}
-                alt={authorDisplay}
-                className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
-              />
+              {hasAvatar ? (
+                <img
+                  src={discussion.authorAvatar!}
+                  alt={authorDisplay}
+                  className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
+                />
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-sm font-medium group-hover:ring-2 group-hover:ring-primary transition-all"
+                  aria-label={`Avatar for ${authorDisplay}`}
+                >
+                  {initials}
+                </div>
+              )}
               <div className="flex-1">
                 <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                   {authorDisplay}
@@ -308,7 +318,7 @@ export default function DiscussionDetail() {
                   <div className="flex items-start gap-3 mb-3">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">
-                        {getAuthorDisplay(c.author)}
+                        {getAuthorDisplay(c.author) || "User"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {timeAgo(c.createdAt)}

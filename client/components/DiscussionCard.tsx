@@ -6,14 +6,14 @@ const userNameToSlug = (name: string) => {
   return name.toLowerCase().replace(/\s+/g, "-");
 };
 
-// Extract display name — author can be string or object like { name: "..." }
+// Use backend author only; no mock fallback. Empty string when missing.
 function getAuthorDisplay(author: unknown): string {
-  if (typeof author === "string") return author.trim() || "Local Driver";
+  if (typeof author === "string") return author.trim();
   if (author && typeof author === "object" && "name" in author) {
     const n = (author as { name?: unknown }).name;
-    return typeof n === "string" ? (n.trim() || "Local Driver") : "Local Driver";
+    return typeof n === "string" ? (n.trim() || "") : "";
   }
-  return "Local Driver";
+  return "";
 }
 
 interface DiscussionCardProps {
@@ -29,9 +29,6 @@ interface DiscussionCardProps {
   isPinned?: boolean;
 }
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
-
 export default function DiscussionCard({
   id,
   title,
@@ -45,7 +42,10 @@ export default function DiscussionCard({
   isPinned,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
-  const authorDisplay = getAuthorDisplay(author);
+  const authorDisplay = getAuthorDisplay(author) || "User";
+  const hasAvatar = authorAvatar && typeof authorAvatar === "string" && authorAvatar.trim().length > 0;
+  const initials = authorDisplay !== "User" ? authorDisplay.slice(0, 2).toUpperCase() : "?";
+
   return (
     <Link to={`/discussion/${id}`}>
       <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
@@ -60,11 +60,20 @@ export default function DiscussionCard({
               }}
               className="flex items-center gap-2 sm:gap-3 flex-1 hover:opacity-80 transition-opacity group text-left"
             >
-              <img
-                src={authorAvatar ?? DEFAULT_AVATAR}
-                alt={authorDisplay}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
-              />
+              {hasAvatar ? (
+                <img
+                  src={authorAvatar!}
+                  alt={authorDisplay}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:ring-1.5 group-hover:ring-primary transition-all text-white/70 text-xs font-medium"
+                  aria-label={`Avatar for ${authorDisplay}`}
+                >
+                  {initials}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-white group-hover:text-primary transition-colors text-xs sm:text-sm">
                   {authorDisplay}

@@ -134,66 +134,24 @@ export default function Community() {
 
     try {
       setCreating(true);
-      const created = await createDiscussion({
+      await createDiscussion({
         category: newDiscussionCategory,
         title,
         description,
       });
-      if (!created || typeof created !== "object") {
-        loadDiscussions();
-        setShowNewDiscussionModal(false);
-        setNewDiscussionTitle("");
-        setNewDiscussionContent("");
-        setNewDiscussionCategory("setup");
-        setValidationErrors({});
-        setCreateError(null);
-        return;
-      }
-
-      const unwrapped = "discussion" in created ? (created as { discussion: Discussion }).discussion : created;
-      const item = unwrapped as Discussion;
-
-      const matchesCategory =
-        selectedCategory === "all" || (item.category ?? newDiscussionCategory) === selectedCategory;
-      const matchesSearch =
-        !searchQuery.trim() ||
-        title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.description ?? description).toLowerCase().includes(searchQuery.toLowerCase());
-
-      if (matchesCategory && matchesSearch) {
-        const toInsert: Discussion = {
-          id: item.id ?? `new-${Date.now()}`,
-          title: item.title ?? title,
-          excerpt: item.excerpt ?? truncateDescription(item.description ?? description),
-          description: item.description ?? description,
-          author: item.author ?? "Local Driver",
-          authorAvatar: item.authorAvatar ?? null,
-          category: item.category ?? newDiscussionCategory,
-          createdAt: item.createdAt ?? new Date().toISOString(),
-          likeCount: item.likeCount ?? item.views ?? 0,
-          commentCount: item.commentCount ?? item.replies ?? 0,
-          isPinned: item.isPinned,
-        };
-        setDiscussions((prev) => [toInsert, ...prev]);
-      } else {
-        loadDiscussions();
-      }
-
+      // Refetch list so the new post appears with real backend author data (no local mock).
+      await loadDiscussions();
       setShowNewDiscussionModal(false);
       setNewDiscussionTitle("");
       setNewDiscussionContent("");
       setNewDiscussionCategory("setup");
       setValidationErrors({});
       setCreateError(null);
-
-      const createdCategory = (item.category ?? newDiscussionCategory) as DiscussionCategory;
-      if (createdCategory !== "all") {
-        setCategoryCounts((prev) => ({
-          ...prev,
-          all: prev.all + 1,
-          [createdCategory]: (prev[createdCategory] ?? 0) + 1,
-        }));
-      }
+      setCategoryCounts((prev) => ({
+        ...prev,
+        all: prev.all + 1,
+        [newDiscussionCategory]: (prev[newDiscussionCategory] ?? 0) + 1,
+      }));
     } catch (e) {
       console.error(e);
       setCreateError(e instanceof Error ? e.message : "Failed to create discussion.");
