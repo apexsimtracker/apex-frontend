@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchApi } from "@/lib/api";
-import { setToken } from "@/auth/token";
-
-type RegisterResponse = { accessToken?: string };
+import { authRegister } from "@/lib/api";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -18,15 +15,15 @@ export default function Signup() {
     setError(null);
     setLoading(true);
     try {
-      const response = await fetchApi<RegisterResponse>("POST", "/api/auth/register", {
-        name: name.trim(),
-        email: email.trim(),
-        password,
-      }, true);
-      if (response.accessToken) {
-        setToken(response.accessToken);
+      const data = await authRegister(email.trim(), password, name.trim() || undefined);
+      const token = data.accessToken ?? data.token;
+      if (!token || typeof token !== "string") {
+        setError("No token returned. Please try again.");
+        return;
       }
-      navigate("/profile");
+      localStorage.setItem("apex_token", token);
+      window.dispatchEvent(new Event("apex:auth"));
+      navigate("/profile", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed. Email may already exist.");
     } finally {

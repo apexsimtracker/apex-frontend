@@ -33,9 +33,6 @@ export default function DiscussionCard({
   isPinned,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
-  if (import.meta.env.DEV && author && typeof author === "object") {
-    console.log("[DiscussionCard] author object from backend:", author);
-  }
   const authorDisplay = getDiscussionAuthorDisplay(author);
   const hasAvatar = authorAvatar && typeof authorAvatar === "string" && authorAvatar.trim().length > 0;
   const initials = getDiscussionAuthorInitials(authorDisplay);

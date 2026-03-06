@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Backend author can be string or { displayName?, name?, email? }. Fallback order: displayName → name → email (before @) → "User". */
+/** Author display for discussion posts. Reads author.displayName first, then fallbacks. No mock values (e.g. "Local Driver").
+ *  Fallback order: author.displayName → author.name → email username (part before @) → "User". */
 export function getDiscussionAuthorDisplay(author: unknown): string {
   if (typeof author === "string") {
     const s = author.trim();

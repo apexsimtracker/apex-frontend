@@ -1,6 +1,9 @@
 import { getToken } from "@/auth/token";
 
+/** Production backend (Render). Used when VITE_API_URL is unset in production builds. */
 const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
+
+/** Single source of truth for API base: VITE_API_URL, or production Render URL, or dev localhost. */
 const API_BASE =
   import.meta.env.VITE_API_URL ??
   (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
@@ -87,13 +90,10 @@ export async function fetchApi<T>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const base =
-    import.meta.env.VITE_API_URL ??
-    (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
   const url =
     path.startsWith("http")
       ? path
-      : `${base}${path.startsWith("/") ? path : `/${path}`}`;
+      : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
   let res: Response;
   try {
@@ -397,17 +397,28 @@ export async function updateMe(body: { displayName: string }): Promise<AuthUser>
   return user;
 }
 
-export async function authSignup(
+/** Response from POST /api/auth/register. Backend may return accessToken or token. */
+export type RegisterResponse = {
+  accessToken?: string;
+  token?: string;
+  user?: AuthUser;
+};
+
+/** POST /api/auth/register — single register endpoint. Body: { name, email, password }. */
+export async function authRegister(
   email: string,
   password: string,
-  displayName?: string
-): Promise<AuthUser> {
-  return fetchApi<AuthUser>("POST", "/api/auth/signup", {
+  name?: string
+): Promise<RegisterResponse> {
+  return fetchApi<RegisterResponse>("POST", "/api/auth/register", {
+    name: name?.trim() || undefined,
     email,
     password,
-    displayName: displayName?.trim() || undefined,
   }, true);
 }
+
+/** @deprecated Use authRegister. Kept for compatibility. */
+export const authSignup = authRegister;
 
 export type LoginResponse = AuthUser & { accessToken?: string };
 
