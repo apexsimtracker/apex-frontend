@@ -226,6 +226,21 @@ export async function getCompetitionSummary(): Promise<CompetitionSummary[]> {
   return apiGet<CompetitionSummary[]>("/api/competitions/summary");
 }
 
+/** Single competition detail (GET /api/competitions/:id). Falls back to summary list if backend has no detail endpoint. */
+export type CompetitionDetail = CompetitionSummary & {
+  description?: string | null;
+  rules?: string[] | null;
+};
+
+export async function getCompetition(id: string): Promise<CompetitionDetail | null> {
+  try {
+    const data = await apiGet<CompetitionDetail>(`/api/competitions/${id}`);
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type CompetitionsMeta = {
   activeChallenges: number;
   joinedThisSeason: number;
