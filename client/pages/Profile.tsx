@@ -8,6 +8,7 @@ import {
   getFollowers,
   getFollowing,
   updateMe,
+  uploadProfileAvatar,
   type ProfileSummary,
   type FollowUser,
   type AuthUser,
@@ -200,26 +201,61 @@ export default function Profile() {
     setEditLoading(true);
     setEditError(null);
     try {
-      // TODO: When backend supports avatar upload, upload avatarFile here (e.g. POST /api/profile/avatar
-      // or multipart PATCH /api/auth/me) and pass returned avatarUrl to updateMe.
-      const updated = await updateMe({
+      let avatarUrlToSet: string | undefined;
+      if (avatarFile) {
+        try {
+          const uploadRes = await uploadProfileAvatar(avatarFile);
+          avatarUrlToSet = uploadRes.avatarUrl;
+          if (import.meta.env.DEV) {
+            console.log("[Profile] Avatar upload response:", uploadRes);
+          }
+        } catch (e) {
+          if (import.meta.env.DEV) {
+            console.warn("[Profile] Avatar upload failed (backend may not support it yet):", e);
+          }
+          // Continue without avatar so displayName and bio still save
+        }
+      }
+
+      const payload = {
         displayName: trimmedName,
         tagline: editForm.tagline.trim() || undefined,
-      });
+        avatarUrl: avatarUrlToSet ?? undefined,
+      };
+      if (import.meta.env.DEV) {
+        console.log("[Profile] updateMe request payload:", payload);
+      }
+
+      const updated = await updateMe(payload);
+      if (import.meta.env.DEV) {
+        console.log("[Profile] updateMe response (updated user):", updated);
+      }
+
       setUser(updated);
       await refreshMe();
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              user: {
-                ...prev.user,
-                displayName: updated.displayName ?? trimmedName,
-                tagline: (updated.tagline ?? editForm.tagline.trim()) || undefined,
-              },
-            }
-          : null
-      );
+
+      getProfileSummary()
+        .then((fresh) => {
+          setProfile(fresh);
+          if (import.meta.env.DEV) {
+            console.log("[Profile] Profile data after refetch:", fresh);
+          }
+        })
+        .catch(() => {
+          setProfile((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  user: {
+                    ...prev.user,
+                    displayName: updated.displayName ?? trimmedName,
+                    tagline: (updated.tagline ?? editForm.tagline.trim()) || undefined,
+                  },
+                }
+              : null
+          );
+        });
+
       setEditSuccess(true);
       clearAvatarSelection();
       setTimeout(() => {
