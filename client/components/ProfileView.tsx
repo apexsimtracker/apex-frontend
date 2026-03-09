@@ -160,17 +160,11 @@ export function ProfileView({
                       : `${profile.user.streakDays} days driving streak`}
                   </div>
                 )}
-                {profile.user.tagline && (
-                  <p className="text-muted-foreground/60 text-xs mb-2 sm:mb-3 leading-relaxed">
-                    {profile.user.tagline}
+                <div className="mt-1 mb-2 sm:mb-3">
+                  <p className="text-xs text-muted-foreground/50 uppercase mb-0.5">Bio</p>
+                  <p className="text-muted-foreground/80 text-sm leading-relaxed">
+                    {profile.user.tagline?.trim() ? profile.user.tagline.trim() : "No bio yet."}
                   </p>
-                )}
-                <div className="flex flex-wrap gap-2 justify-center sm:justify-start text-xs">
-                  <span className="text-muted-foreground/60">Consistent</span>
-                  <span className="text-muted-foreground/40">•</span>
-                  <span className="text-muted-foreground/60">
-                    Podium Regular
-                  </span>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
@@ -72,16 +72,17 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
   };
 }
 
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+
 type EditForm = {
   displayName: string;
   tagline: string;
-  avatarUrl: string;
 };
 
 const emptyEditForm: EditForm = {
   displayName: "",
   tagline: "",
-  avatarUrl: "",
 };
 
 export default function Profile() {
@@ -95,6 +96,10 @@ export default function Profile() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditForm>(emptyEditForm);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
@@ -105,12 +110,45 @@ export default function Profile() {
     setEditForm({
       displayName: name,
       tagline: profile?.user?.tagline ?? "",
-      avatarUrl: (user as AuthUser).avatarUrl ?? "",
     });
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setAvatarError(null);
     setEditError(null);
     setEditSuccess(false);
     setEditOpen(true);
   }, [user, profile?.user?.tagline]);
+
+  const handleAvatarFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setAvatarError(null);
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(null);
+    }
+    setAvatarFile(null);
+    if (!file) return;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setAvatarError("Please choose a JPEG, PNG, GIF, or WebP image.");
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      setAvatarError("Image must be 2 MB or smaller.");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }, [avatarPreview]);
+
+  const clearAvatarSelection = useCallback(() => {
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    setAvatarError(null);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  }, [avatarPreview]);
 
   useEffect(() => {
     if (!user) return;
@@ -158,13 +196,15 @@ export default function Profile() {
       setEditError("Display name must be between 2 and 40 characters.");
       return;
     }
+    if (avatarError) return;
     setEditLoading(true);
     setEditError(null);
     try {
+      // TODO: When backend supports avatar upload, upload avatarFile here (e.g. POST /api/profile/avatar
+      // or multipart PATCH /api/auth/me) and pass returned avatarUrl to updateMe.
       const updated = await updateMe({
         displayName: trimmedName,
         tagline: editForm.tagline.trim() || undefined,
-        avatarUrl: editForm.avatarUrl.trim() || undefined,
       });
       setUser(updated);
       await refreshMe();
@@ -181,6 +221,7 @@ export default function Profile() {
           : null
       );
       setEditSuccess(true);
+      clearAvatarSelection();
       setTimeout(() => {
         setEditOpen(false);
         setEditSuccess(false);
@@ -373,7 +414,15 @@ export default function Profile() {
       </Dialog>
 
       {/* Edit Profile modal */}
-      <Dialog open={editOpen} onOpenChange={(open) => !open && setEditOpen(false)}>
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            clearAvatarSelection();
+            setEditOpen(false);
+          }
+        }}
+      >
         <DialogContent className="bg-card border-white/10 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
@@ -428,29 +477,39 @@ export default function Profile() {
             </div>
 
             <div>
-              <label htmlFor="edit-avatarUrl" className="block text-sm font-medium text-foreground mb-1">
-                Profile picture URL
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Profile picture
               </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Choose an image from your device (JPEG, PNG, GIF, or WebP, max 2 MB).
+              </p>
               <input
-                id="edit-avatarUrl"
-                type="url"
-                value={editForm.avatarUrl}
-                onChange={(e) => setEditForm((f) => ({ ...f, avatarUrl: e.target.value }))}
-                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="https://..."
+                ref={avatarInputRef}
+                id="edit-avatar-file"
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                onChange={handleAvatarFileChange}
+                className="w-full text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-white/15"
                 disabled={editLoading}
               />
-              {editForm.avatarUrl.trim() && (
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">Preview:</span>
+              {avatarError && (
+                <p className="text-sm text-destructive mt-1.5">{avatarError}</p>
+              )}
+              {avatarPreview && (
+                <div className="mt-3 flex items-center gap-3">
                   <img
-                    src={editForm.avatarUrl.trim()}
-                    alt="Avatar preview"
-                    className="w-12 h-12 rounded-full object-cover border border-white/10 bg-muted"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
+                    src={avatarPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-full object-cover border border-white/10 bg-muted"
                   />
+                  <button
+                    type="button"
+                    onClick={clearAvatarSelection}
+                    disabled={editLoading}
+                    className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  >
+                    Remove
+                  </button>
                 </div>
               )}
             </div>
@@ -467,7 +526,10 @@ export default function Profile() {
               </button>
               <button
                 type="button"
-                onClick={() => setEditOpen(false)}
+                onClick={() => {
+                  clearAvatarSelection();
+                  setEditOpen(false);
+                }}
                 disabled={editLoading}
                 className="px-4 py-2 rounded-lg border border-white/20 text-foreground text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
               >
