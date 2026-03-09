@@ -108,9 +108,13 @@ export default function Profile() {
   const openEditProfile = useCallback(() => {
     if (!user) return;
     const name = getAccountDisplayName(user);
+    const currentBio =
+      (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
+      (profile?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
+      "";
     setEditForm({
       displayName: name,
-      tagline: profile?.user?.tagline ?? "",
+      tagline: currentBio,
     });
     setAvatarFile(null);
     setAvatarPreview(null);
@@ -118,7 +122,7 @@ export default function Profile() {
     setEditError(null);
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profile?.user?.tagline]);
+  }, [user, profile?.user]);
 
   const handleAvatarFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,9 +228,11 @@ export default function Profile() {
         }
       }
 
+      const bioValue = editForm.tagline.trim() || undefined;
       const payload = {
         displayName: trimmedName,
-        tagline: editForm.tagline.trim() || undefined,
+        tagline: bioValue,
+        bio: bioValue,
         avatarUrl: avatarUrlToSet ?? undefined,
       };
       if (import.meta.env.DEV) {
@@ -238,29 +244,46 @@ export default function Profile() {
         console.log("[Profile] updateMe response (updated user):", updated);
       }
 
+      const savedBio =
+        (updated as { tagline?: string; bio?: string }).tagline?.trim() ??
+        (updated as { tagline?: string; bio?: string }).bio?.trim() ??
+        editForm.tagline.trim() ||
+        undefined;
+
       setUser(updated);
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              user: {
+                ...prev.user,
+                displayName: updated.displayName ?? trimmedName,
+                tagline: savedBio,
+                bio: savedBio,
+              },
+            }
+          : null
+      );
       await refreshMe();
 
       getProfileSummary()
         .then((fresh) => {
-          setProfile(fresh);
+          const u = fresh.user as { tagline?: string; bio?: string };
+          const serverBio = u?.tagline?.trim() ?? u?.bio?.trim();
+          setProfile({
+            ...fresh,
+            user: {
+              ...fresh.user,
+              tagline: serverBio ?? savedBio ?? fresh.user.tagline,
+              bio: serverBio ?? savedBio ?? u?.bio,
+            },
+          });
           if (import.meta.env.DEV) {
             console.log("[Profile] Profile data after refetch:", fresh);
           }
         })
         .catch(() => {
-          setProfile((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  user: {
-                    ...prev.user,
-                    displayName: updated.displayName ?? trimmedName,
-                    tagline: (updated.tagline ?? editForm.tagline.trim()) || undefined,
-                  },
-                }
-              : null
-          );
+          // Keep the profile we already set from updated
         });
 
       setEditSuccess(true);

@@ -133,6 +133,7 @@ export type ProfileSummary = {
     displayName: string;
     streakDays: number;
     tagline?: string;
+    bio?: string;
     level?: number;
     levelProgressPct?: number;
   };
@@ -426,13 +427,15 @@ export type AuthUser = {
   hasPro?: boolean;
   avatarUrl?: string | null;
   tagline?: string | null;
+  bio?: string | null;
 };
 
-/** Body for PATCH /api/auth/me. Backend may support only displayName; optional fields allowed for future support. */
+/** Body for PATCH /api/auth/me. Backend may use "bio" or "tagline"; we send both so either works. */
 export type UpdateMeBody = {
   displayName: string;
   avatarUrl?: string | null;
   tagline?: string | null;
+  bio?: string | null;
 };
 
 // authMe skips auth expired check to avoid infinite loops during session verification.

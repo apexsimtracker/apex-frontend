@@ -161,7 +161,9 @@ export function ProfileView({
                   </div>
                 )}
                 <p className="text-muted-foreground/80 text-sm leading-relaxed mt-1 mb-2 sm:mb-3">
-                  {profile.user.tagline?.trim() ? profile.user.tagline.trim() : "No bio yet."}
+                  {(profile.user as { tagline?: string; bio?: string }).tagline?.trim() ||
+                  (profile.user as { tagline?: string; bio?: string }).bio?.trim() ||
+                  "No bio yet."}
                 </p>
               </div>
             </div>
