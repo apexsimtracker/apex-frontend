@@ -330,7 +330,6 @@ export default function Index() {
               title={d.title}
               excerpt={d.excerpt ?? (d.description ? (d.description.slice(0, 160) + (d.description.length > 160 ? "…" : "")) : "")}
               author={d.author}
-              authorAvatar={d.authorAvatar ?? null}
               category={d.category}
               timestamp={timeAgo(d.createdAt)}
               replies={d.replies ?? d.commentCount ?? 0}

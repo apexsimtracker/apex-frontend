@@ -5,26 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Author display for discussion posts. Reads author.displayName first, then fallbacks. No mock values (e.g. "Local Driver").
- *  Fallback order: author.displayName → author.name → email username (part before @) → "User". */
+/** Author display for discussion posts/comments.
+ *  Backend contract: author is an object { id, displayName, avatarUrl }.
+ *  We read author.displayName and fall back to "User" if missing. */
 export function getDiscussionAuthorDisplay(author: unknown): string {
-  if (typeof author === "string") {
-    const s = author.trim();
-    return s || "User";
-  }
-  if (author && typeof author === "object") {
-    const o = author as { displayName?: string; name?: string; email?: string };
-    const displayName = typeof o.displayName === "string" ? o.displayName.trim() : "";
-    if (displayName) return displayName;
-    const name = typeof o.name === "string" ? o.name.trim() : "";
-    if (name) return name;
-    const email = typeof o.email === "string" ? o.email.trim() : "";
-    if (email) {
-      const beforeAt = email.split("@")[0]?.trim();
-      if (beforeAt) return beforeAt;
-    }
-  }
-  return "User";
+  if (!author || typeof author !== "object") return "User";
+  const o = author as { displayName?: string | null };
+  const displayName =
+    typeof o.displayName === "string" ? o.displayName.trim() : "";
+  return displayName || "User";
 }
 
 /** Initials from the final display name: first 2 chars, or single char for short names (e.g. "User" → "U"). */

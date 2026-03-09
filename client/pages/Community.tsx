@@ -262,7 +262,6 @@ export default function Community() {
                   truncateDescription(d.description ?? d.title)
                 }
                 author={d.author}
-                authorAvatar={d.authorAvatar}
                 category={categoryLabel(d.category)}
                 timestamp={timeAgo(d.createdAt)}
                 replies={d.commentCount ?? d.replies ?? 0}

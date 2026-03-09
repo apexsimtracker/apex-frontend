@@ -1055,11 +1055,20 @@ export default function UserProfile() {
 
   const profile = userToProfileSummary(user, username ?? "unknown");
   return (
-    <ProfileView
-      profile={profile}
-      onBack={() => navigate(-1)}
-      avatarUrl={user.avatar}
-    />
+    <div className="bg-background min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-100">
+          Demo profile <span className="font-semibold">(mock data)</span> — this
+          page uses sample data only and does not reflect real Apex account
+          information.
+        </div>
+        <ProfileView
+          profile={profile}
+          onBack={() => navigate(-1)}
+          avatarUrl={user.avatar}
+        />
+      </div>
+    </div>
   );
 }
 

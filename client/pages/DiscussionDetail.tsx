@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Heart, Reply, Eye } from "lucide-react";
 import {
   getDiscussion,
-  getDiscussions,
   getDiscussionComments,
   createDiscussionComment,
   DISCUSSION_CATEGORIES,
@@ -87,20 +86,21 @@ export default function DiscussionDetail() {
       try {
         disc = await getDiscussion(id);
       } catch (e) {
-        const is404 = e instanceof ApiError && e.status === 404;
-        const isNetwork = e instanceof ApiError && e.status === 0;
-        try {
-          const raw = await getDiscussions();
-          const list = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
-          disc = list.find((d) => d.id === id) ?? null;
-        } catch {
-          disc = null;
-        }
-        if (!disc && !cancelled) {
-          setDiscussion(null);
-          setComments([]);
-          setDiscussionError(is404 ? "Post not found." : isNetwork ? "Failed to load post." : "Post not found.");
-        }
+        if (cancelled) return;
+        const isApi = e instanceof ApiError;
+        const is404 = isApi && e.status === 404;
+        const isNetwork = isApi && e.status === 0;
+        setDiscussion(null);
+        setComments([]);
+        setDiscussionError(
+          is404
+            ? "Discussion not found."
+            : isNetwork
+              ? "Failed to load discussion."
+              : "Failed to load discussion."
+        );
+        setLoading(false);
+        return;
       }
 
       if (cancelled) return;
@@ -157,7 +157,7 @@ export default function DiscussionDetail() {
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          <p className="text-muted-foreground">Loading post...</p>
+          <p className="text-muted-foreground">Loading discussion...</p>
         </div>
       </div>
     );
@@ -189,7 +189,14 @@ export default function DiscussionDetail() {
   const authorDisplay = getDiscussionAuthorDisplay(discussion.author);
   const description =
     discussion.description ?? discussion.excerpt ?? discussion.title;
-  const hasAvatar = discussion.authorAvatar && typeof discussion.authorAvatar === "string" && discussion.authorAvatar.trim().length > 0;
+  const avatarUrl =
+    discussion.author &&
+    typeof discussion.author === "object" &&
+    "avatarUrl" in discussion.author &&
+    typeof (discussion.author as any).avatarUrl === "string"
+      ? ((discussion.author as any).avatarUrl as string)
+      : null;
+  const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
@@ -211,7 +218,7 @@ export default function DiscussionDetail() {
             >
               {hasAvatar ? (
                 <img
-                  src={discussion.authorAvatar!}
+                  src={avatarUrl!}
                   alt={authorDisplay}
                   className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
                 />
@@ -306,14 +313,41 @@ export default function DiscussionDetail() {
                   className="bg-card rounded-2xl border border p-6"
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">
-                        {getDiscussionAuthorDisplay(c.author)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {timeAgo(c.createdAt)}
-                      </p>
-                    </div>
+                    {(() => {
+                      const authorLabel = getDiscussionAuthorDisplay(c.author);
+                      const avatarUrl =
+                        c.author &&
+                        typeof c.author === "object" &&
+                        "avatarUrl" in c.author &&
+                        typeof (c.author as any).avatarUrl === "string"
+                          ? ((c.author as any).avatarUrl as string)
+                          : null;
+                      const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
+                      const initials = getDiscussionAuthorInitials(authorLabel);
+                      return (
+                        <>
+                          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs font-medium flex-shrink-0">
+                            {hasAvatar ? (
+                              <img
+                                src={avatarUrl!}
+                                alt={authorLabel}
+                                className="w-9 h-9 rounded-full object-cover"
+                              />
+                            ) : (
+                              initials
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-foreground">
+                              {authorLabel}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {timeAgo(c.createdAt)}
+                            </p>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <p className="text-muted-foreground whitespace-pre-wrap">
                     {c.body}

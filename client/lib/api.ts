@@ -277,9 +277,13 @@ export const DISCUSSION_CATEGORIES = [
 
 export type DiscussionCategory = (typeof DISCUSSION_CATEGORIES)[number]["value"];
 
-export type DiscussionAuthor =
-  | string
-  | { displayName?: string; name?: string; email?: string };
+// Author object for community discussions/comments, returned directly by the backend.
+// Shape: { id, displayName, avatarUrl }
+export type DiscussionAuthor = {
+  id: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+};
 
 export type Discussion = {
   id: string;
@@ -287,7 +291,6 @@ export type Discussion = {
   description?: string;
   excerpt?: string;
   author: DiscussionAuthor;
-  authorAvatar?: string | null;
   category: string;
   createdAt: string;
   likeCount?: number;
@@ -328,7 +331,7 @@ export async function getDiscussion(id: string): Promise<Discussion> {
 export type DiscussionComment = {
   id: string;
   body: string;
-  author: string | { name?: string };
+  author: DiscussionAuthor;
   createdAt: string;
 };
 
@@ -566,7 +569,6 @@ export async function uploadSessionFile(file: File): Promise<ManualUploadRespons
     res = await fetch(`${API_BASE}/api/sessions/manual-upload`, {
       method: "POST",
       headers: Object.keys(headers).length > 0 ? headers : undefined,
-      credentials: "include",
       body: formData,
     });
   } catch {
@@ -585,13 +587,9 @@ export async function uploadSessionFile(file: File): Promise<ManualUploadRespons
 
   const { message, code } = await extractErrorInfo(res);
 
-  if (res.status === 401 && authExpiredHandler) {
-    authExpiredHandler();
-  }
-
   if (code === "PRO_REQUIRED") {
     emitProRequiredEvent();
   }
 
-  throw new ApiError(res.status, message);
+  throw new ApiError(res.status, message, code);
 }

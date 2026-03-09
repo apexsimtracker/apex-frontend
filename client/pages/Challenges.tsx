@@ -11,9 +11,6 @@ import {
 } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 
-/** Set to true to hide all challenges (e.g. while backend still returns mock/seed data). Set to false when API returns real data only. */
-const HIDE_CHALLENGES_LIST = true;
-
 function statusLabel(status: CompetitionSummary["status"]): "Live" | "Upcoming" | "Finished" {
   switch (status) {
     case "LIVE":
@@ -92,7 +89,7 @@ export default function Challenges() {
       setLoading(true);
       const data = await getCompetitionSummary();
       const list = Array.isArray(data) ? data : [];
-      setItems(HIDE_CHALLENGES_LIST ? [] : list);
+      setItems(list);
       setError(null);
       try {
         const m = await getCompetitionsMeta();

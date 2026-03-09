@@ -11,8 +11,7 @@ interface DiscussionCardProps {
   id: string;
   title: string;
   excerpt: string;
-  author: string | { displayName?: string; name?: string; email?: string } | unknown;
-  authorAvatar?: string | null;
+  author: { id: string; displayName?: string | null; avatarUrl?: string | null } | unknown;
   category: string;
   timestamp: string;
   replies: number;
@@ -25,7 +24,6 @@ export default function DiscussionCard({
   title,
   excerpt,
   author,
-  authorAvatar,
   category,
   timestamp,
   replies,
@@ -34,7 +32,11 @@ export default function DiscussionCard({
 }: DiscussionCardProps) {
   const navigate = useNavigate();
   const authorDisplay = getDiscussionAuthorDisplay(author);
-  const hasAvatar = authorAvatar && typeof authorAvatar === "string" && authorAvatar.trim().length > 0;
+  const avatarUrl =
+    author && typeof author === "object" && "avatarUrl" in author && typeof (author as any).avatarUrl === "string"
+      ? ((author as any).avatarUrl as string)
+      : null;
+  const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
@@ -53,7 +55,7 @@ export default function DiscussionCard({
             >
               {hasAvatar ? (
                 <img
-                  src={authorAvatar!}
+                  src={avatarUrl!}
                   alt={authorDisplay}
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
                 />

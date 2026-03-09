@@ -143,11 +143,17 @@ export default function RaceDetail() {
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-medium">Back</span>
         </button>
+
+        {/* Demo banner */}
+        <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-100">
+          Demo race view <span className="font-semibold">(mock data)</span> —
+          this page shows sample race data for design/demo purposes only.
+        </div>
 
         {/* Race Header */}
         <div className="bg-card rounded-2xl border border overflow-hidden mb-8">
