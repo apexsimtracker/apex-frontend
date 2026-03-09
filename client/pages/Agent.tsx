@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useIsProUser } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE } from "@/lib/api";
+import { getToken } from "@/auth/token";
 
 const SUPPORTED_SIMS = [
   { name: "iRacing", status: "Supported" },
@@ -22,9 +23,12 @@ export default function Agent() {
   async function handleDownload() {
     setIsDownloading(true);
     try {
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const response = await fetch(DOWNLOAD_ENDPOINT, {
         method: "HEAD",
-        credentials: "include",
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
       });
 
       if (response.ok || response.status === 302) {

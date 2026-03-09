@@ -86,7 +86,6 @@ function CommentsModal({
     fetch(`${API_BASE}/api/sessions/${sid}/comments`, {
       method: "GET",
       headers,
-      credentials: "include",
       signal: controller.signal,
     })
       .then((res) => {
@@ -644,7 +643,6 @@ export default function ActivityCard(props: ActivityCardProps) {
         const res = await fetch(`${API_BASE}/api/sessions/${sid}`, {
           method: "GET",
           headers,
-          credentials: "include",
         });
         if (!res.ok) return;
         const data = await res.json();
