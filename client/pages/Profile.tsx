@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link } from "react/router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
@@ -7,8 +7,10 @@ import {
   getProfileSummary,
   getFollowers,
   getFollowing,
+  updateMe,
   type ProfileSummary,
   type FollowUser,
+  type AuthUser,
 } from "@/lib/api";
 import {
   Dialog,
@@ -70,14 +72,45 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
   };
 }
 
+type EditForm = {
+  displayName: string;
+  tagline: string;
+  avatarUrl: string;
+};
+
+const emptyEditForm: EditForm = {
+  displayName: "",
+  tagline: "",
+  avatarUrl: "",
+};
+
 export default function Profile() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshMe, setUser } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
   const [followsLoading, setFollowsLoading] = useState(false);
   const [followsError, setFollowsError] = useState<string | null>(null);
   const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm>(emptyEditForm);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+
+  const openEditProfile = useCallback(() => {
+    if (!user) return;
+    const name = getAccountDisplayName(user);
+    setEditForm({
+      displayName: name,
+      tagline: profile?.user?.tagline ?? "",
+      avatarUrl: (user as AuthUser).avatarUrl ?? "",
+    });
+    setEditError(null);
+    setEditSuccess(false);
+    setEditOpen(true);
+  }, [user, profile?.user?.tagline]);
 
   useEffect(() => {
     if (!user) return;
@@ -116,6 +149,47 @@ export default function Profile() {
   const handleSignOut = () => {
     clearToken();
     window.location.href = "/login";
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const trimmedName = editForm.displayName.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 40) {
+      setEditError("Display name must be between 2 and 40 characters.");
+      return;
+    }
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const updated = await updateMe({
+        displayName: trimmedName,
+        tagline: editForm.tagline.trim() || undefined,
+        avatarUrl: editForm.avatarUrl.trim() || undefined,
+      });
+      setUser(updated);
+      await refreshMe();
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              user: {
+                ...prev.user,
+                displayName: updated.displayName ?? trimmedName,
+                tagline: (updated.tagline ?? editForm.tagline.trim()) || undefined,
+              },
+            }
+          : null
+      );
+      setEditSuccess(true);
+      setTimeout(() => {
+        setEditOpen(false);
+        setEditSuccess(false);
+      }, 800);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : "Failed to update profile.");
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   if (loading) {
@@ -159,16 +233,19 @@ export default function Profile() {
       }
     })();
 
+  const avatarUrl = (user as AuthUser).avatarUrl ?? undefined;
+
   return (
     <div className="bg-background min-h-screen flex flex-col">
       <ProfileView
         profile={displayProfile}
-        avatarUrl={undefined}
+        avatarUrl={avatarUrl || undefined}
         followersCount={followers.length}
         followingCount={following.length}
         isCurrentUser
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
+        onEditProfile={openEditProfile}
       />
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col items-end gap-2">
@@ -292,6 +369,112 @@ export default function Profile() {
               </ul>
             )
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile modal */}
+      <Dialog open={editOpen} onOpenChange={(open) => !open && setEditOpen(false)}>
+        <DialogContent className="bg-card border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {editError && (
+              <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
+                {editError}
+              </p>
+            )}
+            {editSuccess && (
+              <p className="text-sm text-green-500 bg-green-500/10 rounded-md px-3 py-2">
+                Profile updated.
+              </p>
+            )}
+
+            <div>
+              <label htmlFor="edit-displayName" className="block text-sm font-medium text-foreground mb-1">
+                Display name
+              </label>
+              <input
+                id="edit-displayName"
+                type="text"
+                value={editForm.displayName}
+                onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
+                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Your name"
+                maxLength={40}
+                disabled={editLoading}
+              />
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {editForm.displayName.trim().length}/40
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="edit-tagline" className="block text-sm font-medium text-foreground mb-1">
+                Bio
+              </label>
+              <textarea
+                id="edit-tagline"
+                value={editForm.tagline}
+                onChange={(e) => setEditForm((f) => ({ ...f, tagline: e.target.value }))}
+                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-y"
+                placeholder="A short bio..."
+                maxLength={160}
+                disabled={editLoading}
+              />
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {editForm.tagline.length}/160
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="edit-avatarUrl" className="block text-sm font-medium text-foreground mb-1">
+                Profile picture URL
+              </label>
+              <input
+                id="edit-avatarUrl"
+                type="url"
+                value={editForm.avatarUrl}
+                onChange={(e) => setEditForm((f) => ({ ...f, avatarUrl: e.target.value }))}
+                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="https://..."
+                disabled={editLoading}
+              />
+              {editForm.avatarUrl.trim() && (
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Preview:</span>
+                  <img
+                    src={editForm.avatarUrl.trim()}
+                    alt="Avatar preview"
+                    className="w-12 h-12 rounded-full object-cover border border-white/10 bg-muted"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={editLoading || editForm.displayName.trim().length < 2}
+                className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "rgb(240, 28, 28)" }}
+              >
+                {editLoading ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                disabled={editLoading}
+                className="px-4 py-2 rounded-lg border border-white/20 text-foreground text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

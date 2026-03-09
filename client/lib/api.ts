@@ -424,6 +424,15 @@ export type AuthUser = {
   name?: string;
   createdAt?: string;
   hasPro?: boolean;
+  avatarUrl?: string | null;
+  tagline?: string | null;
+};
+
+/** Body for PATCH /api/auth/me. Backend may support only displayName; optional fields allowed for future support. */
+export type UpdateMeBody = {
+  displayName: string;
+  avatarUrl?: string | null;
+  tagline?: string | null;
 };
 
 // authMe skips auth expired check to avoid infinite loops during session verification.
@@ -434,8 +443,8 @@ export async function authMe(): Promise<AuthUser> {
   return user;
 }
 
-/** PATCH /api/auth/me — update current user (e.g. displayName). Returns updated user. */
-export async function updateMe(body: { displayName: string }): Promise<AuthUser> {
+/** PATCH /api/auth/me — update current user (displayName, optional avatarUrl/tagline). Returns updated user. */
+export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
   const data = await fetchApi<AuthUser | { user?: AuthUser }>("PATCH", "/api/auth/me", body, true);
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
   return user;

@@ -19,6 +19,8 @@ type ProfileViewProps = {
   onToggleFollow?: () => void;
   onOpenFollowers?: () => void;
   onOpenFollowing?: () => void;
+  /** When set and isCurrentUser, shows an Edit Profile button that calls this. */
+  onEditProfile?: () => void;
 };
 
 export function ProfileView({
@@ -33,6 +35,7 @@ export function ProfileView({
   onToggleFollow,
   onOpenFollowers,
   onOpenFollowing,
+  onEditProfile,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -115,6 +118,41 @@ export function ProfileView({
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">
                   {displayName}
                 </h1>
+                <div className="flex flex-wrap items-center gap-4 justify-center sm:justify-start text-xs mb-1">
+                  {typeof followersCount === "number" && typeof followingCount === "number" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={onOpenFollowers}
+                        className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                      >
+                        <span className="font-semibold text-foreground">
+                          {followersCount}
+                        </span>
+                        <span className="text-muted-foreground/60">Followers</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onOpenFollowing}
+                        className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                      >
+                        <span className="font-semibold text-foreground">
+                          {followingCount}
+                        </span>
+                        <span className="text-muted-foreground/60">Following</span>
+                      </button>
+                    </>
+                  )}
+                  {isCurrentUser && onEditProfile && (
+                    <button
+                      type="button"
+                      onClick={onEditProfile}
+                      className="text-muted-foreground/70 hover:text-foreground transition-colors font-medium underline underline-offset-2"
+                    >
+                      Edit Profile
+                    </button>
+                  )}
+                </div>
                 {profile.user.streakDays > 0 && (
                   <div className="text-xs text-neutral-400 mt-1">
                     {profile.user.streakDays === 1
@@ -137,30 +175,6 @@ export function ProfileView({
               </div>
             </div>
               <div className="text-center sm:text-right sm:min-w-max space-y-3">
-                {typeof followersCount === "number" && typeof followingCount === "number" && (
-                  <div className="flex sm:flex-col items-center sm:items-end gap-3 text-xs">
-                    <button
-                      type="button"
-                      onClick={onOpenFollowers}
-                      className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
-                    >
-                      <span className="font-semibold text-foreground">
-                        {followersCount}
-                      </span>
-                      <span className="text-muted-foreground/60">Followers</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onOpenFollowing}
-                      className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
-                    >
-                      <span className="font-semibold text-foreground">
-                        {followingCount}
-                      </span>
-                      <span className="text-muted-foreground/60">Following</span>
-                    </button>
-                  </div>
-                )}
               <p className="text-xs font-semibold text-foreground mb-1">
                 {profile.user.level != null
                   ? `Level ${profile.user.level}`
