@@ -204,6 +204,13 @@ export default function Profile() {
       let avatarUrlToSet: string | undefined;
       if (avatarFile) {
         try {
+          if (import.meta.env.DEV) {
+            console.log("[Profile] Selected avatar file:", {
+              name: avatarFile.name,
+              size: avatarFile.size,
+              type: avatarFile.type,
+            });
+          }
           const uploadRes = await uploadProfileAvatar(avatarFile);
           avatarUrlToSet = uploadRes.avatarUrl;
           if (import.meta.env.DEV) {
