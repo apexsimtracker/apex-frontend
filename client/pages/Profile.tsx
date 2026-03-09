@@ -244,11 +244,9 @@ export default function Profile() {
         console.log("[Profile] updateMe response (updated user):", updated);
       }
 
+      const u = updated as { tagline?: string; bio?: string };
       const savedBio =
-        (updated as { tagline?: string; bio?: string }).tagline?.trim() ??
-        (updated as { tagline?: string; bio?: string }).bio?.trim() ??
-        editForm.tagline.trim() ||
-        undefined;
+        (u.tagline?.trim() ?? u.bio?.trim() ?? editForm.tagline.trim()) || undefined;
 
       setUser(updated);
       setProfile((prev) =>
