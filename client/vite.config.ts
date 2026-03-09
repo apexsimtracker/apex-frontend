@@ -20,12 +20,19 @@ export default defineConfig({
 
   build: {
     outDir: "dist",
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
   },
 
   resolve: {
     alias: {
       "@": path.resolve(__dirname),
     },
+    dedupe: ["react", "react-dom", "react-router-dom"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react-router-dom"],
   },
 
   server: {
