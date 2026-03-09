@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X, Settings, Cpu, Plus, Upload, PenLine, ChevronDown } from "lucide-react";
 import {
@@ -75,55 +75,99 @@ export default function Header() {
   const [isMobileCreateOpen, setIsMobileCreateOpen] = useState(false);
   const [logoImgFailed, setLogoImgFailed] = useState(false);
   const navigate = useNavigate();
+   const location = useLocation();
+
+  const isPathActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <header className="sticky top-0 z-50 border-b border bg-[hsl(var(--background))] bg-opacity-100 shadow-[0_1px_0_0_hsl(var(--border))]">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[hsl(var(--background))]/80 backdrop-blur-md shadow-[0_18px_40px_rgba(0,0,0,0.55)] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center flex-shrink-0 group">
+        <div className="flex justify-between items-center h-16 gap-4">
+          <Link
+            to="/"
+            className="flex items-center flex-shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 rounded-lg -ml-1 px-1"
+          >
             {logoImgFailed ? (
-              <ApexLogo className="h-9 w-auto min-w-[72px]" />
+              <ApexLogo className="h-9 sm:h-10 w-auto min-w-[80px] transition-transform group-hover:scale-[1.03]" />
             ) : (
               <img
                 src="/logo.png?v=4"
                 alt="Apex Logo"
-                className="h-9 w-auto max-w-[100px] object-contain object-center"
+                className="h-9 sm:h-10 w-auto max-w-[112px] object-contain object-center transition-transform group-hover:scale-[1.03]"
                 onError={() => setLogoImgFailed(true)}
               />
             )}
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
             <Link
               to="/"
-              className="text-foreground hover:text-foreground transition-colors font-medium text-sm"
+              className={`relative text-sm font-medium transition-colors ${
+                isPathActive("/")
+                  ? "text-white"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
             >
               Home
+              {isPathActive("/") && (
+                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+              )}
             </Link>
             <Link
               to="/profile"
-              className="text-foreground hover:text-foreground transition-colors font-medium text-sm"
+              className={`relative text-sm font-medium transition-colors ${
+                isPathActive("/profile")
+                  ? "text-white"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
             >
               Profile
+              {isPathActive("/profile") && (
+                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+              )}
             </Link>
             <Link
               to="/community"
-              className="text-foreground hover:text-foreground transition-colors font-medium text-sm"
+              className={`relative text-sm font-medium transition-colors ${
+                isPathActive("/community")
+                  ? "text-white"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
             >
               Community
+              {isPathActive("/community") && (
+                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+              )}
             </Link>
             <Link
               to="/challenges"
-              className="text-foreground hover:text-foreground transition-colors font-medium text-sm"
+              className={`relative text-sm font-medium transition-colors ${
+                isPathActive("/challenges")
+                  ? "text-white"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
             >
               Challenges
+              {isPathActive("/challenges") && (
+                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+              )}
             </Link>
             <Link
               to="/leaderboards"
-              className="text-foreground hover:text-foreground transition-colors font-medium text-sm"
+              className={`relative text-sm font-medium transition-colors ${
+                isPathActive("/leaderboards")
+                  ? "text-white"
+                  : "text-foreground/70 hover:text-foreground"
+              }`}
             >
               Leaderboards
+              {isPathActive("/leaderboards") && (
+                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+              )}
             </Link>
           </nav>
 
@@ -132,7 +176,7 @@ export default function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white text-black text-sm font-medium border border-black/5 shadow-sm hover:bg-white/95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   Create
@@ -157,17 +201,17 @@ export default function Header() {
             </DropdownMenu>
             <Link
               to="/agent"
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Agent"
             >
-              <Cpu className="w-5 h-5 text-foreground" />
+              <Cpu className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
             </Link>
             <Link
               to="/settings"
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Settings"
             >
-              <Settings className="w-5 h-5 text-foreground" />
+              <Settings className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
             </Link>
           </div>
 
@@ -175,7 +219,7 @@ export default function Header() {
           <div className="md:hidden flex items-center gap-2">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 hover:bg-secondary rounded-lg transition-colors"
+              className="p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
             >
               {isMenuOpen ? (
                 <X className="w-5 h-5" />
@@ -188,38 +232,58 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <nav className="md:hidden py-4 border-t border">
+          <nav className="md:hidden py-4 border-t border-white/10 space-y-1">
             <Link
               to="/"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isPathActive("/")
+                  ? "bg-secondary/70 text-white"
+                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
             <Link
               to="/profile"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isPathActive("/profile")
+                  ? "bg-secondary/70 text-white"
+                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Profile
             </Link>
             <Link
               to="/community"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isPathActive("/community")
+                  ? "bg-secondary/70 text-white"
+                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Community
             </Link>
             <Link
               to="/challenges"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isPathActive("/challenges")
+                  ? "bg-secondary/70 text-white"
+                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Challenges
             </Link>
             <Link
               to="/leaderboards"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isPathActive("/leaderboards")
+                  ? "bg-secondary/70 text-white"
+                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+              }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Leaderboards

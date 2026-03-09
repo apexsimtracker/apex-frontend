@@ -11,12 +11,28 @@ type ProfileViewProps = {
   onBack?: () => void;
   /** Profile picture URL; when empty or not set, a blank placeholder is shown (customizable via this prop). */
   avatarUrl?: string | null;
+  followersCount?: number;
+  followingCount?: number;
+  isCurrentUser?: boolean;
+  isFollowing?: boolean;
+  followLoading?: boolean;
+  onToggleFollow?: () => void;
+  onOpenFollowers?: () => void;
+  onOpenFollowing?: () => void;
 };
 
 export function ProfileView({
   profile,
   onBack,
   avatarUrl,
+  followersCount,
+  followingCount,
+  isCurrentUser,
+  isFollowing,
+  followLoading,
+  onToggleFollow,
+  onOpenFollowers,
+  onOpenFollowing,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -120,7 +136,31 @@ export function ProfileView({
                 </div>
               </div>
             </div>
-            <div className="text-center sm:text-right sm:min-w-max">
+              <div className="text-center sm:text-right sm:min-w-max space-y-3">
+                {typeof followersCount === "number" && typeof followingCount === "number" && (
+                  <div className="flex sm:flex-col items-center sm:items-end gap-3 text-xs">
+                    <button
+                      type="button"
+                      onClick={onOpenFollowers}
+                      className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                    >
+                      <span className="font-semibold text-foreground">
+                        {followersCount}
+                      </span>
+                      <span className="text-muted-foreground/60">Followers</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onOpenFollowing}
+                      className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                    >
+                      <span className="font-semibold text-foreground">
+                        {followingCount}
+                      </span>
+                      <span className="text-muted-foreground/60">Following</span>
+                    </button>
+                  </div>
+                )}
               <p className="text-xs font-semibold text-foreground mb-1">
                 {profile.user.level != null
                   ? `Level ${profile.user.level}`

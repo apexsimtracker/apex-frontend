@@ -3,7 +3,19 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
-import { getProfileSummary, type ProfileSummary } from "@/lib/api";
+import {
+  getProfileSummary,
+  getFollowers,
+  getFollowing,
+  type ProfileSummary,
+  type FollowUser,
+} from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ProfileView } from "@/components/ProfileView";
 
 const emptyBuckets = {
@@ -61,12 +73,44 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
 export default function Profile() {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [followsLoading, setFollowsLoading] = useState(false);
+  const [followsError, setFollowsError] = useState<string | null>(null);
+  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
 
   useEffect(() => {
     if (!user) return;
     getProfileSummary()
       .then(setProfile)
       .catch(() => setProfile(profileSummaryFromMe({ user })));
+  }, [user]);
+
+  useEffect(() => {
+    const loadFollows = async () => {
+      if (!user) return;
+      try {
+        setFollowsLoading(true);
+        setFollowsError(null);
+        const [f1, f2] = await Promise.all([
+          getFollowers(user.id),
+          getFollowing(user.id),
+        ]);
+        setFollowers(Array.isArray(f1) ? f1 : []);
+        setFollowing(Array.isArray(f2) ? f2 : []);
+      } catch (e) {
+        const msg =
+          e instanceof Error
+            ? e.message
+            : "Failed to load followers/following.";
+        setFollowsError(msg);
+        setFollowers([]);
+        setFollowing([]);
+      } finally {
+        setFollowsLoading(false);
+      }
+    };
+    loadFollows();
   }, [user]);
 
   const handleSignOut = () => {
@@ -117,7 +161,15 @@ export default function Profile() {
 
   return (
     <div className="bg-background min-h-screen flex flex-col">
-      <ProfileView profile={displayProfile} />
+      <ProfileView
+        profile={displayProfile}
+        avatarUrl={undefined}
+        followersCount={followers.length}
+        followingCount={following.length}
+        isCurrentUser
+        onOpenFollowers={() => setOpenList("followers")}
+        onOpenFollowing={() => setOpenList("following")}
+      />
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col items-end gap-2">
           {memberSince && (
@@ -133,6 +185,115 @@ export default function Profile() {
           </button>
         </div>
       </div>
+      <Dialog
+        open={openList !== null}
+        onOpenChange={(open) => !open && setOpenList(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {openList === "followers" ? "Followers" : "Following"}
+            </DialogTitle>
+          </DialogHeader>
+          {followsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : followsError ? (
+            <p className="text-sm text-destructive">{followsError}</p>
+          ) : openList === "followers" ? (
+            followers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No followers yet.</p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {followers.map((f) => {
+                  const name =
+                    (typeof f.displayName === "string"
+                      ? f.displayName.trim()
+                      : "") || "User";
+                  const initials =
+                    name && name.length >= 2
+                      ? name.slice(0, 2).toUpperCase()
+                      : name.slice(0, 1).toUpperCase() || "?";
+                  return (
+                    <li
+                      key={f.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
+                        {f.avatarUrl ? (
+                          <img
+                            src={f.avatarUrl}
+                            alt={name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          initials
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {name}
+                        </p>
+                        {f.bio && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {f.bio}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : openList === "following" ? (
+            following.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Not following anyone yet.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {following.map((f) => {
+                  const name =
+                    (typeof f.displayName === "string"
+                      ? f.displayName.trim()
+                      : "") || "User";
+                  const initials =
+                    name && name.length >= 2
+                      ? name.slice(0, 2).toUpperCase()
+                      : name.slice(0, 1).toUpperCase() || "?";
+                  return (
+                    <li
+                      key={f.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
+                        {f.avatarUrl ? (
+                          <img
+                            src={f.avatarUrl}
+                            alt={name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          initials
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {name}
+                        </p>
+                        {f.bio && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {f.bio}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

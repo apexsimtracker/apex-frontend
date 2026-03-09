@@ -193,6 +193,21 @@ export type ProfileSummary = {
   } | null;
 };
 
+// Social / follow system
+export type FollowUser = {
+  id: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  followersCount?: number;
+  followingCount?: number;
+};
+
+export type FollowStatus = {
+  following: boolean;
+  mutual?: boolean;
+};
+
 export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
 }
@@ -354,6 +369,32 @@ export async function createDiscussionComment(
   );
 }
 
+// Follow / social API
+export async function followUser(userId: string): Promise<FollowStatus> {
+  // POST /api/users/:id/follow
+  return apiPost<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow`);
+}
+
+export async function unfollowUser(userId: string): Promise<FollowStatus> {
+  // DELETE /api/users/:id/follow
+  return apiDelete<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow`);
+}
+
+export async function getFollowers(userId: string): Promise<FollowUser[]> {
+  // GET /api/users/:id/followers
+  return apiGet<FollowUser[]>(`/api/users/${encodeURIComponent(userId)}/followers`);
+}
+
+export async function getFollowing(userId: string): Promise<FollowUser[]> {
+  // GET /api/users/:id/following
+  return apiGet<FollowUser[]>(`/api/users/${encodeURIComponent(userId)}/following`);
+}
+
+export async function getFollowStatus(userId: string): Promise<FollowStatus> {
+  // GET /api/users/:id/follow-status
+  return apiGet<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow-status`);
+}
+
 // Leaderboards
 export type LeaderboardRow = {
   rank: number;
@@ -501,6 +542,10 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   return fetchApi<T>("PATCH", path, body);
+}
+
+export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
+  return fetchApi<T>("DELETE", path, body);
 }
 
 // Manual session upload
