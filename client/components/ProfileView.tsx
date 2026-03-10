@@ -11,6 +11,8 @@ type ProfileViewProps = {
   onBack?: () => void;
   /** Profile picture URL; when empty or not set, a blank placeholder is shown (customizable via this prop). */
   avatarUrl?: string | null;
+  /** Optional explicit bio for display; if absent, falls back to profile.user.bio/tagline. */
+  bio?: string | null;
   followersCount?: number;
   followingCount?: number;
   isCurrentUser?: boolean;
@@ -27,6 +29,7 @@ export function ProfileView({
   profile,
   onBack,
   avatarUrl,
+  bio,
   followersCount,
   followingCount,
   isCurrentUser,
@@ -51,7 +54,13 @@ export function ProfileView({
     setDisplayedRaces(6);
   };
 
-  const user = profile.user as { displayName?: string; name?: string; email?: string };
+  const user = profile.user as {
+    displayName?: string;
+    name?: string;
+    email?: string;
+    bio?: string;
+    tagline?: string;
+  };
   const raw = (user.displayName ?? user.name)?.trim();
   const isPlaceholder = raw && /^Local\s+(Driver|user)$/i.test(raw);
   const displayName = (raw && !isPlaceholder) ? raw : (user.email?.trim() || "User");
@@ -161,8 +170,9 @@ export function ProfileView({
                   </div>
                 )}
                 <p className="text-muted-foreground/80 text-sm leading-relaxed mt-1 mb-2 sm:mb-3">
-                  {(profile.user as { tagline?: string; bio?: string }).tagline?.trim() ||
-                  (profile.user as { tagline?: string; bio?: string }).bio?.trim() ||
+                  {bio?.trim() ||
+                  user.bio?.trim() ||
+                  user.tagline?.trim() ||
                   "No bio yet."}
                 </p>
               </div>

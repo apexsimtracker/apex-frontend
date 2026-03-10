@@ -108,8 +108,8 @@ export default function Profile() {
     if (!user) return;
     const name = getAccountDisplayName(user);
     const currentBio =
-      (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       (profile?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
+      (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       "";
     setEditForm({
       displayName: name,
@@ -203,6 +203,12 @@ export default function Profile() {
     setEditLoading(true);
     setEditError(null);
     try {
+      if (import.meta.env.DEV) {
+        console.log("[Profile] form state before submit:", {
+          displayName: editForm.displayName,
+          bio: editForm.tagline,
+        });
+      }
       const bioValue = editForm.tagline.trim() || undefined;
       const payload = {
         displayName: trimmedName,
@@ -220,7 +226,7 @@ export default function Profile() {
 
       const u = updated as { tagline?: string; bio?: string };
       const savedBio =
-        (u.tagline?.trim() ?? u.bio?.trim() ?? editForm.tagline.trim()) || undefined;
+        (u.bio?.trim() ?? u.tagline?.trim() ?? editForm.tagline.trim()) || undefined;
 
       setUser(updated);
       setProfile((prev) =>
@@ -237,6 +243,9 @@ export default function Profile() {
           : null
       );
       await refreshMe();
+      if (import.meta.env.DEV) {
+        console.log("[Profile] user after refreshMe (from authMe):", user);
+      }
 
       getProfileSummary()
         .then((fresh) => {
@@ -313,12 +322,19 @@ export default function Profile() {
     })();
 
   const avatarUrl = (user as AuthUser).avatarUrl ?? undefined;
+  const bioForDisplay =
+    (user as AuthUser).bio?.trim() ??
+    (user as AuthUser).tagline?.trim() ??
+    (displayProfile.user as { bio?: string; tagline?: string }).bio?.trim() ??
+    (displayProfile.user as { bio?: string; tagline?: string }).tagline?.trim() ??
+    undefined;
 
   return (
     <div className="bg-background min-h-screen flex flex-col">
       <ProfileView
         profile={displayProfile}
         avatarUrl={avatarUrl || undefined}
+        bio={bioForDisplay}
         followersCount={followers.length}
         followingCount={following.length}
         isCurrentUser

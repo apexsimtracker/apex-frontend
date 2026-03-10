@@ -463,6 +463,10 @@ export type UpdateMeBody = {
 export async function authMe(): Promise<AuthUser> {
   const data = await fetchApi<AuthUser | { user?: AuthUser }>("GET", "/api/auth/me", undefined, true);
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[authMe] response user:", user);
+  }
   return user;
 }
 
