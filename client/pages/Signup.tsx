@@ -17,19 +17,18 @@ export default function Signup() {
     const trimmedEmail = email.trim();
     try {
       const data = await authRegister(trimmedEmail, password, name.trim() || undefined);
-      if (data.requiresVerification) {
-        sessionStorage.setItem("apex_verify_email", trimmedEmail);
-        navigate("/verify-email", { replace: true, state: { email: trimmedEmail } });
-        return;
-      }
       const token = data.accessToken ?? data.token;
-      if (!token || typeof token !== "string") {
-        setError("No token returned. Please try again.");
+      const hasToken = token && typeof token === "string";
+
+      if (hasToken && !data.requiresVerification) {
+        localStorage.setItem("apex_token", token as string);
+        window.dispatchEvent(new Event("apex:auth"));
+        navigate("/profile", { replace: true });
         return;
       }
-      localStorage.setItem("apex_token", token);
-      window.dispatchEvent(new Event("apex:auth"));
-      navigate("/profile", { replace: true });
+
+      sessionStorage.setItem("apex_verify_email", trimmedEmail);
+      navigate("/verify-email", { replace: true, state: { email: trimmedEmail } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed. Email may already exist.");
     } finally {
