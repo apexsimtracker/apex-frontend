@@ -465,7 +465,7 @@ export async function authMe(): Promise<AuthUser> {
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
-    console.log("[authMe] response user:", user);
+    console.log("[authMe] current-user response — avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)");
   }
   return user;
 }
@@ -533,6 +533,10 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
   const data = (await res.json()) as UploadProfileAvatarResponse;
   if (!data?.avatarUrl) {
     throw new ApiError(500, "No avatar URL in response");
+  }
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[uploadProfileAvatar] response body avatarUrl:", data.avatarUrl, "isAbsolute:", data.avatarUrl.startsWith("http"));
   }
   return data;
 }

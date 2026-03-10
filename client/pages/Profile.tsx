@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
 import {
+  API_BASE,
   getFollowers,
   getFollowing,
   updateMe,
@@ -248,7 +249,7 @@ export default function Profile() {
 
       const updated = await updateMe(payload);
       if (import.meta.env.DEV) {
-        console.log("[Profile] updateMe response (updated user):", updated);
+        console.log("[Profile] updateMe response (updated user):", updated, "avatarUrl:", (updated as AuthUser).avatarUrl ?? "(missing)");
       }
 
       const u = updated as { tagline?: string; bio?: string };
@@ -259,6 +260,9 @@ export default function Profile() {
         ...updated,
         avatarUrl: avatarUrlToSet ?? (updated as AuthUser).avatarUrl ?? undefined,
       };
+      if (import.meta.env.DEV) {
+        console.log("[Profile] after save — userWithAvatar.avatarUrl:", userWithAvatar.avatarUrl ?? "(missing)");
+      }
       setUser(userWithAvatar);
       setProfile((prev) =>
         prev
@@ -329,7 +333,13 @@ export default function Profile() {
       }
     })();
 
-  const avatarUrl = (user as AuthUser).avatarUrl ?? undefined;
+  let avatarUrl = (user as AuthUser).avatarUrl ?? undefined;
+  if (avatarUrl && typeof avatarUrl === "string" && avatarUrl.startsWith("/") && !avatarUrl.startsWith("//")) {
+    avatarUrl = `${API_BASE}${avatarUrl}`;
+  }
+  if (import.meta.env.DEV) {
+    console.log("[Profile] render — user.avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)", "→ resolved avatarUrl passed to ProfileView:", avatarUrl ?? "(none, will show placeholder)");
+  }
   const bioForDisplay =
     (user as AuthUser).bio?.trim() ??
     (user as AuthUser).tagline?.trim() ??

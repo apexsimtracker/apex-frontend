@@ -67,6 +67,11 @@ export function ProfileView({
   const safeValue = (v: number | null | undefined) =>
     v === null || v === undefined ? "—" : v;
 
+  const showAvatarImg = Boolean(avatarUrl && String(avatarUrl).trim());
+  if (import.meta.env.DEV) {
+    console.log("[ProfileView] avatarUrl prop:", avatarUrl ?? "(missing)", "→ rendered avatar src:", showAvatarImg ? avatarUrl : "(placeholder)");
+  }
+
   const raceHistory = profile.raceHistory ?? [];
   const displayedHistory = raceHistory.slice(0, displayedRaces);
 
@@ -109,9 +114,9 @@ export function ProfileView({
         <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 p-5 sm:p-8 mb-8 sm:mb-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-7 justify-between">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1">
-              {avatarUrl ? (
+              {showAvatarImg ? (
                 <img
-                  src={avatarUrl}
+                  src={String(avatarUrl).trim()}
                   alt="Profile"
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-1 ring-white/5 flex-shrink-0"
                 />
