@@ -14,8 +14,14 @@ export default function Signup() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const trimmedEmail = email.trim();
     try {
-      const data = await authRegister(email.trim(), password, name.trim() || undefined);
+      const data = await authRegister(trimmedEmail, password, name.trim() || undefined);
+      if (data.requiresVerification) {
+        sessionStorage.setItem("apex_verify_email", trimmedEmail);
+        navigate("/verify-email", { replace: true, state: { email: trimmedEmail } });
+        return;
+      }
       const token = data.accessToken ?? data.token;
       if (!token || typeof token !== "string") {
         setError("No token returned. Please try again.");

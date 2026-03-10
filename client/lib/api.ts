@@ -542,11 +542,31 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
 }
 
 
-/** Response from POST /api/auth/register. Backend may return accessToken or token. */
+/** Response from POST /api/auth/register. Backend may return accessToken or token, or require email verification. */
 export type RegisterResponse = {
   accessToken?: string;
   token?: string;
   user?: AuthUser;
+  /** If true, user must verify email before being fully authenticated; do not store token or redirect to profile. */
+  requiresVerification?: boolean;
+};
+
+/** Response from POST /api/auth/verify-email. Backend may return token to auto-login or just success. */
+export type VerifyEmailResponse = {
+  success?: boolean;
+  accessToken?: string;
+  token?: string;
+  user?: AuthUser;
+};
+
+/** Response from POST /api/auth/resend-verification. Backend may return cooldown. */
+export type ResendVerificationResponse = {
+  ok?: boolean;
+  success?: boolean;
+  /** Unix timestamp (seconds) when next resend is allowed; frontend can show cooldown. */
+  resendAt?: number;
+  /** Alternative: seconds until next resend allowed. */
+  nextResendInSeconds?: number;
 };
 
 /** POST /api/auth/register — single register endpoint. Body: { name, email, password }. */
@@ -564,6 +584,21 @@ export async function authRegister(
 
 /** @deprecated Use authRegister. Kept for compatibility. */
 export const authSignup = authRegister;
+
+/** POST /api/auth/verify-email — submit verification code. Body: { email, code }. Returns token if backend auto-completes auth. */
+export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResponse> {
+  return fetchApi<VerifyEmailResponse>("POST", "/api/auth/verify-email", {
+    email: email.trim(),
+    code: String(code).trim(),
+  }, true);
+}
+
+/** POST /api/auth/resend-verification — request new code. Body: { email }. */
+export async function resendVerificationCode(email: string): Promise<ResendVerificationResponse> {
+  return fetchApi<ResendVerificationResponse>("POST", "/api/auth/resend-verification", {
+    email: email.trim(),
+  }, true);
+}
 
 export type LoginResponse = AuthUser & { accessToken?: string };
 

@@ -1,13 +1,23 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authLogin } from "@/lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailVerifiedMessage, setEmailVerifiedMessage] = useState(false);
+
+  useEffect(() => {
+    const state = location.state as { emailVerified?: boolean } | null;
+    if (state?.emailVerified) {
+      setEmailVerifiedMessage(true);
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location.state, location.pathname]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +44,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-xl font-semibold">Sign in</h1>
+        {emailVerifiedMessage && (
+          <p className="text-sm text-green-500" role="status">
+            Email verified. You can sign in now.
+          </p>
+        )}
 
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1">
