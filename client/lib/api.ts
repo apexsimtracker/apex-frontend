@@ -95,6 +95,16 @@ export async function fetchApi<T>(
       ? path
       : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
+  if (import.meta.env.DEV) {
+    // Temporary dev logging to trace auth/profile requests
+    // eslint-disable-next-line no-console
+    console.log("[fetchApi] request", {
+      method,
+      url,
+      hasToken: Boolean(token),
+    });
+  }
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -104,6 +114,14 @@ export async function fetchApi<T>(
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");
+  }
+
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[fetchApi] response", {
+      url,
+      status: res.status,
+    });
   }
 
   if (res.ok) {
@@ -209,6 +227,8 @@ export type FollowStatus = {
   mutual?: boolean;
 };
 
+// Profile summary endpoint is optional; current backend may not implement it yet.
+// Prefer authMe() for current user; this function is not used by the main profile page.
 export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
 }
@@ -453,39 +473,6 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
   return user;
 }
 
-/** Upload profile avatar image. POST /api/profile/avatar (multipart). Returns URL for use in updateMe. Backend must implement this for avatar upload to persist. */
-export type UploadProfileAvatarResponse = { avatarUrl: string };
-
-export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvatarResponse> {
-  const formData = new FormData();
-  formData.append("avatar", file);
-
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${API_BASE}/api/profile/avatar`, {
-    method: "POST",
-    headers: Object.keys(headers).length > 0 ? headers : undefined,
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    let message = "Avatar upload failed";
-    try {
-      const json = JSON.parse(text);
-      message = json.message ?? json.error ?? message;
-    } catch {
-      if (text) message = text;
-    }
-    throw new ApiError(res.status, message);
-  }
-
-  const data = (await res.json()) as UploadProfileAvatarResponse;
-  if (!data?.avatarUrl) throw new ApiError(500, "No avatar URL in response");
-  return data;
-}
 
 /** Response from POST /api/auth/register. Backend may return accessToken or token. */
 export type RegisterResponse = {

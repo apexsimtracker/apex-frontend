@@ -4,11 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
 import {
-  getProfileSummary,
   getFollowers,
   getFollowing,
   updateMe,
-  uploadProfileAvatar,
   type ProfileSummary,
   type FollowUser,
   type AuthUser,
@@ -18,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ProfileView } from "@/components/ProfileView";
 
@@ -157,9 +156,8 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return;
-    getProfileSummary()
-      .then(setProfile)
-      .catch(() => setProfile(profileSummaryFromMe({ user })));
+    // Build a summary view purely from the current auth user; no extra profile endpoint required.
+    setProfile(profileSummaryFromMe({ user }));
   }, [user]);
 
   useEffect(() => {
@@ -205,35 +203,11 @@ export default function Profile() {
     setEditLoading(true);
     setEditError(null);
     try {
-      let avatarUrlToSet: string | undefined;
-      if (avatarFile) {
-        try {
-          if (import.meta.env.DEV) {
-            console.log("[Profile] Selected avatar file:", {
-              name: avatarFile.name,
-              size: avatarFile.size,
-              type: avatarFile.type,
-            });
-          }
-          const uploadRes = await uploadProfileAvatar(avatarFile);
-          avatarUrlToSet = uploadRes.avatarUrl;
-          if (import.meta.env.DEV) {
-            console.log("[Profile] Avatar upload response:", uploadRes);
-          }
-        } catch (e) {
-          if (import.meta.env.DEV) {
-            console.warn("[Profile] Avatar upload failed (backend may not support it yet):", e);
-          }
-          // Continue without avatar so displayName and bio still save
-        }
-      }
-
       const bioValue = editForm.tagline.trim() || undefined;
       const payload = {
         displayName: trimmedName,
         tagline: bioValue,
         bio: bioValue,
-        avatarUrl: avatarUrlToSet ?? undefined,
       };
       if (import.meta.env.DEV) {
         console.log("[Profile] updateMe request payload:", payload);
@@ -490,6 +464,9 @@ export default function Profile() {
         <DialogContent className="bg-card border-white/10 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update your display name, bio, and profile picture.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             {editError && (
