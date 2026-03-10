@@ -477,7 +477,7 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
   return user;
 }
 
-// Avatar upload – backend must implement POST /api/profile/avatar to persist the avatar and return avatarUrl.
+// Avatar upload – POST /api/profile/avatar with FormData (file field "avatar"). Uses fetch so we can send multipart; auth same as fetchApi.
 export type UploadProfileAvatarResponse = { avatarUrl: string };
 
 export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvatarResponse> {

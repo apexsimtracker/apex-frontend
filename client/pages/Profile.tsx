@@ -255,7 +255,11 @@ export default function Profile() {
       const savedBio =
         (u.bio?.trim() ?? u.tagline?.trim() ?? editForm.tagline.trim()) || undefined;
 
-      setUser(updated);
+      const userWithAvatar = {
+        ...updated,
+        avatarUrl: avatarUrlToSet ?? (updated as AuthUser).avatarUrl ?? undefined,
+      };
+      setUser(userWithAvatar);
       setProfile((prev) =>
         prev
           ? {
