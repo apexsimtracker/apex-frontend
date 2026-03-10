@@ -7,6 +7,7 @@ import {
   getFollowers,
   getFollowing,
   updateMe,
+  uploadProfileAvatar,
   type ProfileSummary,
   type FollowUser,
   type AuthUser,
@@ -209,11 +210,37 @@ export default function Profile() {
           bio: editForm.tagline,
         });
       }
+      let avatarUrlToSet: string | undefined;
+      if (avatarFile) {
+        try {
+          if (import.meta.env.DEV) {
+            console.log("[Profile] Selected avatar file:", {
+              name: avatarFile.name,
+              size: avatarFile.size,
+              type: avatarFile.type,
+            });
+          }
+          const uploadRes = await uploadProfileAvatar(avatarFile);
+          avatarUrlToSet = uploadRes.avatarUrl;
+          if (import.meta.env.DEV) {
+            console.log("[Profile] Avatar upload response:", uploadRes);
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "Avatar upload failed.";
+          setEditError(msg);
+          if (import.meta.env.DEV) {
+            console.error("[Profile] Avatar upload error:", e);
+          }
+          setEditLoading(false);
+          return;
+        }
+      }
       const bioValue = editForm.tagline.trim() || undefined;
       const payload = {
         displayName: trimmedName,
         tagline: bioValue,
         bio: bioValue,
+        avatarUrl: avatarUrlToSet ?? undefined,
       };
       if (import.meta.env.DEV) {
         console.log("[Profile] updateMe request payload:", payload);
@@ -243,29 +270,6 @@ export default function Profile() {
           : null
       );
       await refreshMe();
-      if (import.meta.env.DEV) {
-        console.log("[Profile] user after refreshMe (from authMe):", user);
-      }
-
-      getProfileSummary()
-        .then((fresh) => {
-          const u = fresh.user as { tagline?: string; bio?: string };
-          const serverBio = u?.tagline?.trim() ?? u?.bio?.trim();
-          setProfile({
-            ...fresh,
-            user: {
-              ...fresh.user,
-              tagline: serverBio ?? savedBio ?? fresh.user.tagline,
-              bio: serverBio ?? savedBio ?? u?.bio,
-            },
-          });
-          if (import.meta.env.DEV) {
-            console.log("[Profile] Profile data after refetch:", fresh);
-          }
-        })
-        .catch(() => {
-          // Keep the profile we already set from updated
-        });
 
       setEditSuccess(true);
       clearAvatarSelection();

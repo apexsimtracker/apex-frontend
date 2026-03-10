@@ -477,6 +477,66 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
   return user;
 }
 
+// Avatar upload – backend must implement POST /api/profile/avatar to persist the avatar and return avatarUrl.
+export type UploadProfileAvatarResponse = { avatarUrl: string };
+
+export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvatarResponse> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const url = `${API_BASE}/api/profile/avatar`;
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[uploadProfileAvatar] request", {
+      url,
+      hasToken: Boolean(token),
+      file: { name: file.name, size: file.size, type: file.type },
+    });
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    body: formData,
+  });
+
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[uploadProfileAvatar] response", {
+      url,
+      status: res.status,
+    });
+  }
+
+  if (!res.ok) {
+    let message = "Avatar upload failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          message = json.message ?? json.error ?? message;
+        } catch {
+          message = text;
+        }
+      }
+    } catch {
+      // ignore parse error, keep default message
+    }
+    throw new ApiError(res.status, message);
+  }
+
+  const data = (await res.json()) as UploadProfileAvatarResponse;
+  if (!data?.avatarUrl) {
+    throw new ApiError(500, "No avatar URL in response");
+  }
+  return data;
+}
+
 
 /** Response from POST /api/auth/register. Backend may return accessToken or token. */
 export type RegisterResponse = {
