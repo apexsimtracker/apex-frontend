@@ -136,6 +136,15 @@ export async function fetchApi<T>(
 
   const { message, code } = await extractErrorInfo(res);
 
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log("[fetchApi] response body (error)", {
+      status: res.status,
+      message,
+      code,
+    });
+  }
+
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {
     emitProRequiredEvent();

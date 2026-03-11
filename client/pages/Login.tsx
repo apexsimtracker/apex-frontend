@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { authLogin } from "@/lib/api";
+import { authLogin, ApiError } from "@/lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailVerifiedMessage, setEmailVerifiedMessage] = useState(false);
 
   useEffect(() => {
@@ -22,9 +23,20 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setEmailNotVerified(false);
     setLoading(true);
+    const trimmedEmail = email.trim();
+    const payload = { email: trimmedEmail, password };
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.log("[Login] request payload", { ...payload, password: "***" });
+    }
     try {
-      const data = await authLogin(email.trim(), password) as { accessToken?: string; token?: string };
+      const data = await authLogin(trimmedEmail, password) as { accessToken?: string; token?: string };
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log("[Login] response (success)", { hasToken: Boolean(data?.accessToken ?? data?.token) });
+      }
       const token = data.accessToken ?? data.token;
       if (!token || typeof token !== "string") {
         setError("No token returned. Please try again.");
@@ -34,7 +46,20 @@ export default function Login() {
       window.dispatchEvent(new Event("apex:auth"));
       navigate("/profile", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed.");
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log("[Login] response (error)", {
+          status: err instanceof ApiError ? err.status : "(non-ApiError)",
+          message: err instanceof Error ? err.message : String(err),
+          code: err instanceof ApiError ? err.code : undefined,
+        });
+      }
+      if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
+        setEmailNotVerified(true);
+        setError("Please verify your email before signing in.");
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed.");
+      }
     } finally {
       setLoading(false);
     }
@@ -85,6 +110,21 @@ export default function Login() {
         {error && (
           <div className="text-sm text-red-500" role="alert">
             {error}
+          </div>
+        )}
+        {emailNotVerified && (
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const e = email.trim();
+                if (e) sessionStorage.setItem("apex_verify_email", e);
+                navigate("/verify-email", { state: { email: e } });
+              }}
+              className="text-sm text-foreground underline hover:no-underline font-medium text-left"
+            >
+              Go to verification
+            </button>
           </div>
         )}
 
