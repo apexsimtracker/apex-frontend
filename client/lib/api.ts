@@ -593,9 +593,9 @@ export async function verifyEmail(email: string, code: string): Promise<VerifyEm
   }, true);
 }
 
-/** POST /api/auth/resend-verification — request new code. Body: { email }. */
+/** POST /api/auth/resend-verification-code — request new code. Body: { email }. */
 export async function resendVerificationCode(email: string): Promise<ResendVerificationResponse> {
-  return fetchApi<ResendVerificationResponse>("POST", "/api/auth/resend-verification", {
+  return fetchApi<ResendVerificationResponse>("POST", "/api/auth/resend-verification-code", {
     email: email.trim(),
   }, true);
 }
