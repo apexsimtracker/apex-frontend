@@ -22,6 +22,7 @@ import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import RequireAuth from "./auth/RequireAuth";
 import Upload from "./pages/Upload";
@@ -67,6 +68,7 @@ export default function App() {
                   <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/manual" element={<ManualActivity />} />

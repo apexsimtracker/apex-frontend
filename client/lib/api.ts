@@ -578,6 +578,23 @@ export type ResendVerificationResponse = {
   nextResendInSeconds?: number;
 };
 
+// Forgot password / reset password flows
+
+export type ForgotPasswordResponse = {
+  ok?: boolean;
+  success?: boolean;
+};
+
+export type VerifyResetCodeResponse = {
+  ok?: boolean;
+  success?: boolean;
+};
+
+export type ResetPasswordResponse = {
+  ok?: boolean;
+  success?: boolean;
+};
+
 /** POST /api/auth/register — single register endpoint. Body: { name, email, password }. */
 export async function authRegister(
   email: string,
@@ -593,6 +610,37 @@ export async function authRegister(
 
 /** @deprecated Use authRegister. Kept for compatibility. */
 export const authSignup = authRegister;
+
+/** POST /api/auth/forgot-password — request reset code via email. Body: { email }. */
+export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
+  return fetchApi<ForgotPasswordResponse>("POST", "/api/auth/forgot-password", {
+    email: email.trim(),
+  }, true);
+}
+
+/** POST /api/auth/verify-reset-code — verify reset code. Body: { email, code }. */
+export async function verifyPasswordResetCode(
+  email: string,
+  code: string
+): Promise<VerifyResetCodeResponse> {
+  return fetchApi<VerifyResetCodeResponse>("POST", "/api/auth/verify-reset-code", {
+    email: email.trim(),
+    code: String(code).trim(),
+  }, true);
+}
+
+/** POST /api/auth/reset-password — reset password. Body: { email, code, password }. */
+export async function resetPasswordWithCode(
+  email: string,
+  code: string,
+  password: string
+): Promise<ResetPasswordResponse> {
+  return fetchApi<ResetPasswordResponse>("POST", "/api/auth/reset-password", {
+    email: email.trim(),
+    code: String(code).trim(),
+    password,
+  }, true);
+}
 
 /** POST /api/auth/verify-email — submit verification code. Body: { email, code }. Returns token if backend auto-completes auth. */
 export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResponse> {
