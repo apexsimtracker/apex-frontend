@@ -234,36 +234,46 @@ function CommentsModal({
   }
 }
 
-/** Original race stats: POSITION row + BEST/FASTEST row + CAR row — do not change markup */
+/** True when position/total represent a valid race result (not 0/0 or missing). */
+function hasValidRacePosition(position: number | null, totalRacers: number | null): boolean {
+  const pos = position ?? 0;
+  const total = totalRacers ?? 0;
+  return pos > 0 || total > 0;
+}
+
+/** Original race stats: POSITION row (only when valid) + BEST/FASTEST row + CAR row */
 function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
   const lapTimeDisplay = formatLapMs(item.bestLapMs);
   const pos = item.position ?? 0;
   const total = item.totalRacers ?? 0;
+  const showPosition = hasValidRacePosition(item.position, item.totalRacers);
+
   return (
     <>
-      {/* Podium Result - HERO with subtle styling */}
-      <div
-        className={`${getPodiumColor(pos)} rounded-lg p-3 mb-4 flex items-center justify-between`}
-      >
-        <div>
-          <p className="text-xs font-medium text-white/70 uppercase mb-0.5">
-            Position
-          </p>
-          <p
-            className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
-          >
-            {pos}
-            <span className="text-xs font-medium ml-0.5">/ {total}</span>
-          </p>
-        </div>
-        {pos <= 3 && (
-          <div className="text-xl sm:text-2xl flex-shrink-0">
-            {pos === 1 && "🥇"}
-            {pos === 2 && "🥈"}
-            {pos === 3 && "🥉"}
+      {showPosition && (
+        <div
+          className={`${getPodiumColor(pos)} rounded-lg p-3 mb-4 flex items-center justify-between`}
+        >
+          <div>
+            <p className="text-xs font-medium text-white/70 uppercase mb-0.5">
+              Position
+            </p>
+            <p
+              className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
+            >
+              {pos}
+              <span className="text-xs font-medium ml-0.5">/ {total}</span>
+            </p>
           </div>
-        )}
-      </div>
+          {pos <= 3 && (
+            <div className="text-xl sm:text-2xl flex-shrink-0">
+              {pos === 1 && "🥇"}
+              {pos === 2 && "🥈"}
+              {pos === 3 && "🥉"}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Secondary Stats - Subtle */}
       <div className="grid grid-cols-2 gap-4">
@@ -325,19 +335,19 @@ function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
   );
 }
 
-/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Laps (if present), Position (if present). */
+/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Position (if present). No lap count or telemetry stats. */
 function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
   const simName = getSimDisplayName(item.sim);
   const trackName = item.track ?? "—";
-  const carName = item.vehicleDisplay || "";
+  const carName = item.vehicleDisplay ?? formatCarName(item.car);
   const parts = [simName, trackName];
-  if (carName) parts.push(carName);
+  if (carName && carName !== "—") parts.push(carName);
   const metaLine = parts.join(" • ");
 
   return (
     <div>
       <div className="text-xs text-white/50 mb-3">{metaLine}</div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {item.bestLapMs != null && (
           <div>
             <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
@@ -348,17 +358,7 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
           </div>
         )}
-        {item.lapCount != null && item.lapCount > 0 && (
-          <div>
-            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
-              Laps
-            </p>
-            <p className="text-xs sm:text-sm font-semibold text-white">
-              {item.lapCount}
-            </p>
-          </div>
-        )}
-        {item.position != null && (
+        {hasValidRacePosition(item.position, item.totalRacers) && (
           <div>
             <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
               Position
@@ -372,11 +372,9 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           </div>
         )}
       </div>
-      {item.bestLapMs == null &&
-        (item.lapCount == null || item.lapCount === 0) &&
-        item.position == null && (
-          <div className="h-10" aria-hidden />
-        )}
+      {item.bestLapMs == null && !hasValidRacePosition(item.position, item.totalRacers) && (
+        <div className="h-10" aria-hidden />
+      )}
     </div>
   );
 }
@@ -402,7 +400,7 @@ function RaceCardContent({
   onCommentClick: (e: React.MouseEvent) => void;
 }) {
   const navigate = useNavigate();
-  const isManual = item.source === "MANUAL_ACTIVITY";
+  const isManual = (item.source ?? "").toString().toUpperCase() === "MANUAL_ACTIVITY";
   const isEmptySession = !isManual && (item.lapCount ?? 0) === 0;
   const isStrongSession =
     !isManual &&
@@ -443,7 +441,7 @@ function RaceCardContent({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
-                    {isManual ? "Manual Activity" : formatSessionTypeUpper(item.sessionType)}
+                    {formatSessionTypeUpper(item.sessionType)}
                   </div>
                   <SimBadge sim={item.sim} />
                   {isManual && (
@@ -463,7 +461,7 @@ function RaceCardContent({
                   </div>
                 )}
                 <div className="mt-1.5 text-lg font-semibold text-white">
-                  {isManual ? (item.track || "Manual entry") : cleanTitle(item)}
+                  {cleanTitle(item)}
                 </div>
               </div>
             </div>
