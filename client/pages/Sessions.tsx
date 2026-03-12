@@ -171,6 +171,20 @@ export default function Sessions() {
   }, [validType, loadSessions]);
 
   useEffect(() => {
+    function handleActivityUpdated() {
+      loadSessions(validType);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("apex:activity-updated", handleActivityUpdated);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("apex:activity-updated", handleActivityUpdated);
+      }
+    };
+  }, [validType, loadSessions]);
+
+  useEffect(() => {
     if (
       user &&
       !loading &&

@@ -44,6 +44,9 @@ export default function ManualActivity() {
     try {
       const result = await createManualActivity(data);
       setFormState("success");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("apex:activity-updated"));
+      }
       setTimeout(() => {
         navigate(`/sessions/${result.sessionId}`);
       }, 1000);

@@ -121,6 +121,20 @@ export default function Index() {
   }, [loadFeed]);
 
   useEffect(() => {
+    function handleActivityUpdated() {
+      loadFeed();
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("apex:activity-updated", handleActivityUpdated);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("apex:activity-updated", handleActivityUpdated);
+      }
+    };
+  }, [loadFeed]);
+
+  useEffect(() => {
     setDiscussionsLoading(true);
     getDiscussions()
       .then((list) => setDiscussions(Array.isArray(list) ? list : []))
