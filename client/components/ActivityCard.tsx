@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
-import TrackMapSmall from "./TrackMapSmall";
 import SimBadge from "./SimBadge";
 import { formatLapMs, formatCarName } from "@/lib/utils";
 import { apiGet, apiPost, API_BASE } from "@/lib/api";
@@ -474,11 +473,6 @@ function RaceCardContent({
                 statsOverride ?? <OriginalRaceStats item={item} />
               )}
             </div>
-          </div>
-
-          {/* Right side - Track Map - Hidden on mobile */}
-          <div className="hidden sm:flex items-start justify-end shrink-0 relative z-10 pt-0.5">
-            <TrackMapSmall track={item.track} />
           </div>
         </div>
 
