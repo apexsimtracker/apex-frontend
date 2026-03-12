@@ -325,19 +325,19 @@ function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
   );
 }
 
-/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Position (if present). No lap count or telemetry stats. */
+/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Laps (if present), Position (if present). */
 function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
   const simName = getSimDisplayName(item.sim);
   const trackName = item.track ?? "—";
-  const carName = item.vehicleDisplay ?? formatCarName(item.car);
+  const carName = item.vehicleDisplay || "";
   const parts = [simName, trackName];
-  if (carName && carName !== "—") parts.push(carName);
+  if (carName) parts.push(carName);
   const metaLine = parts.join(" • ");
 
   return (
     <div>
       <div className="text-xs text-white/50 mb-3">{metaLine}</div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {item.bestLapMs != null && (
           <div>
             <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
@@ -345,6 +345,16 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
             <p className="text-xs sm:text-sm font-semibold text-white">
               {formatLapMs(item.bestLapMs)}
+            </p>
+          </div>
+        )}
+        {item.lapCount != null && item.lapCount > 0 && (
+          <div>
+            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+              Laps
+            </p>
+            <p className="text-xs sm:text-sm font-semibold text-white">
+              {item.lapCount}
             </p>
           </div>
         )}
@@ -362,9 +372,11 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           </div>
         )}
       </div>
-      {item.bestLapMs == null && item.position == null && (
-        <div className="h-10" aria-hidden />
-      )}
+      {item.bestLapMs == null &&
+        (item.lapCount == null || item.lapCount === 0) &&
+        item.position == null && (
+          <div className="h-10" aria-hidden />
+        )}
     </div>
   );
 }
@@ -431,7 +443,7 @@ function RaceCardContent({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
-                    {formatSessionTypeUpper(item.sessionType)}
+                    {isManual ? "Manual Activity" : formatSessionTypeUpper(item.sessionType)}
                   </div>
                   <SimBadge sim={item.sim} />
                   {isManual && (
@@ -451,7 +463,7 @@ function RaceCardContent({
                   </div>
                 )}
                 <div className="mt-1.5 text-lg font-semibold text-white">
-                  {cleanTitle(item)}
+                  {isManual ? (item.track || "Manual entry") : cleanTitle(item)}
                 </div>
               </div>
             </div>
