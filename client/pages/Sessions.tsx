@@ -28,6 +28,27 @@ type RawActivityItem = SessionItem & { type?: "session" };
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
 
+type ActivityOwner = {
+  displayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+};
+
+function getActivityHeaderFromOwner(session: RawActivityItem): {
+  name: string;
+  avatar: string;
+} {
+  const owner = (session as unknown as { owner?: ActivityOwner }).owner;
+  const displayName = owner?.displayName?.trim();
+  const username = owner?.username?.trim();
+  const name = displayName || username || session.driverName || "User";
+  const avatar =
+    owner?.avatarUrl && owner.avatarUrl.trim().length > 0
+      ? owner.avatarUrl
+      : DEFAULT_AVATAR;
+  return { name, avatar };
+}
+
 function timeAgo(createdAt: string | Date): string {
   const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
   const sec = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -352,6 +373,7 @@ export default function Sessions() {
                       );
                     }
                     const session = item.session;
+                  const header = getActivityHeaderFromOwner(session as RawActivityItem);
                     return (
                       <Link
                         key={getActivityKey(item)}
@@ -360,8 +382,8 @@ export default function Sessions() {
                       >
                         <ActivityCard
                           id={session.id}
-                          userName={session.driverName}
-                          userAvatar={DEFAULT_AVATAR}
+                        userName={header.name}
+                        userAvatar={header.avatar}
                           game="—"
                           car={session.car ?? "—"}
                           vehicleDisplay={session.vehicleDisplay}

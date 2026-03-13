@@ -7,6 +7,27 @@ import { type SessionItem } from "@/lib/groupSessions";
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
 
+type ActivityOwner = {
+  displayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+};
+
+function getActivityHeaderFromOwner(session: SessionItem): {
+  name: string;
+  avatar: string;
+} {
+  const owner = (session as unknown as { owner?: ActivityOwner }).owner;
+  const displayName = owner?.displayName?.trim();
+  const username = owner?.username?.trim();
+  const name = displayName || username || session.driverName || "User";
+  const avatar =
+    owner?.avatarUrl && owner.avatarUrl.trim().length > 0
+      ? owner.avatarUrl
+      : DEFAULT_AVATAR;
+  return { name, avatar };
+}
+
 function timeAgo(createdAt: string | Date): string {
   const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
   const sec = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -105,10 +126,14 @@ export default function BundledActivityCard({
         {/* Current Session Card */}
         <div className="px-2 py-2">
           <Link to={`/sessions/${currentSession.id}`} className="block">
+          {/** Derive header identity from session.owner when present */}
+          {(() => {
+            const header = getActivityHeaderFromOwner(currentSession);
+            return (
             <ActivityCard
               id={currentSession.id}
-              userName={currentSession.driverName}
-              userAvatar={DEFAULT_AVATAR}
+            userName={header.name}
+            userAvatar={header.avatar}
               game="—"
               car={currentSession.car ?? "—"}
               vehicleDisplay={currentSession.vehicleDisplay}
@@ -130,6 +155,8 @@ export default function BundledActivityCard({
               comments={currentSession.commentCount ?? 0}
               onSessionPatch={onSessionPatch}
             />
+            );
+          })()}
           </Link>
         </div>
 
