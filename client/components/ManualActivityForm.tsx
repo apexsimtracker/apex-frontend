@@ -18,6 +18,7 @@ export type ManualActivityFormData = {
   trackId: string;
   carId: string;
   position: string;
+  totalDrivers: string;
   bestLapTime: string;
   notes: string;
 };
@@ -27,6 +28,7 @@ export type ManualActivityInitialData = {
   trackId?: string | null;
   carId?: string | null;
   position?: number | null;
+  totalDrivers?: number | null;
   bestLapMs?: number | null;
   notes?: string | null;
 };
@@ -40,6 +42,7 @@ interface ManualActivityFormProps {
     trackId: string;
     carId?: string;
     position?: number;
+    totalDrivers?: number;
     bestLapMs?: number;
     notes?: string;
   }) => Promise<void>;
@@ -71,6 +74,9 @@ export default function ManualActivityForm({
   const [position, setPosition] = useState(
     initialData?.position != null ? String(initialData.position) : ""
   );
+  const [totalDrivers, setTotalDrivers] = useState(
+    initialData?.totalDrivers != null ? String(initialData.totalDrivers) : ""
+  );
   const [bestLapTime, setBestLapTime] = useState(
     formatMsToInput(initialData?.bestLapMs)
   );
@@ -92,6 +98,9 @@ export default function ManualActivityForm({
       setCarId(initialData.carId ?? "");
       setPosition(
         initialData.position != null ? String(initialData.position) : ""
+      );
+      setTotalDrivers(
+        initialData.totalDrivers != null ? String(initialData.totalDrivers) : ""
       );
       setBestLapTime(formatMsToInput(initialData.bestLapMs));
       setNotes(initialData.notes ?? "");
@@ -172,8 +181,29 @@ export default function ManualActivityForm({
     }
 
     const positionNum = position ? parseInt(position, 10) : undefined;
+    const totalDriversNum = totalDrivers ? parseInt(totalDrivers, 10) : undefined;
+
     if (position && (!Number.isInteger(positionNum) || positionNum! < 1)) {
-      setLocalError("Position must be a positive number.");
+      setLocalError("Position must be at least 1.");
+      return;
+    }
+    if (totalDrivers && (!Number.isInteger(totalDriversNum) || totalDriversNum! < 1)) {
+      setLocalError("Grid size must be at least 1 driver.");
+      return;
+    }
+    if (
+      (positionNum != null && totalDriversNum == null) ||
+      (positionNum == null && totalDriversNum != null)
+    ) {
+      setLocalError("Please enter both position and grid size, or leave both empty.");
+      return;
+    }
+    if (
+      positionNum != null &&
+      totalDriversNum != null &&
+      positionNum > totalDriversNum
+    ) {
+      setLocalError("Position cannot be greater than the total number of drivers.");
       return;
     }
 
@@ -190,6 +220,7 @@ export default function ManualActivityForm({
       trackId,
       carId: carId || undefined,
       position: positionNum,
+      totalDrivers: totalDriversNum,
       bestLapMs,
       notes: notes.trim() || undefined,
     });
@@ -337,24 +368,42 @@ export default function ManualActivityForm({
         </select>
       </div>
 
-      {/* Position (Optional) */}
+      {/* Position / Grid (Optional) */}
       <div>
-        <label
-          htmlFor="position"
-          className="block text-sm font-medium text-white/80 mb-1.5"
-        >
-          Position <span className="text-white/40">(optional)</span>
+        <label className="block text-sm font-medium text-white/80 mb-1.5">
+          Finishing position <span className="text-white/40">(optional)</span>
         </label>
-        <input
-          id="position"
-          type="number"
-          min="1"
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          disabled={isSubmitting}
-          placeholder="e.g., 3"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
-        />
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 items-center">
+          <input
+            id="position"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            disabled={isSubmitting}
+            placeholder="7"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
+          />
+          <span className="text-xs text-white/60 text-center">out of</span>
+          <div className="flex items-center gap-1">
+            <input
+              id="totalDrivers"
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={totalDrivers}
+              onChange={(e) => setTotalDrivers(e.target.value)}
+              disabled={isSubmitting}
+              placeholder="20"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
+            />
+            <span className="text-xs text-white/60">drivers</span>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-white/40">
+          Optional for races. Leave both fields empty for practice activities.
+        </p>
       </div>
 
       {/* Best Lap Time (Optional) */}

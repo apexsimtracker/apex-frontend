@@ -753,6 +753,7 @@ export type ManualActivityRequest = {
   trackId: string;
   carId?: string;
   position?: number;
+  totalDrivers?: number;
   bestLapMs?: number;
   notes?: string;
 };
