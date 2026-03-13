@@ -7,16 +7,17 @@ import { formatLapMs, formatCarName } from "@/lib/utils";
 import { apiGet, apiPost, API_BASE } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
+import { formatTrackName } from "@/lib/tracks";
 
 const userNameToSlug = (name: string) => {
   return name.toLowerCase().replace(/\s+/g, "-");
 };
 
-/** Never show .ibt filename; use track name or "Practice Session" */
+/** Never show .ibt filename; use formatted track name or "Practice Session" */
 function cleanTitle(item: ActivityCardItem): string {
   const t = (item.track ?? "").trim();
   if (t.toLowerCase().endsWith(".ibt")) return "Practice Session";
-  if (t && t.toLowerCase() !== "unknown") return t;
+  if (t && t.toLowerCase() !== "unknown") return formatTrackName(t);
   return "Practice Session";
 }
 
@@ -337,7 +338,7 @@ function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
 /** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Position (if present). No lap count or telemetry stats. */
 function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
   const simName = getSimDisplayName(item.sim);
-  const trackName = item.track ?? "—";
+  const trackName = formatTrackName(item.track);
   const carName = item.vehicleDisplay ?? formatCarName(item.car);
   const parts = [simName, trackName];
   if (carName && carName !== "—") parts.push(carName);

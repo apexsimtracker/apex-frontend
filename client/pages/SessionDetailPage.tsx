@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Share2, PenLine, FileText, Pencil, Trash2, Repeat } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
+import { formatTrackName } from "@/lib/tracks";
 import { formatSessionTypeUpper, formatSessionType, getSimDisplayName } from "@/lib/sim";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
@@ -64,7 +65,7 @@ function calcConsistencyScore(lapTimes: number[]): number | null {
 
 function buildShareText(session: SessionDetail): string {
   const type = formatSessionType(session?.sessionType);
-  const track = session?.track ?? "Unknown track";
+  const track = formatTrackName(session?.track);
   const car = session?.vehicleDisplay ?? session?.car ?? "Unknown car";
   const laps = session?.lapCount ?? 0;
   const best = formatLapMs(session?.bestLapMs);
@@ -340,7 +341,7 @@ export default function SessionDetailPage() {
             )}
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-white">
-            {session.track ?? "—"}
+            {formatTrackName(session.track)}
           </h1>
           {import.meta.env.DEV && session.processingDurationMs != null && (
             <p className="mt-1 text-xs text-white/40">
@@ -480,7 +481,7 @@ export default function SessionDetailPage() {
                   Track
                 </p>
                 <p className="text-sm text-white">
-                  {session.track ?? "—"}
+                  {formatTrackName(session.track)}
                 </p>
               </div>
               {(session.vehicleDisplay || session.car) && (
