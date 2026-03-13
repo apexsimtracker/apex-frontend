@@ -38,6 +38,10 @@ export type SessionItem = {
   likedByMe?: boolean;
   createdAt: string | Date;
   source?: string | null;
+  // Activity owner identity (from /api/activity)
+  authorId?: string | null;
+  authorName?: string | null;
+  authorAvatarUrl?: string | null;
   // Optional fields for aggregation
   iRatingChange?: number | null;
   incidentCount?: number | null;

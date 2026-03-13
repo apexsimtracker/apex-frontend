@@ -18,13 +18,19 @@ function getActivityHeaderFromOwner(session: SessionItem): {
   avatar: string;
 } {
   const owner = (session as unknown as { owner?: ActivityOwner }).owner;
-  const displayName = owner?.displayName?.trim();
-  const username = owner?.username?.trim();
-  const name = displayName || username || session.driverName || "User";
+  const name =
+    (session as any).authorName?.trim() ||
+    owner?.displayName?.trim() ||
+    owner?.username?.trim() ||
+    session.driverName ||
+    "User";
   const avatar =
-    owner?.avatarUrl && owner.avatarUrl.trim().length > 0
-      ? owner.avatarUrl
-      : DEFAULT_AVATAR;
+    ((session as any).authorAvatarUrl &&
+    (session as any).authorAvatarUrl.trim().length > 0
+      ? (session as any).authorAvatarUrl
+      : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
+        ? owner.avatarUrl
+        : undefined) || DEFAULT_AVATAR;
   return { name, avatar };
 }
 
@@ -126,14 +132,10 @@ export default function BundledActivityCard({
         {/* Current Session Card */}
         <div className="px-2 py-2">
           <Link to={`/sessions/${currentSession.id}`} className="block">
-          {/** Derive header identity from session.owner when present */}
-          {(() => {
-            const header = getActivityHeaderFromOwner(currentSession);
-            return (
             <ActivityCard
               id={currentSession.id}
-            userName={header.name}
-            userAvatar={header.avatar}
+            userName={getActivityHeaderFromOwner(currentSession).name}
+            userAvatar={getActivityHeaderFromOwner(currentSession).avatar}
               game="—"
               car={currentSession.car ?? "—"}
               vehicleDisplay={currentSession.vehicleDisplay}
@@ -155,8 +157,6 @@ export default function BundledActivityCard({
               comments={currentSession.commentCount ?? 0}
               onSessionPatch={onSessionPatch}
             />
-            );
-          })()}
           </Link>
         </div>
 

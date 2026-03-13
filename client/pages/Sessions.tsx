@@ -34,18 +34,23 @@ type ActivityOwner = {
   avatarUrl?: string | null;
 };
 
-function getActivityHeaderFromOwner(session: RawActivityItem): {
+function getActivityHeaderFromOwner(session: RawActivityItem & { owner?: ActivityOwner }): {
   name: string;
   avatar: string;
 } {
-  const owner = (session as unknown as { owner?: ActivityOwner }).owner;
-  const displayName = owner?.displayName?.trim();
-  const username = owner?.username?.trim();
-  const name = displayName || username || session.driverName || "User";
+  const owner = session.owner;
+  const name =
+    session.authorName?.trim() ||
+    owner?.displayName?.trim() ||
+    owner?.username?.trim() ||
+    session.driverName ||
+    "User";
   const avatar =
-    owner?.avatarUrl && owner.avatarUrl.trim().length > 0
-      ? owner.avatarUrl
-      : DEFAULT_AVATAR;
+    (session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
+      ? session.authorAvatarUrl
+      : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
+        ? owner.avatarUrl
+        : undefined) || DEFAULT_AVATAR;
   return { name, avatar };
 }
 
