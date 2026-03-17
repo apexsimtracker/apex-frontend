@@ -310,6 +310,7 @@ export default function SessionDetailPage() {
   const [telemetry, setTelemetry] = useState<TelemetryPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllLaps, setShowAllLaps] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -466,7 +467,8 @@ export default function SessionDetailPage() {
   }
 
   const insights = buildInsights(session);
-  const visibleLaps = laps;
+  const visibleLaps = showAllLaps ? laps : laps.slice(0, 6);
+  const canShowMoreLaps = !showAllLaps && laps.length > 6;
   const lapTimes = (session?.laps ?? []).map((l) => l.timeMs).filter(Boolean);
   const consistency = calcConsistencyScore(lapTimes);
   const lapTimesForTrend = laps.map((l) => l.timeMs);
@@ -480,6 +482,12 @@ export default function SessionDetailPage() {
       : 0;
   const bestLapLapNumber = session.bestLapLapNumber;
   const bestLapNumberForTelemetry = pickBestLapNumber(laps, defaultTelemetryLapNumber ?? undefined);
+  const hasTelemetry =
+    telemetry != null &&
+    Array.isArray(telemetry.distance) &&
+    telemetry.distance.length > 1 &&
+    Array.isArray(telemetry.speed) &&
+    telemetry.speed.length > 1;
 
   async function handleDelete() {
     if (!id) return;
@@ -707,13 +715,6 @@ export default function SessionDetailPage() {
               </div>
             )}
           </div>
-
-          {/* No Telemetry Panel */}
-          <div className="mt-6 rounded-lg border border-white/5 bg-white/[0.02] p-8 text-center">
-            <p className="text-sm text-white/40">
-              Manual activities don't include telemetry charts.
-            </p>
-          </div>
         </>
       ) : hasNoLaps ? (
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-8 text-center">
@@ -798,23 +799,33 @@ export default function SessionDetailPage() {
                     Lap
                   </th>
                   <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                    S1
+                  </th>
+                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                    S2
+                  </th>
+                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                    S3
+                  </th>
+                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
                     Time
                   </th>
                   <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    Valid
-                  </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    Best
+                    DELTA
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {visibleLaps.map((row, index) => {
                   const isFastest =
-                    bestLapNumberForTelemetry != null
-                      ? row.lap === bestLapNumberForTelemetry
-                      : bestLapMsFromLaps != null && row.timeMs === bestLapMsFromLaps;
-                  const isValid = row.isValid !== false;
+                    bestLapMsFromLaps != null &&
+                    row.timeMs === bestLapMsFromLaps;
+                  const deltaContent =
+                    bestLapMsFromLaps == null
+                      ? "—"
+                      : row.timeMs === bestLapMsFromLaps
+                        ? "🏁 BEST"
+                        : formatDeltaMs(row.timeMs - bestLapMsFromLaps);
                   return (
                     <tr
                       key={`lap-${row.lap}-${index}`}
@@ -827,66 +838,93 @@ export default function SessionDetailPage() {
                     >
                       <td className="py-3 px-4 font-medium text-white">
                         {row.lap}
+                        {isFastest && " 🏁"}
+                      </td>
+                      <td
+                        className={`py-3 px-4 text-right font-mono text-sm ${
+                          row.sector1Ms === bestS1 && Number.isFinite(bestS1)
+                            ? "text-purple-400"
+                            : "text-white/80"
+                        }`}
+                      >
+                        {formatLapMs(row.sector1Ms)}
+                      </td>
+                      <td
+                        className={`py-3 px-4 text-right font-mono text-sm ${
+                          row.sector2Ms === bestS2 && Number.isFinite(bestS2)
+                            ? "text-purple-400"
+                            : "text-white/80"
+                        }`}
+                      >
+                        {formatLapMs(row.sector2Ms)}
+                      </td>
+                      <td
+                        className={`py-3 px-4 text-right font-mono text-sm ${
+                          row.sector3Ms === bestS3 && Number.isFinite(bestS3)
+                            ? "text-purple-400"
+                            : "text-white/80"
+                        }`}
+                      >
+                        {formatLapMs(row.sector3Ms)}
                       </td>
                       <td className="py-3 px-4 text-right font-mono">
                         <span className={lapColorClass(row.timeMs)}>
                           {formatLapMs(row.timeMs)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right text-sm">
-                        {isValid ? (
-                          <span className="text-emerald-300/80">✓</span>
-                        ) : (
-                          <span className="text-white/40">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-right text-sm">
-                        {isFastest ? (
-                          <span className="text-white font-medium">🏁</span>
-                        ) : (
-                          <span className="text-white/40">—</span>
-                        )}
+                      <td
+                        className={`py-3 px-4 text-right ${
+                          row.timeMs === bestLapMsFromLaps
+                            ? "text-sm font-medium text-white"
+                            : "text-sm text-white/60"
+                        }`}
+                      >
+                        {deltaContent}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            {canShowMoreLaps && (
+              <div className="px-4 py-3 border-t border-white/10 flex justify-end bg-white/[0.02]">
+                <button
+                  type="button"
+                  className="text-xs font-medium text-white/70 hover:text-white"
+                  onClick={() => setShowAllLaps(true)}
+                >
+                  See all laps
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Telemetry (Best lap only) — Apex Pro gated */}
-          {isPro ? (
-            telemetry ? (
-              <TelemetryTracesCard telemetry={telemetry} lapNumber={bestLapNumberForTelemetry} />
-            ) : (
-              <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
-                <div className="text-xs uppercase tracking-wider text-white/50">
-                  Telemetry Analysis
+          {/* Telemetry (Best lap only) — small add-on below existing laps content */}
+          {hasTelemetry && (
+            <>
+              {isPro ? (
+                <TelemetryTracesCard telemetry={telemetry as TelemetryPayload} lapNumber={bestLapNumberForTelemetry} />
+              ) : (
+                <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
+                  <div className="text-xs uppercase tracking-wider text-white/50">
+                    Telemetry Analysis
+                  </div>
+                  <p className="mt-2 text-base font-semibold text-white">
+                    Telemetry Analysis is available with Apex Pro
+                  </p>
+                  <p className="mt-1 text-sm text-white/60">
+                    Upgrade to unlock speed, brake, throttle and gear traces for your best lap
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/upgrade")}
+                    className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
+                  >
+                    Upgrade to Pro
+                  </button>
                 </div>
-                <p className="mt-2 text-sm text-white/60">
-                  Telemetry is unavailable for this session.
-                </p>
-              </div>
-            )
-          ) : (
-            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
-              <div className="text-xs uppercase tracking-wider text-white/50">
-                Telemetry Analysis
-              </div>
-              <p className="mt-2 text-base font-semibold text-white">
-                Telemetry Analysis is available with Apex Pro
-              </p>
-              <p className="mt-1 text-sm text-white/60">
-                Upgrade to unlock speed, brake, throttle and gear traces for your best lap
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("/upgrade")}
-                className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
-              >
-                Upgrade to Pro
-              </button>
-            </div>
+              )}
+            </>
           )}
 
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
