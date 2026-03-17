@@ -7,7 +7,7 @@ import { formatTrackName } from "@/lib/tracks";
 import { formatSessionTypeUpper, formatSessionType, getSimDisplayName } from "@/lib/sim";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 
@@ -87,6 +87,8 @@ type RawLap = {
   lapNumber?: number;
   timeMs?: number;
   lapTimeMs?: number;
+  isValid?: boolean;
+  isBestLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -95,6 +97,8 @@ type RawLap = {
 type NormalizedLap = {
   lap: number;
   timeMs: number;
+  isValid?: boolean;
+  isBestLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -105,10 +109,153 @@ function normalizeLaps(laps: RawLap[] | undefined): NormalizedLap[] {
   return laps.map((l) => ({
     lap: l.lapNumber ?? l.lap,
     timeMs: l.lapTimeMs ?? l.timeMs ?? 0,
+    isValid: l.isValid,
+    isBestLap: l.isBestLap,
     sector1Ms: l.sector1Ms,
     sector2Ms: l.sector2Ms,
     sector3Ms: l.sector3Ms,
   }));
+}
+
+type BackendLapLite = {
+  lapNumber: number;
+  lapTimeMs: number;
+  isValid: boolean;
+  isBestLap: boolean;
+};
+
+type TelemetryPayload = {
+  distance: number[];
+  speed: number[];
+  brake: number[];
+  throttle: number[];
+  gear: number[];
+};
+
+type SessionDetailResponse =
+  | SessionDetail
+  | {
+      session: SessionDetail;
+      laps?: BackendLapLite[];
+      defaultTelemetryLapNumber?: number;
+      telemetry?: TelemetryPayload | null;
+    };
+
+function pickBestLapNumber(
+  laps: NormalizedLap[],
+  serverDefault?: number
+): number | null {
+  if (serverDefault != null && Number.isFinite(serverDefault) && serverDefault > 0) {
+    return serverDefault;
+  }
+  const marked = laps.find((l) => l.isBestLap);
+  if (marked?.lap != null && marked.lap > 0) return marked.lap;
+  if (laps.length === 0) return null;
+  const valid = laps.filter((l) => l.isValid !== false && l.timeMs > 0);
+  const pool = valid.length > 0 ? valid : laps.filter((l) => l.timeMs > 0);
+  if (pool.length === 0) return null;
+  const best = pool.reduce((acc, cur) => (cur.timeMs < acc.timeMs ? cur : acc), pool[0]);
+  return best.lap ?? null;
+}
+
+function buildPolyline(
+  xs: number[],
+  ys: number[],
+  width: number,
+  height: number
+): string {
+  const n = Math.min(xs.length, ys.length);
+  if (n < 2) return "";
+  const xMin = Math.min(...xs.slice(0, n));
+  const xMax = Math.max(...xs.slice(0, n));
+  const yMin = Math.min(...ys.slice(0, n));
+  const yMax = Math.max(...ys.slice(0, n));
+  const xDen = xMax - xMin || 1;
+  const yDen = yMax - yMin || 1;
+  const points: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const x = ((xs[i] - xMin) / xDen) * width;
+    const y = height - ((ys[i] - yMin) / yDen) * height;
+    points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+  }
+  return points.join(" ");
+}
+
+function TelemetryTracesCard({
+  telemetry,
+  lapNumber,
+}: {
+  telemetry: TelemetryPayload;
+  lapNumber: number | null;
+}) {
+  const width = 920;
+  const height = 220;
+  const xs = telemetry.distance ?? [];
+  const speed = telemetry.speed ?? [];
+  const brake = telemetry.brake ?? [];
+  const throttle = telemetry.throttle ?? [];
+  const gear = telemetry.gear ?? [];
+
+  const n = Math.min(xs.length, speed.length, brake.length, throttle.length, gear.length);
+  const xSlice = xs.slice(0, n);
+  const speedSlice = speed.slice(0, n);
+  const brakeSlice = brake.slice(0, n);
+  const throttleSlice = throttle.slice(0, n);
+  const gearSlice = gear.slice(0, n);
+
+  const speedPoints = buildPolyline(xSlice, speedSlice, width, height);
+  const throttlePoints = buildPolyline(xSlice, throttleSlice, width, height);
+  const brakePoints = buildPolyline(xSlice, brakeSlice, width, height);
+  const gearPoints = buildPolyline(xSlice, gearSlice, width, height);
+
+  return (
+    <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-white/50">
+            Telemetry Analysis
+          </div>
+          <div className="mt-1 text-sm text-white/70">
+            {lapNumber != null ? `Best lap telemetry (Lap ${lapNumber})` : "Best lap telemetry"}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-white/60">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-sky-400" /> Speed
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" /> Throttle
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-400" /> Brake
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-violet-400" /> Gear
+          </span>
+        </div>
+      </div>
+
+      {n < 2 || !speedPoints ? (
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
+          <p className="text-sm text-white/60">Telemetry unavailable for this session.</p>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-white/10 bg-black/20 overflow-hidden">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="w-full h-[220px] block"
+            preserveAspectRatio="none"
+            aria-label="Telemetry traces"
+          >
+            <polyline points={speedPoints} fill="none" stroke="rgba(56,189,248,0.95)" strokeWidth="2" />
+            <polyline points={throttlePoints} fill="none" stroke="rgba(52,211,153,0.9)" strokeWidth="2" />
+            <polyline points={brakePoints} fill="none" stroke="rgba(251,191,36,0.9)" strokeWidth="2" />
+            <polyline points={gearPoints} fill="none" stroke="rgba(167,139,250,0.9)" strokeWidth="2" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export type SessionSource = "TELEMETRY" | "MANUAL_ACTIVITY" | "AGENT" | string;
@@ -154,12 +301,15 @@ export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isPro = useIsProUser();
   const { toast } = useToast();
 
   const [session, setSession] = useState<SessionDetail | null>(null);
+  const [lapsData, setLapsData] = useState<BackendLapLite[] | null>(null);
+  const [defaultTelemetryLapNumber, setDefaultTelemetryLapNumber] = useState<number | null>(null);
+  const [telemetry, setTelemetry] = useState<TelemetryPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllLaps, setShowAllLaps] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -170,9 +320,20 @@ export default function SessionDetailPage() {
     }
     setLoading(true);
     setError(null);
-    apiGet<SessionDetail>(`/api/sessions/${id}`)
+    apiGet<SessionDetailResponse>(`/api/sessions/${id}`)
       .then((data) => {
-        setSession(data);
+        if (data && typeof data === "object" && "session" in (data as any)) {
+          const d = data as Exclude<SessionDetailResponse, SessionDetail>;
+          setSession(d.session);
+          setLapsData(Array.isArray(d.laps) ? d.laps : null);
+          setDefaultTelemetryLapNumber(d.defaultTelemetryLapNumber ?? null);
+          setTelemetry(d.telemetry ?? null);
+        } else {
+          setSession(data as SessionDetail);
+          setLapsData(null);
+          setDefaultTelemetryLapNumber(null);
+          setTelemetry(null);
+        }
         setError(null);
       })
       .catch((err) => {
@@ -180,6 +341,9 @@ export default function SessionDetailPage() {
           err instanceof Error ? err.message : "Failed to load session"
         );
         setSession(null);
+        setLapsData(null);
+        setDefaultTelemetryLapNumber(null);
+        setTelemetry(null);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -240,7 +404,19 @@ export default function SessionDetailPage() {
   }
 
   const sessionTypeLabel = formatSessionTypeUpper(session.sessionType);
-  const laps = normalizeLaps(session.laps);
+  const laps = normalizeLaps(
+    (lapsData
+      ? lapsData.map((l) => ({
+          lapNumber: l.lapNumber,
+          lapTimeMs: l.lapTimeMs,
+          isValid: l.isValid,
+          isBestLap: l.isBestLap,
+          lap: l.lapNumber,
+        }))
+      : session.laps) as RawLap[] | undefined
+  )
+    .filter((l) => Number.isFinite(l.lap) && l.lap > 0)
+    .sort((a, b) => a.lap - b.lap);
   const hasNoLaps = session.lapCount === 0 || laps.length === 0;
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
@@ -290,8 +466,7 @@ export default function SessionDetailPage() {
   }
 
   const insights = buildInsights(session);
-  const visibleLaps = showAllLaps ? laps : laps.slice(0, 6);
-  const canShowMoreLaps = !showAllLaps && laps.length > 6;
+  const visibleLaps = laps;
   const lapTimes = (session?.laps ?? []).map((l) => l.timeMs).filter(Boolean);
   const consistency = calcConsistencyScore(lapTimes);
   const lapTimesForTrend = laps.map((l) => l.timeMs);
@@ -304,6 +479,7 @@ export default function SessionDetailPage() {
       ? firstLapMs - trendBestLapMs
       : 0;
   const bestLapLapNumber = session.bestLapLapNumber;
+  const bestLapNumberForTelemetry = pickBestLapNumber(laps, defaultTelemetryLapNumber ?? undefined);
 
   async function handleDelete() {
     if (!id) return;
@@ -622,33 +798,23 @@ export default function SessionDetailPage() {
                     Lap
                   </th>
                   <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    S1
-                  </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    S2
-                  </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    S3
-                  </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
                     Time
                   </th>
                   <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
-                    DELTA
+                    Valid
+                  </th>
+                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                    Best
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {visibleLaps.map((row, index) => {
                   const isFastest =
-                    bestLapMsFromLaps != null &&
-                    row.timeMs === bestLapMsFromLaps;
-                  const deltaContent =
-                    bestLapMsFromLaps == null
-                      ? "—"
-                      : row.timeMs === bestLapMsFromLaps
-                        ? "🏁 BEST"
-                        : formatDeltaMs(row.timeMs - bestLapMsFromLaps);
+                    bestLapNumberForTelemetry != null
+                      ? row.lap === bestLapNumberForTelemetry
+                      : bestLapMsFromLaps != null && row.timeMs === bestLapMsFromLaps;
+                  const isValid = row.isValid !== false;
                   return (
                     <tr
                       key={`lap-${row.lap}-${index}`}
@@ -661,66 +827,67 @@ export default function SessionDetailPage() {
                     >
                       <td className="py-3 px-4 font-medium text-white">
                         {row.lap}
-                        {isFastest && " 🏁"}
-                      </td>
-                      <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
-                          row.sector1Ms === bestS1 && Number.isFinite(bestS1)
-                            ? "text-purple-400"
-                            : "text-white/80"
-                        }`}
-                      >
-                        {formatLapMs(row.sector1Ms)}
-                      </td>
-                      <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
-                          row.sector2Ms === bestS2 && Number.isFinite(bestS2)
-                            ? "text-purple-400"
-                            : "text-white/80"
-                        }`}
-                      >
-                        {formatLapMs(row.sector2Ms)}
-                      </td>
-                      <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
-                          row.sector3Ms === bestS3 && Number.isFinite(bestS3)
-                            ? "text-purple-400"
-                            : "text-white/80"
-                        }`}
-                      >
-                        {formatLapMs(row.sector3Ms)}
                       </td>
                       <td className="py-3 px-4 text-right font-mono">
                         <span className={lapColorClass(row.timeMs)}>
                           {formatLapMs(row.timeMs)}
                         </span>
                       </td>
-                      <td
-                        className={`py-3 px-4 text-right ${
-                          row.timeMs === bestLapMsFromLaps
-                            ? "text-sm font-medium text-white"
-                            : "text-sm text-white/60"
-                        }`}
-                      >
-                        {deltaContent}
+                      <td className="py-3 px-4 text-right text-sm">
+                        {isValid ? (
+                          <span className="text-emerald-300/80">✓</span>
+                        ) : (
+                          <span className="text-white/40">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right text-sm">
+                        {isFastest ? (
+                          <span className="text-white font-medium">🏁</span>
+                        ) : (
+                          <span className="text-white/40">—</span>
+                        )}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            {canShowMoreLaps && (
-              <div className="px-4 py-3 border-t border-white/10 flex justify-end bg-white/[0.02]">
-                <button
-                  type="button"
-                  className="text-xs font-medium text-white/70 hover:text-white"
-                  onClick={() => setShowAllLaps(true)}
-                >
-                  See all laps
-                </button>
-              </div>
-            )}
           </div>
+
+          {/* Telemetry (Best lap only) — Apex Pro gated */}
+          {isPro ? (
+            telemetry ? (
+              <TelemetryTracesCard telemetry={telemetry} lapNumber={bestLapNumberForTelemetry} />
+            ) : (
+              <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
+                <div className="text-xs uppercase tracking-wider text-white/50">
+                  Telemetry Analysis
+                </div>
+                <p className="mt-2 text-sm text-white/60">
+                  Telemetry is unavailable for this session.
+                </p>
+              </div>
+            )
+          ) : (
+            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
+              <div className="text-xs uppercase tracking-wider text-white/50">
+                Telemetry Analysis
+              </div>
+              <p className="mt-2 text-base font-semibold text-white">
+                Telemetry Analysis is available with Apex Pro
+              </p>
+              <p className="mt-1 text-sm text-white/60">
+                Upgrade to unlock speed, brake, throttle and gear traces for your best lap
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/upgrade")}
+                className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
             <div className="text-xs uppercase tracking-wider text-white/50">
