@@ -32,9 +32,6 @@ export type SessionDetail = {
   comments?: number | null;
 };
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
-
 // Helper to convert username to URL slug
 const userNameToSlug = (name: string) => {
   return name.toLowerCase().replace(/\s+/g, "-");
@@ -68,7 +65,7 @@ function timeAgo(createdAt: string | Date): string {
 // UI shape used by the template (mapped from SessionDetail)
 type ActivityView = {
   userName: string;
-  userAvatar: string;
+  userAvatar: string | null;
   game: string;
   track: string;
   position: number;
@@ -87,7 +84,7 @@ function sessionToView(s: SessionDetail): ActivityView {
   const avgLap = s.avgLapTime != null ? String(s.avgLapTime) : "—";
   return {
     userName: s.driverName,
-    userAvatar: s.userAvatar ?? DEFAULT_AVATAR,
+    userAvatar: s.userAvatar ?? null,
     game: s.game ?? "—",
     track: s.track ?? "—",
     position: s.position ?? 0,
@@ -197,17 +194,24 @@ export default function ActivityDetail() {
           {/* Header with user info */}
           <div className="px-6 py-4 border-b border">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() =>
-                  navigate(`/user/${userNameToSlug(activity.userName)}`)
-                }
-                className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity group text-left"
-              >
-                <img
-                  src={activity.userAvatar}
-                  alt={activity.userName}
-                  className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
-                />
+              <div className="flex items-center gap-3 flex-1">
+                {activity.userAvatar && activity.userAvatar.trim().length > 0 ? (
+                  <img
+                    src={activity.userAvatar}
+                    alt={activity.userName}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-muted border border-white/10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                    {(activity.userName || "?")
+                      .trim()
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((p) => p[0]?.toUpperCase() ?? "")
+                      .join("") || "?"}
+                  </div>
+                )}
                 <div className="flex-1">
                   <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {activity.userName}
@@ -216,7 +220,7 @@ export default function ActivityDetail() {
                     {activity.timestamp}
                   </p>
                 </div>
-              </button>
+              </div>
               <button
                 type="button"
                 onClick={() => id && navigate(`/sessions/${id}`)}

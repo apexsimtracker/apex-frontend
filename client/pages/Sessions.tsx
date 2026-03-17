@@ -25,9 +25,6 @@ function setOnboarded() {
 
 type RawActivityItem = SessionItem & { type?: "session" };
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
-
 type ActivityOwner = {
   displayName?: string | null;
   username?: string | null;
@@ -36,7 +33,7 @@ type ActivityOwner = {
 
 function getActivityHeaderFromOwner(session: RawActivityItem & { owner?: ActivityOwner }): {
   name: string;
-  avatar: string;
+  avatar: string | null;
 } {
   const owner = session.owner;
   const name =
@@ -44,13 +41,13 @@ function getActivityHeaderFromOwner(session: RawActivityItem & { owner?: Activit
     owner?.displayName?.trim() ||
     owner?.username?.trim() ||
     session.driverName ||
-    "User";
+    "—";
   const avatar =
     (session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
       ? session.authorAvatarUrl
       : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
         ? owner.avatarUrl
-        : undefined) || DEFAULT_AVATAR;
+        : null);
   return { name, avatar };
 }
 

@@ -63,7 +63,7 @@ export function ProfileView({
   };
   const raw = (user.displayName ?? user.name)?.trim();
   const isPlaceholder = raw && /^Local\s+(Driver|user)$/i.test(raw);
-  const displayName = (raw && !isPlaceholder) ? raw : (user.email?.trim() || "User");
+  const displayName = (raw && !isPlaceholder) ? raw : (user.email?.trim() || "—");
   const safeValue = (v: number | null | undefined) =>
     v === null || v === undefined ? "—" : v;
 

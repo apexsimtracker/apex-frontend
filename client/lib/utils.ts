@@ -9,11 +9,11 @@ export function cn(...inputs: ClassValue[]) {
  *  Backend contract: author is an object { id, displayName, avatarUrl }.
  *  We read author.displayName and fall back to "User" if missing. */
 export function getDiscussionAuthorDisplay(author: unknown): string {
-  if (!author || typeof author !== "object") return "User";
+  if (!author || typeof author !== "object") return "—";
   const o = author as { displayName?: string | null };
   const displayName =
     typeof o.displayName === "string" ? o.displayName.trim() : "";
-  return displayName || "User";
+  return displayName || "—";
 }
 
 /** Initials from the final display name: first 2 chars, or single char for short names (e.g. "User" → "U"). */

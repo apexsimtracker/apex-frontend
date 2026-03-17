@@ -4,9 +4,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import ActivityCard, { type SessionPatch } from "./ActivityCard";
 import { type SessionItem } from "@/lib/groupSessions";
 
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop";
-
 type ActivityOwner = {
   displayName?: string | null;
   username?: string | null;
@@ -15,7 +12,7 @@ type ActivityOwner = {
 
 function getActivityHeaderFromOwner(session: SessionItem): {
   name: string;
-  avatar: string;
+  avatar: string | null;
 } {
   const owner = (session as unknown as { owner?: ActivityOwner }).owner;
   const name =
@@ -23,14 +20,14 @@ function getActivityHeaderFromOwner(session: SessionItem): {
     owner?.displayName?.trim() ||
     owner?.username?.trim() ||
     session.driverName ||
-    "User";
+    "—";
   const avatar =
     ((session as any).authorAvatarUrl &&
     (session as any).authorAvatarUrl.trim().length > 0
       ? (session as any).authorAvatarUrl
       : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
         ? owner.avatarUrl
-        : undefined) || DEFAULT_AVATAR;
+        : null);
   return { name, avatar };
 }
 

@@ -38,7 +38,7 @@ function getAccountDisplayName(user: { displayName?: string; name?: string; emai
   if (n && n.length > 0) return n;
   const e = user.email?.trim();
   if (e && e.length > 0) return e;
-  return "User";
+  return "";
 }
 
 function profileSummaryFromMe(me: MeResponse): ProfileSummary {
@@ -398,7 +398,7 @@ export default function Profile() {
                   const name =
                     (typeof f.displayName === "string"
                       ? f.displayName.trim()
-                      : "") || "User";
+                      : "") || (f.email?.trim() ?? "—");
                   const initials =
                     name && name.length >= 2
                       ? name.slice(0, 2).toUpperCase()
@@ -445,7 +445,7 @@ export default function Profile() {
                   const name =
                     (typeof f.displayName === "string"
                       ? f.displayName.trim()
-                      : "") || "User";
+                      : "") || (f.email?.trim() ?? "—");
                   const initials =
                     name && name.length >= 2
                       ? name.slice(0, 2).toUpperCase()

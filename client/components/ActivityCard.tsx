@@ -410,26 +410,31 @@ function RaceCardContent({
     <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
         {/* Header with user info */}
         <div className="px-4 sm:px-5 py-3 sm:py-3.5">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              navigate(`/user/${userNameToSlug(item.userName)}`);
-            }}
-            className="w-full flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity group text-left"
-          >
-            <img
-              src={item.userAvatar}
-              alt={item.userName}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
-            />
+          <div className="w-full flex items-center gap-2 sm:gap-3">
+            {item.userAvatar && item.userAvatar.trim().length > 0 ? (
+              <img
+                src={item.userAvatar}
+                alt={item.userName}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 text-xs font-semibold text-white/80 flex items-center justify-center flex-shrink-0">
+                {(item.userName || "?")
+                  .trim()
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0]?.toUpperCase() ?? "")
+                  .join("") || "?"}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-white group-hover:text-primary transition-colors text-xs sm:text-sm">
+              <p className="font-medium text-white text-xs sm:text-sm">
                 {item.userName}
               </p>
               <p className="text-xs text-white/50 mt-0.5">{item.timestamp}</p>
             </div>
-          </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -546,7 +551,7 @@ export type SessionPatch = Partial<{
 interface ActivityCardProps {
   id: string;
   userName: string;
-  userAvatar: string;
+  userAvatar?: string | null;
   game: string;
   car: string;
   vehicleDisplay?: string;
@@ -675,7 +680,7 @@ export default function ActivityCard(props: ActivityCardProps) {
   const item: ActivityCardItem = {
     id: props.id,
     userName: props.userName,
-    userAvatar: props.userAvatar,
+    userAvatar: props.userAvatar ?? "",
     game: props.game,
     car: props.car,
     vehicleDisplay: props.vehicleDisplay,
