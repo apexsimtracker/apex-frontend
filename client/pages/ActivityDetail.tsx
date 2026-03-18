@@ -162,9 +162,18 @@ export default function ActivityDetail() {
 
         const path = "/api/activity/" + id;
         const data = (await apiGet(path)) as SessionDetail;
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("[ActivityDetail] /api/activity/:id raw", data);
+        }
 
         if (!cancelled) {
-          setActivity(sessionToView ? sessionToView(data) : (data as any));
+          const mapped = sessionToView ? sessionToView(data) : (data as any);
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.log("[ActivityDetail] mapped view", mapped);
+          }
+          setActivity(mapped);
         }
       } catch (err: any) {
         if (!cancelled) {

@@ -29,11 +29,25 @@ function resolveSessionFields(session: SessionDetail): {
   car: string | null;
   carRawForFormat: string | null;
 } {
-  const s = session as any;
+  // Some backends nest fields under session/session, details, or meta.
+  const s0 = session as any;
+  const s =
+    s0 && typeof s0 === "object" && s0.session && typeof s0.session === "object"
+      ? s0.session
+      : s0;
+  const meta = (s0 as any)?.meta ?? (s as any)?.meta;
+  const details = (s0 as any)?.details ?? (s as any)?.details;
   const track = pickFirstString(
     session.track,
+    session.trackName,
     s.trackName,
     s.track_name,
+    meta?.track,
+    meta?.trackName,
+    meta?.track_name,
+    details?.track,
+    details?.trackName,
+    details?.track_name,
     s.circuit,
     s.circuitName,
     s.circuit_name,
@@ -42,6 +56,7 @@ function resolveSessionFields(session: SessionDetail): {
   );
   const sim = pickFirstString(
     session.sim,
+    session.game,
     s.game,
     s.gameName,
     s.simName,
@@ -53,8 +68,18 @@ function resolveSessionFields(session: SessionDetail): {
     s.vehicleDisplay,
     s.vehicle_display,
     session.car,
+    session.carName,
     s.carName,
     s.car_name,
+    meta?.car,
+    meta?.carName,
+    meta?.car_name,
+    details?.car,
+    details?.carName,
+    details?.car_name,
+    details?.vehicle,
+    details?.vehicleName,
+    details?.vehicle_name,
     s.vehicle,
     s.vehicleName,
     s.vehicle_name
@@ -64,6 +89,12 @@ function resolveSessionFields(session: SessionDetail): {
     session.car,
     s.carName,
     s.car_name,
+    meta?.car,
+    meta?.carName,
+    meta?.car_name,
+    details?.car,
+    details?.carName,
+    details?.car_name,
     s.vehicle,
     s.vehicleName,
     s.vehicle_name
@@ -200,6 +231,10 @@ type SessionDetailResponse =
       laps?: BackendLapLite[];
       defaultTelemetryLapNumber?: number;
       telemetry?: TelemetryPayload | null;
+      trackName?: string | null;
+      carName?: string | null;
+      game?: string | null;
+      sim?: string | null;
     };
 
 function pickBestLapNumber(
@@ -325,9 +360,12 @@ export type SessionDetail = {
   id: string;
   sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "UNKNOWN" | null;
   sim?: string | null;
+  game?: string | null;
   track: string | null;
+  trackName?: string | null;
   trackId?: string | null;
   car: string | null;
+  carName?: string | null;
   carId?: string | null;
   vehicleDisplay?: string;
   position?: number | null;
@@ -384,17 +422,51 @@ export default function SessionDetailPage() {
     setError(null);
     apiGet<SessionDetailResponse>(`/api/sessions/${id}`)
       .then((data) => {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log("SESSION RAW", data);
+        }
         if (data && typeof data === "object" && "session" in (data as any)) {
           const d = data as Exclude<SessionDetailResponse, SessionDetail>;
-          setSession(d.session);
+          const base =
+            (d.session as any)?.session && typeof (d.session as any).session === "object"
+              ? ((d.session as any).session as SessionDetail)
+              : d.session;
+          const mergedSession: SessionDetail = {
+            ...base,
+            trackName: d.session.trackName ?? (d as any).trackName ?? null,
+            carName: d.session.carName ?? (d as any).carName ?? null,
+            game: d.session.game ?? (d as any).game ?? null,
+            sim: d.session.sim ?? (d as any).sim ?? null,
+          };
+          setSession(mergedSession);
           setLapsData(Array.isArray(d.laps) ? d.laps : null);
           setDefaultTelemetryLapNumber(d.defaultTelemetryLapNumber ?? null);
           setTelemetry(d.telemetry ?? null);
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.log("[SessionDetailPage] /api/sessions/:id raw keys", Object.keys(d as any));
+            // eslint-disable-next-line no-console
+            console.log("[SessionDetailPage] /api/sessions/:id session keys", Object.keys((d as any).session ?? {}));
+            // eslint-disable-next-line no-console
+            console.log("[SessionDetailPage] merged fields", {
+              track: mergedSession.track,
+              trackName: mergedSession.trackName,
+              car: mergedSession.car,
+              carName: mergedSession.carName,
+              sim: mergedSession.sim,
+              game: mergedSession.game,
+            });
+          }
         } else {
           setSession(data as SessionDetail);
           setLapsData(null);
           setDefaultTelemetryLapNumber(null);
           setTelemetry(null);
+          if (import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.log("[SessionDetailPage] /api/sessions/:id raw (no wrapper)", data);
+          }
         }
         setError(null);
       })
