@@ -911,31 +911,41 @@ export default function SessionDetailPage() {
           </div>
 
           {/* Telemetry (Best lap only) — small add-on below existing laps content */}
-          {hasTelemetry && (
-            <>
-              {isPro ? (
-                <TelemetryTracesCard telemetry={telemetry as TelemetryPayload} lapNumber={bestLapNumberForTelemetry} />
-              ) : (
-                <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
-                  <div className="text-xs uppercase tracking-wider text-white/50">
-                    Telemetry Analysis
-                  </div>
-                  <p className="mt-2 text-base font-semibold text-white">
-                    Telemetry Analysis is available with Apex Pro
-                  </p>
-                  <p className="mt-1 text-sm text-white/60">
-                    Upgrade to unlock speed, brake, throttle and gear traces for your best lap
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/upgrade")}
-                    className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
-                  >
-                    Upgrade to Pro
-                  </button>
+          {isPro ? (
+            hasTelemetry ? (
+              <TelemetryTracesCard
+                telemetry={telemetry as TelemetryPayload}
+                lapNumber={bestLapNumberForTelemetry}
+              />
+            ) : (
+              <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
+                <div className="text-xs uppercase tracking-wider text-white/50">
+                  Telemetry Analysis
                 </div>
-              )}
-            </>
+                <p className="mt-2 text-sm text-white/60">
+                  No telemetry available for this session
+                </p>
+              </div>
+            )
+          ) : (
+            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
+              <div className="text-xs uppercase tracking-wider text-white/50">
+                Telemetry Analysis
+              </div>
+              <p className="mt-2 text-base font-semibold text-white">
+                Telemetry Analysis is available with Apex Pro
+              </p>
+              <p className="mt-1 text-sm text-white/60">
+                Upgrade to unlock speed, brake, throttle and gear traces for your best lap
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/upgrade")}
+                className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
           )}
 
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
