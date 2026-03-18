@@ -19,8 +19,12 @@ export function resolveApiUrl(url: string | null | undefined): string | null {
   if (!raw) return null;
   if (/^(https?:)?\/\//i.test(raw)) return raw; // http(s) or protocol-relative
   if (/^(data:|blob:)/i.test(raw)) return raw;
-  const path = raw.startsWith("/") ? raw : `/${raw}`;
-  return `${API_BASE}${path}`;
+  // Only prefix backend base for API-served asset paths.
+  if (!raw.startsWith("/api/")) return raw;
+
+  const base = import.meta.env.VITE_APEX_API_BASE_URL ?? API_BASE;
+  const normalizedBase = String(base).replace(/\/+$/, "");
+  return `${normalizedBase}${raw}`;
 }
 
 // Standardized API error

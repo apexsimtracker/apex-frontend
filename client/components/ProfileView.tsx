@@ -5,6 +5,7 @@ import type { ProfileSummary } from "../lib/api";
 import { formatLapMs, formatCarName } from "../lib/utils";
 import SimBadge from "./SimBadge";
 import { getSimDisplayName } from "../lib/sim";
+import { resolveApiUrl } from "@/lib/api";
 
 type ProfileViewProps = {
   profile: ProfileSummary;
@@ -67,9 +68,10 @@ export function ProfileView({
   const safeValue = (v: number | null | undefined) =>
     v === null || v === undefined ? "—" : v;
 
-  const showAvatarImg = Boolean(avatarUrl && String(avatarUrl).trim());
+  const avatarSrc = resolveApiUrl(avatarUrl);
+  const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
   if (import.meta.env.DEV) {
-    console.log("[ProfileView] avatarUrl prop:", avatarUrl ?? "(missing)", "→ rendered avatar src:", showAvatarImg ? avatarUrl : "(placeholder)");
+    console.log("[ProfileView] avatarUrl prop:", avatarUrl ?? "(missing)", "→ rendered avatar src:", showAvatarImg ? avatarSrc : "(placeholder)");
   }
 
   const raceHistory = profile.raceHistory ?? [];
@@ -116,7 +118,7 @@ export function ProfileView({
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1">
               {showAvatarImg ? (
                 <img
-                  src={String(avatarUrl).trim()}
+                  src={String(avatarSrc).trim()}
                   alt="Profile"
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-1 ring-white/5 flex-shrink-0"
                 />
