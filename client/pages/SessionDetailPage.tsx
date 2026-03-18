@@ -578,7 +578,7 @@ export default function SessionDetailPage() {
             <p className="text-xs uppercase tracking-wider text-[rgb(240,28,28)]">
               {sessionTypeLabel}
             </p>
-            <SimBadge sim={session.sim} />
+            <SimBadge sim={resolved.sim ?? session.sim} />
             {isManual && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-violet-500/10 text-violet-300 border-violet-500/20">
                 <PenLine className="h-3 w-3" />
@@ -604,7 +604,7 @@ export default function SessionDetailPage() {
                   navigate("/manual", {
                     state: {
                       logAgain: {
-                        sim: session.sim ?? undefined,
+                        sim: (resolved.sim ?? session.sim) ?? undefined,
                         trackId: session.trackId ?? undefined,
                         carId: session.carId ?? undefined,
                       },
