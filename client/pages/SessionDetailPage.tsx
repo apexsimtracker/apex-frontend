@@ -5,6 +5,7 @@ import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
 import { formatSessionTypeUpper, formatSessionType, getSimDisplayName } from "@/lib/sim";
+import { formatActivitySource } from "@/lib/enumFormat";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
@@ -533,7 +534,13 @@ export default function SessionDetailPage() {
     );
   }
 
-  const sessionTypeLabel = formatSessionTypeUpper(session.sessionType);
+  const sessionTypeKey = (session.sessionType ?? "").toString().trim();
+  const sessionTypeLabel =
+    sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
+    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
+    sessionTypeKey.toUpperCase() === "AGENT"
+      ? formatActivitySource(sessionTypeKey)
+      : formatSessionTypeUpper(session.sessionType);
   const resolved = resolveSessionFields(session);
   const laps = normalizeLaps(
     (lapsData
