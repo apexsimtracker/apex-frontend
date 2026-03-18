@@ -701,7 +701,48 @@ export async function getActivity(type: SessionsFilterType = "all"): Promise<unk
     : (raw as { sessions?: unknown[] }).sessions ??
       (raw as { activity?: unknown[] }).activity ??
       [];
-  return Array.isArray(list) ? list : [];
+  const arr = Array.isArray(list) ? list : [];
+
+  function toNumber(v: unknown): number | null {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string") {
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  }
+
+  function normalizeFeedSession(item: unknown): unknown {
+    if (!item || typeof item !== "object") return item;
+    const outer = item as any;
+    const inner =
+      outer.session && typeof outer.session === "object" ? (outer.session as any) : null;
+
+    // Merge outer+inner like SessionDetailPage unwrapping.
+    const merged: any = {
+      ...(outer ?? {}),
+      ...(inner ?? {}),
+    };
+
+    // Normalize best lap time field into bestLapMs (used by ActivityCard).
+    const bestLapMs =
+      toNumber(merged.bestLapMs) ??
+      toNumber(merged.bestLapTimeMs) ??
+      toNumber(merged.best_lap_ms) ??
+      toNumber(merged.bestLapTime) ??
+      toNumber(merged.best_lap_time_ms) ??
+      toNumber(merged.fastestLapMs) ??
+      toNumber(merged.fastest_lap_ms) ??
+      (merged.bestLap && typeof merged.bestLap === "object"
+        ? toNumber((merged.bestLap as any).lapTimeMs) ?? toNumber((merged.bestLap as any).timeMs)
+        : null);
+
+    if (bestLapMs != null) merged.bestLapMs = bestLapMs;
+
+    return merged;
+  }
+
+  return arr.map(normalizeFeedSession);
 }
 
 // Billing / Upgrade

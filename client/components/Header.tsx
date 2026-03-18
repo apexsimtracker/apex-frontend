@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Settings, Cpu, Plus, Upload, PenLine, ChevronDown } from "lucide-react";
+import { Menu, X, Settings, Bot, Plus, Upload, PenLine, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -203,13 +203,15 @@ export default function Header() {
               to="/agent"
               className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Agent"
+              title="Agent"
             >
-              <Cpu className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
+              <Bot className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
             </Link>
             <Link
               to="/settings"
               className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Settings"
+              title="Settings"
             >
               <Settings className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
             </Link>

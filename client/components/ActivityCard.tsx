@@ -243,10 +243,48 @@ function hasValidRacePosition(position: number | null, totalRacers: number | nul
 
 /** Original race stats: POSITION row (only when valid) + BEST/FASTEST row + CAR row */
 function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
-  const lapTimeDisplay = formatLapMs(item.bestLapMs);
   const pos = item.position ?? 0;
   const total = item.totalRacers ?? 0;
   const showPosition = hasValidRacePosition(item.position, item.totalRacers);
+  const showBest = item.bestLapMs != null;
+  const lapTimeDisplay = showBest ? formatLapMs(item.bestLapMs) : "";
+
+  // If we only have Position + Car (no best lap), keep the layout balanced.
+  if (showPosition && !showBest) {
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        <div className={`${getPodiumColor(pos)} rounded-lg p-3 flex items-center justify-between`}>
+          <div>
+            <p className="text-xs font-medium text-white/70 uppercase mb-0.5">
+              Position
+            </p>
+            <p
+              className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
+            >
+              {pos}
+              <span className="text-xs font-medium ml-0.5">/ {total}</span>
+            </p>
+          </div>
+          {pos <= 3 && (
+            <div className="text-xl sm:text-2xl flex-shrink-0">
+              {pos === 1 && "🥇"}
+              {pos === 2 && "🥈"}
+              {pos === 3 && "🥉"}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+            Car
+          </p>
+          <p className="text-xs sm:text-sm font-semibold text-white truncate">
+            {item.vehicleDisplay ?? formatCarName(item.car)}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -276,18 +314,18 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
       )}
 
       {/* Secondary Stats - Subtle */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Fastest Lap */}
-        <div>
-          <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
-            {item.bestLapMs != null ? "Fastest" : "Best"}
-          </p>
-          <p className="text-xs sm:text-sm font-semibold text-white">
-            {lapTimeDisplay}
-          </p>
-        </div>
+      <div className={`grid ${showBest ? "grid-cols-2" : "grid-cols-1"} gap-4`}>
+        {showBest && (
+          <div>
+            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+              Fastest
+            </p>
+            <p className="text-xs sm:text-sm font-semibold text-white">
+              {lapTimeDisplay}
+            </p>
+          </div>
+        )}
 
-        {/* Car */}
         <div>
           <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
             Car
@@ -409,7 +447,7 @@ function RaceCardContent({
   return (
     <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
         {/* Header with user info */}
-        <div className="px-4 sm:px-5 py-3 sm:py-3.5">
+        <div className="px-4 sm:px-5 py-2.5 sm:py-3">
           <div className="w-full flex items-center gap-2 sm:gap-3">
             {item.userAvatar && item.userAvatar.trim().length > 0 ? (
               <img
@@ -438,11 +476,11 @@ function RaceCardContent({
         </div>
 
         {/* Content */}
-        <div className="px-4 sm:px-5 pt-1.5 pb-4 sm:pt-1.5 sm:pb-5 flex gap-4 relative">
+        <div className="px-4 sm:px-5 pt-1 pb-3 sm:pt-1 sm:pb-4 flex gap-4 relative">
           {/* Left side - Stats and info */}
           <div className="flex-1 relative z-10">
             {/* Track and Game info */}
-            <div className="mb-4">
+            <div className="mb-3">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">

@@ -9,6 +9,7 @@ import {
   Droplet,
 } from "lucide-react";
 import { formatCarName } from "@/lib/utils";
+import { formatSimEnum } from "@/lib/enumFormat";
 
 // Mock race data database
 const racesDatabase: Record<string, any> = {
@@ -163,7 +164,7 @@ export default function RaceDetail() {
                 <h1 className="text-3xl font-bold text-foreground mb-2">
                   {race.track}
                 </h1>
-                <p className="text-muted-foreground">{race.sim}</p>
+                <p className="text-muted-foreground">{formatSimEnum(race.sim)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-1">

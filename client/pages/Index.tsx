@@ -7,7 +7,7 @@ import DiscussionCard from "@/components/DiscussionCard";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import { apiGet, isNetworkError, getDiscussions, type Discussion } from "@/lib/api";
+import { apiGet, isNetworkError, getDiscussions, getActivity, type Discussion } from "@/lib/api";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -115,15 +115,9 @@ export default function Index() {
     setLoading(true);
     setError(null);
     setFeedError(null);
-    type ActivityResponse = RawActivityItem[] | { sessions?: RawActivityItem[]; activity?: RawActivityItem[] };
-    apiGet<ActivityResponse>("/api/activity")
+    getActivity("all")
       .then((data) => {
-        const list = Array.isArray(data)
-          ? data
-          : (data as { sessions?: RawActivityItem[] }).sessions ??
-            (data as { activity?: RawActivityItem[] }).activity ??
-            [];
-        const sessions = Array.isArray(list) ? list : [];
+        const sessions = (Array.isArray(data) ? data : []) as RawActivityItem[];
         setActivity(sessions);
         setError(null);
         setFeedError(null);

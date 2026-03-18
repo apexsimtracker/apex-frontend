@@ -81,6 +81,30 @@ const SIM_CONFIGS: Record<string, SimConfig> = {
       hasLicenseClass: false,
     },
   },
+  ASSETTO_CORSA: {
+    displayName: "Assetto Corsa",
+    shortName: "AC",
+    badgeClass: "bg-orange-500/10 text-orange-300 border-orange-500/20",
+    capabilities: {
+      hasRating: false,
+      hasIncidents: false,
+      hasSOF: false,
+      hasOfficialStatus: false,
+      hasLicenseClass: false,
+    },
+  },
+  ASSETTO_CORSA_COMPETIZIONE: {
+    displayName: "ACC",
+    shortName: "ACC",
+    badgeClass: "bg-green-500/10 text-green-300 border-green-500/20",
+    capabilities: {
+      hasRating: true,
+      hasIncidents: false,
+      hasSOF: false,
+      hasOfficialStatus: false,
+      hasLicenseClass: false,
+    },
+  },
 };
 
 const DEFAULT_CONFIG: SimConfig = {

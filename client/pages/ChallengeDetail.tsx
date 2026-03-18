@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import { formatLapDelta, formatCarName, formatLapMs } from "@/lib/utils";
 import { getCompetition, getCompetitionSummary, type CompetitionDetail } from "@/lib/api";
+import { formatSimEnum } from "@/lib/enumFormat";
 
 const formatRemaining = (sec: number) => {
   const s = Math.max(0, Math.floor(sec));
@@ -144,7 +145,7 @@ export default function ChallengeDetail() {
                   <p className="text-xs text-white/50 uppercase tracking-widest mb-2">
                     Game
                   </p>
-                  <p className="text-base text-white font-medium">{challenge.sim}</p>
+                  <p className="text-base text-white font-medium">{formatSimEnum(challenge.sim)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-white/50 uppercase tracking-widest mb-2">

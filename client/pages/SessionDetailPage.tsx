@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Share2, PenLine, FileText, Pencil, Trash2, Repeat } from "lucide-react";
+import { Share2, PenLine, FileText, Pencil, Trash2, Repeat, Timer } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
@@ -432,15 +432,34 @@ export default function SessionDetailPage() {
             (d.session as any)?.session && typeof (d.session as any).session === "object"
               ? ((d.session as any).session as SessionDetail)
               : d.session;
+          const outer = d.session as any;
           const mergedSession: SessionDetail = {
-            ...base,
-            trackName: d.session.trackName ?? (d as any).trackName ?? null,
-            carName: d.session.carName ?? (d as any).carName ?? null,
-            game: d.session.game ?? (d as any).game ?? null,
-            sim: d.session.sim ?? (d as any).sim ?? null,
+            // Preserve any outer fields (some backends nest and keep display fields on the outer object)
+            ...(outer && typeof outer === "object" ? outer : {}),
+            ...(base && typeof base === "object" ? base : {}),
+            // Prefer inner/base values first, then outer, then wrapper top-level
+            trackName: (base as any)?.trackName ?? (outer as any)?.trackName ?? (d as any).trackName ?? null,
+            carName: (base as any)?.carName ?? (outer as any)?.carName ?? (d as any).carName ?? null,
+            game: (base as any)?.game ?? (outer as any)?.game ?? (d as any).game ?? null,
+            sim: (base as any)?.sim ?? (outer as any)?.sim ?? (d as any).sim ?? null,
           };
           setSession(mergedSession);
-          setLapsData(Array.isArray(d.laps) ? d.laps : null);
+          const lapsPayload =
+            (Array.isArray(d.laps) ? d.laps : null) ??
+            (Array.isArray((d as any).laps) ? ((d as any).laps as unknown[]) : null) ??
+            (Array.isArray((outer as any)?.laps) ? ((outer as any).laps as unknown[]) : null) ??
+            (Array.isArray((base as any)?.laps) ? ((base as any).laps as unknown[]) : null);
+
+          // Only treat as BackendLapLite[] if it matches the expected lite shape.
+          const lite =
+            Array.isArray(lapsPayload) &&
+            lapsPayload.length > 0 &&
+            typeof (lapsPayload[0] as any)?.lapNumber === "number" &&
+            typeof (lapsPayload[0] as any)?.lapTimeMs === "number"
+              ? (lapsPayload as BackendLapLite[])
+              : null;
+
+          setLapsData(lite);
           setDefaultTelemetryLapNumber(d.defaultTelemetryLapNumber ?? null);
           setTelemetry(d.telemetry ?? null);
           if (import.meta.env.DEV) {
@@ -552,7 +571,11 @@ export default function SessionDetailPage() {
   )
     .filter((l) => Number.isFinite(l.lap) && l.lap > 0)
     .sort((a, b) => a.lap - b.lap);
-  const hasNoLaps = session.lapCount === 0 || laps.length === 0;
+  const totalLapsCount =
+    typeof session.lapCount === "number" && session.lapCount > 0
+      ? session.lapCount
+      : laps.length;
+  const hasNoLaps = totalLapsCount === 0;
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
   const canEditOrDelete = isManual && isOwner;
@@ -762,7 +785,7 @@ export default function SessionDetailPage() {
             Total Laps
           </p>
           <p className="text-lg font-semibold text-white">
-            {hasNoLaps ? 0 : (session.lapCount ?? "—")}
+            {totalLapsCount}
           </p>
         </div>
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
@@ -869,9 +892,16 @@ export default function SessionDetailPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="py-6 px-4 text-center text-sm text-white/50"
+                      className="py-10 px-4 text-center"
                     >
-                      No laps recorded yet.
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
+                          <Timer className="h-5 w-5 text-white/45" />
+                        </div>
+                        <div className="text-sm text-white/60">
+                          No laps recorded yet. Add your first lap to get started.
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ) : (
