@@ -13,6 +13,64 @@ import { SkeletonBlock } from "@/components/ui/skeleton";
 
 type Insight = { title: string; description: string; icon: string };
 
+function pickFirstString(...candidates: unknown[]): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string") {
+      const t = c.trim();
+      if (t && t !== "—") return t;
+    }
+  }
+  return null;
+}
+
+function resolveSessionFields(session: SessionDetail): {
+  track: string | null;
+  sim: string | null;
+  car: string | null;
+  carRawForFormat: string | null;
+} {
+  const s = session as any;
+  const track = pickFirstString(
+    session.track,
+    s.trackName,
+    s.track_name,
+    s.circuit,
+    s.circuitName,
+    s.circuit_name,
+    s.trackDisplay,
+    s.track_display
+  );
+  const sim = pickFirstString(
+    session.sim,
+    s.game,
+    s.gameName,
+    s.simName,
+    s.sim_name,
+    s.sourceSim
+  );
+  const car = pickFirstString(
+    session.vehicleDisplay,
+    s.vehicleDisplay,
+    s.vehicle_display,
+    session.car,
+    s.carName,
+    s.car_name,
+    s.vehicle,
+    s.vehicleName,
+    s.vehicle_name
+  );
+  // Keep a raw "car id/name" to feed into formatCarName if vehicleDisplay isn't provided.
+  const carRawForFormat = pickFirstString(
+    session.car,
+    s.carName,
+    s.car_name,
+    s.vehicle,
+    s.vehicleName,
+    s.vehicle_name
+  );
+  return { track, sim, car, carRawForFormat };
+}
+
 function buildInsights(session: SessionDetail): Insight[] {
   const insights: Insight[] = [];
   if ((session.lapCount ?? 0) > 0) {
@@ -64,9 +122,12 @@ function calcConsistencyScore(lapTimes: number[]): number | null {
 }
 
 function buildShareText(session: SessionDetail): string {
+  const resolved = resolveSessionFields(session);
   const type = formatSessionType(session?.sessionType);
-  const track = formatTrackName(session?.track);
-  const car = session?.vehicleDisplay ?? session?.car ?? "Unknown car";
+  const track = formatTrackName(resolved.track);
+  const car =
+    resolved.car ??
+    (resolved.carRawForFormat ? formatCarName(resolved.carRawForFormat) : "Unknown Car");
   const laps = session?.lapCount ?? 0;
   const best = formatLapMs(session?.bestLapMs);
   const lapTimes = (session?.laps ?? []).map((l) => l.timeMs).filter(Boolean);
@@ -405,6 +466,7 @@ export default function SessionDetailPage() {
   }
 
   const sessionTypeLabel = formatSessionTypeUpper(session.sessionType);
+  const resolved = resolveSessionFields(session);
   const laps = normalizeLaps(
     (lapsData
       ? lapsData.map((l) => ({
@@ -525,7 +587,7 @@ export default function SessionDetailPage() {
             )}
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-white">
-            {formatTrackName(session.track)}
+            {formatTrackName(resolved.track)}
           </h1>
           {import.meta.env.DEV && session.processingDurationMs != null && (
             <p className="mt-1 text-xs text-white/40">
@@ -636,7 +698,7 @@ export default function SessionDetailPage() {
             Car
           </p>
           <p className="text-lg font-semibold text-white">
-            {session.vehicleDisplay ?? formatCarName(session.car)}
+            {resolved.car ?? formatCarName(resolved.carRawForFormat)}
           </p>
         </div>
       </div>
@@ -655,7 +717,7 @@ export default function SessionDetailPage() {
                 Sim / Game
               </p>
               <p className="text-sm text-white">
-                {getSimDisplayName(session.sim)}
+                {getSimDisplayName(resolved.sim)}
               </p>
             </div>
             <div>
@@ -663,16 +725,16 @@ export default function SessionDetailPage() {
                 Track
               </p>
               <p className="text-sm text-white">
-                {formatTrackName(session.track)}
+                {formatTrackName(resolved.track)}
               </p>
             </div>
-            {(session.vehicleDisplay || session.car) && (
+            {(resolved.car || resolved.carRawForFormat) && (
               <div>
                 <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
                   Car
                 </p>
                 <p className="text-sm text-white">
-                  {session.vehicleDisplay ?? formatCarName(session.car)}
+                  {resolved.car ?? formatCarName(resolved.carRawForFormat)}
                 </p>
               </div>
             )}
