@@ -6,6 +6,8 @@ const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 /** Single source of truth for API base: VITE_API_URL, or production Render URL, or dev localhost. */
 const API_BASE =
   import.meta.env.VITE_API_URL ??
+  // Back-compat: some envs use this name in local dev.
+  import.meta.env.VITE_APEX_API_BASE_URL ??
   (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
 
 export { API_BASE };

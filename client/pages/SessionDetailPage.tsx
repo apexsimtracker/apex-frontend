@@ -422,10 +422,6 @@ export default function SessionDetailPage() {
     setError(null);
     apiGet<SessionDetailResponse>(`/api/sessions/${id}`)
       .then((data) => {
-        if (import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.log("SESSION RAW", data);
-        }
         if (data && typeof data === "object" && "session" in (data as any)) {
           const d = data as Exclude<SessionDetailResponse, SessionDetail>;
           const base =
@@ -462,30 +458,11 @@ export default function SessionDetailPage() {
           setLapsData(lite);
           setDefaultTelemetryLapNumber(d.defaultTelemetryLapNumber ?? null);
           setTelemetry(d.telemetry ?? null);
-          if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
-            console.log("[SessionDetailPage] /api/sessions/:id raw keys", Object.keys(d as any));
-            // eslint-disable-next-line no-console
-            console.log("[SessionDetailPage] /api/sessions/:id session keys", Object.keys((d as any).session ?? {}));
-            // eslint-disable-next-line no-console
-            console.log("[SessionDetailPage] merged fields", {
-              track: mergedSession.track,
-              trackName: mergedSession.trackName,
-              car: mergedSession.car,
-              carName: mergedSession.carName,
-              sim: mergedSession.sim,
-              game: mergedSession.game,
-            });
-          }
         } else {
           setSession(data as SessionDetail);
           setLapsData(null);
           setDefaultTelemetryLapNumber(null);
           setTelemetry(null);
-          if (import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
-            console.log("[SessionDetailPage] /api/sessions/:id raw (no wrapper)", data);
-          }
         }
         setError(null);
       })
