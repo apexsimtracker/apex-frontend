@@ -7,6 +7,7 @@ import {
   createDiscussionComment,
   DISCUSSION_CATEGORIES,
   ApiError,
+  resolveApiUrl,
   type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
@@ -196,7 +197,8 @@ export default function DiscussionDetail() {
     typeof (discussion.author as any).avatarUrl === "string"
       ? ((discussion.author as any).avatarUrl as string)
       : null;
-  const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
+  const avatarSrc = resolveApiUrl(avatarUrl);
+  const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
@@ -218,7 +220,7 @@ export default function DiscussionDetail() {
             >
               {hasAvatar ? (
                 <img
-                  src={avatarUrl!}
+                  src={avatarSrc!}
                   alt={authorDisplay}
                   className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
                 />
@@ -322,14 +324,15 @@ export default function DiscussionDetail() {
                         typeof (c.author as any).avatarUrl === "string"
                           ? ((c.author as any).avatarUrl as string)
                           : null;
-                      const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
+                      const avatarSrc = resolveApiUrl(avatarUrl);
+                      const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
                       const initials = getDiscussionAuthorInitials(authorLabel);
                       return (
                         <>
                           <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs font-medium flex-shrink-0">
                             {hasAvatar ? (
                               <img
-                                src={avatarUrl!}
+                                src={avatarSrc!}
                                 alt={authorLabel}
                                 className="w-9 h-9 rounded-full object-cover"
                               />

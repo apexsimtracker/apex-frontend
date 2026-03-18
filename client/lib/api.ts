@@ -12,6 +12,17 @@ const API_BASE =
 
 export { API_BASE };
 
+/** Resolve relative API-served assets (e.g. "/api/assets/...") to absolute URLs. */
+export function resolveApiUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const raw = String(url).trim();
+  if (!raw) return null;
+  if (/^(https?:)?\/\//i.test(raw)) return raw; // http(s) or protocol-relative
+  if (/^(data:|blob:)/i.test(raw)) return raw;
+  const path = raw.startsWith("/") ? raw : `/${raw}`;
+  return `${API_BASE}${path}`;
+}
+
 // Standardized API error
 export class ApiError extends Error {
   status: number;

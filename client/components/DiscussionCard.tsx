@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle, Eye } from "lucide-react";
 import { getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
+import { resolveApiUrl } from "@/lib/api";
 
 // Helper to convert username to URL slug
 const userNameToSlug = (name: string) => {
@@ -36,7 +37,8 @@ export default function DiscussionCard({
     author && typeof author === "object" && "avatarUrl" in author && typeof (author as any).avatarUrl === "string"
       ? ((author as any).avatarUrl as string)
       : null;
-  const hasAvatar = !!avatarUrl && avatarUrl.trim().length > 0;
+  const avatarSrc = resolveApiUrl(avatarUrl);
+  const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
@@ -55,7 +57,7 @@ export default function DiscussionCard({
             >
               {hasAvatar ? (
                 <img
-                  src={avatarUrl!}
+                  src={avatarSrc!}
                   alt={authorDisplay}
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
                 />

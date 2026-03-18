@@ -7,7 +7,7 @@ import {
   Share2,
   TrendingUp,
 } from "lucide-react";
-import { apiGet } from "@/lib/api";
+import { apiGet, resolveApiUrl } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 
 function pickFirstString(...candidates: unknown[]): string | null {
@@ -243,9 +243,9 @@ export default function ActivityDetail() {
           <div className="px-6 py-4 border-b border">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-3 flex-1">
-                {activity.userAvatar && activity.userAvatar.trim().length > 0 ? (
+                {resolveApiUrl(activity.userAvatar) ? (
                   <img
-                    src={activity.userAvatar}
+                    src={resolveApiUrl(activity.userAvatar)!}
                     alt={activity.userName}
                     className="w-10 h-10 rounded-full object-cover"
                   />

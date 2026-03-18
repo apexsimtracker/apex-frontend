@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import SimBadge from "./SimBadge";
 import { formatLapMs, formatCarName } from "@/lib/utils";
-import { apiGet, apiPost, API_BASE } from "@/lib/api";
+import { apiGet, apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
@@ -446,6 +446,8 @@ function RaceCardContent({
     (item.lapCount ?? 0) > 5 &&
     (item.consistencyScore ?? 0) >= 80;
 
+  const avatarSrc = resolveApiUrl(item.userAvatar);
+
   const sessionTypeKey = (item.sessionType ?? "").toString().trim();
   const sessionTypeLabel =
     sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
@@ -459,9 +461,9 @@ function RaceCardContent({
         {/* Header with user info */}
         <div className="px-4 sm:px-5 py-2.5 sm:py-3">
           <div className="w-full flex items-center gap-2 sm:gap-3">
-            {item.userAvatar && item.userAvatar.trim().length > 0 ? (
+            {avatarSrc && avatarSrc.trim().length > 0 ? (
               <img
-                src={item.userAvatar}
+                src={avatarSrc}
                 alt={item.userName}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover flex-shrink-0"
               />
