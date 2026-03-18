@@ -7,6 +7,7 @@ import { formatLapMs, formatCarName } from "@/lib/utils";
 import { apiGet, apiPost, API_BASE } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
+import { formatActivitySource } from "@/lib/enumFormat";
 import { formatTrackName } from "@/lib/tracks";
 
 const userNameToSlug = (name: string) => {
@@ -444,6 +445,15 @@ function RaceCardContent({
     !isManual &&
     (item.lapCount ?? 0) > 5 &&
     (item.consistencyScore ?? 0) >= 80;
+
+  const sessionTypeKey = (item.sessionType ?? "").toString().trim();
+  const sessionTypeLabel =
+    sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
+    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
+    sessionTypeKey.toUpperCase() === "AGENT"
+      ? formatActivitySource(sessionTypeKey)
+      : formatSessionTypeUpper(item.sessionType);
+
   return (
     <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
         {/* Header with user info */}
@@ -484,7 +494,7 @@ function RaceCardContent({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
-                    {formatSessionTypeUpper(item.sessionType)}
+                    {sessionTypeLabel}
                   </div>
                   <SimBadge sim={item.sim} />
                   {isManual && (

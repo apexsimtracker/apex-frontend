@@ -47,7 +47,7 @@ function CircularProgress({
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="rgb(240, 28, 28)"
+        stroke="rgba(255,255,255,0.9)"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}
