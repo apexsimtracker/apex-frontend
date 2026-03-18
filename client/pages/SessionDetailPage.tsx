@@ -715,33 +715,34 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {hasNoLaps ? (
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-8 text-center">
-          <h2 className="text-lg font-semibold text-white">
-            No laps recorded
-          </h2>
-          <p className="mt-2 text-sm text-white/60">
-            This session didn&apos;t contain any completed laps.
-          </p>
-        </div>
-      ) : (
-        <>
-          {bestLapLapNumber != null && (
-            <div className="mt-8 mb-2 text-sm text-white/60">
-              Best lap was{" "}
-              <span className="text-white">Lap {bestLapLapNumber}</span>
-              {improvementMs > 0 ? (
-                <>
-                  {" "}
-                  — improved by{" "}
-                  <span className="text-white">
-                    {formatLapDelta(improvementMs)}
-                  </span>{" "}
-                  from Lap 1
-                </>
-              ) : null}
-            </div>
-          )}
+      <>
+        {hasNoLaps && (
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-8 text-center">
+            <h2 className="text-lg font-semibold text-white">
+              No laps recorded
+            </h2>
+            <p className="mt-2 text-sm text-white/60">
+              This session didn&apos;t contain any completed laps.
+            </p>
+          </div>
+        )}
+
+        {!hasNoLaps && bestLapLapNumber != null && (
+          <div className="mt-8 mb-2 text-sm text-white/60">
+            Best lap was{" "}
+            <span className="text-white">Lap {bestLapLapNumber}</span>
+            {improvementMs > 0 ? (
+              <>
+                {" "}
+                — improved by{" "}
+                <span className="text-white">
+                  {formatLapDelta(improvementMs)}
+                </span>{" "}
+                from Lap 1
+              </>
+            ) : null}
+          </div>
+        )}
 
           {/* Ideal Lap — best S1 + S2 + S3 + lap time across like lap table */}
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
@@ -815,7 +816,17 @@ export default function SessionDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleLaps.map((row, index) => {
+                {visibleLaps.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="py-6 px-4 text-center text-sm text-white/50"
+                    >
+                      No laps recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  visibleLaps.map((row, index) => {
                   const isFastest =
                     bestLapMsFromLaps != null &&
                     row.timeMs === bestLapMsFromLaps;
@@ -882,7 +893,8 @@ export default function SessionDetailPage() {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
             {canShowMoreLaps && (
@@ -1017,8 +1029,7 @@ export default function SessionDetailPage() {
               </div>
             )}
           </div>
-        </>
-      )}
+      </>
 
       <DeleteConfirmModal
         isOpen={showDeleteModal}
