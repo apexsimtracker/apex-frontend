@@ -928,23 +928,70 @@ export default function SessionDetailPage() {
               </div>
             )
           ) : (
-            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
-              <div className="text-xs uppercase tracking-wider text-white/50">
-                Telemetry Analysis
-              </div>
-              <p className="mt-2 text-base font-semibold text-white">
-                Telemetry Analysis is available with Apex Pro
-              </p>
-              <p className="mt-1 text-sm text-white/60">
-                Upgrade to unlock speed, brake, throttle and gear traces for your best lap
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("/upgrade")}
-                className="mt-4 inline-flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
+            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center relative overflow-hidden">
+              {/* Subtle preview background */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-60"
               >
-                Upgrade to Pro
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
+                <svg
+                  className="absolute inset-0 w-full h-full"
+                  viewBox="0 0 1000 260"
+                  preserveAspectRatio="none"
+                >
+                  <polyline
+                    points="0,200 120,160 220,170 320,120 420,140 520,90 620,110 740,70 860,85 1000,60"
+                    fill="none"
+                    stroke="rgba(56,189,248,0.22)"
+                    strokeWidth="3"
+                  />
+                  <polyline
+                    points="0,220 120,210 220,180 320,190 420,150 520,160 620,120 740,140 860,110 1000,130"
+                    fill="none"
+                    stroke="rgba(52,211,153,0.18)"
+                    strokeWidth="3"
+                  />
+                  <polyline
+                    points="0,240 140,230 260,235 380,210 500,220 620,195 740,205 860,175 1000,185"
+                    fill="none"
+                    stroke="rgba(251,191,36,0.16)"
+                    strokeWidth="3"
+                  />
+                  {/* soft grid */}
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <line
+                      key={`tg-h-${i}`}
+                      x1="0"
+                      x2="1000"
+                      y1={String(40 + i * 36)}
+                      y2={String(40 + i * 36)}
+                      stroke="rgba(255,255,255,0.06)"
+                      strokeWidth="1"
+                    />
+                  ))}
+                </svg>
+              </div>
+
+              <div className="relative">
+                <div className="text-xs uppercase tracking-wider text-white/50">
+                  Telemetry Analysis
+                </div>
+                <p className="mt-2 text-lg font-semibold text-white">
+                  Telemetry Analysis is available with Apex Pro
+                </p>
+                <p className="mt-1 text-sm text-white/60">
+                  Unlock speed, brake, throttle and gear data for your best lap
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/upgrade")}
+                  className="mt-5 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                  style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                >
+                  Upgrade to Apex Pro
+                </button>
+              </div>
             </div>
           )}
 
