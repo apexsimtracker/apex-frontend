@@ -641,82 +641,81 @@ export default function SessionDetailPage() {
         </div>
       </div>
 
-      {isManual ? (
-        <>
-          {/* Manual Activity Details Card */}
-          <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-white/60" />
-              <h2 className="text-lg font-semibold text-white">
-                Activity Details
-              </h2>
+      {isManual && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-white/60" />
+            <h2 className="text-lg font-semibold text-white">
+              Activity Details
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                Sim / Game
+              </p>
+              <p className="text-sm text-white">
+                {getSimDisplayName(session.sim)}
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                Track
+              </p>
+              <p className="text-sm text-white">
+                {formatTrackName(session.track)}
+              </p>
+            </div>
+            {(session.vehicleDisplay || session.car) && (
               <div>
                 <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
-                  Sim / Game
+                  Car
                 </p>
                 <p className="text-sm text-white">
-                  {getSimDisplayName(session.sim)}
+                  {session.vehicleDisplay ?? formatCarName(session.car)}
                 </p>
               </div>
+            )}
+            {session.position != null && (
               <div>
                 <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
-                  Track
+                  Position
                 </p>
                 <p className="text-sm text-white">
-                  {formatTrackName(session.track)}
+                  P{session.position}
+                  {session.totalDrivers != null && (
+                    <span className="text-white/60">
+                      {" "}/ {session.totalDrivers}
+                    </span>
+                  )}
                 </p>
               </div>
-              {(session.vehicleDisplay || session.car) && (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
-                    Car
-                  </p>
-                  <p className="text-sm text-white">
-                    {session.vehicleDisplay ?? formatCarName(session.car)}
-                  </p>
-                </div>
-              )}
-              {session.position != null && (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
-                    Position
-                  </p>
-                  <p className="text-sm text-white">
-                    P{session.position}
-                    {session.totalDrivers != null && (
-                      <span className="text-white/60">
-                        {" "}/ {session.totalDrivers}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
-              {session.bestLapMs != null && (
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
-                    Best Lap
-                  </p>
-                  <p className="text-sm text-white font-mono">
-                    {formatLapMs(session.bestLapMs)}
-                  </p>
-                </div>
-              )}
-            </div>
-            {session.notes && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <p className="text-xs uppercase tracking-wider text-white/50 mb-2">
-                  Notes
+            )}
+            {session.bestLapMs != null && (
+              <div>
+                <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+                  Best Lap
                 </p>
-                <p className="text-sm text-white/80 whitespace-pre-wrap">
-                  {session.notes}
+                <p className="text-sm text-white font-mono">
+                  {formatLapMs(session.bestLapMs)}
                 </p>
               </div>
             )}
           </div>
-        </>
-      ) : hasNoLaps ? (
+          {session.notes && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-xs uppercase tracking-wider text-white/50 mb-2">
+                Notes
+              </p>
+              <p className="text-sm text-white/80 whitespace-pre-wrap">
+                {session.notes}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasNoLaps ? (
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-8 text-center">
           <h2 className="text-lg font-semibold text-white">
             No laps recorded
