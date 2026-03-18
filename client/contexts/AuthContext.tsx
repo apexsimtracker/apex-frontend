@@ -26,7 +26,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const handlingExpiry = useRef(false);
 
+  const hasToken = () =>
+    typeof localStorage !== "undefined" &&
+    Boolean(localStorage.getItem("apex_token"));
+
   const refreshUser = useCallback(async () => {
+    if (!hasToken()) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     try {
       setError(null);
       const data = await authMe();
@@ -46,6 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshMe = useCallback(async () => {
+    if (!hasToken()) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       setError(null);
@@ -65,6 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handlingExpiry.current = true;
 
       try {
+        if (!hasToken()) {
+          setUser(null);
+          return;
+        }
         const data = await authMe();
         setUser(data);
       } catch {
