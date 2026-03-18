@@ -10,6 +10,16 @@ import {
 import { apiGet } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 
+function pickFirstString(...candidates: unknown[]): string | null {
+  for (const c of candidates) {
+    if (typeof c === "string") {
+      const t = c.trim();
+      if (t && t !== "—") return t;
+    }
+  }
+  return null;
+}
+
 // Session detail from backend (GET /api/activity/:id). Add endpoint if missing.
 export type SessionDetail = {
   id: string;
@@ -24,6 +34,8 @@ export type SessionDetail = {
   // Optional: include when backend supports them
   userAvatar?: string | null;
   game?: string | null;
+  trackName?: string | null;
+  carName?: string | null;
   raceTime?: string | null;
   totalKm?: number | null;
   avgLapTime?: string | number | null;
@@ -82,11 +94,38 @@ type ActivityView = {
 
 function sessionToView(s: SessionDetail): ActivityView {
   const avgLap = s.avgLapTime != null ? String(s.avgLapTime) : "—";
+  const any = s as any;
+  const game = pickFirstString(
+    s.game,
+    any.game,
+    any.sim,
+    any.simName,
+    any.sim_name,
+    any.sourceSim
+  );
+  const track = pickFirstString(
+    s.trackName,
+    any.trackName,
+    any.track_name,
+    s.track,
+    any.track,
+    any.circuit,
+    any.circuitName
+  );
+  const car = pickFirstString(
+    s.carName,
+    any.carName,
+    any.car_name,
+    s.car,
+    any.car,
+    any.vehicle,
+    any.vehicleName
+  );
   return {
     userName: s.driverName,
     userAvatar: s.userAvatar ?? null,
-    game: s.game ?? "—",
-    track: s.track ?? "—",
+    game: game ?? "—",
+    track: track ?? "—",
     position: s.position ?? 0,
     totalRacers: s.totalDrivers ?? 0,
     fastestLap: formatLapMs(s.bestLapMs),
