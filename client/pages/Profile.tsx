@@ -89,10 +89,19 @@ const emptyEditForm: EditForm = {
   tagline: "",
 };
 
+function withCacheBust(url: string, stamp: number): string {
+  return `${url}${url.includes("?") ? "&" : "?"}t=${stamp}`;
+}
+
+function stripQuery(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  const idx = url.indexOf("?");
+  return idx >= 0 ? url.slice(0, idx) : url;
+}
+
 export default function Profile() {
   const { user, loading, refreshMe, setUser } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [avatarBust, setAvatarBust] = useState<number>(0);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
   const [followsLoading, setFollowsLoading] = useState(false);
@@ -228,6 +237,7 @@ export default function Profile() {
         });
       }
       let avatarUrlToSet: string | undefined;
+      let uploadedAvatarForSession: string | undefined;
       if (avatarFile) {
         try {
           if (import.meta.env.DEV) {
@@ -239,8 +249,8 @@ export default function Profile() {
           }
           const uploadRes = await uploadProfileAvatar(avatarFile);
           avatarUrlToSet = uploadRes.avatarUrl;
-          // Force immediate browser refresh when backend keeps same avatar path.
-          setAvatarBust(Date.now());
+          // Persist cache-busted avatar in global auth user for this session.
+          uploadedAvatarForSession = withCacheBust(avatarUrlToSet, Date.now());
           if (import.meta.env.DEV) {
             console.log("[Profile] Avatar upload response:", uploadRes);
           }
@@ -276,7 +286,10 @@ export default function Profile() {
 
       const userWithAvatar = {
         ...updated,
-        avatarUrl: avatarUrlToSet ?? (updated as AuthUser).avatarUrl ?? undefined,
+        avatarUrl:
+          uploadedAvatarForSession ??
+          (updated as AuthUser).avatarUrl ??
+          undefined,
       };
       if (import.meta.env.DEV) {
         console.log("[Profile] after save — userWithAvatar.avatarUrl:", userWithAvatar.avatarUrl ?? "(missing)");
@@ -303,11 +316,18 @@ export default function Profile() {
         try {
           const freshUser = await authMe();
           const freshAvatar = freshUser.avatarUrl ?? undefined;
+          const freshAvatarBase = stripQuery(freshAvatar);
+          const previousAvatarBase = stripQuery(previousAvatarUrl);
           const shouldPreserveUploadedAvatar =
-            !freshAvatar || freshAvatar === previousAvatarUrl;
+            !freshAvatarBase || freshAvatarBase === previousAvatarBase;
           setUser(
             shouldPreserveUploadedAvatar
-              ? { ...freshUser, avatarUrl: avatarUrlToSet }
+              ? {
+                  ...freshUser,
+                  avatarUrl:
+                    uploadedAvatarForSession ??
+                    withCacheBust(avatarUrlToSet, Date.now()),
+                }
               : freshUser
           );
         } catch {
@@ -371,11 +391,7 @@ export default function Profile() {
       }
     })();
 
-  const resolvedAvatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
-  const avatarUrl =
-    resolvedAvatarUrl && avatarBust > 0
-      ? `${resolvedAvatarUrl}${resolvedAvatarUrl.includes("?") ? "&" : "?"}t=${avatarBust}`
-      : resolvedAvatarUrl;
+  const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
   if (import.meta.env.DEV) {
     console.log("[Profile] render — user.avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)", "→ resolved avatarUrl passed to ProfileView:", avatarUrl ?? "(none, will show placeholder)");
   }
