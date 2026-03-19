@@ -77,7 +77,8 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
 }
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MIN_AVATAR_DIMENSION = 400; // Require at least 400x400 for quality
 
 type EditForm = {
   displayName: string;
@@ -97,6 +98,24 @@ function stripQuery(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
   const idx = url.indexOf("?");
   return idx >= 0 ? url.slice(0, idx) : url;
+}
+
+async function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width, height });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Invalid image file."));
+    };
+    img.src = objectUrl;
+  });
 }
 
 export default function Profile() {
@@ -151,11 +170,22 @@ export default function Profile() {
       return;
     }
     if (file.size > MAX_AVATAR_SIZE_BYTES) {
-      setAvatarError("Image must be 2 MB or smaller.");
+      setAvatarError("Image must be 5 MB or smaller.");
       return;
     }
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    void (async () => {
+      try {
+        const { width, height } = await readImageDimensions(file);
+        if (width < MIN_AVATAR_DIMENSION || height < MIN_AVATAR_DIMENSION) {
+          setAvatarError(`Image must be at least ${MIN_AVATAR_DIMENSION}x${MIN_AVATAR_DIMENSION}px.`);
+          return;
+        }
+        setAvatarFile(file);
+        setAvatarPreview(URL.createObjectURL(file));
+      } catch {
+        setAvatarError("Invalid image file.");
+      }
+    })();
   }, [avatarPreview]);
 
   const clearAvatarSelection = useCallback(() => {
@@ -611,7 +641,7 @@ export default function Profile() {
                 Profile picture
               </label>
               <p className="text-xs text-muted-foreground mb-2">
-                Choose an image from your device (JPEG, PNG, GIF, or WebP, max 2 MB).
+                Choose an image from your device (JPEG, PNG, GIF, or WebP, at least 400x400, max 5 MB).
               </p>
               <input
                 ref={avatarInputRef}
