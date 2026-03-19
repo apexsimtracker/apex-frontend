@@ -23,7 +23,11 @@ export function resolveApiUrl(url: string | null | undefined): string | null {
   if (!raw.startsWith("/api/")) return raw;
 
   const base = import.meta.env.VITE_APEX_API_BASE_URL ?? API_BASE;
-  const normalizedBase = String(base).replace(/\/+$/, "");
+  let normalizedBase = String(base).trim().replace(/\/+$/, "");
+  // Avoid mixed-content avatar loads on HTTPS pages.
+  if (/^http:\/\//i.test(normalizedBase)) {
+    normalizedBase = normalizedBase.replace(/^http:\/\//i, "https://");
+  }
   return `${normalizedBase}${raw}`;
 }
 
