@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ActivityCard, { type SessionPatch } from "./ActivityCard";
 import { type SessionItem } from "@/lib/groupSessions";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ActivityOwner = {
   displayName?: string | null;
@@ -10,21 +11,38 @@ type ActivityOwner = {
   avatarUrl?: string | null;
 };
 
-function getActivityHeaderFromOwner(session: SessionItem): {
+function getActivityHeaderFromOwner(
+  session: SessionItem,
+  currentUser?: { id: string; avatarUrl?: string | null } | null
+): {
   name: string;
   avatar: string | null;
 } {
   const owner = (session as unknown as { owner?: ActivityOwner }).owner;
+  const sessionAny = session as any;
+  const sessionOwnerId =
+    sessionAny.authorId ??
+    ((owner && typeof owner === "object" && "id" in owner && typeof (owner as any).id === "string")
+      ? ((owner as any).id as string)
+      : null);
+  const isCurrentUsersSession =
+    Boolean(currentUser?.id) && Boolean(sessionOwnerId) && currentUser!.id === sessionOwnerId;
   const name =
-    (session as any).authorName?.trim() ||
+    sessionAny.authorName?.trim() ||
     owner?.displayName?.trim() ||
     owner?.username?.trim() ||
     session.driverName ||
     "—";
+  const currentUserAvatar =
+    currentUser?.avatarUrl && currentUser.avatarUrl.trim().length > 0
+      ? currentUser.avatarUrl
+      : null;
   const avatar =
-    ((session as any).authorAvatarUrl &&
-    (session as any).authorAvatarUrl.trim().length > 0
-      ? (session as any).authorAvatarUrl
+    (isCurrentUsersSession && currentUserAvatar
+      ? currentUserAvatar
+      : sessionAny.authorAvatarUrl &&
+    sessionAny.authorAvatarUrl.trim().length > 0
+      ? sessionAny.authorAvatarUrl
       : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
         ? owner.avatarUrl
         : null);
@@ -52,6 +70,7 @@ export default function BundledActivityCard({
   overflowCount,
   onSessionPatch,
 }: BundledActivityCardProps) {
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentSession = sessions[currentIndex];
 
@@ -83,6 +102,8 @@ export default function BundledActivityCard({
 
   const firstSession = sessions[0];
   const driverName = firstSession?.driverName ?? "Unknown Driver";
+
+  const currentHeader = getActivityHeaderFromOwner(currentSession, user ?? null);
 
   return (
     <div
@@ -131,8 +152,8 @@ export default function BundledActivityCard({
           <Link to={`/sessions/${currentSession.id}`} className="block">
             <ActivityCard
               id={currentSession.id}
-            userName={getActivityHeaderFromOwner(currentSession).name}
-            userAvatar={getActivityHeaderFromOwner(currentSession).avatar}
+              userName={currentHeader.name}
+              userAvatar={currentHeader.avatar}
               game="—"
               car={currentSession.car ?? "—"}
               vehicleDisplay={currentSession.vehicleDisplay}

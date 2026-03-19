@@ -24,19 +24,35 @@ type RawActivityItem = SessionItem & {
   };
 };
 
-function getActivityHeaderFromOwner(session: RawActivityItem): {
+function getActivityHeaderFromOwner(
+  session: RawActivityItem,
+  currentUser?: { id: string; avatarUrl?: string | null } | null
+): {
   name: string;
   avatar: string | null;
 } {
   const owner = session.owner;
+  const sessionOwnerId =
+    session.authorId ??
+    ((owner && typeof owner === "object" && "id" in owner && typeof (owner as any).id === "string")
+      ? ((owner as any).id as string)
+      : null);
+  const isCurrentUsersSession =
+    Boolean(currentUser?.id) && Boolean(sessionOwnerId) && currentUser!.id === sessionOwnerId;
   const name =
     session.authorName?.trim() ||
     owner?.displayName?.trim() ||
     owner?.username?.trim() ||
     session.driverName ||
     "—";
+  const currentUserAvatar =
+    currentUser?.avatarUrl && currentUser.avatarUrl.trim().length > 0
+      ? currentUser.avatarUrl
+      : null;
   const avatar =
-    (session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
+    (isCurrentUsersSession && currentUserAvatar
+      ? currentUserAvatar
+      : session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
       ? session.authorAvatarUrl
       : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
         ? owner.avatarUrl
@@ -316,7 +332,7 @@ export default function Index() {
                     );
                   }
                   const session = item.session;
-                  const header = getActivityHeaderFromOwner(session as RawActivityItem);
+                  const header = getActivityHeaderFromOwner(session as RawActivityItem, user ?? null);
                   return (
                     <Link
                       key={getActivityKey(item)}
