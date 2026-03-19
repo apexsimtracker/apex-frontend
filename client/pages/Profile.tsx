@@ -91,6 +91,7 @@ const emptyEditForm: EditForm = {
 export default function Profile() {
   const { user, loading, refreshMe, setUser } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [avatarBust, setAvatarBust] = useState<number>(0);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
   const [followsLoading, setFollowsLoading] = useState(false);
@@ -236,6 +237,8 @@ export default function Profile() {
           }
           const uploadRes = await uploadProfileAvatar(avatarFile);
           avatarUrlToSet = uploadRes.avatarUrl;
+          // Force immediate browser refresh when backend keeps same avatar path.
+          setAvatarBust(Date.now());
           if (import.meta.env.DEV) {
             console.log("[Profile] Avatar upload response:", uploadRes);
           }
@@ -346,7 +349,11 @@ export default function Profile() {
       }
     })();
 
-  const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
+  const resolvedAvatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
+  const avatarUrl =
+    resolvedAvatarUrl && avatarBust > 0
+      ? `${resolvedAvatarUrl}${resolvedAvatarUrl.includes("?") ? "&" : "?"}t=${avatarBust}`
+      : resolvedAvatarUrl;
   if (import.meta.env.DEV) {
     console.log("[Profile] render — user.avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)", "→ resolved avatarUrl passed to ProfileView:", avatarUrl ?? "(none, will show placeholder)");
   }
