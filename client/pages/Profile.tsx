@@ -5,6 +5,7 @@ import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
 import {
   resolveApiUrl,
+  authMe,
   getFollowers,
   getFollowing,
   getProfileSummary,
@@ -210,6 +211,7 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (!user) return;
+    const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
     const trimmedName = editForm.displayName.trim();
     if (trimmedName.length < 2 || trimmedName.length > 40) {
       setEditError("Display name must be between 2 and 40 characters.");
@@ -293,7 +295,27 @@ export default function Profile() {
             }
           : null
       );
-      await refreshMe();
+
+      // Re-sync from backend only after upload/save has settled.
+      // If backend still returns stale avatar briefly, preserve the freshly uploaded URL.
+      if (avatarUrlToSet) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        try {
+          const freshUser = await authMe();
+          const freshAvatar = freshUser.avatarUrl ?? undefined;
+          const shouldPreserveUploadedAvatar =
+            !freshAvatar || freshAvatar === previousAvatarUrl;
+          setUser(
+            shouldPreserveUploadedAvatar
+              ? { ...freshUser, avatarUrl: avatarUrlToSet }
+              : freshUser
+          );
+        } catch {
+          // Keep optimistic user state if refresh fails.
+        }
+      } else {
+        await refreshMe();
+      }
 
       setEditSuccess(true);
       clearAvatarSelection();
