@@ -189,7 +189,10 @@ export default function DiscussionDetail() {
 
   const authorDisplay = getDiscussionAuthorDisplay(discussion.author);
   const description =
-    discussion.description ?? discussion.excerpt ?? discussion.title;
+    discussion.content ??
+    discussion.description ??
+    discussion.excerpt ??
+    discussion.title;
   const avatarUrl =
     discussion.author &&
     typeof discussion.author === "object" &&
@@ -273,7 +276,10 @@ export default function DiscussionDetail() {
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Reply className="w-4 h-4" />
               <span className="text-xs font-medium">
-                {discussion.commentCount ?? discussion.replies ?? 0}
+                {discussion.commentCount ??
+                  discussion.commentsCount ??
+                  discussion.replies ??
+                  0}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">

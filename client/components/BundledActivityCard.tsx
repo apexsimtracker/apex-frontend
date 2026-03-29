@@ -149,33 +149,31 @@ export default function BundledActivityCard({
 
         {/* Current Session Card */}
         <div className="px-2 py-2">
-          <Link to={`/sessions/${currentSession.id}`} className="block">
-            <ActivityCard
-              id={currentSession.id}
-              userName={currentHeader.name}
-              userAvatar={currentHeader.avatar}
-              game="—"
-              car={currentSession.car ?? "—"}
-              vehicleDisplay={currentSession.vehicleDisplay}
-              track={currentSession.track ?? "—"}
-              position={currentSession.position ?? null}
-              totalRacers={currentSession.totalDrivers ?? null}
-              sessionType={currentSession.sessionType}
-              sim={currentSession.sim}
-              source={currentSession.source}
-              bestLapMs={currentSession.bestLapMs}
-              lapCount={currentSession.lapCount}
-              consistencyScore={currentSession.consistencyScore}
-              likeCount={currentSession.likeCount ?? 0}
-              commentCount={currentSession.commentCount ?? 0}
-              likedByMe={currentSession.likedByMe ?? false}
-              score={0}
-              timestamp={timeAgo(currentSession.createdAt)}
-              likes={currentSession.likeCount ?? 0}
-              comments={currentSession.commentCount ?? 0}
-              onSessionPatch={onSessionPatch}
-            />
-          </Link>
+          <ActivityCard
+            id={currentSession.id}
+            userName={currentHeader.name}
+            userAvatar={currentHeader.avatar}
+            game="—"
+            car={currentSession.car ?? "—"}
+            vehicleDisplay={currentSession.vehicleDisplay}
+            track={currentSession.track ?? "—"}
+            position={currentSession.position ?? null}
+            totalRacers={currentSession.totalDrivers ?? null}
+            sessionType={currentSession.sessionType}
+            sim={currentSession.sim}
+            source={currentSession.source}
+            bestLapMs={currentSession.bestLapMs}
+            lapCount={currentSession.lapCount}
+            consistencyScore={currentSession.consistencyScore}
+            likeCount={currentSession.likeCount ?? 0}
+            commentCount={currentSession.commentCount ?? 0}
+            likedByMe={currentSession.likedByMe ?? false}
+            score={0}
+            timestamp={timeAgo(currentSession.createdAt)}
+            likes={currentSession.likeCount ?? 0}
+            comments={currentSession.commentCount ?? 0}
+            onSessionPatch={onSessionPatch}
+          />
         </div>
 
         {/* Dot Indicators */}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
@@ -334,41 +334,36 @@ export default function Index() {
                   const session = item.session;
                   const header = getActivityHeaderFromOwner(session as RawActivityItem, user ?? null);
                   return (
-                    <Link
+                    <ActivityCard
                       key={getActivityKey(item)}
-                      to={`/sessions/${session.id}`}
-                      className="block"
-                    >
-                      <ActivityCard
-                        id={session.id}
-                        userName={header.name}
-                        userAvatar={header.avatar}
-                        game="—"
-                        car={session.car ?? "—"}
-                        vehicleDisplay={session.vehicleDisplay}
-                        track={session.track ?? "—"}
-                        position={session.position ?? null}
-                        totalRacers={session.totalDrivers ?? null}
-                        sessionType={session.sessionType}
-                        sim={session.sim}
-                        source={session.source}
-                        bestLapMs={session.bestLapMs}
-                        lapCount={session.lapCount}
-                        consistencyScore={session.consistencyScore}
-                        likeCount={session.likeCount ?? 0}
-                        commentCount={session.commentCount ?? 0}
-                        likedByMe={session.likedByMe ?? false}
-                        score={0}
-                        timestamp={timeAgo(session.createdAt)}
-                        likes={session.likeCount ?? 0}
-                        comments={session.commentCount ?? 0}
-                        onSessionPatch={(id, patch) => {
-                          setActivity((prev) =>
-                            prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
-                          );
-                        }}
-                      />
-                    </Link>
+                      id={session.id}
+                      userName={header.name}
+                      userAvatar={header.avatar}
+                      game="—"
+                      car={session.car ?? "—"}
+                      vehicleDisplay={session.vehicleDisplay}
+                      track={session.track ?? "—"}
+                      position={session.position ?? null}
+                      totalRacers={session.totalDrivers ?? null}
+                      sessionType={session.sessionType}
+                      sim={session.sim}
+                      source={session.source}
+                      bestLapMs={session.bestLapMs}
+                      lapCount={session.lapCount}
+                      consistencyScore={session.consistencyScore}
+                      likeCount={session.likeCount ?? 0}
+                      commentCount={session.commentCount ?? 0}
+                      likedByMe={session.likedByMe ?? false}
+                      score={0}
+                      timestamp={timeAgo(session.createdAt)}
+                      likes={session.likeCount ?? 0}
+                      comments={session.commentCount ?? 0}
+                      onSessionPatch={(id, patch) => {
+                        setActivity((prev) =>
+                          prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
+                        );
+                      }}
+                    />
                   );
                 })}
             </>

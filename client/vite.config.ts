@@ -37,5 +37,12 @@ export default defineConfig({
 
   server: {
     port: 8080,
+    // Forward /api to local Fastify so same-origin requests work if you use a relative API base.
+    proxy: {
+      "/api": {
+        target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://127.0.0.1:10000",
+        changeOrigin: true,
+      },
+    },
   },
 });

@@ -119,10 +119,17 @@ export default function Challenges() {
           return hay.includes(q);
         });
 
+  const isTournament = (c: CompetitionSummary) =>
+    (c as { kind?: string }).kind === "tournament";
+
+  const weeklyPool = filtered.filter((c) => !isTournament(c));
+  const tournamentPool = filtered.filter(isTournament);
+
   const featured =
-    filtered.find((c) => c.status === "LIVE") ?? filtered[0] ?? null;
-  const rest = featured ? filtered.filter((c) => c.id !== featured.id) : filtered;
-  const filteredTournaments = rest;
+    weeklyPool.find((c) => c.status === "LIVE") ?? weeklyPool[0] ?? null;
+  const restWeekly = featured
+    ? weeklyPool.filter((c) => c.id !== featured.id)
+    : weeklyPool;
 
   if (loading) {
     return (
@@ -259,7 +266,7 @@ export default function Challenges() {
                   No competitions match your search.
                 </p>
               ) : (
-                rest.map((c) => (
+                restWeekly.map((c) => (
                   <ChallengeCard
                     key={c.id}
                     {...competitionToCardProps(c)}
@@ -290,7 +297,7 @@ export default function Challenges() {
                   No competitions match your search.
                 </p>
               ) : (
-                filteredTournaments.map((c) => (
+                tournamentPool.map((c) => (
                   <ChallengeCard
                     key={c.id}
                     {...competitionToCardProps(c)}

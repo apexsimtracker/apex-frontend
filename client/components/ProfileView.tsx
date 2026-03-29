@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, User } from "lucide-react";
 import type { ProfileSummary } from "../lib/api";
-import { formatLapMs, formatCarName } from "../lib/utils";
+import { formatLapMs, formatCarName, formatAvgFinishOneDecimal } from "../lib/utils";
 import SimBadge from "./SimBadge";
 import { getSimDisplayName } from "../lib/sim";
 import { resolveApiUrl } from "@/lib/api";
@@ -70,9 +70,6 @@ export function ProfileView({
 
   const avatarSrc = resolveApiUrl(avatarUrl);
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
-  if (import.meta.env.DEV) {
-    console.log("[ProfileView] avatarUrl prop:", avatarUrl ?? "(missing)", "→ rendered avatar src:", showAvatarImg ? avatarSrc : "(placeholder)");
-  }
 
   const raceHistory = profile.raceHistory ?? [];
   const displayedHistory = raceHistory.slice(0, displayedRaces);
@@ -254,7 +251,7 @@ export function ProfileView({
                 Avg
               </p>
               <p className="text-sm sm:text-base font-semibold text-foreground">
-                {safeValue(profile.totals?.avgFinish)}
+                {formatAvgFinishOneDecimal(profile.totals?.avgFinish)}
               </p>
             </div>
           </div>
@@ -374,7 +371,7 @@ export function ProfileView({
                   Avg Finish
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {safeValue(profile.weekly?.avgFinish)}
+                  {formatAvgFinishOneDecimal(profile.weekly?.avgFinish)}
                 </p>
               </div>
               <div>
@@ -702,7 +699,7 @@ export function ProfileView({
                           <span className="text-muted-foreground">Win %</span>
                           <span className="font-semibold text-foreground">
                             {game.winPct != null && Number.isFinite(game.winPct)
-                              ? `${game.winPct}%`
+                              ? `${game.winPct.toFixed(1)}%`
                               : "—"}
                           </span>
                         </div>
@@ -713,7 +710,7 @@ export function ProfileView({
                           <span className="font-semibold text-foreground">
                             {game.podiumPct != null &&
                             Number.isFinite(game.podiumPct)
-                              ? `${game.podiumPct}%`
+                              ? `${game.podiumPct.toFixed(1)}%`
                               : "—"}
                           </span>
                         </div>

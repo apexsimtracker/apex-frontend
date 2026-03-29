@@ -6,14 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Author display for discussion posts/comments.
- *  Backend contract: author is an object { id, displayName, avatarUrl }.
- *  We read author.displayName and fall back to "User" if missing. */
+ *  Backend: { id, displayName, avatarUrl }. Empty → em dash; literal "Unknown" → neutral label. */
 export function getDiscussionAuthorDisplay(author: unknown): string {
   if (!author || typeof author !== "object") return "—";
   const o = author as { displayName?: string | null };
   const displayName =
     typeof o.displayName === "string" ? o.displayName.trim() : "";
-  return displayName || "—";
+  if (!displayName) return "—";
+  if (displayName === "Unknown") return "Community member";
+  return displayName;
 }
 
 /** Initials from the final display name: first 2 chars, or single char for short names (e.g. "User" → "U"). */
@@ -108,6 +109,12 @@ export const formatLapDelta = (ms: number | null | undefined): string => {
   return `${(ms / 1000).toFixed(3)}s`;
 };
 
+/** Average finish for profile stats: one decimal place (e.g. 3.5). */
+export function formatAvgFinishOneDecimal(v: number | null | undefined): string {
+  if (v === null || v === undefined || !Number.isFinite(v)) return "—";
+  return Math.round(v).toString();
+}
+
 export function formatDuration(ms: number): string {
   const totalMinutes = Math.floor(ms / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -177,6 +184,10 @@ export function formatCarName(car: string | null | undefined): string {
     if (!word) return "";
     
     const upper = word.toUpperCase();
+
+    // e.g. "rb19" → "RB19" when attached to manufacturer name
+    const modelMatch = /^rb\d{2}$/i.test(word);
+    if (modelMatch) return upper;
     
     // Pure numbers stay as-is
     if (/^\d+$/.test(word)) return word;

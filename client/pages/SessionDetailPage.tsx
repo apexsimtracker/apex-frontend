@@ -777,7 +777,7 @@ export default function SessionDetailPage() {
             Car
           </p>
           <p className="text-lg font-semibold text-white">
-            {resolved.car ?? formatCarName(resolved.carRawForFormat)}
+            {formatCarName(resolved.car ?? resolved.carRawForFormat ?? null)}
           </p>
         </div>
       </div>

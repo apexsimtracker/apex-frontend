@@ -3,12 +3,15 @@ import { getToken } from "@/auth/token";
 /** Production backend (Render). Used when VITE_API_URL is unset in production builds. */
 const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 
-/** Single source of truth for API base: VITE_API_URL, or production Render URL, or dev localhost. */
+/** Default local API port (matches apex `PORT` default 10000, not the Vite dev port 8080). */
+const DEFAULT_DEV_API = "http://127.0.0.1:10000";
+
+/** Single source of truth for API base: VITE_API_URL, VITE_APEX_API_BASE_URL, or dev/prod defaults. */
 const API_BASE =
   import.meta.env.VITE_API_URL ??
   // Back-compat: some envs use this name in local dev.
   import.meta.env.VITE_APEX_API_BASE_URL ??
-  (import.meta.env.PROD ? DEFAULT_PROD_API : "http://localhost:8080");
+  (import.meta.env.PROD ? DEFAULT_PROD_API : DEFAULT_DEV_API);
 
 export { API_BASE };
 
@@ -270,6 +273,8 @@ export type Competition = {
   track: string;
   vehicle: string;
   targetTimeMs: number | null;
+  /** Weekly challenge vs tournament — drives /challenges tab grouping. */
+  kind?: "challenge" | "tournament";
   status: "LIVE" | "UPCOMING" | "FINISHED";
   participants: number;
   startsAt: string | null;
@@ -286,10 +291,37 @@ export type CompetitionSummary = Competition & {
   yourPosition: number | null;
   timeRemainingSec: number | null;
   joined: boolean;
+  /** Present on /summary and GET /competitions/:id responses. */
+  isSupported?: boolean;
 };
 
+function toNum(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/** Normalize lap ms fields from camelCase or snake_case API responses. */
+function normalizeCompetitionSummaryRow(row: CompetitionSummary): CompetitionSummary {
+  const fastest =
+    toNum(row.fastestLapMs) ??
+    toNum((row as unknown as { fastest_lap_ms?: unknown }).fastest_lap_ms);
+  const your =
+    toNum(row.yourBestLapMs) ??
+    toNum((row as unknown as { your_best_lap_ms?: unknown }).your_best_lap_ms);
+  return {
+    ...row,
+    fastestLapMs: fastest ?? null,
+    yourBestLapMs: your ?? null,
+  };
+}
+
 export async function getCompetitionSummary(): Promise<CompetitionSummary[]> {
-  return apiGet<CompetitionSummary[]>("/api/competitions/summary");
+  const raw = await apiGet<CompetitionSummary[]>("/api/competitions/summary");
+  return Array.isArray(raw) ? raw.map(normalizeCompetitionSummaryRow) : [];
 }
 
 /** Single competition detail (GET /api/competitions/:id). Falls back to summary list if backend has no detail endpoint. */
@@ -300,8 +332,9 @@ export type CompetitionDetail = CompetitionSummary & {
 
 export async function getCompetition(id: string): Promise<CompetitionDetail | null> {
   try {
-    const data = await apiGet<CompetitionDetail>(`/api/competitions/${id}`);
-    return data ?? null;
+    const data = await apiGet<CompetitionDetail>(`/api/competitions/${encodeURIComponent(id)}`);
+    if (!data || typeof data !== "object") return null;
+    return normalizeCompetitionSummaryRow(data as CompetitionSummary) as CompetitionDetail;
   } catch {
     return null;
   }
@@ -354,6 +387,8 @@ export type DiscussionAuthor = {
 export type Discussion = {
   id: string;
   title: string;
+  /** Post body from API (`content`); older code may use `description`. */
+  content?: string;
   description?: string;
   excerpt?: string;
   author: DiscussionAuthor;
@@ -361,6 +396,8 @@ export type Discussion = {
   createdAt: string;
   likeCount?: number;
   commentCount?: number;
+  /** Backend list/detail uses `commentsCount`. */
+  commentsCount?: number;
   replies?: number;
   views?: number;
   isPinned?: boolean;

@@ -259,12 +259,12 @@ export default function Community() {
                 title={d.title}
                 excerpt={
                   d.excerpt ??
-                  truncateDescription(d.description ?? d.title)
+                  truncateDescription(d.content ?? d.description ?? d.title)
                 }
                 author={d.author}
                 category={categoryLabel(d.category)}
                 timestamp={timeAgo(d.createdAt)}
-                replies={d.commentCount ?? d.replies ?? 0}
+                replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
                 views={d.likeCount ?? d.views ?? 0}
                 isPinned={d.isPinned}
               />

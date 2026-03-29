@@ -263,7 +263,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
             >
               {pos}
-              <span className="text-xs font-medium ml-0.5">/ {total}</span>
+              {total > 0 && (
+                <span className="text-xs font-medium ml-0.5">/ {total}</span>
+              )}
             </p>
           </div>
           {pos <= 3 && (
@@ -301,7 +303,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
             >
               {pos}
-              <span className="text-xs font-medium ml-0.5">/ {total}</span>
+              {total > 0 && (
+                <span className="text-xs font-medium ml-0.5">/ {total}</span>
+              )}
             </p>
           </div>
           {pos <= 3 && (
@@ -404,7 +408,7 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
             <p className="text-xs sm:text-sm font-semibold text-white">
               P{item.position}
-              {item.totalRacers != null && (
+              {item.totalRacers != null && item.totalRacers > 0 && (
                 <span className="text-white/60"> / {item.totalRacers}</span>
               )}
             </p>
@@ -439,6 +443,11 @@ function RaceCardContent({
   onCommentClick: (e: React.MouseEvent) => void;
 }) {
   const navigate = useNavigate();
+  const goToSession = () => navigate(`/sessions/${item.id}`);
+  const handleShellClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    goToSession();
+  };
   const isManual = (item.source ?? "").toString().toUpperCase() === "MANUAL_ACTIVITY";
   const isEmptySession = !isManual && (item.lapCount ?? 0) === 0;
   const isStrongSession =
@@ -457,7 +466,10 @@ function RaceCardContent({
       : formatSessionTypeUpper(item.sessionType);
 
   return (
-    <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
+    <div
+      className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6"
+      onClick={handleShellClick}
+    >
         {/* Header with user info */}
         <div className="px-4 sm:px-5 py-2.5 sm:py-3">
           <div className="w-full flex items-center gap-2 sm:gap-3">
