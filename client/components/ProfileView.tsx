@@ -4,6 +4,7 @@ import { ArrowLeft, User } from "lucide-react";
 import type { ProfileSummary } from "../lib/api";
 import { formatLapMs, formatCarName, formatAvgFinishOneDecimal } from "../lib/utils";
 import SimBadge from "./SimBadge";
+import { SimLogo } from "./SimLogo";
 import { getSimDisplayName } from "../lib/sim";
 import { resolveApiUrl } from "@/lib/api";
 
@@ -400,9 +401,9 @@ export function ProfileView({
               <div className="space-y-6">
                 {(profile.mostPlayed ?? []).map((sim) => (
                   <div key={sim.sim}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex items-center justify-between mb-2 gap-3">
+                      <div className="min-w-0 flex-1 flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
                           <p className="font-semibold text-foreground">
                             {getSimDisplayName(sim.sim)}
                           </p>
@@ -412,7 +413,9 @@ export function ProfileView({
                           {sim.km != null ? `${sim.km} km` : "—"}
                         </p>
                       </div>
-                      <span className="text-lg">🏎️</span>
+                      <div className="w-10 h-10 flex items-center justify-center">
+                        <SimLogo sim={sim.sim} />
+                      </div>
                     </div>
                     <div className="h-2 bg-secondary/40 rounded-full overflow-hidden">
                       <div

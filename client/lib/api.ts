@@ -816,6 +816,42 @@ export async function getUpgradeInfo(): Promise<UpgradeInfo> {
   return apiGet<UpgradeInfo>("/api/billing/upgrade-info");
 }
 
+export type ProWaitlistEntry = {
+  fullName: string;
+  contactEmail: string;
+  company: string | null;
+  message: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProWaitlistStatus = {
+  joined: boolean;
+  entry: ProWaitlistEntry | null;
+};
+
+export async function getProWaitlistStatus(): Promise<ProWaitlistStatus> {
+  return apiGet<ProWaitlistStatus>("/api/billing/pro-waitlist");
+}
+
+export type ProWaitlistSubmitBody = {
+  fullName: string;
+  contactEmail: string;
+  company?: string;
+  message?: string;
+};
+
+export type ProWaitlistSubmitResponse = {
+  success: boolean;
+  entry: ProWaitlistEntry;
+};
+
+export async function submitProWaitlist(
+  body: ProWaitlistSubmitBody
+): Promise<ProWaitlistSubmitResponse> {
+  return apiPost<ProWaitlistSubmitResponse>("/api/billing/pro-waitlist", body);
+}
+
 export type SystemStatusResponse = {
   environment?: string;
   version?: string;

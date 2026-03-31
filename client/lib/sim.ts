@@ -143,6 +143,19 @@ export function getSimConfig(sim: string | null | undefined): SimConfig {
 }
 
 /**
+ * Static logo URL under `client/public/sims/` (served as `/sims/*.svg`).
+ * Returns null when no dedicated asset exists (caller may use a generic icon).
+ */
+export function getSimLogoSrc(sim: string | null | undefined): string | null {
+  const key = normalizeSimKey(sim);
+  if (!key) return null;
+  if (key === "IRACING") return "/sims/iracing.svg";
+  if (key === "F1_25" || key === "F1_24" || key.startsWith("F1_")) return "/sims/f1.svg";
+  if (key === "F1") return "/sims/f1.svg";
+  return null;
+}
+
+/**
  * Get human-readable display name for a sim.
  * e.g., "IRACING" -> "iRacing", "F1_25" -> "F1 25"
  */

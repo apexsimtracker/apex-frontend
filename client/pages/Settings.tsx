@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
-import { authMe, updateMe, API_BASE } from "@/lib/api";
+import { authMe, updateMe, API_BASE, changePassword, deleteAccount, ApiError } from "@/lib/api";
 import {
   getApexSettings,
   setApexSettings,
@@ -10,26 +10,41 @@ import {
   type ApexSettings,
 } from "@/lib/settingsStorage";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { RefreshCw, LogOut, Trash2 } from "lucide-react";
+import { RefreshCw, LogOut, Trash2, Loader2 } from "lucide-react";
 
 const PRIMARY_RED = "rgb(240, 28, 28)";
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 200;
+const DELETE_CONFIRM_PHRASE = "DELETE";
 
 function SettingsCard({
   title,
   description,
   children,
   className,
+  id,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
     <section
+      id={id}
       className={cn(
         "rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6",
         className
@@ -90,8 +105,15 @@ export default function Settings() {
   const [changePwCurrent, setChangePwCurrent] = useState("");
   const [changePwNew, setChangePwNew] = useState("");
   const [changePwError, setChangePwError] = useState<string | null>(null);
+  const [changePwSubmitting, setChangePwSubmitting] = useState(false);
+  const [changePwSuccess, setChangePwSuccess] = useState(false);
   const [testApiStatus, setTestApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [testApiMessage, setTestApiMessage] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -144,6 +166,53 @@ export default function Settings() {
     navigate("/login", { replace: true });
   }, [navigate]);
 
+  const resetDeleteDialog = useCallback(() => {
+    setDeletePassword("");
+    setDeleteConfirmText("");
+    setDeleteError(null);
+  }, []);
+
+  const handleDeleteDialogOpenChange = useCallback(
+    (open: boolean) => {
+      setDeleteDialogOpen(open);
+      if (!open) resetDeleteDialog();
+    },
+    [resetDeleteDialog]
+  );
+
+  const deleteConfirmValid =
+    deletePassword.length > 0 && deleteConfirmText.trim() === DELETE_CONFIRM_PHRASE;
+  const handleConfirmDeleteAccount = useCallback(async () => {
+    if (!deleteConfirmValid || deleteSubmitting) return;
+    setDeleteError(null);
+    setDeleteSubmitting(true);
+    try {
+      await deleteAccount(deletePassword);
+      clearToken();
+      setUser(null);
+      setDeleteDialogOpen(false);
+      resetDeleteDialog();
+      navigate("/login", { replace: true });
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Could not delete account.";
+      setDeleteError(msg);
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }, [
+    deleteConfirmValid,
+    deletePassword,
+    deleteSubmitting,
+    navigate,
+    resetDeleteDialog,
+    setUser,
+  ]);
+
   const handleTestApi = useCallback(async () => {
     setTestApiStatus("loading");
     setTestApiMessage("");
@@ -157,7 +226,51 @@ export default function Settings() {
     }
   }, []);
 
-  const newPasswordValid = changePwNew.length >= 8;
+  const trimmedNewPw = changePwNew.trim();
+  const currentPasswordValid = changePwCurrent.length > 0;
+  const newPasswordValid =
+    trimmedNewPw.length >= PASSWORD_MIN && trimmedNewPw.length <= PASSWORD_MAX;
+  const newPasswordTooLong = trimmedNewPw.length > PASSWORD_MAX;
+  const passwordsSameAsCurrent =
+    changePwCurrent.trim() === trimmedNewPw && trimmedNewPw.length > 0;
+  const updatePasswordDisabled =
+    !currentPasswordValid ||
+    !newPasswordValid ||
+    passwordsSameAsCurrent ||
+    changePwSubmitting;
+
+  const handleChangePassword = useCallback(async () => {
+    if (changePwSubmitting) return;
+    const trimmedNew = changePwNew.trim();
+    if (
+      changePwCurrent.length === 0 ||
+      trimmedNew.length < PASSWORD_MIN ||
+      trimmedNew.length > PASSWORD_MAX ||
+      changePwCurrent.trim() === trimmedNew
+    ) {
+      return;
+    }
+    setChangePwError(null);
+    setChangePwSuccess(false);
+    setChangePwSubmitting(true);
+    try {
+      await changePassword(changePwCurrent, trimmedNew);
+      setChangePwCurrent("");
+      setChangePwNew("");
+      setChangePwSuccess(true);
+      setTimeout(() => setChangePwSuccess(false), 2500);
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Could not update password.";
+      setChangePwError(msg);
+    } finally {
+      setChangePwSubmitting(false);
+    }
+  }, [changePwCurrent, changePwNew, changePwSubmitting]);
   const envLabel = import.meta.env.MODE === "production" ? "production" : "development";
   const apiHost = (() => {
     try {
@@ -345,44 +458,80 @@ export default function Settings() {
             </div>
           </SettingsCard>
 
-          {/* Security – Change password (Coming soon) */}
           <SettingsCard
+            id="change-password"
             title="Security"
-            description="Change your password. Not available yet."
+            description="Enter your current password and a new password (8–200 characters)."
           >
             <div className="space-y-3 max-w-xs">
               <input
                 type="password"
+                autoComplete="current-password"
                 value={changePwCurrent}
                 onChange={(e) => {
                   setChangePwCurrent(e.target.value);
                   setChangePwError(null);
+                  setChangePwSuccess(false);
                 }}
                 placeholder="Current password"
-                disabled
-                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm disabled:opacity-50"
+                disabled={changePwSubmitting}
+                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
               />
+              {!currentPasswordValid && changePwCurrent.length === 0 && changePwNew.length > 0 && (
+                <p className="text-xs text-amber-500">Current password is required.</p>
+              )}
               <input
                 type="password"
+                autoComplete="new-password"
                 value={changePwNew}
                 onChange={(e) => {
                   setChangePwNew(e.target.value);
                   setChangePwError(null);
+                  setChangePwSuccess(false);
                 }}
-                placeholder="New password (min 8 characters)"
-                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm"
+                placeholder="New password"
+                disabled={changePwSubmitting}
+                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
               />
-              {!newPasswordValid && changePwNew.length > 0 && (
-                <p className="text-xs text-amber-500">New password must be at least 8 characters.</p>
+              {changePwNew.length > 0 && trimmedNewPw.length < PASSWORD_MIN && (
+                <p className="text-xs text-amber-500">
+                  New password must be at least {PASSWORD_MIN} characters.
+                </p>
+              )}
+              {newPasswordTooLong && (
+                <p className="text-xs text-amber-500">
+                  New password must be at most {PASSWORD_MAX} characters.
+                </p>
+              )}
+              {passwordsSameAsCurrent && newPasswordValid && currentPasswordValid && (
+                <p className="text-xs text-amber-500">
+                  New password must be different from your current password.
+                </p>
               )}
               {changePwError && (
                 <p className="text-xs text-destructive">{changePwError}</p>
               )}
-              <Button disabled title="Coming soon" variant="secondary" className="opacity-60 cursor-not-allowed">
-                Update password
+              {changePwSuccess && (
+                <p className="text-xs text-green-500">Password updated.</p>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={updatePasswordDisabled}
+                aria-busy={changePwSubmitting}
+                onClick={handleChangePassword}
+                className={updatePasswordDisabled ? "opacity-60 cursor-not-allowed" : undefined}
+              >
+                {changePwSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                    Updating…
+                  </>
+                ) : (
+                  "Update password"
+                )}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
           </SettingsCard>
 
           {/* Account – Log out + Delete */}
@@ -399,19 +548,93 @@ export default function Settings() {
               </Button>
               <div className="pt-2 border-t border-white/5">
                 <p className="text-xs text-muted-foreground mb-2">
-                  Permanently delete your account and data. This cannot be undone.
+                  Permanently remove access and anonymize your personal data on our servers. Your
+                  public posts may remain with the label &quot;Deleted User.&quot; This cannot be
+                  undone.
                 </p>
-                <Button
-                  type="button"
-                  disabled
-                  variant="destructive"
-                  className="opacity-60 cursor-not-allowed"
-                  title="Coming soon"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete account
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2">Coming soon</p>
+                <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete account
+                  </Button>
+                  <AlertDialogContent className="bg-card border-white/10 sm:max-w-md">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-foreground">Delete account</AlertDialogTitle>
+                      <AlertDialogDescription className="text-left space-y-3">
+                        <span className="block">
+                          This will sign you out everywhere, revoke sessions, and anonymize your
+                          email, password, name, avatar, and bio. You will not be able to sign in
+                          again with this account.
+                        </span>
+                        <span className="block font-medium text-foreground">
+                          Type {DELETE_CONFIRM_PHRASE} below to confirm.
+                        </span>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-3 py-2">
+                      <input
+                        type="password"
+                        autoComplete="current-password"
+                        value={deletePassword}
+                        onChange={(e) => {
+                          setDeletePassword(e.target.value);
+                          setDeleteError(null);
+                        }}
+                        placeholder="Current password"
+                        disabled={deleteSubmitting}
+                        className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                      />
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        value={deleteConfirmText}
+                        onChange={(e) => {
+                          setDeleteConfirmText(e.target.value);
+                          setDeleteError(null);
+                        }}
+                        placeholder={`Type ${DELETE_CONFIRM_PHRASE}`}
+                        disabled={deleteSubmitting}
+                        className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                      />
+                      {deleteError && (
+                        <p className="text-xs text-destructive">{deleteError}</p>
+                      )}
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel
+                        type="button"
+                        disabled={deleteSubmitting}
+                        className="border-white/20"
+                      >
+                        Cancel
+                      </AlertDialogCancel>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={!deleteConfirmValid || deleteSubmitting}
+                        onClick={handleConfirmDeleteAccount}
+                        className={
+                          !deleteConfirmValid || deleteSubmitting
+                            ? "opacity-60 cursor-not-allowed"
+                            : undefined
+                        }
+                      >
+                        {deleteSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                            Deleting…
+                          </>
+                        ) : (
+                          "Delete permanently"
+                        )}
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </SettingsCard>

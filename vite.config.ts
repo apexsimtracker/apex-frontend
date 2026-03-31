@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 const pkg = JSON.parse(
   readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
 ) as { version?: string };
-const appVersion = pkg.version ?? "0.0.0";
+const appVersion = pkg.version ?? "1.0.0";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
