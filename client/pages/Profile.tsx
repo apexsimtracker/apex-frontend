@@ -260,36 +260,17 @@ export default function Profile() {
     setEditLoading(true);
     setEditError(null);
     try {
-      if (import.meta.env.DEV) {
-        console.log("[Profile] form state before submit:", {
-          displayName: editForm.displayName,
-          bio: editForm.tagline,
-        });
-      }
       let avatarUrlToSet: string | undefined;
       let uploadedAvatarForSession: string | undefined;
       if (avatarFile) {
         try {
-          if (import.meta.env.DEV) {
-            console.log("[Profile] Selected avatar file:", {
-              name: avatarFile.name,
-              size: avatarFile.size,
-              type: avatarFile.type,
-            });
-          }
           const uploadRes = await uploadProfileAvatar(avatarFile);
           avatarUrlToSet = uploadRes.avatarUrl;
           // Persist cache-busted avatar in global auth user for this session.
           uploadedAvatarForSession = withCacheBust(avatarUrlToSet, Date.now());
-          if (import.meta.env.DEV) {
-            console.log("[Profile] Avatar upload response:", uploadRes);
-          }
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Avatar upload failed.";
           setEditError(msg);
-          if (import.meta.env.DEV) {
-            console.error("[Profile] Avatar upload error:", e);
-          }
           setEditLoading(false);
           return;
         }
@@ -301,14 +282,8 @@ export default function Profile() {
         bio: bioValue,
         avatarUrl: avatarUrlToSet ?? undefined,
       };
-      if (import.meta.env.DEV) {
-        console.log("[Profile] updateMe request payload:", payload);
-      }
 
       const updated = await updateMe(payload);
-      if (import.meta.env.DEV) {
-        console.log("[Profile] updateMe response (updated user):", updated, "avatarUrl:", (updated as AuthUser).avatarUrl ?? "(missing)");
-      }
 
       const u = updated as { tagline?: string; bio?: string };
       const savedBio =
@@ -321,9 +296,6 @@ export default function Profile() {
           (updated as AuthUser).avatarUrl ??
           undefined,
       };
-      if (import.meta.env.DEV) {
-        console.log("[Profile] after save — userWithAvatar.avatarUrl:", userWithAvatar.avatarUrl ?? "(missing)");
-      }
       setUser(userWithAvatar);
       setProfile((prev) =>
         prev
@@ -422,9 +394,6 @@ export default function Profile() {
     })();
 
   const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
-  if (import.meta.env.DEV) {
-    console.log("[Profile] render — user.avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)", "→ resolved avatarUrl passed to ProfileView:", avatarUrl ?? "(none, will show placeholder)");
-  }
   const bioForDisplay =
     (user as AuthUser).bio?.trim() ??
     (user as AuthUser).tagline?.trim() ??

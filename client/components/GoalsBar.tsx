@@ -8,10 +8,18 @@ interface Goal {
   label: string;
 }
 
+const DEFAULT_RACES_TARGET = 10;
+const DEFAULT_PODIUMS_TARGET = 5;
+const DEFAULT_LAPS_TARGET = 100;
+
 interface GoalsBarProps {
   races: number;
   podiums: number;
   laps: number;
+  /** From profile weekly goal settings; defaults match server defaults. */
+  racesTarget?: number;
+  podiumsTarget?: number;
+  lapsTarget?: number;
 }
 
 function CircularProgress({
@@ -27,7 +35,8 @@ function CircularProgress({
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(current / target, 1);
+  const safeTarget = target > 0 ? target : 1;
+  const progress = Math.min(current / safeTarget, 1);
   const offset = circumference - progress * circumference;
 
   return (
@@ -82,27 +91,34 @@ function GoalItem({ goal }: { goal: Goal }) {
   );
 }
 
-export default function GoalsBar({ races, podiums, laps }: GoalsBarProps) {
+export default function GoalsBar({
+  races,
+  podiums,
+  laps,
+  racesTarget = DEFAULT_RACES_TARGET,
+  podiumsTarget = DEFAULT_PODIUMS_TARGET,
+  lapsTarget = DEFAULT_LAPS_TARGET,
+}: GoalsBarProps) {
   const goals: Goal[] = [
     {
       id: "races",
       icon: <Flag className="w-5 h-5" />,
       current: races,
-      target: 10,
+      target: racesTarget,
       label: "Races",
     },
     {
       id: "podiums",
       icon: <Trophy className="w-5 h-5" />,
       current: podiums,
-      target: 5,
+      target: podiumsTarget,
       label: "Podiums",
     },
     {
       id: "laps",
       icon: <Gauge className="w-5 h-5" />,
       current: laps,
-      target: 100,
+      target: lapsTarget,
       label: "Laps",
     },
   ];

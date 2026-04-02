@@ -373,7 +373,7 @@ export default function ManualActivityForm({
         <label className="block text-sm font-medium text-white/80 mb-1.5">
           Finishing position <span className="text-white/40">(optional)</span>
         </label>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2 items-center">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] gap-2 items-center w-full">
           <input
             id="position"
             type="number"
@@ -398,7 +398,7 @@ export default function ManualActivityForm({
               placeholder="20"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
             />
-            <span className="text-xs text-white/60">drivers</span>
+            <span className="text-xs text-white/60 shrink-0">drivers</span>
           </div>
         </div>
         <p className="mt-1 text-xs text-white/40">

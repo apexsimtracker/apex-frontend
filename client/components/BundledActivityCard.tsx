@@ -102,6 +102,15 @@ export default function BundledActivityCard({
 
   const firstSession = sessions[0];
   const driverName = firstSession?.driverName ?? "Unknown Driver";
+  const profileOwnerId = (() => {
+    const s = firstSession as unknown as {
+      authorId?: string | null;
+      owner?: { id?: string | null };
+    };
+    if (typeof s.authorId === "string" && s.authorId.trim()) return s.authorId.trim();
+    const oid = s.owner && typeof s.owner === "object" ? s.owner.id : null;
+    return typeof oid === "string" && oid.trim() ? oid.trim() : null;
+  })();
 
   const currentHeader = getActivityHeaderFromOwner(currentSession, user ?? null);
 
@@ -151,6 +160,7 @@ export default function BundledActivityCard({
         <div className="px-2 py-2">
           <ActivityCard
             id={currentSession.id}
+            profileUserId={profileOwnerId}
             userName={currentHeader.name}
             userAvatar={currentHeader.avatar}
             game="—"
@@ -196,15 +206,18 @@ export default function BundledActivityCard({
               }`}
             />
           ))}
-          {overflowCount > 0 && (
-            <Link
-              to={`/user/${driverName.toLowerCase().replace(/\s+/g, "-")}`}
-              onClick={(e) => e.stopPropagation()}
-              className="ml-2 text-xs text-white/40 hover:text-white/60"
-            >
-              +{overflowCount}
-            </Link>
-          )}
+          {overflowCount > 0 &&
+            (profileOwnerId ? (
+              <Link
+                to={`/user/${encodeURIComponent(profileOwnerId)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="ml-2 text-xs text-white/40 hover:text-white/60"
+              >
+                +{overflowCount}
+              </Link>
+            ) : (
+              <span className="ml-2 text-xs text-white/30">+{overflowCount}</span>
+            ))}
         </div>
 
         {/* Slide indicator */}

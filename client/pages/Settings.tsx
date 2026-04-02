@@ -271,6 +271,8 @@ export default function Settings() {
       setChangePwSubmitting(false);
     }
   }, [changePwCurrent, changePwNew, changePwSubmitting]);
+  /** Only for local/dev builds — never expose API host / connectivity test in production. */
+  const showDevSystemStatus = import.meta.env.DEV;
   const envLabel = import.meta.env.MODE === "production" ? "production" : "development";
   const apiHost = (() => {
     try {
@@ -639,46 +641,47 @@ export default function Settings() {
             </div>
           </SettingsCard>
 
-          {/* System status */}
-          <SettingsCard
-            title="System status"
-            description="Environment and API connectivity."
-          >
-            <div className="space-y-2 text-sm">
-              <p>
-                <span className="text-muted-foreground">Environment:</span>{" "}
-                <span className="text-foreground">{envLabel}</span>
-              </p>
-              <p>
-                <span className="text-muted-foreground">API host:</span>{" "}
-                <span className="text-foreground font-mono text-xs">{apiHost}</span>
-              </p>
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestApi}
-                  disabled={testApiStatus === "loading"}
-                >
-                  {testApiStatus === "loading" ? (
-                    "Testing…"
-                  ) : (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                      Test API
-                    </>
+          {showDevSystemStatus && (
+            <SettingsCard
+              title="System status"
+              description="Environment and API connectivity (developers only)."
+            >
+              <div className="space-y-2 text-sm">
+                <p>
+                  <span className="text-muted-foreground">Environment:</span>{" "}
+                  <span className="text-foreground">{envLabel}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">API host:</span>{" "}
+                  <span className="text-foreground font-mono text-xs">{apiHost}</span>
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestApi}
+                    disabled={testApiStatus === "loading"}
+                  >
+                    {testApiStatus === "loading" ? (
+                      "Testing…"
+                    ) : (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                        Test API
+                      </>
+                    )}
+                  </Button>
+                  {testApiStatus === "success" && (
+                    <span className="text-xs text-green-500">{testApiMessage}</span>
                   )}
-                </Button>
-                {testApiStatus === "success" && (
-                  <span className="text-xs text-green-500">{testApiMessage}</span>
-                )}
-                {testApiStatus === "error" && (
-                  <span className="text-xs text-destructive">{testApiMessage}</span>
-                )}
+                  {testApiStatus === "error" && (
+                    <span className="text-xs text-destructive">{testApiMessage}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          </SettingsCard>
+            </SettingsCard>
+          )}
         </div>
       </div>
     </div>

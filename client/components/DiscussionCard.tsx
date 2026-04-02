@@ -1,19 +1,22 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MessageCircle, Eye } from "lucide-react";
+import { Eye, MessageCircle, Pin } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import { getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
-import { resolveApiUrl } from "@/lib/api";
-
-// Helper to convert username to URL slug
-const userNameToSlug = (name: string) => {
-  return name.toLowerCase().replace(/\s+/g, "-");
-};
+import {
+  getDiscussionCategoryLabel,
+  resolveDiscussionAvatarSrc,
+  getDiscussionAuthorId,
+} from "@/lib/api";
 
 interface DiscussionCardProps {
   id: string;
   title: string;
   excerpt: string;
   author: { id: string; displayName?: string | null; avatarUrl?: string | null } | unknown;
-  category: string;
+  /** Backend category: setup | guides | general */
+  categoryKey: string;
   timestamp: string;
   replies: number;
   views: number;
@@ -25,21 +28,24 @@ export default function DiscussionCard({
   title,
   excerpt,
   author,
-  category,
+  categoryKey,
   timestamp,
   replies,
   views,
   isPinned,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const authorDisplay = getDiscussionAuthorDisplay(author);
-  const avatarUrl =
-    author && typeof author === "object" && "avatarUrl" in author && typeof (author as any).avatarUrl === "string"
-      ? ((author as any).avatarUrl as string)
-      : null;
-  const avatarSrc = resolveApiUrl(avatarUrl);
-  const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
+  const authorId = getDiscussionAuthorId(author);
+  const avatarSrc = resolveDiscussionAvatarSrc(author, user);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarSrc, user?.id, user?.avatarUrl]);
+  const showAvatar = Boolean(avatarSrc?.trim()) && !avatarLoadFailed;
   const initials = getDiscussionAuthorInitials(authorDisplay);
+  const categoryLabel = getDiscussionCategoryLabel(categoryKey);
 
   return (
     <Link to={`/discussion/${id}`}>
@@ -51,15 +57,16 @@ export default function DiscussionCard({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                navigate(`/user/${userNameToSlug(authorDisplay)}`);
+                if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
               }}
               className="flex items-center gap-2 sm:gap-3 flex-1 hover:opacity-80 transition-opacity group text-left"
             >
-              {hasAvatar ? (
+              {showAvatar ? (
                 <img
                   src={avatarSrc!}
                   alt={authorDisplay}
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
+                  onError={() => setAvatarLoadFailed(true)}
                 />
               ) : (
                 <div
@@ -78,10 +85,10 @@ export default function DiscussionCard({
             </button>
             {isPinned && (
               <div
-                className="text-xs sm:text-sm flex-shrink-0"
+                className="text-xs sm:text-sm flex-shrink-0 flex items-center"
                 style={{ color: "rgb(240, 28, 28)" }}
               >
-                <span>📌</span>
+                <Pin className="w-4 h-4" aria-hidden />
               </div>
             )}
           </div>
@@ -90,9 +97,13 @@ export default function DiscussionCard({
         {/* Content */}
         <div className="px-4 sm:px-5 py-4 sm:py-5">
           {/* Category */}
-          <div className="mb-3 flex items-center gap-1.5">
-            <span className="inline-block px-2 py-1 text-white/60 rounded-md text-xs font-medium bg-white/2 ml-0">
-              {category}
+          <div className="mb-3 flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 pr-2 py-1 text-white/60 rounded-md text-xs font-medium bg-white/2 ml-0">
+              <DiscussionCategoryIcon
+                categoryKey={categoryKey}
+                className="w-3.5 h-3.5 text-white/70"
+              />
+              {categoryLabel}
             </span>
             {isPinned && (
               <span

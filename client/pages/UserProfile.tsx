@@ -1,1044 +1,172 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
-import { ProfileView } from "../components/ProfileView";
-import type { ProfileSummary } from "../lib/api";
-
-// Map mock user to ProfileSummary so we can use the same ProfileView as /profile
-function userToProfileSummary(
-  user: any,
-  userId: string
-): ProfileSummary {
-  const daily = user.weeklyStats?.daily ?? [];
-  const buckets = {
-    Mon: daily[0]?.races ?? 0,
-    Tue: daily[1]?.races ?? 0,
-    Wed: daily[2]?.races ?? 0,
-    Thu: daily[3]?.races ?? 0,
-    Fri: daily[4]?.races ?? 0,
-    Sat: daily[5]?.races ?? 0,
-    Sun: daily[6]?.races ?? 0,
-  };
-
-  const races = user.races ?? [];
-  const gameStats: Record<
-    string,
-    {
-      races: number;
-      wins: number;
-      podiums: number;
-      poles: number;
-      fastestLaps: number;
-    }
-  > = {};
-  races.forEach((race: any) => {
-    if (!gameStats[race.sim]) {
-      gameStats[race.sim] = {
-        races: 0,
-        wins: 0,
-        podiums: 0,
-        poles: 0,
-        fastestLaps: 0,
-      };
-    }
-    gameStats[race.sim].races += 1;
-    if (race.position === 1) gameStats[race.sim].wins += 1;
-    if (race.position <= 3) gameStats[race.sim].podiums += 1;
-    if (race.qualiPos === 1) gameStats[race.sim].poles += 1;
-    if (race.isFastestLap) gameStats[race.sim].fastestLaps += 1;
-  });
-
-  const statsByGame = Object.entries(gameStats).map(([sim, stats]) => ({
-    sim,
-    races: stats.races,
-    wins: stats.wins,
-    podiums: stats.podiums,
-    poles: stats.poles,
-    fastestLaps: stats.fastestLaps,
-    winPct: stats.races > 0 ? (stats.wins / stats.races) * 100 : null,
-    podiumPct: stats.races > 0 ? (stats.podiums / stats.races) * 100 : null,
-  }));
-
-  return {
-    user: {
-      id: userId,
-      displayName: user.name,
-      streakDays: user.streakDays ?? 0,
-      tagline: user.bio,
-      level: user.level,
-      levelProgressPct: (user.level * 7) % 100,
-    },
-    totals: {
-      races: user.totalRaces ?? 0,
-      wins: user.raceWins ?? null,
-      podiums: user.podiums ?? null,
-      poles: user.polePositions ?? null,
-      fastestLaps: user.fastestLaps ?? 0,
-      avgFinish: user.avgFinish ?? null,
-    },
-    weekly: {
-      buckets,
-      totalRaces: user.weeklyStats?.totalRaces ?? 0,
-      wins: user.weeklyStats?.wins ?? null,
-      avgFinish: user.weeklyStats?.avgFinish ?? null,
-      totalKm: user.weeklyStats?.totalKm ?? null,
-    },
-    mostPlayed: (user.mostPlayed ?? []).map((g: any) => ({
-      sim: g.name,
-      sessions: 0,
-      km: g.km ?? null,
-      pctOfTotal: g.percentage ?? 0,
-    })),
-    raceHistory: (user.races ?? []).map((r: any, i: number) => ({
-      id: `race-${userId}-${i}`,
-      date: r.date,
-      sim: r.sim,
-      car: r.car,
-      track: r.track,
-      position: r.position ?? null,
-      qualiPos: r.qualiPos ?? null,
-      bestLapMs: null,
-    })),
-    statsByGame,
-    insight: null,
-  };
-}
-
-// Mock user data with full profile information
-const usersDatabase: Record<string, any> = {
-  "alex-chen": {
-    name: "Alex Chen",
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets%2F28a62c25c1b348f89516f18f1616bb52%2F812578f1c02240b4968d1ce152fff8ab?format=webp&width=120&height=120",
-    bio: "Sim Racing Enthusiast â€¢ F1 24 & iRacing",
-    level: 42,
-    totalRaces: 124,
-    raceWins: 18,
-    podiums: 28,
-    polePositions: 22,
-    fastestLaps: 31,
-    avgFinish: 4.2,
-    totalKm: 2400,
-    weeklyStats: {
-      totalRaces: 27,
-      wins: 5,
-      avgFinish: 3.8,
-      totalKm: 127.4,
-      daily: [
-        { day: "Mon", races: 2, height: "40%" },
-        { day: "Tue", races: 4, height: "70%" },
-        { day: "Wed", races: 3, height: "55%" },
-        { day: "Thu", races: 5, height: "90%" },
-        { day: "Fri", races: 6, height: "100%" },
-        { day: "Sat", races: 4, height: "65%" },
-        { day: "Sun", races: 3, height: "50%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "F1 24", km: 1245, percentage: 46, emoji: "ðŸŽï¸" },
-      { name: "iRacing", km: 892, percentage: 33, emoji: "ðŸ" },
-      { name: "Assetto Corsa", km: 567, percentage: 21, emoji: "ðŸŽ®" },
-    ],
-    races: [
-      {
-        date: "Jan 28, 2024",
-        sim: "F1 24",
-        car: "Ferrari SF-24",
-        track: "Monaco",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:14.234",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 26, 2024",
-        sim: "iRacing",
-        car: "McLaren GT",
-        track: "Spa-Francorchamps",
-        position: 2,
-        qualiPos: 3,
-        bestLap: "2:01.567",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 25, 2024",
-        sim: "Assetto Corsa",
-        car: "GT1 Nissan GT-R",
-        track: "Suzuka",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "1:32.891",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 23, 2024",
-        sim: "F1 24",
-        car: "Mercedes W15",
-        track: "Silverstone",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:27.123",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 22, 2024",
-        sim: "iRacing",
-        car: "Ferrari 488 GTE",
-        track: "Le Mans",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "3:26.456",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 20, 2024",
-        sim: "Assetto Corsa",
-        car: "Porsche 911 GT2 RS",
-        track: "Nurburgring",
-        position: 5,
-        qualiPos: 6,
-        bestLap: "6:47.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 19, 2024",
-        sim: "F1 24",
-        car: "Red Bull RB20",
-        track: "Bahrain",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:32.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 17, 2024",
-        sim: "iRacing",
-        car: "Chevrolet Corvette C8",
-        track: "Road Atlanta",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "1:18.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 15, 2024",
-        sim: "Assetto Corsa",
-        car: "McLaren P1 GTR",
-        track: "Monza",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "1:38.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 13, 2024",
-        sim: "F1 24",
-        car: "Alpine A523",
-        track: "Singapore",
-        position: 4,
-        qualiPos: 5,
-        bestLap: "1:56.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 12, 2024",
-        sim: "iRacing",
-        car: "Porsche 911 RSR",
-        track: "Watkins Glen",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:41.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 10, 2024",
-        sim: "Assetto Corsa",
-        car: "Nissan GT-R Nismo",
-        track: "Tokyo",
-        position: 3,
-        qualiPos: 3,
-        bestLap: "2:01.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 08, 2024",
-        sim: "F1 24",
-        car: "Haas VF-24",
-        track: "Las Vegas",
-        position: 6,
-        qualiPos: 7,
-        bestLap: "1:42.123",
-        isFastestLap: false,
-      },
-    ],
-  },
-  "sarah-mitchell": {
-    name: "Sarah Mitchell",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop",
-    bio: "iRacing Specialist â€¢ Endurance Racer",
-    level: 38,
-    totalRaces: 98,
-    raceWins: 12,
-    podiums: 24,
-    polePositions: 16,
-    fastestLaps: 19,
-    avgFinish: 5.1,
-    totalKm: 1890,
-    weeklyStats: {
-      totalRaces: 18,
-      wins: 3,
-      avgFinish: 4.9,
-      totalKm: 95.2,
-      daily: [
-        { day: "Mon", races: 1, height: "30%" },
-        { day: "Tue", races: 2, height: "50%" },
-        { day: "Wed", races: 3, height: "70%" },
-        { day: "Thu", races: 2, height: "50%" },
-        { day: "Fri", races: 4, height: "80%" },
-        { day: "Sat", races: 3, height: "65%" },
-        { day: "Sun", races: 3, height: "65%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "iRacing", km: 1200, percentage: 63, emoji: "ðŸ" },
-      { name: "Assetto Corsa", km: 500, percentage: 26, emoji: "ðŸŽ®" },
-      { name: "F1 24", km: 190, percentage: 11, emoji: "ðŸŽï¸" },
-    ],
-    races: [
-      {
-        date: "Jan 28, 2024",
-        sim: "iRacing",
-        car: "Ferrari 488 GTE",
-        track: "Le Mans",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "3:24.123",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 26, 2024",
-        sim: "Assetto Corsa",
-        car: "Porsche 911 GT2 RS",
-        track: "Nurburgring",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "6:45.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 24, 2024",
-        sim: "iRacing",
-        car: "BMW M6 GT3",
-        track: "Spa-Francorchamps",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "2:04.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 22, 2024",
-        sim: "Assetto Corsa",
-        car: "Lamborghini HuracÃ¡n",
-        track: "Paul Ricard",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "1:50.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 20, 2024",
-        sim: "iRacing",
-        car: "Aston Martin DBR9",
-        track: "Daytona",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "1:54.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 18, 2024",
-        sim: "Assetto Corsa",
-        car: "McLaren MP4-12C",
-        track: "Brands Hatch",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:27.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 16, 2024",
-        sim: "iRacing",
-        car: "Porsche 991 GT3 R",
-        track: "Road America",
-        position: 4,
-        qualiPos: 5,
-        bestLap: "2:11.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 14, 2024",
-        sim: "Assetto Corsa",
-        car: "Ferrari 458 GT2",
-        track: "Monza",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "1:41.567",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 12, 2024",
-        sim: "iRacing",
-        car: "Chevrolet Corvette Z06",
-        track: "Watkins Glen",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:39.789",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 10, 2024",
-        sim: "Assetto Corsa",
-        car: "Audi R8 LMS",
-        track: "Laguna Seca",
-        position: 3,
-        qualiPos: 3,
-        bestLap: "1:32.123",
-        isFastestLap: false,
-      },
-    ],
-  },
-  "taylor-rodriguez": {
-    name: "Taylor Rodriguez",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop",
-    bio: "Assetto Corsa Master â€¢ Track Expert",
-    level: 51,
-    totalRaces: 156,
-    raceWins: 34,
-    podiums: 52,
-    polePositions: 28,
-    fastestLaps: 45,
-    avgFinish: 3.8,
-    totalKm: 2850,
-    weeklyStats: {
-      totalRaces: 32,
-      wins: 8,
-      avgFinish: 3.5,
-      totalKm: 156.8,
-      daily: [
-        { day: "Mon", races: 4, height: "60%" },
-        { day: "Tue", races: 5, height: "80%" },
-        { day: "Wed", races: 5, height: "80%" },
-        { day: "Thu", races: 6, height: "100%" },
-        { day: "Fri", races: 4, height: "65%" },
-        { day: "Sat", races: 5, height: "75%" },
-        { day: "Sun", races: 3, height: "50%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "Assetto Corsa", km: 1500, percentage: 53, emoji: "ðŸŽ®" },
-      { name: "F1 24", km: 900, percentage: 31, emoji: "ðŸŽï¸" },
-      { name: "iRacing", km: 450, percentage: 16, emoji: "ðŸ" },
-    ],
-    races: [
-      {
-        date: "Jan 25, 2024",
-        sim: "Assetto Corsa",
-        car: "GT1 Nissan GT-R",
-        track: "Suzuka",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:32.891",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 23, 2024",
-        sim: "F1 24",
-        car: "Ferrari SF-24",
-        track: "Melbourne",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:23.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 21, 2024",
-        sim: "Assetto Corsa",
-        car: "Lamborghini Gallardo GT3",
-        track: "Imola",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "1:45.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 19, 2024",
-        sim: "iRacing",
-        car: "Porsche GT3 Cup",
-        track: "Sebring",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "2:07.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 17, 2024",
-        sim: "Assetto Corsa",
-        car: "McLaren 650S GT3",
-        track: "Spa-Francorchamps",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "2:02.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 15, 2024",
-        sim: "F1 24",
-        car: "McLaren MCL38",
-        track: "Silverstone",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:27.234",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 13, 2024",
-        sim: "Assetto Corsa",
-        car: "Audi R8 LMS Ultra",
-        track: "Nurburgring",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "6:52.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 11, 2024",
-        sim: "iRacing",
-        car: "Ferrari 488 GTE",
-        track: "Le Mans",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "3:23.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 09, 2024",
-        sim: "Assetto Corsa",
-        car: "BMW M6 GT3",
-        track: "Paul Ricard",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:52.789",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 07, 2024",
-        sim: "F1 24",
-        car: "Alpine A523",
-        track: "Monaco",
-        position: 2,
-        qualiPos: 3,
-        bestLap: "1:15.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 05, 2024",
-        sim: "Assetto Corsa",
-        car: "Porsche 911 RSR",
-        track: "Monza",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:39.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 03, 2024",
-        sim: "iRacing",
-        car: "Chevrolet Corvette C8",
-        track: "Road Atlanta",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "1:19.234",
-        isFastestLap: false,
-      },
-    ],
-  },
-  "casey-williams": {
-    name: "Casey Williams",
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop",
-    bio: "Multi-Sim Driver â€¢ Consistent Performer",
-    level: 35,
-    totalRaces: 87,
-    raceWins: 8,
-    podiums: 18,
-    polePositions: 11,
-    fastestLaps: 14,
-    avgFinish: 5.3,
-    totalKm: 1650,
-    weeklyStats: {
-      totalRaces: 15,
-      wins: 1,
-      avgFinish: 5.2,
-      totalKm: 78.5,
-      daily: [
-        { day: "Mon", races: 2, height: "45%" },
-        { day: "Tue", races: 2, height: "50%" },
-        { day: "Wed", races: 2, height: "50%" },
-        { day: "Thu", races: 3, height: "70%" },
-        { day: "Fri", races: 2, height: "50%" },
-        { day: "Sat", races: 2, height: "45%" },
-        { day: "Sun", races: 2, height: "50%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "F1 24", km: 700, percentage: 42, emoji: "ðŸŽï¸" },
-      { name: "iRacing", km: 600, percentage: 36, emoji: "ðŸ" },
-      { name: "Assetto Corsa", km: 350, percentage: 22, emoji: "ðŸŽ®" },
-    ],
-    races: [
-      {
-        date: "Jan 27, 2024",
-        sim: "F1 24",
-        car: "Mercedes W15",
-        track: "Silverstone",
-        position: 2,
-        qualiPos: 3,
-        bestLap: "1:27.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 24, 2024",
-        sim: "iRacing",
-        car: "McLaren GT",
-        track: "Daytona",
-        position: 4,
-        qualiPos: 4,
-        bestLap: "1:45.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 22, 2024",
-        sim: "Assetto Corsa",
-        car: "Lamborghini HuracÃ¡n",
-        track: "Brands Hatch",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:29.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 20, 2024",
-        sim: "F1 24",
-        car: "Haas VF-24",
-        track: "Abu Dhabi",
-        position: 5,
-        qualiPos: 6,
-        bestLap: "1:36.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 18, 2024",
-        sim: "iRacing",
-        car: "BMW M4 GT3",
-        track: "Road America",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "2:13.456",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 16, 2024",
-        sim: "Assetto Corsa",
-        car: "McLaren 650S GT3",
-        track: "Spa-Francorchamps",
-        position: 3,
-        qualiPos: 3,
-        bestLap: "2:03.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 14, 2024",
-        sim: "F1 24",
-        car: "Alpine A523",
-        track: "Singapore",
-        position: 6,
-        qualiPos: 7,
-        bestLap: "1:57.234",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 12, 2024",
-        sim: "iRacing",
-        car: "Porsche 911 GT3 R",
-        track: "Watkins Glen",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:40.567",
-        isFastestLap: true,
-      },
-    ],
-  },
-  "jordan-park": {
-    name: "Jordan Park",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop",
-    bio: "Setup Expert â€¢ Tips & Guides Creator",
-    level: 58,
-    totalRaces: 203,
-    raceWins: 42,
-    podiums: 78,
-    polePositions: 35,
-    fastestLaps: 61,
-    avgFinish: 3.5,
-    totalKm: 3200,
-    weeklyStats: {
-      totalRaces: 38,
-      wins: 9,
-      avgFinish: 3.3,
-      totalKm: 187.2,
-      daily: [
-        { day: "Mon", races: 5, height: "70%" },
-        { day: "Tue", races: 6, height: "85%" },
-        { day: "Wed", races: 5, height: "75%" },
-        { day: "Thu", races: 6, height: "90%" },
-        { day: "Fri", races: 7, height: "100%" },
-        { day: "Sat", races: 5, height: "70%" },
-        { day: "Sun", races: 4, height: "60%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "F1 24", km: 1800, percentage: 56, emoji: "ðŸŽï¸" },
-      { name: "Assetto Corsa", km: 900, percentage: 28, emoji: "ðŸŽ®" },
-      { name: "iRacing", km: 500, percentage: 16, emoji: "ðŸ" },
-    ],
-    races: [
-      {
-        date: "Jan 29, 2024",
-        sim: "F1 24",
-        car: "Red Bull RB20",
-        track: "Abu Dhabi",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:26.234",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 27, 2024",
-        sim: "Assetto Corsa",
-        car: "GT1 Ferrari 488",
-        track: "Monza",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:42.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 25, 2024",
-        sim: "iRacing",
-        car: "Porsche 911 RSR",
-        track: "Le Mans",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "3:45.891",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 23, 2024",
-        sim: "F1 24",
-        car: "Mercedes W15",
-        track: "Melbourne",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:24.123",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 21, 2024",
-        sim: "Assetto Corsa",
-        car: "BMW M4 GT4",
-        track: "Sachsenring",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:22.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 19, 2024",
-        sim: "iRacing",
-        car: "Ferrari 488 GTE",
-        track: "Sebring",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "3:16.789",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 17, 2024",
-        sim: "F1 24",
-        car: "Aston Martin AMR24",
-        track: "Singapore",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "1:58.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 15, 2024",
-        sim: "Assetto Corsa",
-        car: "Lamborghini HuracÃ¡n GT3",
-        track: "Spa-Francorchamps",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "2:01.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 13, 2024",
-        sim: "iRacing",
-        car: "Chevrolet Corvette C8",
-        track: "Road Atlanta",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:18.234",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 11, 2024",
-        sim: "F1 24",
-        car: "McLaren MCL38",
-        track: "Bahrain",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:31.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 09, 2024",
-        sim: "Assetto Corsa",
-        car: "Porsche 911 GT3 R",
-        track: "Nurburgring",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "6:48.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 07, 2024",
-        sim: "iRacing",
-        car: "BMW M6 GT3",
-        track: "Watkins Glen",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:39.123",
-        isFastestLap: true,
-      },
-    ],
-  },
-  "admin-team": {
-    name: "Admin Team",
-    avatar:
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=120&h=120&fit=crop",
-    bio: "Community Leaders â€¢ Event Organizers",
-    level: 99,
-    totalRaces: 0,
-    raceWins: 0,
-    podiums: 0,
-    polePositions: 0,
-    fastestLaps: 0,
-    avgFinish: 0,
-    totalKm: 0,
-    weeklyStats: {
-      totalRaces: 0,
-      wins: 0,
-      avgFinish: 0,
-      totalKm: 0,
-      daily: [
-        { day: "Mon", races: 0, height: "0%" },
-        { day: "Tue", races: 0, height: "0%" },
-        { day: "Wed", races: 0, height: "0%" },
-        { day: "Thu", races: 0, height: "0%" },
-        { day: "Fri", races: 0, height: "0%" },
-        { day: "Sat", races: 0, height: "0%" },
-        { day: "Sun", races: 0, height: "0%" },
-      ],
-    },
-    mostPlayed: [],
-    races: [],
-  },
-  "mike-racing": {
-    name: "Mike Racing",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop",
-    bio: "Community Leader â€¢ Tournament Organizer",
-    level: 45,
-    totalRaces: 142,
-    raceWins: 28,
-    podiums: 45,
-    polePositions: 19,
-    fastestLaps: 38,
-    avgFinish: 4.4,
-    totalKm: 2100,
-    weeklyStats: {
-      totalRaces: 24,
-      wins: 4,
-      avgFinish: 4.1,
-      totalKm: 112.6,
-      daily: [
-        { day: "Mon", races: 3, height: "55%" },
-        { day: "Tue", races: 4, height: "75%" },
-        { day: "Wed", races: 3, height: "60%" },
-        { day: "Thu", races: 4, height: "75%" },
-        { day: "Fri", races: 3, height: "60%" },
-        { day: "Sat", races: 4, height: "80%" },
-        { day: "Sun", races: 3, height: "55%" },
-      ],
-    },
-    mostPlayed: [
-      { name: "iRacing", km: 1200, percentage: 57, emoji: "ðŸ" },
-      { name: "F1 24", km: 600, percentage: 29, emoji: "ðŸŽï¸" },
-      { name: "Assetto Corsa", km: 300, percentage: 14, emoji: "ðŸŽ®" },
-    ],
-    races: [
-      {
-        date: "Jan 28, 2024",
-        sim: "iRacing",
-        car: "Chevrolet Corvette C8",
-        track: "Sebring",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "1:58.456",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 26, 2024",
-        sim: "F1 24",
-        car: "McLaren MCL38",
-        track: "Suzuka",
-        position: 2,
-        qualiPos: 1,
-        bestLap: "1:30.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 23, 2024",
-        sim: "iRacing",
-        car: "Porsche 911 GT2 RS",
-        track: "Road America",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "2:12.789",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 21, 2024",
-        sim: "Assetto Corsa",
-        car: "BMW M4 GT3",
-        track: "Paul Ricard",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:51.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 19, 2024",
-        sim: "F1 24",
-        car: "Ferrari SF-24",
-        track: "Melbourne",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "1:25.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 17, 2024",
-        sim: "iRacing",
-        car: "Ferrari 488 GTE",
-        track: "Le Mans",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "3:24.123",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 15, 2024",
-        sim: "Assetto Corsa",
-        car: "Lamborghini HuracÃ¡n GT3",
-        track: "Monza",
-        position: 3,
-        qualiPos: 4,
-        bestLap: "1:43.456",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 13, 2024",
-        sim: "F1 24",
-        car: "Red Bull RB20",
-        track: "Abu Dhabi",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "1:26.234",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 11, 2024",
-        sim: "iRacing",
-        car: "Porsche 911 RSR",
-        track: "Watkins Glen",
-        position: 2,
-        qualiPos: 2,
-        bestLap: "1:40.789",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 09, 2024",
-        sim: "Assetto Corsa",
-        car: "Audi R8 LMS Ultra",
-        track: "Spa-Francorchamps",
-        position: 1,
-        qualiPos: 1,
-        bestLap: "2:02.567",
-        isFastestLap: true,
-      },
-      {
-        date: "Jan 07, 2024",
-        sim: "F1 24",
-        car: "Mercedes W15",
-        track: "Singapore",
-        position: 2,
-        qualiPos: 3,
-        bestLap: "1:59.123",
-        isFastestLap: false,
-      },
-      {
-        date: "Jan 05, 2024",
-        sim: "iRacing",
-        car: "BMW M6 GT3",
-        track: "Road America",
-        position: 1,
-        qualiPos: 2,
-        bestLap: "2:14.456",
-        isFastestLap: true,
-      },
-    ],
-  },
-};
+import { ProfileView } from "@/components/ProfileView";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  resolveApiUrl,
+  getProfileSummaryForUser,
+  getUserPublicProfile,
+  getFollowers,
+  getFollowing,
+  followUser,
+  unfollowUser,
+  ApiError,
+  type ProfileSummary,
+  type FollowUser,
+} from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function UserProfile() {
-  const { username } = useParams();
+  const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const user = usersDatabase[username!];
+  const { user: currentUser, loading: authLoading } = useAuth();
+
+  const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [followsLoading, setFollowsLoading] = useState(false);
+  const [followsError, setFollowsError] = useState<string | null>(null);
+  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
+
+  const [preview, setPreview] = useState<Awaited<
+    ReturnType<typeof getUserPublicProfile>
+  > | null>(null);
+
+  const [followLoading, setFollowLoading] = useState(false);
+
+  const id = userId?.trim() ?? "";
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [username]);
+  }, [id]);
 
-  if (!user) {
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      setNotFound(true);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    setNotFound(false);
+    setProfile(null);
+    setPreview(null);
+
+    (async () => {
+      try {
+        const [summary, pub] = await Promise.all([
+          getProfileSummaryForUser(id),
+          getUserPublicProfile(id),
+        ]);
+        if (cancelled) return;
+        setProfile(summary);
+        setPreview(pub);
+      } catch (e: unknown) {
+        if (cancelled) return;
+        if (e instanceof ApiError && e.status === 404) {
+          setNotFound(true);
+        } else {
+          setLoadError(e instanceof Error ? e.message : "Failed to load profile.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || notFound || loadError) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setFollowsLoading(true);
+        setFollowsError(null);
+        const [f1, f2] = await Promise.all([
+          getFollowers(id),
+          getFollowing(id),
+        ]);
+        if (cancelled) return;
+        setFollowers(Array.isArray(f1) ? f1 : []);
+        setFollowing(Array.isArray(f2) ? f2 : []);
+      } catch (e) {
+        if (cancelled) return;
+        setFollowsError(
+          e instanceof Error ? e.message : "Failed to load followers/following."
+        );
+        setFollowers([]);
+        setFollowing([]);
+      } finally {
+        if (!cancelled) setFollowsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, notFound, loadError]);
+
+  const handleToggleFollow = useCallback(async () => {
+    if (!currentUser || !id || currentUser.id === id) return;
+    setFollowLoading(true);
+    try {
+      const isFollowing = preview?.isFollowing ?? false;
+      if (isFollowing) {
+        await unfollowUser(id);
+      } else {
+        await followUser(id);
+      }
+      const pub = await getUserPublicProfile(id);
+      setPreview(pub);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Could not update follow status.");
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [currentUser, id, preview?.isFollowing]);
+
+  if (!id) {
+    return (
+      <div className="bg-background min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <p className="text-center text-foreground text-lg">Invalid profile link.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authLoading && currentUser?.id === id) {
+    return <Navigate to="/profile" replace />;
+  }
+
+  if (loading || authLoading) {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center p-6">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
     return (
       <div className="bg-background min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <button
+            type="button"
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
           >
@@ -1053,22 +181,175 @@ export default function UserProfile() {
     );
   }
 
-  const profile = userToProfileSummary(user, username ?? "unknown");
-  return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-100">
-          Demo profile <span className="font-semibold">(mock data)</span> — this
-          page uses sample data only and does not reflect real Apex account
-          information.
+  if (loadError || !profile || !preview) {
+    return (
+      <div className="bg-background min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Back</span>
+          </button>
+          <div className="text-center max-w-md mx-auto">
+            <p className="text-destructive text-sm mb-4">{loadError ?? "Something went wrong."}</p>
+            <Link
+              to="/community"
+              className="text-primary text-sm underline underline-offset-2"
+            >
+              Back to community
+            </Link>
+          </div>
         </div>
-        <ProfileView
-          profile={profile}
-          onBack={() => navigate(-1)}
-          avatarUrl={user.avatar}
-        />
       </div>
+    );
+  }
+
+  const avatarUrl = resolveApiUrl(preview.avatarUrl) ?? undefined;
+  const bio =
+    preview.bio?.trim() ||
+    (profile.user as { tagline?: string; bio?: string }).bio?.trim() ||
+    (profile.user as { tagline?: string; bio?: string }).tagline?.trim() ||
+    undefined;
+
+  const displayProfile: ProfileSummary = {
+    ...profile,
+    user: {
+      ...profile.user,
+      displayName: preview.displayName || profile.user.displayName,
+    },
+  };
+
+  const showFollowUi = Boolean(currentUser && currentUser.id !== id);
+
+  return (
+    <div className="bg-background min-h-screen flex flex-col">
+      <ProfileView
+        profile={displayProfile}
+        onBack={() => navigate(-1)}
+        avatarUrl={avatarUrl || undefined}
+        bio={bio}
+        followersCount={preview.followersCount}
+        followingCount={preview.followingCount}
+        isCurrentUser={false}
+        isFollowing={preview.isFollowing}
+        followLoading={followLoading}
+        onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
+        onOpenFollowers={() => setOpenList("followers")}
+        onOpenFollowing={() => setOpenList("following")}
+      />
+
+      <Dialog
+        open={openList !== null}
+        onOpenChange={(open) => !open && setOpenList(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {openList === "followers" ? "Followers" : "Following"}
+            </DialogTitle>
+          </DialogHeader>
+          {followsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : followsError ? (
+            <p className="text-sm text-destructive">{followsError}</p>
+          ) : openList === "followers" ? (
+            followers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No followers yet.</p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {followers.map((f) => {
+                  const name =
+                    (typeof f.displayName === "string"
+                      ? f.displayName.trim()
+                      : "") || (f.email?.trim() ?? "—");
+                  const initials =
+                    name && name.length >= 2
+                      ? name.slice(0, 2).toUpperCase()
+                      : name.slice(0, 1).toUpperCase() || "?";
+                  return (
+                    <li
+                      key={f.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
+                        {resolveApiUrl(f.avatarUrl) ? (
+                          <img
+                            src={resolveApiUrl(f.avatarUrl)!}
+                            alt={name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          initials
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {name}
+                        </p>
+                        {f.bio && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {f.bio}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : openList === "following" ? (
+            following.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Not following anyone yet.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {following.map((f) => {
+                  const name =
+                    (typeof f.displayName === "string"
+                      ? f.displayName.trim()
+                      : "") || (f.email?.trim() ?? "—");
+                  const initials =
+                    name && name.length >= 2
+                      ? name.slice(0, 2).toUpperCase()
+                      : name.slice(0, 1).toUpperCase() || "?";
+                  return (
+                    <li
+                      key={f.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
+                        {resolveApiUrl(f.avatarUrl) ? (
+                          <img
+                            src={resolveApiUrl(f.avatarUrl)!}
+                            alt={name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          initials
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {name}
+                        </p>
+                        {f.bio && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {f.bio}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

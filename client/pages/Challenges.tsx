@@ -131,6 +131,11 @@ export default function Challenges() {
     ? weeklyPool.filter((c) => c.id !== featured.id)
     : weeklyPool;
 
+  const yourRank =
+    meta?.yourRank != null && Number.isFinite(meta.yourRank)
+      ? meta.yourRank
+      : null;
+
   if (loading) {
     return (
       <div className="bg-background min-h-screen flex items-center justify-center p-6">
@@ -328,10 +333,18 @@ export default function Challenges() {
                 Your Rank
               </p>
               <p
-                className="text-2xl font-bold"
-                style={{ color: "rgb(240, 28, 28)" }}
+                className={
+                  yourRank != null
+                    ? "text-2xl font-bold"
+                    : "text-2xl font-bold text-white"
+                }
+                style={
+                  yourRank != null
+                    ? { color: "rgb(240, 28, 28)" }
+                    : undefined
+                }
               >
-                {meta?.yourRank != null ? `#${meta.yourRank}` : "—"}
+                {yourRank != null ? `#${yourRank}` : "Unranked"}
               </p>
               <p className="text-xs text-white/60 mt-1">Overall leaderboard</p>
             </div>

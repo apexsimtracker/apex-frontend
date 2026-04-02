@@ -7,23 +7,48 @@ import {
   createDiscussionComment,
   DISCUSSION_CATEGORIES,
   ApiError,
-  resolveApiUrl,
+  resolveDiscussionAvatarSrc,
+  getDiscussionAuthorId,
   type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
+import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
+import { useAuth } from "@/contexts/AuthContext";
 import { timeAgo, getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
-
-function userNameToSlug(name: string) {
-  return name.toLowerCase().replace(/\s+/g, "-");
-}
 
 function categoryLabel(value: string) {
   return DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
 
+/** Avatar for a comment row: same resolution as /profile when the reply is yours. */
+function CommentAuthorAvatar({ author }: { author: unknown }) {
+  const { user } = useAuth();
+  const label = getDiscussionAuthorDisplay(author);
+  const src = resolveDiscussionAvatarSrc(author, user);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src, user?.id, user?.avatarUrl]);
+  const initials = getDiscussionAuthorInitials(label);
+  if (src?.trim() && !failed) {
+    return (
+      <img
+        src={src}
+        alt={label}
+        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs font-medium flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 export default function DiscussionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [discussion, setDiscussion] = useState<Discussion | null>(null);
   const [comments, setComments] = useState<DiscussionComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +57,7 @@ export default function DiscussionDetail() {
   const [replyBody, setReplyBody] = useState("");
   const [posting, setPosting] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
+  const [postAvatarFailed, setPostAvatarFailed] = useState(false);
 
   const loadComments = useCallback(async () => {
     if (!id) return;
@@ -130,6 +156,10 @@ export default function DiscussionDetail() {
     };
   }, [id]);
 
+  useEffect(() => {
+    setPostAvatarFailed(false);
+  }, [discussion?.id, user?.id, user?.avatarUrl]);
+
   if (!id) {
     return (
       <div className="bg-background min-h-screen">
@@ -188,20 +218,14 @@ export default function DiscussionDetail() {
   }
 
   const authorDisplay = getDiscussionAuthorDisplay(discussion.author);
+  const authorId = getDiscussionAuthorId(discussion.author);
   const description =
     discussion.content ??
     discussion.description ??
     discussion.excerpt ??
     discussion.title;
-  const avatarUrl =
-    discussion.author &&
-    typeof discussion.author === "object" &&
-    "avatarUrl" in discussion.author &&
-    typeof (discussion.author as any).avatarUrl === "string"
-      ? ((discussion.author as any).avatarUrl as string)
-      : null;
-  const avatarSrc = resolveApiUrl(avatarUrl);
-  const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
+  const avatarSrc = resolveDiscussionAvatarSrc(discussion.author, user);
+  const showPostAvatar = Boolean(avatarSrc?.trim()) && !postAvatarFailed;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
@@ -218,14 +242,17 @@ export default function DiscussionDetail() {
         <div className="bg-card rounded-2xl border border overflow-hidden">
           <div className="px-6 py-4 border-b border">
             <button
-              onClick={() => navigate(`/user/${userNameToSlug(authorDisplay)}`)}
+              onClick={() => {
+                if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
+              }}
               className="w-full flex items-center gap-3 mb-4 hover:opacity-80 transition-opacity group text-left"
             >
-              {hasAvatar ? (
+              {showPostAvatar ? (
                 <img
                   src={avatarSrc!}
                   alt={authorDisplay}
                   className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
+                  onError={() => setPostAvatarFailed(true)}
                 />
               ) : (
                 <div
@@ -246,7 +273,11 @@ export default function DiscussionDetail() {
             </button>
 
             <div className="flex gap-2 mb-4">
-              <span className="inline-block px-2.5 py-1 bg-secondary text-foreground rounded-full text-xs font-medium">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-foreground rounded-full text-xs font-medium">
+                <DiscussionCategoryIcon
+                  categoryKey={discussion.category ?? "general"}
+                  className="w-3.5 h-3.5 opacity-90"
+                />
                 {categoryLabel(discussion.category)}
               </span>
               {discussion.isPinned && (
@@ -321,42 +352,15 @@ export default function DiscussionDetail() {
                   className="bg-card rounded-2xl border border p-6"
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    {(() => {
-                      const authorLabel = getDiscussionAuthorDisplay(c.author);
-                      const avatarUrl =
-                        c.author &&
-                        typeof c.author === "object" &&
-                        "avatarUrl" in c.author &&
-                        typeof (c.author as any).avatarUrl === "string"
-                          ? ((c.author as any).avatarUrl as string)
-                          : null;
-                      const avatarSrc = resolveApiUrl(avatarUrl);
-                      const hasAvatar = !!avatarSrc && avatarSrc.trim().length > 0;
-                      const initials = getDiscussionAuthorInitials(authorLabel);
-                      return (
-                        <>
-                          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs font-medium flex-shrink-0">
-                            {hasAvatar ? (
-                              <img
-                                src={avatarSrc!}
-                                alt={authorLabel}
-                                className="w-9 h-9 rounded-full object-cover"
-                              />
-                            ) : (
-                              initials
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-semibold text-foreground">
-                              {authorLabel}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {timeAgo(c.createdAt)}
-                            </p>
-                          </div>
-                        </>
-                      );
-                    })()}
+                    <CommentAuthorAvatar author={c.author} />
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground">
+                        {getDiscussionAuthorDisplay(c.author)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {timeAgo(c.createdAt)}
+                      </p>
+                    </div>
                   </div>
                   <p className="text-muted-foreground whitespace-pre-wrap">
                     {c.body}

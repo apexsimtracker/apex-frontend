@@ -26,17 +26,8 @@ export default function Login() {
     setEmailNotVerified(false);
     setLoading(true);
     const trimmedEmail = email.trim();
-    const payload = { email: trimmedEmail, password };
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.log("[Login] request payload", { ...payload, password: "***" });
-    }
     try {
       const data = await authLogin(trimmedEmail, password) as { accessToken?: string; token?: string };
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.log("[Login] response (success)", { hasToken: Boolean(data?.accessToken ?? data?.token) });
-      }
       const token = data.accessToken ?? data.token;
       if (!token || typeof token !== "string") {
         setError("No token returned. Please try again.");
@@ -46,14 +37,6 @@ export default function Login() {
       window.dispatchEvent(new Event("apex:auth"));
       navigate("/profile", { replace: true });
     } catch (err) {
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.log("[Login] response (error)", {
-          status: err instanceof ApiError ? err.status : "(non-ApiError)",
-          message: err instanceof Error ? err.message : String(err),
-          code: err instanceof ApiError ? err.code : undefined,
-        });
-      }
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setEmailNotVerified(true);
         setError("Please verify your email before signing in.");

@@ -3,16 +3,12 @@ import React, { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import SimBadge from "./SimBadge";
-import { formatLapMs, formatCarName } from "@/lib/utils";
+import { formatLapMs, formatCarName, cn } from "@/lib/utils";
 import { apiGet, apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
 import { formatTrackName } from "@/lib/tracks";
-
-const userNameToSlug = (name: string) => {
-  return name.toLowerCase().replace(/\s+/g, "-");
-};
 
 /** Never show .ibt filename; use formatted track name or "Practice Session" */
 function cleanTitle(item: ActivityCardItem): string {
@@ -47,11 +43,21 @@ interface ActivityCardItem {
   likedByMe?: boolean;
 }
 
+/** Feed uses `source: "manual"`; detail APIs may use `MANUAL_ACTIVITY`. */
+function isManualSessionItem(item: ActivityCardItem): boolean {
+  const st = (item.sessionType ?? "").toString().trim().toUpperCase();
+  if (st === "MANUAL_ACTIVITY") return true;
+  const src = (item.source ?? "").toString().trim();
+  if (src.toUpperCase() === "MANUAL_ACTIVITY") return true;
+  if (src.toLowerCase() === "manual") return true;
+  return false;
+}
+
 const getPodiumColor = (pos: number) => {
   if (pos === 1) return "text-gold bg-yellow-950/20 dark:bg-yellow-950/15";
   if (pos === 2) return "text-silver bg-gray-800/15 dark:bg-gray-800/20";
   if (pos === 3) return "text-bronze bg-orange-950/20 dark:bg-orange-950/15";
-  return "text-muted-foreground/70 bg-secondary/30";
+  return "";
 };
 
 type CommentItem = { id: string; body: string; createdAt?: string };
@@ -196,29 +202,29 @@ function CommentsModal({
         </div>
         <div className="p-4 border-t border-white/10 flex flex-col gap-2">
           <div className="flex gap-2">
-          <input
-            type="text"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                e.preventDefault();
-                void submitComment();
-              }
-            }}
-            placeholder="Add a comment..."
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
-          />
-          <button
-            type="button"
-            disabled={commentPending || !commentText.trim()}
-            className={`rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15 disabled:pointer-events-none ${commentPending || !commentText.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => void submitComment()}
-          >
-            {commentPending ? "Posting…" : "Post"}
-          </button>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  void submitComment();
+                }
+              }}
+              placeholder="Add a comment..."
+              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
+            />
+            <button
+              type="button"
+              disabled={commentPending || !commentText.trim()}
+              className={`rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15 disabled:pointer-events-none ${commentPending || !commentText.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
+              onClick={() => void submitComment()}
+            >
+              {commentPending ? "Posting…" : "Post"}
+            </button>
           </div>
           {commentError && (
             <div className="text-xs text-red-400">{commentError}</div>
@@ -235,17 +241,26 @@ function CommentsModal({
   }
 }
 
+/** Coerce session position / grid size from the API (sometimes string) for numeric comparisons and podium UI. */
+function activityPositionValue(raw: unknown): number {
+  if (raw == null || raw === "") return 0;
+  const n =
+    typeof raw === "number" ? raw : Number(String(raw).trim());
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.trunc(n);
+}
+
 /** True when position/total represent a valid race result (not 0/0 or missing). */
-function hasValidRacePosition(position: number | null, totalRacers: number | null): boolean {
-  const pos = position ?? 0;
-  const total = totalRacers ?? 0;
+function hasValidRacePosition(position: unknown, totalRacers: unknown): boolean {
+  const pos = activityPositionValue(position);
+  const total = activityPositionValue(totalRacers);
   return pos > 0 || total > 0;
 }
 
 /** Original race stats: POSITION row (only when valid) + BEST/FASTEST row + CAR row */
 function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
-  const pos = item.position ?? 0;
-  const total = item.totalRacers ?? 0;
+  const pos = activityPositionValue(item.position);
+  const total = activityPositionValue(item.totalRacers);
   const showPosition = hasValidRacePosition(item.position, item.totalRacers);
   const showBest = item.bestLapMs != null;
   const lapTimeDisplay = showBest ? formatLapMs(item.bestLapMs) : "";
@@ -268,11 +283,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               )}
             </p>
           </div>
-          {pos <= 3 && (
-            <div className="text-xl sm:text-2xl flex-shrink-0">
-              {pos === 1 && "🥇"}
-              {pos === 2 && "🥈"}
-              {pos === 3 && "🥉"}
+          {pos >= 1 && pos <= 3 && (
+            <div className="text-xl sm:text-2xl flex-shrink-0" aria-hidden>
+              {["🥇", "🥈", "🥉"][pos - 1]}
             </div>
           )}
         </div>
@@ -308,11 +321,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               )}
             </p>
           </div>
-          {pos <= 3 && (
-            <div className="text-xl sm:text-2xl flex-shrink-0">
-              {pos === 1 && "🥇"}
-              {pos === 2 && "🥈"}
-              {pos === 3 && "🥉"}
+          {pos >= 1 && pos <= 3 && (
+            <div className="text-xl sm:text-2xl flex-shrink-0" aria-hidden>
+              {["🥇", "🥈", "🥉"][pos - 1]}
             </div>
           )}
         </div>
@@ -401,19 +412,35 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
           </div>
         )}
-        {hasValidRacePosition(item.position, item.totalRacers) && (
-          <div>
-            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
-              Position
-            </p>
-            <p className="text-xs sm:text-sm font-semibold text-white">
-              P{item.position}
-              {item.totalRacers != null && item.totalRacers > 0 && (
-                <span className="text-white/60"> / {item.totalRacers}</span>
-              )}
-            </p>
-          </div>
-        )}
+        {hasValidRacePosition(item.position, item.totalRacers) && (() => {
+          const pos = activityPositionValue(item.position);
+          const total = activityPositionValue(item.totalRacers);
+          return (
+            <div>
+              <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+                Position
+              </p>
+              <div
+                // className={`rounded-lg py-2 flex items-center justify-between gap-2 ${getPodiumColor(pos)}`}
+                className={cn("rounded-lg py-2 flex items-center justify-between gap-2", getPodiumColor(pos),
+                  pos <= 3 && "px-4"
+                )}
+              >
+                <p className="text-xs sm:text-sm font-semibold text-white">
+                  P{pos}
+                  {total > 0 && (
+                    <span className="text-white/60"> / {total}</span>
+                  )}
+                </p>
+                {pos >= 1 && pos <= 3 && (
+                  <span className="text-lg flex-shrink-0" aria-hidden>
+                    {["🥇", "🥈", "🥉"][pos - 1]}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
       {item.bestLapMs == null && !hasValidRacePosition(item.position, item.totalRacers) && (
         <div className="h-10" aria-hidden />
@@ -425,6 +452,7 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
 /** Full race card shell; stats area is either statsOverride (practice) or OriginalRaceStats (race) */
 function RaceCardContent({
   item,
+  profileUserId,
   statsOverride,
   likedByMe,
   likeCount,
@@ -434,6 +462,8 @@ function RaceCardContent({
   onCommentClick,
 }: {
   item: ActivityCardItem;
+  /** When set, avatar + name navigate here; clicks stop propagation so the card shell opens the session only for other areas. */
+  profileUserId?: string | null;
   statsOverride?: React.ReactNode;
   likedByMe: boolean;
   likeCount: number;
@@ -446,9 +476,11 @@ function RaceCardContent({
   const goToSession = () => navigate(`/sessions/${item.id}`);
   const handleShellClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
+    if ((e.target as HTMLElement).closest("[data-feed-profile-header]")) return;
     goToSession();
   };
-  const isManual = (item.source ?? "").toString().toUpperCase() === "MANUAL_ACTIVITY";
+  const isManual = isManualSessionItem(item);
+  /** Telemetry/practice rows with no laps; false for manual so we don't show "No laps recorded" on manual cards. */
   const isEmptySession = !isManual && (item.lapCount ?? 0) === 0;
   const isStrongSession =
     !isManual &&
@@ -460,8 +492,8 @@ function RaceCardContent({
   const sessionTypeKey = (item.sessionType ?? "").toString().trim();
   const sessionTypeLabel =
     sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
-    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
-    sessionTypeKey.toUpperCase() === "AGENT"
+      sessionTypeKey.toUpperCase() === "TELEMETRY" ||
+      sessionTypeKey.toUpperCase() === "AGENT"
       ? formatActivitySource(sessionTypeKey)
       : formatSessionTypeUpper(item.sessionType);
 
@@ -470,8 +502,47 @@ function RaceCardContent({
       className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6"
       onClick={handleShellClick}
     >
-        {/* Header with user info */}
-        <div className="px-4 sm:px-5 py-2.5 sm:py-3">
+      {/* Header with user info */}
+      <div className="px-4 sm:px-5 py-2.5 sm:py-3">
+        {profileUserId ? (
+          <div className="w-full">
+            <button
+              type="button"
+              data-feed-profile-header
+              className="flex items-center gap-2 sm:gap-3 text-left rounded-lg -mx-1 px-1 py-0.5 hover:bg-white/5 transition-colors max-w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/user/${encodeURIComponent(profileUserId)}`);
+              }}
+            >
+              {avatarSrc && avatarSrc.trim().length > 0 ? (
+                <img
+                  src={avatarSrc}
+                  alt={item.userName}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 text-xs font-semibold text-white/80 flex items-center justify-center flex-shrink-0">
+                  {(item.userName || "?")
+                    .trim()
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((p) => p[0]?.toUpperCase() ?? "")
+                    .join("") || "?"}
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white text-xs sm:text-sm min-w-0 truncate">
+                  {item.userName}
+                </p>
+
+                <p className="text-xs text-white/50 mt-0.5">{item.timestamp}</p>
+              </div>
+            </button>
+          </div>
+        ) : (
           <div className="w-full flex items-center gap-2 sm:gap-3">
             {avatarSrc && avatarSrc.trim().length > 0 ? (
               <img
@@ -497,110 +568,111 @@ function RaceCardContent({
               <p className="text-xs text-white/50 mt-0.5">{item.timestamp}</p>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Content */}
-        <div className="px-4 sm:px-5 pt-1 pb-3 sm:pt-1 sm:pb-4 flex gap-4 relative">
-          {/* Left side - Stats and info */}
-          <div className="flex-1 relative z-10">
-            {/* Track and Game info */}
-            <div className="mb-3">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
-                    {sessionTypeLabel}
-                  </div>
-                  <SimBadge sim={item.sim} />
-                  {isManual && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-white/5 text-white/60 border-white/10">
-                      Manual
-                    </span>
-                  )}
+      {/* Content */}
+      <div className="px-4 sm:px-5 pt-1 pb-3 sm:pt-1 sm:pb-4 flex gap-4 relative">
+        {/* Left side - Stats and info */}
+        <div className="flex-1 relative z-10">
+          {/* Track and Game info */}
+          <div className="mb-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
+                  {sessionTypeLabel}
                 </div>
-                {isStrongSession && (
-                  <div className="mt-1 text-xs text-emerald-400">
-                    Strong Session
-                  </div>
+                <SimBadge sim={item.sim} />
+                {isManual && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-white/5 text-white/60 border-white/10">
+                    Manual
+                  </span>
                 )}
-                {isEmptySession && !isManual && (
-                  <div className="mt-1 text-xs text-white/40">
-                    No laps recorded
-                  </div>
-                )}
-                <div className="mt-1.5 text-lg font-semibold text-white">
-                  {cleanTitle(item)}
+              </div>
+              {isStrongSession && (
+                <div className="mt-1 text-xs text-emerald-400">
+                  Strong Session
                 </div>
+              )}
+              {isEmptySession && (
+                <div className="mt-1 text-xs text-white/40">
+                  No laps recorded
+                </div>
+              )}
+              <div className="mt-1.5 text-lg font-semibold text-white">
+                {cleanTitle(item)}
               </div>
             </div>
+          </div>
 
-            {/* Stats area: manual, practice override, or original race stats */}
-            <div className={isEmptySession ? "opacity-60" : ""}>
-              {isManual ? (
-                <ManualStatsBlock item={item} />
-              ) : (
-                statsOverride ?? <OriginalRaceStats item={item} />
-              )}
-            </div>
+          {/* Stats area: manual, practice override, or original race stats */}
+          <div className={isEmptySession ? "opacity-60" : ""}>
+            {isManual ? (
+              <ManualStatsBlock item={item} />
+            ) : (
+              statsOverride ?? <OriginalRaceStats item={item} />
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Footer with actions */}
-        <div className="px-4 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between border-t border-white/3 bg-white/2">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              type="button"
-              disabled={likePending}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                void onLikeClick(e);
-              }}
-              className={`flex items-center gap-1 transition-colors group py-1 px-1 ${likedByMe ? "text-red-400 hover:text-red-300" : "text-white/60 hover:text-white/80"} ${likePending ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              <Heart
-                className={`w-3.5 h-3.5 ${likedByMe ? "fill-red-400" : "group-hover:fill-primary"}`}
-              />
-              <span className="text-xs">{likeCount}</span>
-            </button>
-            <button
-              type="button"
-              onPointerDown={(e) => {
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCommentClick(e);
-              }}
-              className="flex items-center gap-1 text-white/60 hover:text-white/80 transition-colors py-1 px-1"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span className="text-xs text-white/60">{commentCount}</span>
-            </button>
-          </div>
+      {/* Footer with actions */}
+      <div className="px-4 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between border-t border-white/3 bg-white/2">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
+            disabled={likePending}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (typeof navigator !== "undefined" && navigator.share) {
-                navigator.share({
-                  title: `${cleanTitle(item)} – ${item.userName}`,
-                  url: `${window.location.origin}/sessions/${item.id}`,
-                }).catch(() => {});
-              }
+              void onLikeClick(e);
             }}
-            className="text-white/40 hover:text-white/60 transition-colors p-1"
-            aria-label="Share"
+            className={`flex items-center gap-1 transition-colors group py-1 px-1 ${likedByMe ? "text-red-400 hover:text-red-300" : "text-white/60 hover:text-white/80"} ${likePending ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Heart
+              className={`w-3.5 h-3.5 ${likedByMe ? "fill-red-400" : "group-hover:fill-primary"}`}
+            />
+            <span className="text-xs">{likeCount}</span>
+          </button>
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCommentClick(e);
+            }}
+            className="flex items-center gap-1 text-white/60 hover:text-white/80 transition-colors py-1 px-1"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span className="text-xs text-white/60">{commentCount}</span>
           </button>
         </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof navigator !== "undefined" && navigator.share) {
+              navigator.share({
+                title: `${cleanTitle(item)} – ${item.userName}`,
+                url: `${window.location.origin}/sessions/${item.id}`,
+              }).catch(() => { });
+            }
+          }}
+          className="text-white/40 hover:text-white/60 transition-colors p-1"
+          aria-label="Share"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
       </div>
+    </div>
   );
 }
 
@@ -634,13 +706,18 @@ interface ActivityCardProps {
   likes: number;
   comments: number;
   onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
+  /** Activity / session owner id for linking avatar + name to `/user/:id`. */
+  profileUserId?: string | null;
 }
 
 export default function ActivityCard(props: ActivityCardProps) {
+  /** Feed maps UNKNOWN → PRACTICE in activityModel; still show race stats + medals when we have a real finish. */
+  const hasRaceFinish = hasValidRacePosition(props.position, props.totalRacers);
   const isPractice =
-    props.sessionType === "PRACTICE" ||
-    props.sessionType === "UNKNOWN" ||
-    props.sessionType == null;
+    !hasRaceFinish &&
+    (props.sessionType === "PRACTICE" ||
+      props.sessionType === "UNKNOWN" ||
+      props.sessionType == null);
 
   const [likedByMe, setLikedByMe] = useState(props.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(props.likeCount ?? props.likes ?? 0);
@@ -767,6 +844,7 @@ export default function ActivityCard(props: ActivityCardProps) {
     <>
       <RaceCardContent
         item={item}
+        profileUserId={props.profileUserId}
         statsOverride={isPractice ? <PracticeStatsBlock item={item} /> : undefined}
         likedByMe={likedByMe}
         likeCount={likeCount}

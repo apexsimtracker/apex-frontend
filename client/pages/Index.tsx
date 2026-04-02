@@ -7,7 +7,14 @@ import DiscussionCard from "@/components/DiscussionCard";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import { apiGet, isNetworkError, getDiscussions, getActivity, type Discussion } from "@/lib/api";
+import {
+  getProfileSummary,
+  isNetworkError,
+  getDiscussions,
+  getActivity,
+  type Discussion,
+  type WeeklyGoalsSummary,
+} from "@/lib/api";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,6 +66,19 @@ function getActivityHeaderFromOwner(
         : null);
   return { name, avatar };
 }
+
+function getProfileOwnerId(session: RawActivityItem): string | null {
+  if (typeof session.authorId === "string" && session.authorId.trim()) {
+    return session.authorId.trim();
+  }
+  const owner = session.owner;
+  const oid =
+    owner && typeof owner === "object" && "id" in owner && typeof (owner as { id?: unknown }).id === "string"
+      ? (owner as { id: string }).id
+      : null;
+  return oid && oid.trim() ? oid.trim() : null;
+}
+
 function timeAgo(createdAt: string | Date): string {
   const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
   const sec = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -111,8 +131,26 @@ export default function Index() {
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [discussionsLoading, setDiscussionsLoading] = useState(true);
   const [showUploadBanner, setShowUploadBanner] = useState(false);
+  /** Canonical weekly goals from GET /api/profile/summary when logged in; null uses feed fallback. */
+  const [profileWeeklyGoals, setProfileWeeklyGoals] = useState<WeeklyGoalsSummary | null>(null);
 
   const feedLoading = loading || discussionsLoading;
+
+  const loadProfileWeeklyGoals = useCallback(() => {
+    if (!user?.id) {
+      setProfileWeeklyGoals(null);
+      return;
+    }
+    void getProfileSummary()
+      .then((summary) => {
+        if (summary.weeklyGoals) {
+          setProfileWeeklyGoals(summary.weeklyGoals);
+        } else {
+          setProfileWeeklyGoals(null);
+        }
+      })
+      .catch(() => setProfileWeeklyGoals(null));
+  }, [user?.id]);
 
   useEffect(() => {
     if (searchParams.get("uploaded") === "1") {
@@ -148,12 +186,19 @@ export default function Index() {
         }
         setActivity([]);
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        setLoading(false);
+        loadProfileWeeklyGoals();
+      });
+  }, [loadProfileWeeklyGoals]);
 
   useEffect(() => {
     loadFeed();
   }, [loadFeed]);
+
+  useEffect(() => {
+    loadProfileWeeklyGoals();
+  }, [loadProfileWeeklyGoals]);
 
   useEffect(() => {
     function handleActivityUpdated() {
@@ -247,6 +292,28 @@ export default function Index() {
     return { races, podiums, laps };
   }, [activity]);
 
+  const goalsForBar = useMemo(() => {
+    if (profileWeeklyGoals) {
+      const w = profileWeeklyGoals;
+      return {
+        races: w.races.current,
+        podiums: w.podiums.current,
+        laps: w.laps.current,
+        racesTarget: w.races.target,
+        podiumsTarget: w.podiums.target,
+        lapsTarget: w.laps.target,
+      };
+    }
+    return {
+      races: goalsStats.races,
+      podiums: goalsStats.podiums,
+      laps: goalsStats.laps,
+      racesTarget: 10,
+      podiumsTarget: 5,
+      lapsTarget: 100,
+    };
+  }, [profileWeeklyGoals, goalsStats]);
+
   return (
     <div className="bg-background min-h-screen">
       {/* Hero Section */}
@@ -262,9 +329,12 @@ export default function Index() {
 
         {/* Goals */}
         <GoalsBar
-          races={goalsStats.races}
-          podiums={goalsStats.podiums}
-          laps={goalsStats.laps}
+          races={goalsForBar.races}
+          podiums={goalsForBar.podiums}
+          laps={goalsForBar.laps}
+          racesTarget={goalsForBar.racesTarget}
+          podiumsTarget={goalsForBar.podiumsTarget}
+          lapsTarget={goalsForBar.lapsTarget}
         />
 
         {/* Feed */}
@@ -333,10 +403,12 @@ export default function Index() {
                   }
                   const session = item.session;
                   const header = getActivityHeaderFromOwner(session as RawActivityItem, user ?? null);
+                  const profileOwnerId = getProfileOwnerId(session as RawActivityItem);
                   return (
                     <ActivityCard
                       key={getActivityKey(item)}
                       id={session.id}
+                      profileUserId={profileOwnerId}
                       userName={header.name}
                       userAvatar={header.avatar}
                       game="—"
@@ -375,7 +447,7 @@ export default function Index() {
               title={d.title}
               excerpt={d.excerpt ?? (d.description ? (d.description.slice(0, 160) + (d.description.length > 160 ? "…" : "")) : "")}
               author={d.author}
-              category={d.category}
+              categoryKey={d.category ?? "general"}
               timestamp={timeAgo(d.createdAt)}
               replies={d.replies ?? d.commentCount ?? 0}
               views={d.views ?? 0}

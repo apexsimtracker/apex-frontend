@@ -60,7 +60,7 @@ export default function App() {
                   <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-                  <Route path="/user/:username" element={<UserProfile />} />
+                  <Route path="/user/:userId" element={<UserProfile />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/challenges" element={<Challenges />} />
                   <Route path="/challenge/:id" element={<ChallengeDetail />} />

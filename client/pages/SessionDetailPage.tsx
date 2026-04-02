@@ -990,7 +990,7 @@ export default function SessionDetailPage() {
                 </p>
               </div>
             )
-          ) : (
+          ) : totalLapsCount > 0 ? <></> : (
             <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center relative overflow-hidden">
               {/* Subtle preview background */}
               <div

@@ -13,10 +13,6 @@ const TAB_METRICS = {
 
 type TabKey = keyof typeof TAB_METRICS;
 
-function displayNameToSlug(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, "-");
-}
-
 function formatValue(
   row: LeaderboardRow,
   metric: string
@@ -251,13 +247,15 @@ export default function Leaderboards() {
               {rows.map((row) => {
                 const rank = row.rank ?? 0;
                 const name = row.displayName ?? "";
-                const slug = displayNameToSlug(name);
                 const value = formatValue(row, metric ?? "wins");
+                const uid = row.userId?.trim();
 
                 return (
                   <button
                     key={`${rank}-${name}`}
-                    onClick={() => navigate(`/user/${slug}`)}
+                    onClick={() => {
+                      if (uid) navigate(`/user/${encodeURIComponent(uid)}`);
+                    }}
                     className={`w-full transition-all hover:bg-white/2 text-left border-b border-white/3 px-3 sm:px-4 ${
                       rank <= 3 ? "py-3 sm:py-4" : "py-2.5 sm:py-3"
                     }`}

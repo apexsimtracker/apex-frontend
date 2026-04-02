@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, User } from "lucide-react";
 import type { ProfileSummary } from "../lib/api";
-import { formatLapMs, formatCarName, formatAvgFinishOneDecimal } from "../lib/utils";
+import {
+  formatLapMs,
+  formatCarName,
+  formatAvgFinishOneDecimal,
+  formatTrackName,
+  cn,
+} from "../lib/utils";
 import SimBadge from "./SimBadge";
 import { SimLogo } from "./SimLogo";
 import { getSimDisplayName } from "../lib/sim";
@@ -157,6 +163,16 @@ export function ProfileView({
                       </button>
                     </>
                   )}
+                  {!isCurrentUser && onToggleFollow && (
+                    <button
+                      type="button"
+                      onClick={onToggleFollow}
+                      disabled={followLoading}
+                      className="px-3 py-1 rounded-lg text-xs font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {followLoading ? "…" : isFollowing ? "Unfollow" : "Follow"}
+                    </button>
+                  )}
                   {isCurrentUser && onEditProfile && (
                     <button
                       type="button"
@@ -176,13 +192,13 @@ export function ProfileView({
                 )}
                 <p className="text-muted-foreground/80 text-sm leading-relaxed mt-1 mb-2 sm:mb-3">
                   {bio?.trim() ||
-                  user.bio?.trim() ||
-                  user.tagline?.trim() ||
-                  "No bio yet."}
+                    user.bio?.trim() ||
+                    user.tagline?.trim() ||
+                    "No bio yet."}
                 </p>
               </div>
             </div>
-              <div className="text-center sm:text-right sm:min-w-max space-y-3">
+            <div className="text-center sm:text-right sm:min-w-max space-y-3">
               <p className="text-xs font-semibold text-foreground mb-1">
                 {profile.user.level != null
                   ? `Level ${profile.user.level}`
@@ -401,7 +417,7 @@ export function ProfileView({
               <div className="space-y-6">
                 {(profile.mostPlayed ?? []).map((sim) => (
                   <div key={sim.sim}>
-                    <div className="flex items-center justify-between mb-2 gap-3">
+                    <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1 flex items-center gap-2">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
                           <p className="font-semibold text-foreground">
@@ -409,14 +425,16 @@ export function ProfileView({
                           </p>
                           <SimBadge sim={sim.sim} />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {sim.km != null ? `${sim.km} km` : "—"}
-                        </p>
+
                       </div>
-                      <div className="w-10 h-10 flex items-center justify-center">
+                      <div className="flex-1 w-10 h-10 flex items-center justify-end">
                         <SimLogo sim={sim.sim} />
                       </div>
                     </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {sim.km != null ? `${sim.km} km` : "—"}
+                    </p>
                     <div className="h-2 bg-secondary/40 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full"
@@ -506,19 +524,18 @@ export function ProfileView({
                         {formatCarName(race.car)}
                       </td>
                       <td className="py-3 px-4 text-sm text-foreground">
-                        {race.track}
+                        {formatTrackName(race.track)}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                            race.position === 1
-                              ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
-                              : race.position === 2
-                                ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
-                                : race.position === 3
-                                  ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
-                                  : "bg-secondary text-foreground"
-                          }`}
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${race.position === 1
+                            ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
+                            : race.position === 2
+                              ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
+                              : race.position === 3
+                                ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
+                                : "bg-secondary text-foreground"
+                            }`}
                         >
                           {race.position ?? "—"}
                         </span>
@@ -569,22 +586,21 @@ export function ProfileView({
                       </p>
                     </div>
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                        race.position === 1
-                          ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
-                          : race.position === 2
-                            ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
-                            : race.position === 3
-                              ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
-                              : "bg-secondary text-foreground"
-                      }`}
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${race.position === 1
+                        ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
+                        : race.position === 2
+                          ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
+                          : race.position === 3
+                            ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
+                            : "bg-secondary text-foreground"
+                        }`}
                     >
                       P{race.position ?? "—"}
                     </span>
                   </div>
                   <div className="mb-3">
                     <p className="text-sm font-semibold text-foreground">
-                      {race.track}
+                      {formatTrackName(race.track)}
                     </p>
                     <p className="text-xs text-muted-foreground">{formatCarName(race.car)}</p>
                   </div>
@@ -712,7 +728,7 @@ export function ProfileView({
                           </span>
                           <span className="font-semibold text-foreground">
                             {game.podiumPct != null &&
-                            Number.isFinite(game.podiumPct)
+                              Number.isFinite(game.podiumPct)
                               ? `${game.podiumPct.toFixed(1)}%`
                               : "—"}
                           </span>

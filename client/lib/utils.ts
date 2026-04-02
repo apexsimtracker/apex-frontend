@@ -215,3 +215,48 @@ export function formatCarName(car: string | null | undefined): string {
 
   return processed.filter(Boolean).join(" ") || "Unknown Car";
 }
+
+/** Short tokens shown in ALL CAPS when formatted from slugs (e.g. monaco_gp → Monaco GP). */
+const TRACK_ACRONYMS = new Set([
+  "gp",
+  "f1",
+  "f2",
+  "f3",
+  "gt",
+  "gt3",
+  "gt4",
+  "gtd",
+  "gte",
+  "lmp",
+  "imsa",
+  "wec",
+  "dtm",
+  "nascar",
+]);
+
+/**
+ * Formats raw track identifiers (often lowercase slugs like `monaco`, `red_bull_ring`)
+ * into readable titles: "Monaco", "Red Bull Ring", "Silverstone".
+ */
+export function formatTrackName(track: string | null | undefined): string {
+  if (track == null || track === "") return "—";
+  const s = String(track).trim();
+  if (!s) return "—";
+
+  const tokens = s
+    .split(/[\s_\-]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  if (tokens.length === 0) return "—";
+
+  const formatted = tokens.map((word) => {
+    const lower = word.toLowerCase();
+    if (TRACK_ACRONYMS.has(lower)) return lower.toUpperCase();
+    if (/^\d+(st|nd|rd|th)?$/i.test(word)) return word;
+    if (/^\d+$/.test(word)) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+
+  return formatted.join(" ");
+}

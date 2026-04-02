@@ -18,20 +18,60 @@ export { API_BASE };
 /** Resolve relative API-served assets (e.g. "/api/assets/...") to absolute URLs. */
 export function resolveApiUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  const raw = String(url).trim();
+  let raw = String(url).trim();
   if (!raw) return null;
   if (/^(https?:)?\/\//i.test(raw)) return raw; // http(s) or protocol-relative
   if (/^(data:|blob:)/i.test(raw)) return raw;
+  // Normalize "api/assets/..." → "/api/assets/..." (DB or older clients may omit leading slash).
+  if (!raw.startsWith("/") && /^api\//i.test(raw)) {
+    raw = `/${raw}`;
+  }
   // Only prefix backend base for API-served asset paths.
   if (!raw.startsWith("/api/")) return raw;
 
-  const base = import.meta.env.VITE_APEX_API_BASE_URL ?? API_BASE;
+  const base =
+    String(import.meta.env.VITE_APEX_API_BASE_URL ?? "").trim() || API_BASE;
   let normalizedBase = String(base).trim().replace(/\/+$/, "");
   // Avoid mixed-content avatar loads on HTTPS pages.
   if (/^http:\/\//i.test(normalizedBase)) {
     normalizedBase = normalizedBase.replace(/^http:\/\//i, "https://");
   }
   return `${normalizedBase}${raw}`;
+}
+
+export function getDiscussionAuthorId(author: unknown): string | null {
+  if (!author || typeof author !== "object") return null;
+  const id = (author as { id?: unknown }).id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+/** Raw avatar string from community author JSON (`avatarUrl` or `avatar_url`). */
+export function getDiscussionAuthorAvatarRaw(author: unknown): string | null {
+  if (!author || typeof author !== "object") return null;
+  const o = author as Record<string, unknown>;
+  const v = o.avatarUrl ?? o.avatar_url;
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  return s.length > 0 ? s : null;
+}
+
+/**
+ * Same avatar resolution as /profile for your own posts: use auth user's `avatarUrl` when the
+ * discussion author is the logged-in user (GET /me returns absolute URLs; community list may not).
+ * Otherwise use author.avatarUrl from the discussion payload.
+ */
+export function resolveDiscussionAvatarSrc(
+  author: unknown,
+  currentUser: { id: string; avatarUrl?: string | null } | null | undefined
+): string | null {
+  const authorId = getDiscussionAuthorId(author);
+  if (authorId && currentUser?.id === authorId) {
+    const u = currentUser.avatarUrl;
+    if (typeof u === "string" && u.trim() !== "") {
+      return resolveApiUrl(u.trim());
+    }
+  }
+  return resolveApiUrl(getDiscussionAuthorAvatarRaw(author));
 }
 
 // Standardized API error
@@ -119,16 +159,6 @@ export async function fetchApi<T>(
       ? path
       : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
-  if (import.meta.env.DEV) {
-    // Temporary dev logging to trace auth/profile requests
-    // eslint-disable-next-line no-console
-    console.log("[fetchApi] request", {
-      method,
-      url,
-      hasToken: Boolean(token),
-    });
-  }
-
   let res: Response;
   try {
     res = await fetch(url, {
@@ -138,14 +168,6 @@ export async function fetchApi<T>(
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");
-  }
-
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[fetchApi] response", {
-      url,
-      status: res.status,
-    });
   }
 
   if (res.ok) {
@@ -160,15 +182,6 @@ export async function fetchApi<T>(
 
   const { message, code } = await extractErrorInfo(res);
 
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[fetchApi] response body (error)", {
-      status: res.status,
-      message,
-      code,
-    });
-  }
-
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {
     emitProRequiredEvent();
@@ -177,6 +190,18 @@ export async function fetchApi<T>(
 
   throw new ApiError(res.status, message, code);
 }
+
+/** Per-metric progress toward weekly goals (GET /api/profile/summary). */
+export type WeeklyGoalMetric = {
+  current: number;
+  target: number;
+};
+
+export type WeeklyGoalsSummary = {
+  races: WeeklyGoalMetric;
+  podiums: WeeklyGoalMetric;
+  laps: WeeklyGoalMetric;
+};
 
 export type ProfileSummary = {
   user: {
@@ -243,12 +268,26 @@ export type ProfileSummary = {
     body: string;
     sessionId: string;
   } | null;
+  /** ISO week window + deltas; returned by profile summary API. */
+  weeklySnapshot?: {
+    weekStart: string;
+    weekEnd: string;
+    sessions: number;
+    sessionsDelta: number;
+    trackTimeSec: number;
+    trackTimeSecDelta: number;
+    laps: number;
+    lapsDelta: number;
+  };
+  /** Canonical weekly goal progress for the profile user (same as server-side stats). */
+  weeklyGoals?: WeeklyGoalsSummary;
 };
 
 // Social / follow system
 export type FollowUser = {
   id: string;
   displayName?: string | null;
+  email?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
   followersCount?: number;
@@ -264,6 +303,35 @@ export type FollowStatus = {
 // Prefer authMe() for current user; this function is not used by the main profile page.
 export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
+}
+
+/** GET /api/profile/summary/:userId — same shape as getProfileSummary; public. */
+export async function getProfileSummaryForUser(
+  userId: string,
+  type?: "all" | "telemetry" | "manual"
+): Promise<ProfileSummary> {
+  const q =
+    type && type !== "all"
+      ? `?type=${encodeURIComponent(type)}`
+      : "";
+  return apiGet<ProfileSummary>(
+    `/api/profile/summary/${encodeURIComponent(userId)}${q}`
+  );
+}
+
+/** GET /api/users/:userId — public profile preview (avatar, bio, follow counts). */
+export type UserPublicProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  followersCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+};
+
+export async function getUserPublicProfile(userId: string): Promise<UserPublicProfile> {
+  return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
 }
 
 export type Competition = {
@@ -375,6 +443,15 @@ export const DISCUSSION_CATEGORIES = [
 ] as const;
 
 export type DiscussionCategory = (typeof DISCUSSION_CATEGORIES)[number]["value"];
+
+/** Label for a discussion category key (setup → Setups). Unknown keys pass through. */
+export function getDiscussionCategoryLabel(key: string): string {
+  const k = String(key ?? "")
+    .trim()
+    .toLowerCase();
+  const row = DISCUSSION_CATEGORIES.find((c) => c.value === k);
+  return row?.label ?? key;
+}
 
 // Author object for community discussions/comments, returned directly by the backend.
 // Shape: { id, displayName, avatarUrl }
@@ -530,10 +607,6 @@ export type UpdateMeBody = {
 export async function authMe(): Promise<AuthUser> {
   const data = await fetchApi<AuthUser | { user?: AuthUser }>("GET", "/api/auth/me", undefined, true);
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[authMe] current-user response — avatarUrl:", (user as AuthUser).avatarUrl ?? "(missing)");
-  }
   return user;
 }
 
@@ -556,28 +629,12 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const url = `${API_BASE}/api/profile/avatar`;
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[uploadProfileAvatar] request", {
-      url,
-      hasToken: Boolean(token),
-      file: { name: file.name, size: file.size, type: file.type },
-    });
-  }
 
   const res = await fetch(url, {
     method: "POST",
     headers: Object.keys(headers).length > 0 ? headers : undefined,
     body: formData,
   });
-
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[uploadProfileAvatar] response", {
-      url,
-      status: res.status,
-    });
-  }
 
   if (!res.ok) {
     let message = "Avatar upload failed";
@@ -600,10 +657,6 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
   const data = (await res.json()) as UploadProfileAvatarResponse;
   if (!data?.avatarUrl) {
     throw new ApiError(500, "No avatar URL in response");
-  }
-  if (import.meta.env.DEV) {
-    // eslint-disable-next-line no-console
-    console.log("[uploadProfileAvatar] response body avatarUrl:", data.avatarUrl, "isAbsolute:", data.avatarUrl.startsWith("http"));
   }
   return data;
 }
@@ -796,6 +849,13 @@ export async function getActivity(type: SessionsFilterType = "all"): Promise<unk
         : null);
 
     if (bestLapMs != null) merged.bestLapMs = bestLapMs;
+
+    // Ensure feed avatars load: relative /api/assets/... → API base (same as auth/me absolute URLs).
+    const rawAvatar =
+      typeof merged.authorAvatarUrl === "string" ? merged.authorAvatarUrl.trim() : "";
+    if (rawAvatar) {
+      merged.authorAvatarUrl = resolveApiUrl(rawAvatar) ?? rawAvatar;
+    }
 
     return merged;
   }

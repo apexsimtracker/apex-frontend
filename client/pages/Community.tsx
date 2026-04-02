@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import DiscussionCard from "@/components/DiscussionCard";
+import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import {
   getDiscussions,
   createDiscussion,
@@ -226,8 +227,17 @@ export default function Community() {
                   : "border border-white/4 text-foreground/70 hover:text-foreground hover:bg-white/2"
               }`}
             >
-              <span className="text-base mb-1 block">
-                {cat.value === "all" ? "📋" : cat.value === "setup" ? "🏎️" : cat.value === "guides" ? "💡" : "📋"}
+              <span
+                className={`mb-1 flex justify-center ${
+                  selectedCategory === cat.value
+                    ? "text-[rgb(240,28,28)]"
+                    : "text-muted-foreground/70"
+                }`}
+              >
+                <DiscussionCategoryIcon
+                  categoryKey={cat.value}
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                />
               </span>
               <p className="font-medium text-xs">{cat.label}</p>
               <p className="text-xs text-muted-foreground/50 mt-0.5">
@@ -262,7 +272,7 @@ export default function Community() {
                   truncateDescription(d.content ?? d.description ?? d.title)
                 }
                 author={d.author}
-                category={categoryLabel(d.category)}
+                categoryKey={d.category ?? "general"}
                 timestamp={timeAgo(d.createdAt)}
                 replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
                 views={d.likeCount ?? d.views ?? 0}
