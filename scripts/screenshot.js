@@ -43,7 +43,6 @@ const DESKTOP_VIEWPORT = {
         await desktopPage.screenshot({
           path: path.join(screenshotsDir, `${page.name}.png`),
         });
-        console.log(`✓ Screenshot: ${page.name}.png`);
       } catch (error) {
         console.log(`✗ Failed to screenshot ${page.name}: ${error.message}`);
       }
@@ -68,14 +67,12 @@ const DESKTOP_VIEWPORT = {
         await iphonePage.screenshot({
           path: path.join(screenshotsDir, `${page.name}.png`),
         });
-        console.log(`✓ Screenshot: ${page.name}.png`);
       } catch (error) {
         console.log(`✗ Failed to screenshot ${page.name}: ${error.message}`);
       }
     }
 
     await browser.close();
-    console.log("\n✨ Screenshots saved to ./screenshots/");
   } catch (error) {
     console.error("Error:", error);
     process.exit(1);

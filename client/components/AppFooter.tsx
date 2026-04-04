@@ -1,4 +1,8 @@
+import { Link } from "react-router-dom";
 import { APP_VERSION, SUPPORT_EMAIL } from "@/lib/appConfig";
+
+const linkClass =
+  "text-white/50 hover:text-white/70 transition-colors underline underline-offset-2";
 
 export default function AppFooter() {
   return (
@@ -7,12 +11,21 @@ export default function AppFooter() {
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-white/40">
           <span>
             Support:{" "}
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              className="text-white/50 hover:text-white/70 transition-colors underline underline-offset-2"
-            >
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={linkClass}>
               {SUPPORT_EMAIL}
             </a>
+          </span>
+          <span>
+            Legal:{" "}
+            <Link to="/terms-and-conditions" className={linkClass}>
+              Terms
+            </Link>
+            <span className="text-white/25 mx-1.5" aria-hidden>
+              ·
+            </span>
+            <Link to="/privacy-policy" className={linkClass}>
+              Privacy
+            </Link>
           </span>
           <span>Version: {APP_VERSION}</span>
         </div>

@@ -48,7 +48,6 @@ const IPHONE_12_PRO = {
       const browser_page = await context.newPage();
 
       const url = `http://localhost:8080${page.path}`;
-      console.log(`📸 Capturing ${page.name} from ${url}...`);
 
       try {
         await browser_page.goto(url, { waitUntil: "networkidle" });
@@ -65,16 +64,12 @@ const IPHONE_12_PRO = {
           fullPage: true,
         });
 
-        console.log(`✅ Saved: ${screenshotPath}`);
       } catch (pageError) {
         console.error(`❌ Error capturing ${page.name}:`, pageError.message);
       } finally {
         await context.close();
       }
     }
-
-    console.log("\n✨ Screenshots completed!");
-    console.log(`📁 Location: ${screenshotsDir}`);
   } catch (error) {
     console.error("Error:", error.message);
     process.exit(1);

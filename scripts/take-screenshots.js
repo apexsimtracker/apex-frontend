@@ -36,7 +36,6 @@ const IPHONE_VIEWPORT = {
       await browser_page.setViewport(IPHONE_VIEWPORT);
 
       const url = `http://localhost:8080${page.path}`;
-      console.log(`📸 Capturing ${page.name} from ${url}...`);
 
       await browser_page.goto(url, { waitUntil: "networkidle2" });
 
@@ -52,12 +51,8 @@ const IPHONE_VIEWPORT = {
         fullPage: true,
       });
 
-      console.log(`✅ Saved: ${screenshotPath}`);
       await browser_page.close();
     }
-
-    console.log("\n✨ All screenshots captured successfully!");
-    console.log(`📁 Location: ${screenshotsDir}`);
   } catch (error) {
     console.error("Error taking screenshots:", error);
     process.exit(1);

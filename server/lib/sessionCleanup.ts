@@ -15,16 +15,22 @@ export function setSessionStore(store: SessionStore): void {
 
 export async function cleanupExpiredSessions(): Promise<number> {
   if (!sessionStore) {
-    console.log("⚠️  Session store not configured, skipping cleanup");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("⚠️  Session store not configured, skipping cleanup");
+    }
     return 0;
   }
 
   try {
     const deleted = await sessionStore.deleteExpired();
-    console.log(`🧹 Cleaned up ${deleted} expired sessions`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🧹 Cleaned up ${deleted} expired sessions`);
+    }
     return deleted;
   } catch (error) {
-    console.error("❌ Session cleanup failed:", error);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("❌ Session cleanup failed:", error);
+    }
     return 0;
   }
 }
@@ -45,7 +51,9 @@ export function startSessionCleanup(): void {
     cleanupInterval = setInterval(cleanupExpiredSessions, 24 * 60 * 60 * 1000);
   }, msUntilMidnight);
 
-  console.log(`⏰ Session cleanup scheduled (first run in ${Math.round(msUntilMidnight / 1000 / 60)}min)`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`⏰ Session cleanup scheduled (first run in ${Math.round(msUntilMidnight / 1000 / 60)}min)`);
+  }
 }
 
 export function stopSessionCleanup(): void {
