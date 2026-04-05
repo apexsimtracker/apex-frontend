@@ -36,8 +36,8 @@
     "client/**/*",
     "server/**/*",
     "shared/**/*",
-    "vite.config.ts",
-    "vite.config.server.ts"
+    "vite.config.server.ts",
+    "tailwind.config.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

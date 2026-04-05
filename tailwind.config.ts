@@ -1,10 +1,21 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Single Tailwind config at repo root so PostCSS during `vite build` (cwd = repo root)
+ * discovers it reliably. Content paths are relative to this file.
+ */
 export default {
   darkMode: ["class"],
   content: [
     "./client/index.html",
-    "./client/**/*.{js,ts,jsx,tsx}",
+    "./client/main.tsx",
+    "./client/App.tsx",
+    "./client/auth/**/*.{js,ts,jsx,tsx}",
+    "./client/components/**/*.{js,ts,jsx,tsx}",
+    "./client/contexts/**/*.{js,ts,jsx,tsx}",
+    "./client/hooks/**/*.{js,ts,jsx,tsx}",
+    "./client/lib/**/*.{js,ts,jsx,tsx}",
+    "./client/pages/**/*.{js,ts,jsx,tsx}",
   ],
   prefix: "",
   theme: {
@@ -80,20 +91,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {

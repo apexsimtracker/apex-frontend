@@ -91,6 +91,12 @@ Path aliases:
 - `@shared/*` - Shared folder
 - `@/*` - Client folder
 
+### Content-Security-Policy (CSP)
+
+- **Production SPA build** (`client/vite.config.ts`): a `Content-Security-Policy` meta tag is injected on build so `connect-src` includes the API origin from `VITE_API_URL` or `VITE_APEX_API_BASE_URL` (defaults match `client/lib/api.ts`).
+- **Backend API** (sibling `apex` repo: `apex/src/lib/securityHeaders.ts`): optional env `CSP_CONNECT_SRC_EXTRA` (comma-separated origins) is appended to `connect-src`.
+- If the browser blocks `fetch` to the API, check DevTools for CSP violations and ensure the API origin is allowed.
+
 ## Development Commands
 
 ```bash
@@ -105,7 +111,7 @@ pnpm test          # Run Vitest tests
 
 ### Add new colors to the theme
 
-Open `client/global.css` and `tailwind.config.ts` and add new tailwind colors.
+Open `client/global.css` and `tailwind.config.ts` (repo root) and add new tailwind colors.
 
 ### New API Route
 

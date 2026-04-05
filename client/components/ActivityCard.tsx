@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import SimBadge from "./SimBadge";
@@ -81,12 +81,14 @@ function CommentsModal({
   const [commentText, setCommentText] = useState("");
   const [commentPending, setCommentPending] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const commentsAbortRef = useRef<AbortController | null>(null);
 
   const loadComments = useCallback((sid: string) => {
-    if (commentsLoading) return;
+    commentsAbortRef.current?.abort();
+    const controller = new AbortController();
+    commentsAbortRef.current = controller;
     setCommentsLoading(true);
     setCommentsError(null);
-    const controller = new AbortController();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const token = getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -100,27 +102,33 @@ function CommentsModal({
         return res.json();
       })
       .then((data: { comments?: CommentItem[] }) => {
+        if (commentsAbortRef.current !== controller) return;
         setComments(Array.isArray(data?.comments) ? data.comments : []);
       })
       .catch((err) => {
         if (err?.name === "AbortError") return;
+        if (commentsAbortRef.current !== controller) return;
         setCommentsError("Can't load comments. Backend may be offline.");
       })
       .finally(() => {
-        setCommentsLoading(false);
+        if (commentsAbortRef.current === controller) {
+          commentsAbortRef.current = null;
+          setCommentsLoading(false);
+        }
       });
-    return controller;
-  }, [commentsLoading]);
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !sessionId) return;
     setCommentText("");
     setCommentsError(null);
-    const controller = loadComments(sessionId);
+    loadComments(sessionId);
     return () => {
-      controller?.abort();
+      commentsAbortRef.current?.abort();
+      commentsAbortRef.current = null;
+      setCommentsLoading(false);
     };
-  }, [isOpen, sessionId]);
+  }, [isOpen, sessionId, loadComments]);
 
   const submitComment = useCallback(async () => {
     const body = commentText.trim();
