@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import Header from "./components/Header";
@@ -34,19 +34,11 @@ import NotFound from "./pages/NotFound";
 import QAPage from "./pages/QA";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import FAQPage from "./pages/FAQ";
 import ProRequiredBanner from "./components/ProRequiredBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 export default function App() {
   useEffect(() => {
@@ -60,7 +52,12 @@ export default function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_relativeSplatPath: true,
+              v7_startTransition: true,
+            }}
+          >
             <ScrollToTop />
             <div className="flex flex-col min-h-screen bg-background">
               <Header />
@@ -93,7 +90,6 @@ export default function App() {
                     <Route path="/qa" element={<QAPage />} />
                     <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                    <Route path="/faq" element={<FAQPage />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
 import DiscussionCard from "@/components/DiscussionCard";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
+import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import {
+  getProfileSummary,
   isNetworkError,
   getDiscussions,
   getActivity,
-  getProfileSummary,
   type Discussion,
+  type WeeklyGoalsSummary,
 } from "@/lib/api";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
@@ -122,53 +123,34 @@ function FeedSkeletonCard() {
 
 export default function Index() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [activity, setActivity] = useState<RawActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [feedError, setFeedError] = useState<string | null>(null);
+  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [discussionsLoading, setDiscussionsLoading] = useState(true);
   const [showUploadBanner, setShowUploadBanner] = useState(false);
+  /** Canonical weekly goals from GET /api/profile/summary when logged in; null uses feed fallback. */
+  const [profileWeeklyGoals, setProfileWeeklyGoals] = useState<WeeklyGoalsSummary | null>(null);
 
-  const {
-    data: activity = [],
-    isLoading: activityLoading,
-    error: activityError,
-    refetch: refetchActivity,
-  } = useQuery({
-    queryKey: ["activity", "all"],
-    queryFn: async () => {
-      const data = await getActivity("all");
-      return (Array.isArray(data) ? data : []) as RawActivityItem[];
-    },
-  });
+  const feedLoading = loading || discussionsLoading;
 
-  const { data: profileSummary } = useQuery({
-    queryKey: ["profile", "summary", user?.id ?? ""],
-    queryFn: getProfileSummary,
-    enabled: Boolean(user?.id),
-  });
-  const profileWeeklyGoals = profileSummary?.weeklyGoals ?? null;
-
-  const { data: discussions = [], isLoading: discussionsLoading } = useQuery({
-    queryKey: ["discussions"],
-    queryFn: async () => {
-      const list = await getDiscussions();
-      return Array.isArray(list) ? list : [];
-    },
-  });
-
-  const feedError = useMemo(() => {
-    if (!activityError) return null;
-    return isNetworkError(activityError)
-      ? "Can't reach Apex backend. Check it's running."
-      : null;
-  }, [activityError]);
-
-  const error = useMemo(() => {
-    if (!activityError || feedError) return null;
-    return activityError instanceof Error
-      ? activityError.message
-      : "Failed to load activity";
-  }, [activityError, feedError]);
-
-  const feedLoading = activityLoading || discussionsLoading;
+  const loadProfileWeeklyGoals = useCallback(() => {
+    if (!user?.id) {
+      setProfileWeeklyGoals(null);
+      return;
+    }
+    void getProfileSummary()
+      .then((summary) => {
+        if (summary.weeklyGoals) {
+          setProfileWeeklyGoals(summary.weeklyGoals);
+        } else {
+          setProfileWeeklyGoals(null);
+        }
+      })
+      .catch(() => setProfileWeeklyGoals(null));
+  }, [user?.id]);
 
   useEffect(() => {
     if (searchParams.get("uploaded") === "1") {
@@ -183,10 +165,44 @@ export default function Index() {
     }
   }, [searchParams, setSearchParams]);
 
+  const loadFeed = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setFeedError(null);
+    getActivity("all")
+      .then((data) => {
+        const sessions = (Array.isArray(data) ? data : []) as RawActivityItem[];
+        setActivity(sessions);
+        setError(null);
+        setFeedError(null);
+      })
+      .catch((err) => {
+        if (isNetworkError(err)) {
+          setFeedError("Can't reach Apex backend. Check it's running.");
+        } else {
+          setError(
+            err instanceof Error ? err.message : "Failed to load activity",
+          );
+        }
+        setActivity([]);
+      })
+      .finally(() => {
+        setLoading(false);
+        loadProfileWeeklyGoals();
+      });
+  }, [loadProfileWeeklyGoals]);
+
+  useEffect(() => {
+    loadFeed();
+  }, [loadFeed]);
+
+  useEffect(() => {
+    loadProfileWeeklyGoals();
+  }, [loadProfileWeeklyGoals]);
+
   useEffect(() => {
     function handleActivityUpdated() {
-      void queryClient.invalidateQueries({ queryKey: ["activity"] });
-      void queryClient.invalidateQueries({ queryKey: ["profile", "summary"] });
+      loadFeed();
     }
     if (typeof window !== "undefined") {
       window.addEventListener("apex:activity-updated", handleActivityUpdated);
@@ -196,7 +212,15 @@ export default function Index() {
         window.removeEventListener("apex:activity-updated", handleActivityUpdated);
       }
     };
-  }, [queryClient]);
+  }, [loadFeed]);
+
+  useEffect(() => {
+    setDiscussionsLoading(true);
+    getDiscussions()
+      .then((list) => setDiscussions(Array.isArray(list) ? list : []))
+      .catch(() => setDiscussions([]))
+      .finally(() => setDiscussionsLoading(false));
+  }, []);
 
   // Group sessions into bundled activities
   const groupedActivity = useMemo<GroupedActivityItem[]>(() => {
@@ -347,7 +371,7 @@ export default function Index() {
                   <button
                     type="button"
                     className="mt-2 text-sm text-zinc-200 hover:text-white"
-                    onClick={() => void refetchActivity()}
+                    onClick={() => void loadFeed()}
                   >
                     Retry
                   </button>
@@ -370,12 +394,8 @@ export default function Index() {
                         sessions={item.sessions}
                         overflowCount={item.overflowCount}
                         onSessionPatch={(id, patch) => {
-                          queryClient.setQueryData<RawActivityItem[]>(
-                            ["activity", "all"],
-                            (prev) =>
-                              (prev ?? []).map((x) =>
-                                x.id === id ? { ...x, ...patch } : x
-                              )
+                          setActivity((prev) =>
+                            prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
                           );
                         }}
                       />
@@ -411,12 +431,8 @@ export default function Index() {
                       likes={session.likeCount ?? 0}
                       comments={session.commentCount ?? 0}
                       onSessionPatch={(id, patch) => {
-                        queryClient.setQueryData<RawActivityItem[]>(
-                          ["activity", "all"],
-                          (prev) =>
-                            (prev ?? []).map((x) =>
-                              x.id === id ? { ...x, ...patch } : x
-                            )
+                        setActivity((prev) =>
+                          prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
                         );
                       }}
                     />

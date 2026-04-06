@@ -91,17 +91,6 @@ Path aliases:
 - `@shared/*` - Shared folder
 - `@/*` - Client folder
 
-### Content-Security-Policy (CSP)
-
-- **Do not** ship CSP only via `<meta http-equiv="Content-Security-Policy">`: `frame-ancestors` is ignored in meta tags (console warning), and a strict policy can block Google Fonts (`@import` in `global.css`) and break styling.
-- **Vercel** (`vercel.json` at the **Vercel project root** — repo root [`vercel.json`](vercel.json) or [`client/vercel.json`](client/vercel.json) if **Root Directory** is `client`):
-  - SPA **rewrite** uses `destination: "/index.html"` so routing is explicit.
-  - **CSP** is applied only to non-asset paths (headers exclude `/assets/*`) so hashed CSS/JS under `/assets/` are not given a full document CSP on the response.
-  - Policy allows `https://fonts.googleapis.com` / `https://fonts.gstatic.com`, `connect-src` for the default Render API (`https://apex-25ft.onrender.com`), and `frame-ancestors 'self'`. If `VITE_API_URL` points elsewhere, update `connect-src` in `vercel.json` to match.
-- **Vercel output directory:** If the repo root is `apex-frontend` and the Vite app lives under `client/`, set **Output Directory** to `client/dist`. If it is set to `dist` at the repo root, the deployment will miss `/assets/*.css` and styles will not load.
-- **Backend API** (sibling `apex` repo: `apex/src/lib/securityHeaders.ts`): optional env `CSP_CONNECT_SRC_EXTRA` (comma-separated origins) is appended to `connect-src` on API responses.
-- If the browser blocks `fetch` or fonts, check DevTools → Console for CSP violations.
-
 ## Development Commands
 
 ```bash
@@ -116,7 +105,7 @@ pnpm test          # Run Vitest tests
 
 ### Add new colors to the theme
 
-Open `client/global.css` and `tailwind.config.ts` (repo root) and add new tailwind colors.
+Open `client/global.css` and `tailwind.config.ts` and add new tailwind colors.
 
 ### New API Route
 

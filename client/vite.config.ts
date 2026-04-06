@@ -9,13 +9,6 @@ const rootPkg = JSON.parse(
 ) as { version?: string };
 const appVersion = rootPkg.version ?? "1.0.0";
 
-/**
- * Do NOT inject CSP via <meta http-equiv="Content-Security-Policy">:
- * - `frame-ancestors` is ignored in meta tags (browser warning).
- * - A strict meta CSP blocked Google Fonts (`@import` in global.css) and could break styling.
- * Production CSP is set via HTTP headers in `client/vercel.json` (Vercel).
- */
-
 export default defineConfig({
   root: path.resolve(__dirname),
   appType: "spa",

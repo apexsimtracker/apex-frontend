@@ -100,21 +100,11 @@ export function isProRequiredError(err: unknown): err is ProRequiredError {
   return false;
 }
 
-// Auth expiry handler registration (e.g. AuthProvider: re-fetch /api/auth/me or clear user).
-let authExpiredHandler: (() => void | Promise<void>) | null = null;
+// Auth expiry handler registration
+let authExpiredHandler: (() => void) | null = null;
 
-export function registerAuthExpiredHandler(handler: () => void | Promise<void>): void {
+export function registerAuthExpiredHandler(handler: () => void): void {
   authExpiredHandler = handler;
-}
-
-/** Invoked on HTTP 401 from fetchApi (unless skipAuthExpiredCheck). Not exported — use registerAuthExpiredHandler. */
-async function notifyAuthExpired(skipAuthExpiredCheck: boolean, status: number): Promise<void> {
-  if (skipAuthExpiredCheck || status !== 401 || !authExpiredHandler) return;
-  try {
-    await Promise.resolve(authExpiredHandler());
-  } catch {
-    // Handler errors should not mask the original ApiError.
-  }
 }
 
 // Pro required event emission
@@ -151,13 +141,11 @@ async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
 }
 
 // Central fetch handler (exported for auth/api and other modules that need it).
-// Token is read from localStorage "apex_token". On 401, notifyAuthExpired runs the registered handler
-// (unless skipAuthExpiredCheck) so AuthContext can sync user state; token clearing is left to the handler/backend.
+// Token is always read from localStorage "apex_token"; we do NOT clear it on 401.
 export async function fetchApi<T>(
   method: string,
   path: string,
   body?: unknown,
-  /** When true, skip calling the auth-expired handler on 401 (login, register, authMe, etc.). */
   skipAuthExpiredCheck = false
 ): Promise<T> {
   const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
@@ -199,8 +187,6 @@ export async function fetchApi<T>(
     emitProRequiredEvent();
     throw new ProRequiredError(message);
   }
-
-  await notifyAuthExpired(skipAuthExpiredCheck, res.status);
 
   throw new ApiError(res.status, message, code);
 }
@@ -665,7 +651,6 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
     } catch {
       // ignore parse error, keep default message
     }
-    await notifyAuthExpired(false, res.status);
     throw new ApiError(res.status, message);
   }
 

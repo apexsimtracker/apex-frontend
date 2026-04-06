@@ -8,18 +8,12 @@ export default function AppFooter() {
   return (
     <footer className="mt-auto border-t border-white/5 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/40">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-white/40">
           <span>
             Support:{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className={linkClass}>
               {SUPPORT_EMAIL}
             </a>
-          </span>
-          <span>
-            Resources:{" "}
-            <Link to="/faq" className={linkClass}>
-              FAQ
-            </Link>
           </span>
           <span>
             Legal:{" "}
