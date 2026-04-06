@@ -4,7 +4,7 @@ import path from "path";
 import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(
-  readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
+  readFileSync(path.resolve(__dirname, "package.json"), "utf-8"),
 ) as { version?: string };
 const appVersion = pkg.version ?? "1.0.0";
 
