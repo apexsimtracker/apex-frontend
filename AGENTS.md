@@ -93,9 +93,10 @@ Path aliases:
 
 ### Content-Security-Policy (CSP)
 
-- **Production SPA build** (`client/vite.config.ts`): a `Content-Security-Policy` meta tag is injected on build so `connect-src` includes the API origin from `VITE_API_URL` or `VITE_APEX_API_BASE_URL` (defaults match `client/lib/api.ts`).
-- **Backend API** (sibling `apex` repo: `apex/src/lib/securityHeaders.ts`): optional env `CSP_CONNECT_SRC_EXTRA` (comma-separated origins) is appended to `connect-src`.
-- If the browser blocks `fetch` to the API, check DevTools for CSP violations and ensure the API origin is allowed.
+- **Do not** ship CSP only via `<meta http-equiv="Content-Security-Policy">`: `frame-ancestors` is ignored in meta tags (console warning), and a strict policy can block Google Fonts (`@import` in `global.css`) and break styling.
+- **Vercel** (`client/vercel.json`): `Content-Security-Policy` is sent as an **HTTP header** on all routes. It allows `https://fonts.googleapis.com` / `https://fonts.gstatic.com`, `connect-src` for the default Render API (`https://apex-25ft.onrender.com`), and `frame-ancestors 'self'`. If `VITE_API_URL` points elsewhere, update the `connect-src` origin in `vercel.json` to match.
+- **Backend API** (sibling `apex` repo: `apex/src/lib/securityHeaders.ts`): optional env `CSP_CONNECT_SRC_EXTRA` (comma-separated origins) is appended to `connect-src` on API responses.
+- If the browser blocks `fetch` or fonts, check DevTools → Console for CSP violations.
 
 ## Development Commands
 
