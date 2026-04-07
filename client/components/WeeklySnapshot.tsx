@@ -1,4 +1,5 @@
 import { formatDuration } from "@/lib/utils";
+import { SkeletonBlock } from "@/components/ui/skeleton";
 
 function TrendChip({
   improvement,
@@ -25,6 +26,8 @@ function TrendChip({
 }
 
 type WeeklySnapshotProps = {
+  /** When true, shows a placeholder (profile summary still loading). */
+  loading?: boolean;
   sessionsCount: number;
   totalLaps: number;
   trackTimeMs: number;
@@ -34,6 +37,7 @@ type WeeklySnapshotProps = {
 };
 
 export default function WeeklySnapshot({
+  loading = false,
   sessionsCount,
   totalLaps,
   trackTimeMs,
@@ -41,6 +45,25 @@ export default function WeeklySnapshot({
   lapsDelta,
   trackTimeDelta,
 }: WeeklySnapshotProps) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-white/6 bg-card/20 backdrop-blur-lg p-4">
+        <div className="flex items-center justify-between">
+          <SkeletonBlock height={20} width={180} className="bg-white/10" rounded="md" />
+        </div>
+        <div className="mt-3 grid grid-cols-3 divide-x divide-white/10">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={i === 0 ? "pr-4" : i === 2 ? "pl-4" : "px-4"}>
+              <SkeletonBlock height={12} width={64} className="mb-2 bg-white/10" rounded="sm" />
+              <SkeletonBlock height={32} width={48} className="bg-white/10" rounded="md" />
+              <SkeletonBlock height={14} width={40} className="mt-2 bg-white/10" rounded="sm" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const sessionImprovement =
     sessionDelta === 0 ? null : sessionDelta > 0;
   const sessionDisplay =

@@ -6,6 +6,12 @@ import { useIsProUser } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE } from "@/lib/api";
 import { getToken } from "@/auth/token";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const AGENT_PATH = "/agent";
+const agentTitle = `Apex Agent | ${COMPANY_NAME}`;
+const agentDescription = `Download the ${COMPANY_NAME} Agent for automatic sim telemetry uploads (Pro). ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const SUPPORTED_SIMS = [
   { name: "iRacing", status: "Supported" },
@@ -59,7 +65,9 @@ export default function Agent() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <>
+      <PageMeta title={agentTitle} description={agentDescription} path={AGENT_PATH} />
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8">
           <div className="text-center">
@@ -168,5 +176,6 @@ export default function Agent() {
         </div>
       </div>
     </div>
+    </>
   );
 }

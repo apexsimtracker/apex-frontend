@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, User } from "lucide-react";
-import type { ProfileSummary } from "../lib/api";
+import type { ProfileSummary, RaceHistoryPageResult } from "../lib/api";
+import { RaceHistoryPagination } from "./RaceHistoryPagination";
 import {
   formatLapMs,
   formatCarName,
@@ -31,6 +32,16 @@ type ProfileViewProps = {
   onOpenFollowing?: () => void;
   /** When set and isCurrentUser, shows an Edit Profile button that calls this. */
   onEditProfile?: () => void;
+  /** Paginated race history (GET /api/profile/.../race-history). When set, replaces profile.raceHistory for the table. */
+  raceHistoryPagination?: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    total: number;
+    items: RaceHistoryPageResult["items"];
+    loading: boolean;
+    onPageChange: (page: number) => void;
+  };
 };
 
 export function ProfileView({
@@ -47,20 +58,10 @@ export function ProfileView({
   onOpenFollowers,
   onOpenFollowing,
   onEditProfile,
+  raceHistoryPagination,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
-  const [displayedRaces, setDisplayedRaces] = useState(6);
-
-  const handleLoadMore = () => {
-    setDisplayedRaces((prev) =>
-      Math.min(prev + 6, profile.raceHistory.length)
-    );
-  };
-
-  const handleHideRaces = () => {
-    setDisplayedRaces(6);
-  };
 
   const user = profile.user as {
     displayName?: string;
@@ -78,8 +79,19 @@ export function ProfileView({
   const avatarSrc = resolveApiUrl(avatarUrl);
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
 
-  const raceHistory = profile.raceHistory ?? [];
-  const displayedHistory = raceHistory.slice(0, displayedRaces);
+  const raceHistory = raceHistoryPagination?.items ?? profile.raceHistory ?? [];
+  const raceHistoryTotal = raceHistoryPagination?.total ?? raceHistory.length;
+  const raceHistoryPage = raceHistoryPagination?.page ?? 1;
+  const raceHistoryPageSize = raceHistoryPagination?.limit ?? 6;
+  const raceHistoryTotalPages = raceHistoryPagination?.totalPages ?? 1;
+  const raceHistoryLoading = raceHistoryPagination?.loading ?? false;
+  const raceHistoryRange =
+    raceHistoryTotal === 0
+      ? null
+      : {
+          start: (raceHistoryPage - 1) * raceHistoryPageSize + 1,
+          end: Math.min(raceHistoryPage * raceHistoryPageSize, raceHistoryTotal),
+        };
 
   const emptyBuckets = {
     Mon: 0,
@@ -490,7 +502,16 @@ export function ProfileView({
                 </tr>
               </thead>
               <tbody>
-                {raceHistory.length === 0 ? (
+                {raceHistoryLoading && raceHistory.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="py-10 text-center text-muted-foreground text-sm"
+                    >
+                      Loading race history…
+                    </td>
+                  </tr>
+                ) : raceHistory.length === 0 ? (
                   <tr>
                     <td
                       colSpan={7}
@@ -501,7 +522,7 @@ export function ProfileView({
                     </td>
                   </tr>
                 ) : (
-                  displayedHistory.map((race) => (
+                  raceHistory.map((race) => (
                     <tr
                       key={race.id}
                       onClick={() => navigate(`/sessions/${race.id}`)}
@@ -559,13 +580,17 @@ export function ProfileView({
 
           {/* Mobile Card View */}
           <div className="md:hidden space-y-4">
-            {raceHistory.length === 0 ? (
+            {raceHistoryLoading && raceHistory.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground text-sm">
+                Loading race history…
+              </div>
+            ) : raceHistory.length === 0 ? (
               <div className="py-10 text-center text-neutral-400 text-sm">
                 Your race history will appear here after your first race
                 session.
               </div>
             ) : (
-              displayedHistory.map((race) => (
+              raceHistory.map((race) => (
                 <div
                   key={race.id}
                   onClick={() => navigate(`/sessions/${race.id}`)}
@@ -635,26 +660,22 @@ export function ProfileView({
             )}
           </div>
 
-          {/* Load More / Hide */}
-          <div className="mt-6 text-center">
-            {displayedRaces < raceHistory.length ? (
-              <button
-                onClick={handleLoadMore}
-                className="px-6 py-2 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              >
-                Load more races
-              </button>
-            ) : (
-              <button
-                onClick={handleHideRaces}
-                className="px-6 py-2 text-white rounded-lg font-medium transition-colors inline-flex items-center gap-2"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              >
-                Hide races
-              </button>
-            )}
-          </div>
+          {raceHistoryPagination && raceHistoryTotal > 0 && (
+            <div className="mt-6 space-y-3">
+              {raceHistoryRange && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Showing {raceHistoryRange.start}–{raceHistoryRange.end} of{" "}
+                  {raceHistoryTotal}
+                </p>
+              )}
+              <RaceHistoryPagination
+                page={raceHistoryPage}
+                totalPages={raceHistoryTotalPages}
+                onPageChange={raceHistoryPagination.onPageChange}
+                disabled={raceHistoryLoading}
+              />
+            </div>
+          )}
 
           {/* Game Stats Summary */}
           <div className="mt-10 pt-10 border-t border/20">

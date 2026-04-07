@@ -24,6 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const UPGRADE_PATH = "/upgrade";
+const upgradeTitle = `Apex Pro | ${COMPANY_NAME}`;
+const upgradeDescription = `Upgrade to ${COMPANY_NAME} Pro: automatic telemetry, Apex Agent, analytics, and more at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const PRO_FEATURES = [
   { icon: Upload, text: "Automatic telemetry uploads" },
@@ -176,7 +182,9 @@ export default function Upgrade() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <>
+      <PageMeta title={upgradeTitle} description={upgradeDescription} path={UPGRADE_PATH} />
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8">
           <div className="text-center">
@@ -404,5 +412,6 @@ export default function Upgrade() {
         </div>
       </div>
     </div>
+    </>
   );
 }

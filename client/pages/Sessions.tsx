@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import { Upload, PenLine, Cpu, Zap, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import { getActivity, isNetworkError, type SessionsFilterType } from "@/lib/api";
+import {
+  getActivityFeedPage,
+  ACTIVITY_FEED_DEFAULT_LIMIT,
+  isNetworkError,
+  type ActivityFeedPageResult,
+  type SessionsFilterType,
+} from "@/lib/api";
+import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
 import {
   groupSessions,
   getActivityKey,
@@ -160,42 +169,53 @@ const TAB_VALUES: { value: SessionsFilterType; label: string }[] = [
 
 export default function Sessions() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const isPro = useIsProUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const sessionsType = (searchParams.get("sessionsType") as SessionsFilterType) || "all";
   const validType = TAB_VALUES.some((t) => t.value === sessionsType) ? sessionsType : "all";
 
-  const [activity, setActivity] = useState<RawActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
-  const loadSessions = useCallback((type: SessionsFilterType) => {
-    setLoading(true);
-    setError(null);
-    getActivity(type)
-      .then((list) => {
-        setActivity((list as RawActivityItem[]) ?? []);
-      })
-      .catch((err) => {
-        if (isNetworkError(err)) {
-          setError("Can't reach Apex backend. Check it's running.");
-        } else {
-          setError(err instanceof Error ? err.message : "Failed to load sessions.");
-        }
-        setActivity([]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const {
+    data: activityPages,
+    isLoading: loading,
+    error: activityError,
+    refetch: refetchSessions,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
+    queryFn: ({ pageParam }) =>
+      getActivityFeedPage({
+        type: validType,
+        page: pageParam as number,
+        limit: ACTIVITY_FEED_DEFAULT_LIMIT,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+  });
 
-  useEffect(() => {
-    loadSessions(validType);
-  }, [validType, loadSessions]);
+  const activity = useMemo(
+    () =>
+      (activityPages?.pages.flatMap((p) => p.items) ?? []) as RawActivityItem[],
+    [activityPages]
+  );
+
+  const error = useMemo(() => {
+    if (!activityError) return null;
+    return isNetworkError(activityError)
+      ? "Can't reach Apex backend. Check it's running."
+      : activityError instanceof Error
+        ? activityError.message
+        : "Failed to load sessions.";
+  }, [activityError]);
 
   useEffect(() => {
     function handleActivityUpdated() {
-      loadSessions(validType);
+      void queryClient.invalidateQueries({ queryKey: ["activity", "feed"] });
     }
     if (typeof window !== "undefined") {
       window.addEventListener("apex:activity-updated", handleActivityUpdated);
@@ -205,7 +225,7 @@ export default function Sessions() {
         window.removeEventListener("apex:activity-updated", handleActivityUpdated);
       }
     };
-  }, [validType, loadSessions]);
+  }, [queryClient]);
 
   useEffect(() => {
     if (
@@ -347,7 +367,7 @@ export default function Sessions() {
                   <Button
                     variant="outline"
                     className="mt-4 border-white/20 text-white/80"
-                    onClick={() => loadSessions(validType)}
+                    onClick={() => void refetchSessions()}
                   >
                     Retry
                   </Button>
@@ -367,8 +387,10 @@ export default function Sessions() {
                           sessions={item.sessions}
                           overflowCount={item.overflowCount}
                           onSessionPatch={(id, patch) => {
-                            setActivity((prev) =>
-                              prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
+                            queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                              ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
+                              (prev) =>
+                                patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                             );
                           }}
                         />
@@ -406,14 +428,28 @@ export default function Sessions() {
                           likes={session.likeCount ?? 0}
                           comments={session.commentCount ?? 0}
                           onSessionPatch={(id, patch) => {
-                            setActivity((prev) =>
-                              prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
+                            queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                              ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
+                              (prev) =>
+                                patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                             );
                           }}
                         />
                       </Link>
                     );
                   })}
+                  {hasNextPage && (
+                    <div className="flex justify-center py-6">
+                      <button
+                        type="button"
+                        onClick={() => void fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                        className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                      >
+                        {isFetchingNextPage ? "Loading…" : "Load more"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -3,6 +3,12 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { createManualActivity, ApiError } from "@/lib/api";
 import ManualActivityForm from "@/components/ManualActivityForm";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const MANUAL_PATH = "/manual";
+const manualTitle = `Log activity | ${COMPANY_NAME}`;
+const manualDescription = `Log a sim racing session manually on ${COMPANY_NAME} when you don’t have telemetry files—${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -61,7 +67,9 @@ export default function ManualActivity() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <>
+      <PageMeta title={manualTitle} description={manualDescription} path={MANUAL_PATH} />
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
           <div className="text-center mb-6">
@@ -109,5 +117,6 @@ export default function ManualActivity() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -10,6 +10,12 @@ import {
   type CompetitionsMeta,
 } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const CHALLENGES_PATH = "/challenges";
+const challengesTitle = `Challenges | ${COMPANY_NAME}`;
+const challengesDescription = `Sim racing challenges and tournaments on ${COMPANY_NAME}: compete, qualify, and climb leaderboards at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 function statusLabel(status: CompetitionSummary["status"]): "Live" | "Upcoming" | "Finished" {
   switch (status) {
@@ -138,32 +144,43 @@ export default function Challenges() {
 
   if (loading) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
-        <p className="text-muted-foreground">Loading competitions…</p>
-      </div>
+      <>
+        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
+        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+          <p className="text-muted-foreground">Loading competitions…</p>
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
-        <p className="text-muted-foreground">{error}</p>
-      </div>
+      <>
+        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
+        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </>
     );
   }
 
   if (items && items.length === 0) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
-        <p className="text-muted-foreground">
-          No competitions available right now.
-        </p>
-      </div>
+      <>
+        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
+        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+          <p className="text-muted-foreground">
+            No competitions available right now.
+          </p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <>
+      <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
+      <div className="bg-background min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Header */}
         <div className="mb-12">
@@ -363,5 +380,6 @@ export default function Challenges() {
         </div>
       </div>
     </div>
+    </>
   );
 }

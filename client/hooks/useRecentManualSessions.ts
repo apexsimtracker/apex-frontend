@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { apiGet } from "@/lib/api";
+import { getActivityFeedPage } from "@/lib/api";
 import { getSimDisplayName } from "@/lib/sim";
 
 export type RecentManualItem = {
@@ -15,12 +15,14 @@ export type RecentManualItem = {
 type ActivitySession = {
   id?: string;
   sim?: string | null;
+  simKey?: string | null;
   track?: string | null;
   trackId?: string | null;
   car?: string | null;
   carId?: string | null;
   vehicleDisplay?: string | null;
   source?: string | null;
+  sessionType?: string | null;
   createdAt?: string | Date;
 };
 
@@ -42,25 +44,18 @@ export function useRecentManualSessions(): {
   const fetchRecent = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await apiGet<ActivitySession[] | { sessions?: ActivitySession[]; activity?: ActivitySession[] }>(
-        "/api/activity"
-      );
-      const list = Array.isArray(raw)
-        ? raw
-        : (raw as { sessions?: ActivitySession[] }).sessions ??
-          (raw as { activity?: ActivitySession[] }).activity ??
-          [];
-      const sessions = (Array.isArray(list) ? list : []) as ActivitySession[];
-
-      const manual = sessions.filter(
-        (s) => (s.source ?? "").toString().toUpperCase() === "MANUAL_ACTIVITY"
-      );
+      const { items } = await getActivityFeedPage({
+        type: "manual",
+        page: 1,
+        limit: 50,
+      });
+      const sessions = (Array.isArray(items) ? items : []) as ActivitySession[];
 
       const seen = new Set<string>();
-      const items: RecentManualItem[] = [];
+      const out: RecentManualItem[] = [];
 
-      for (const s of manual) {
-        const sim = normalizeSim(s.sim);
+      for (const s of sessions) {
+        const sim = normalizeSim((s.simKey ?? s.sim) as string | null | undefined);
         if (!sim) continue;
         const trackId = (s.trackId ?? s.track ?? "").toString().trim();
         const trackName = (s.track ?? "").toString().trim() || trackId;
@@ -73,7 +68,7 @@ export function useRecentManualSessions(): {
 
         if (!trackId && !trackName) continue;
 
-        items.push({
+        out.push({
           sim,
           trackId: trackId || trackName,
           trackName,
@@ -81,10 +76,10 @@ export function useRecentManualSessions(): {
           carName,
           key,
         });
-        if (items.length >= RECENT_LIMIT) break;
+        if (out.length >= RECENT_LIMIT) break;
       }
 
-      setRecent(items);
+      setRecent(out);
     } catch {
       setRecent([]);
     } finally {

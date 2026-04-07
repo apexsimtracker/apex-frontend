@@ -2,6 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLeaderboards, type LeaderboardRow } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const LEADERBOARDS_PATH = "/leaderboards";
+const leaderboardsTitle = `Leaderboards | ${COMPANY_NAME}`;
+const leaderboardsDescription = `Global sim racing leaderboards on ${COMPANY_NAME}: wins, races, podiums, fastest laps, and more at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const TAB_METRICS = {
   wins: "wins",
@@ -124,7 +130,9 @@ export default function Leaderboards() {
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <>
+      <PageMeta title={leaderboardsTitle} description={leaderboardsDescription} path={LEADERBOARDS_PATH} />
+      <div className="bg-background min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Header */}
         <div className="mb-10 sm:mb-16">
@@ -308,5 +316,6 @@ export default function Leaderboards() {
         </div>
       </div>
     </div>
+    </>
   );
 }

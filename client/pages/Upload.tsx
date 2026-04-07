@@ -3,6 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { Upload as UploadIcon, FileText, AlertCircle, Loader2, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadSessionFile, ApiError } from "@/lib/api";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const UPLOAD_PATH = "/upload";
+const uploadTitle = `Upload session | ${COMPANY_NAME}`;
+const uploadDescription = `Upload .ibt telemetry to ${COMPANY_NAME} to process laps and share sessions—${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 type UploadState = "idle" | "uploading" | "error";
 
@@ -108,7 +114,9 @@ export default function UploadPage() {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <>
+      <PageMeta title={uploadTitle} description={uploadDescription} path={UPLOAD_PATH} />
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
           <div className="text-center mb-6">
@@ -223,5 +231,6 @@ export default function UploadPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

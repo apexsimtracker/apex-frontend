@@ -260,8 +260,11 @@ export type ProfileSummary = {
     id: string;
     date: string;
     sim: string;
+    simKey?: string;
     car: string;
     track: string;
+    trackName?: string | null;
+    carName?: string | null;
     position: number | null;
     qualiPos: number | null;
     bestLapMs: number | null;
@@ -330,6 +333,50 @@ export async function getProfileSummaryForUser(
       : "";
   return apiGet<ProfileSummary>(
     `/api/profile/summary/${encodeURIComponent(userId)}${q}`
+  );
+}
+
+/** Default page size for race history (must match server default). */
+export const RACE_HISTORY_PAGE_SIZE = 6;
+
+export type RaceHistoryPageResult = {
+  items: ProfileSummary["raceHistory"];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export async function getProfileRaceHistory(params?: {
+  page?: number;
+  limit?: number;
+  type?: "all" | "telemetry" | "manual";
+}): Promise<RaceHistoryPageResult> {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.type && params.type !== "all") sp.set("type", params.type);
+  const q = sp.toString();
+  return apiGet<RaceHistoryPageResult>(
+    `/api/profile/race-history${q ? `?${q}` : ""}`
+  );
+}
+
+export async function getProfileRaceHistoryForUser(
+  userId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    type?: "all" | "telemetry" | "manual";
+  }
+): Promise<RaceHistoryPageResult> {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.type && params.type !== "all") sp.set("type", params.type);
+  const q = sp.toString();
+  return apiGet<RaceHistoryPageResult>(
+    `/api/profile/${encodeURIComponent(userId)}/race-history${q ? `?${q}` : ""}`
   );
 }
 
@@ -494,16 +541,74 @@ export type Discussion = {
   isPinned?: boolean;
 };
 
-export async function getDiscussions(params?: {
+/** Default page size for GET /api/community/discussions (must match server default). */
+export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 5;
+
+export type DiscussionsPageResult = {
+  items: Discussion[];
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  /** Total rows matching the current filter (category + search). */
+  total: number;
+};
+
+function normalizeDiscussionListItem(item: Record<string, unknown>): Discussion {
+  const d = { ...item } as Discussion;
+  const content = d.content ?? d.description;
+  if (typeof content === "string" && d.description == null) {
+    return { ...d, description: content };
+  }
+  return d;
+}
+
+/**
+ * Paginated community discussions (GET /api/community/discussions).
+ */
+export async function getDiscussionsPage(params?: {
   category?: string;
   q?: string;
-}): Promise<Discussion[]> {
+  page?: number;
+  limit?: number;
+}): Promise<DiscussionsPageResult> {
   const sp = new URLSearchParams();
   if (params?.category) sp.set("category", params.category);
   if (params?.q?.trim()) sp.set("q", params.q.trim());
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
   const query = sp.toString();
   const path = `/api/community/discussions${query ? `?${query}` : ""}`;
-  return apiGet<Discussion[]>(path);
+  const raw = await apiGet<
+    DiscussionsPageResult | Discussion[] | { discussions?: Discussion[] }
+  >(path);
+
+  if (Array.isArray(raw)) {
+    const items = raw.map((x) => normalizeDiscussionListItem(x as Record<string, unknown>));
+    return {
+      items,
+      page: 1,
+      limit: items.length,
+      hasMore: false,
+      total: items.length,
+    };
+  }
+  const legacy = raw as { discussions?: Discussion[]; items?: unknown[] };
+  const rawItems = Array.isArray(legacy.items)
+    ? legacy.items
+    : Array.isArray(legacy.discussions)
+      ? legacy.discussions
+      : [];
+  const items = rawItems.map((x) =>
+    normalizeDiscussionListItem(x as Record<string, unknown>)
+  );
+  const r = raw as DiscussionsPageResult;
+  return {
+    items,
+    page: typeof r.page === "number" ? r.page : 1,
+    limit: typeof r.limit === "number" ? r.limit : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+    hasMore: Boolean(r.hasMore),
+    total: typeof r.total === "number" ? r.total : items.length,
+  };
 }
 
 export type CreateDiscussionBody = {
@@ -817,65 +922,91 @@ export async function apiGet<T>(path: string): Promise<T> {
 
 export type SessionsFilterType = "all" | "telemetry" | "manual";
 
-export async function getActivity(type: SessionsFilterType = "all"): Promise<unknown[]> {
-  const q = `?type=${encodeURIComponent(type)}`;
-  const raw = await apiGet<unknown[] | { sessions?: unknown[]; activity?: unknown[] }>(
-    `/api/activity${q}`
-  );
-  const list = Array.isArray(raw)
-    ? raw
-    : (raw as { sessions?: unknown[] }).sessions ??
-      (raw as { activity?: unknown[] }).activity ??
-      [];
-  const arr = Array.isArray(list) ? list : [];
+/** Default page size for GET /api/activity (must match server default). */
+export const ACTIVITY_FEED_DEFAULT_LIMIT = 5;
 
-  function toNumber(v: unknown): number | null {
-    if (typeof v === "number" && Number.isFinite(v)) return v;
-    if (typeof v === "string") {
-      const n = Number(v);
-      if (Number.isFinite(n)) return n;
-    }
-    return null;
+export type ActivityFeedPageResult = {
+  items: unknown[];
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+function feedToNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/** Normalize one feed session item (GET /api/activity items). */
+export function normalizeFeedSession(item: unknown): unknown {
+  if (!item || typeof item !== "object") return item;
+  const outer = item as Record<string, unknown>;
+  const inner =
+    outer.session && typeof outer.session === "object" ? (outer.session as Record<string, unknown>) : null;
+
+  const merged: Record<string, unknown> = {
+    ...(outer ?? {}),
+    ...(inner ?? {}),
+  };
+
+  const bestLapMs =
+    feedToNumber(merged.bestLapMs) ??
+    feedToNumber(merged.bestLapTimeMs) ??
+    feedToNumber(merged.best_lap_ms) ??
+    feedToNumber(merged.bestLapTime) ??
+    feedToNumber(merged.best_lap_time_ms) ??
+    feedToNumber(merged.fastestLapMs) ??
+    feedToNumber(merged.fastest_lap_ms) ??
+    (merged.bestLap && typeof merged.bestLap === "object"
+      ? feedToNumber((merged.bestLap as { lapTimeMs?: unknown }).lapTimeMs) ??
+        feedToNumber((merged.bestLap as { timeMs?: unknown }).timeMs)
+      : null);
+
+  if (bestLapMs != null) merged.bestLapMs = bestLapMs;
+
+  const rawAvatar =
+    typeof merged.authorAvatarUrl === "string" ? merged.authorAvatarUrl.trim() : "";
+  if (rawAvatar) {
+    merged.authorAvatarUrl = resolveApiUrl(rawAvatar) ?? rawAvatar;
   }
 
-  function normalizeFeedSession(item: unknown): unknown {
-    if (!item || typeof item !== "object") return item;
-    const outer = item as any;
-    const inner =
-      outer.session && typeof outer.session === "object" ? (outer.session as any) : null;
+  return merged;
+}
 
-    // Merge outer+inner like SessionDetailPage unwrapping.
-    const merged: any = {
-      ...(outer ?? {}),
-      ...(inner ?? {}),
-    };
+/**
+ * Paginated activity feed (GET /api/activity).
+ */
+export async function getActivityFeedPage(options: {
+  type?: SessionsFilterType;
+  page?: number;
+  limit?: number;
+}): Promise<ActivityFeedPageResult> {
+  const type = options.type ?? "all";
+  const page = options.page ?? 1;
+  const limit = options.limit ?? ACTIVITY_FEED_DEFAULT_LIMIT;
+  const q = new URLSearchParams({
+    type,
+    page: String(page),
+    limit: String(limit),
+  });
+  const raw = await apiGet<{
+    items?: unknown[];
+    page?: number;
+    limit?: number;
+    hasMore?: boolean;
+  }>(`/api/activity?${q.toString()}`);
 
-    // Normalize best lap time field into bestLapMs (used by ActivityCard).
-    const bestLapMs =
-      toNumber(merged.bestLapMs) ??
-      toNumber(merged.bestLapTimeMs) ??
-      toNumber(merged.best_lap_ms) ??
-      toNumber(merged.bestLapTime) ??
-      toNumber(merged.best_lap_time_ms) ??
-      toNumber(merged.fastestLapMs) ??
-      toNumber(merged.fastest_lap_ms) ??
-      (merged.bestLap && typeof merged.bestLap === "object"
-        ? toNumber((merged.bestLap as any).lapTimeMs) ?? toNumber((merged.bestLap as any).timeMs)
-        : null);
-
-    if (bestLapMs != null) merged.bestLapMs = bestLapMs;
-
-    // Ensure feed avatars load: relative /api/assets/... → API base (same as auth/me absolute URLs).
-    const rawAvatar =
-      typeof merged.authorAvatarUrl === "string" ? merged.authorAvatarUrl.trim() : "";
-    if (rawAvatar) {
-      merged.authorAvatarUrl = resolveApiUrl(rawAvatar) ?? rawAvatar;
-    }
-
-    return merged;
-  }
-
-  return arr.map(normalizeFeedSession);
+  const items = Array.isArray(raw?.items) ? raw.items : [];
+  return {
+    items: items.map(normalizeFeedSession),
+    page: typeof raw?.page === "number" ? raw.page : page,
+    limit: typeof raw?.limit === "number" ? raw.limit : limit,
+    hasMore: Boolean(raw?.hasMore),
+  };
 }
 
 // Billing / Upgrade

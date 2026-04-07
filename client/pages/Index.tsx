@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
@@ -9,14 +9,25 @@ import WeeklySnapshot from "@/components/WeeklySnapshot";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import {
   isNetworkError,
-  getDiscussions,
-  getActivity,
+  getDiscussionsPage,
+  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+  getActivityFeedPage,
+  ACTIVITY_FEED_DEFAULT_LIMIT,
   getProfileSummary,
+  type ActivityFeedPageResult,
   type Discussion,
 } from "@/lib/api";
+import type { InfiniteData } from "@tanstack/react-query";
+import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import { useAuth } from "@/contexts/AuthContext";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const HOME_PATH = "/";
+const HOME_TITLE = `Home | ${COMPANY_NAME}`;
+const HOME_DESCRIPTION = `Your sim racing hub on ${COMPANY_NAME}: activity feed, weekly goals, sessions, and community at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 type RawActivityItem = SessionItem & {
   type?: "session";
@@ -127,32 +138,61 @@ export default function Index() {
   const [showUploadBanner, setShowUploadBanner] = useState(false);
 
   const {
-    data: activity = [],
+    data: activityPages,
     isLoading: activityLoading,
     error: activityError,
     refetch: refetchActivity,
-  } = useQuery({
-    queryKey: ["activity", "all"],
-    queryFn: async () => {
-      const data = await getActivity("all");
-      return (Array.isArray(data) ? data : []) as RawActivityItem[];
-    },
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+    queryFn: ({ pageParam }) =>
+      getActivityFeedPage({
+        type: "all",
+        page: pageParam as number,
+        limit: ACTIVITY_FEED_DEFAULT_LIMIT,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });
 
-  const { data: profileSummary } = useQuery({
+  const activity = useMemo(
+    () =>
+      (activityPages?.pages.flatMap((p) => p.items) ?? []) as RawActivityItem[],
+    [activityPages]
+  );
+
+  const { data: profileSummary, isPending: profileSummaryPending } = useQuery({
     queryKey: ["profile", "summary", user?.id ?? ""],
     queryFn: getProfileSummary,
     enabled: Boolean(user?.id),
   });
   const profileWeeklyGoals = profileSummary?.weeklyGoals ?? null;
 
-  const { data: discussions = [], isLoading: discussionsLoading } = useQuery({
-    queryKey: ["discussions"],
-    queryFn: async () => {
-      const list = await getDiscussions();
-      return Array.isArray(list) ? list : [];
-    },
+  const {
+    data: discussionPages,
+    isLoading: discussionsLoading,
+    fetchNextPage: fetchNextDiscussionsPage,
+    hasNextPage: discussionsHasNextPage,
+    isFetchingNextPage: isFetchingNextDiscussionsPage,
+  } = useInfiniteQuery({
+    queryKey: ["discussions", "home", DISCUSSIONS_PAGE_DEFAULT_LIMIT],
+    queryFn: ({ pageParam }) =>
+      getDiscussionsPage({
+        page: pageParam as number,
+        limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.page + 1 : undefined,
   });
+
+  const discussions = useMemo(
+    () =>
+      (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
+    [discussionPages]
+  );
 
   const feedError = useMemo(() => {
     if (!activityError) return null;
@@ -204,6 +244,30 @@ export default function Index() {
   }, [activity]);
 
   const weeklyStats = useMemo(() => {
+    // Signed-in: only server weeklySnapshot (user + ISO week). Do not use the global feed here —
+    // the feed is everyone’s sessions, so it briefly showed non-zero then flipped to real user stats.
+    if (user?.id) {
+      const snap = profileSummary?.weeklySnapshot;
+      if (snap) {
+        return {
+          sessionsCount: snap.sessions,
+          totalLaps: snap.laps,
+          trackTimeMs: snap.trackTimeSec * 1000,
+          sessionDelta: snap.sessionsDelta,
+          lapsDelta: snap.lapsDelta,
+          trackTimeDelta: snap.trackTimeSecDelta * 1000,
+        };
+      }
+      return {
+        sessionsCount: 0,
+        totalLaps: 0,
+        trackTimeMs: 0,
+        sessionDelta: 0,
+        lapsDelta: 0,
+        trackTimeDelta: 0,
+      };
+    }
+
     const now = Date.now();
     const weekMs = 7 * 24 * 60 * 60 * 1000;
     const startThisWeek = now - weekMs;
@@ -246,7 +310,9 @@ export default function Index() {
       lapsDelta,
       trackTimeDelta,
     };
-  }, [activity]);
+  }, [activity, profileSummary?.weeklySnapshot, user?.id]);
+
+  const weeklySnapshotLoading = Boolean(user?.id) && profileSummaryPending;
 
   // Calculate weekly goals progress from activity
   const goalsStats = useMemo(() => {
@@ -291,10 +357,13 @@ export default function Index() {
   }, [profileWeeklyGoals, goalsStats]);
 
   return (
-    <div className="bg-background min-h-screen">
+    <>
+      <PageMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path={HOME_PATH} />
+      <div className="bg-background min-h-screen">
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <WeeklySnapshot
+          loading={weeklySnapshotLoading}
           sessionsCount={weeklyStats.sessionsCount}
           totalLaps={weeklyStats.totalLaps}
           trackTimeMs={weeklyStats.trackTimeMs}
@@ -370,12 +439,9 @@ export default function Index() {
                         sessions={item.sessions}
                         overflowCount={item.overflowCount}
                         onSessionPatch={(id, patch) => {
-                          queryClient.setQueryData<RawActivityItem[]>(
-                            ["activity", "all"],
-                            (prev) =>
-                              (prev ?? []).map((x) =>
-                                x.id === id ? { ...x, ...patch } : x
-                              )
+                          queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                            ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+                            (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                           );
                         }}
                       />
@@ -411,17 +477,26 @@ export default function Index() {
                       likes={session.likeCount ?? 0}
                       comments={session.commentCount ?? 0}
                       onSessionPatch={(id, patch) => {
-                        queryClient.setQueryData<RawActivityItem[]>(
-                          ["activity", "all"],
-                          (prev) =>
-                            (prev ?? []).map((x) =>
-                              x.id === id ? { ...x, ...patch } : x
-                            )
+                        queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                          ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+                          (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                         );
                       }}
                     />
                   );
                 })}
+              {!error && !feedError && hasNextPage && (
+                <div className="flex justify-center py-6">
+                  <button
+                    type="button"
+                    onClick={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                  >
+                    {isFetchingNextPage ? "Loading…" : "Load more"}
+                  </button>
+                </div>
+              )}
             </>
           )}
           {discussions.map((d) => (
@@ -429,17 +504,38 @@ export default function Index() {
               key={d.id}
               id={d.id}
               title={d.title}
-              excerpt={d.excerpt ?? (d.description ? (d.description.slice(0, 160) + (d.description.length > 160 ? "…" : "")) : "")}
+              excerpt={
+                d.excerpt ??
+                (() => {
+                  const body = d.description ?? d.content ?? "";
+                  return body
+                    ? body.slice(0, 160) + (body.length > 160 ? "…" : "")
+                    : "";
+                })()
+              }
               author={d.author}
               categoryKey={d.category ?? "general"}
               timestamp={timeAgo(d.createdAt)}
-              replies={d.replies ?? d.commentCount ?? 0}
+              replies={d.replies ?? d.commentCount ?? d.commentsCount ?? 0}
               views={d.views ?? 0}
               isPinned={d.isPinned}
             />
           ))}
+          {discussionsHasNextPage && (
+            <div className="flex justify-center py-6">
+              <button
+                type="button"
+                onClick={() => void fetchNextDiscussionsPage()}
+                disabled={isFetchingNextDiscussionsPage}
+                className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+              >
+                {isFetchingNextDiscussionsPage ? "Loading…" : "Load more discussions"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   resolveApiUrl,
   getProfileSummaryForUser,
+  getProfileRaceHistoryForUser,
+  RACE_HISTORY_PAGE_SIZE,
   getUserPublicProfile,
   getFollowers,
   getFollowing,
@@ -13,6 +15,7 @@ import {
   unfollowUser,
   ApiError,
   type ProfileSummary,
+  type RaceHistoryPageResult,
   type FollowUser,
 } from "@/lib/api";
 import {
@@ -44,7 +47,15 @@ export default function UserProfile() {
 
   const [followLoading, setFollowLoading] = useState(false);
 
+  const [raceHistoryPage, setRaceHistoryPage] = useState(1);
+  const [raceHistoryData, setRaceHistoryData] = useState<RaceHistoryPageResult | null>(null);
+  const [raceHistoryLoading, setRaceHistoryLoading] = useState(false);
+
   const id = userId?.trim() ?? "";
+
+  useEffect(() => {
+    setRaceHistoryPage(1);
+  }, [id]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -89,6 +100,28 @@ export default function UserProfile() {
       cancelled = true;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id || notFound || loadError) return;
+    let cancelled = false;
+    setRaceHistoryLoading(true);
+    void getProfileRaceHistoryForUser(id, {
+      page: raceHistoryPage,
+      limit: RACE_HISTORY_PAGE_SIZE,
+    })
+      .then((data) => {
+        if (!cancelled) setRaceHistoryData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRaceHistoryData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRaceHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, raceHistoryPage, notFound, loadError]);
 
   useEffect(() => {
     if (!id || notFound || loadError) return;
@@ -239,6 +272,15 @@ export default function UserProfile() {
         onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
+        raceHistoryPagination={{
+          page: raceHistoryData?.page ?? raceHistoryPage,
+          limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+          totalPages: raceHistoryData?.totalPages ?? 1,
+          total: raceHistoryData?.total ?? 0,
+          items: raceHistoryData?.items ?? [],
+          loading: raceHistoryLoading,
+          onPageChange: setRaceHistoryPage,
+        }}
       />
 
       <Dialog

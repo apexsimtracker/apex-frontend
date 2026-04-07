@@ -22,6 +22,12 @@ export default function AppFooter() {
             </Link>
           </span>
           <span>
+            Company:{" "}
+            <Link to="/about" className={linkClass}>
+              About us
+            </Link>
+          </span>
+          <span>
             Legal:{" "}
             <Link to="/terms-and-conditions" className={linkClass}>
               Terms

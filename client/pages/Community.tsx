@@ -1,15 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import DiscussionCard from "@/components/DiscussionCard";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import {
-  getDiscussions,
+  getDiscussionsPage,
+  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   createDiscussion,
   DISCUSSION_CATEGORIES,
   type Discussion,
   type DiscussionCategory,
 } from "@/lib/api";
 import { timeAgo } from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const COMMUNITY_PATH = "/community";
+const communityTitle = `Community | ${COMPANY_NAME}`;
+const communityDescription = `Sim racing discussions, setups, and strategy on ${COMPANY_NAME} at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const DESCRIPTION_TRUNCATE = 160;
 
@@ -25,9 +33,7 @@ const DESCRIPTION_MIN = 10;
 const DESCRIPTION_MAX = 5000;
 
 export default function Community() {
-  const [discussions, setDiscussions] = useState<Discussion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<DiscussionCategory>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -44,57 +50,61 @@ export default function Community() {
     category?: string;
   }>({});
 
-  const [categoryCounts, setCategoryCounts] = useState<Record<DiscussionCategory, number>>({
-    all: 0,
-    setup: 0,
-    guides: 0,
-    general: 0,
+  const { data: categoryCounts = { all: 0, setup: 0, guides: 0, general: 0 } } = useQuery({
+    queryKey: ["discussions", "category-totals"],
+    queryFn: async () => {
+      const [all, setup, guides, general] = await Promise.all([
+        getDiscussionsPage({ category: "all", page: 1, limit: 1 }),
+        getDiscussionsPage({ category: "setup", page: 1, limit: 1 }),
+        getDiscussionsPage({ category: "guides", page: 1, limit: 1 }),
+        getDiscussionsPage({ category: "general", page: 1, limit: 1 }),
+      ]);
+      return {
+        all: all.total,
+        setup: setup.total,
+        guides: guides.total,
+        general: general.total,
+      };
+    },
   });
 
-  // Fetch all discussions once on mount to compute category counts (independent of tab/search)
-  useEffect(() => {
-    let cancelled = false;
-    getDiscussions({ category: "all" })
-      .then((raw) => {
-        if (cancelled) return;
-        const data = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
-        setCategoryCounts({
-          all: data.length,
-          setup: data.filter((d) => (d.category ?? "") === "setup").length,
-          guides: data.filter((d) => (d.category ?? "") === "guides").length,
-          general: data.filter((d) => (d.category ?? "") === "general").length,
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setCategoryCounts((prev) => prev);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const loadDiscussions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const raw = await getDiscussions({
+  const {
+    data: discussionPages,
+    isLoading: loading,
+    error: discussionsQueryError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: [
+      "discussions",
+      "community",
+      selectedCategory,
+      searchQuery,
+      DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+    ],
+    queryFn: ({ pageParam }) =>
+      getDiscussionsPage({
         category: selectedCategory,
         q: searchQuery.trim() || undefined,
-      });
-      const data = Array.isArray(raw) ? raw : (raw as { discussions?: Discussion[] })?.discussions ?? [];
-      setDiscussions(data);
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : String(e));
-      setDiscussions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedCategory, searchQuery]);
+        page: pageParam as number,
+        limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.page + 1 : undefined,
+  });
 
-  useEffect(() => {
-    loadDiscussions();
-  }, [loadDiscussions]);
+  const discussions = useMemo(
+    () => (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
+    [discussionPages]
+  );
+
+  const error = discussionsQueryError
+    ? discussionsQueryError instanceof Error
+      ? discussionsQueryError.message
+      : "Failed to load discussions."
+    : null;
 
   // Debounce search input -> searchQuery (300ms)
   useEffect(() => {
@@ -140,19 +150,13 @@ export default function Community() {
         title,
         description,
       });
-      // Refetch list so the new post appears with real backend author data (no local mock).
-      await loadDiscussions();
+      await queryClient.invalidateQueries({ queryKey: ["discussions"] });
       setShowNewDiscussionModal(false);
       setNewDiscussionTitle("");
       setNewDiscussionContent("");
       setNewDiscussionCategory("setup");
       setValidationErrors({});
       setCreateError(null);
-      setCategoryCounts((prev) => ({
-        ...prev,
-        all: prev.all + 1,
-        [newDiscussionCategory]: (prev[newDiscussionCategory] ?? 0) + 1,
-      }));
     } catch (e) {
       console.error(e);
       setCreateError(e instanceof Error ? e.message : "Failed to create discussion.");
@@ -182,7 +186,9 @@ export default function Community() {
         : null;
 
   return (
-    <div className="bg-background min-h-screen">
+    <>
+      <PageMeta title={communityTitle} description={communityDescription} path={COMMUNITY_PATH} />
+      <div className="bg-background min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         {/* Header */}
         <div className="mb-10 sm:mb-12">
@@ -262,23 +268,37 @@ export default function Community() {
               <p className="text-muted-foreground/60 text-sm">{emptyMessage}</p>
             </div>
           ) : (
-            discussions.map((d) => (
-              <DiscussionCard
-                key={d.id}
-                id={d.id}
-                title={d.title}
-                excerpt={
-                  d.excerpt ??
-                  truncateDescription(d.content ?? d.description ?? d.title)
-                }
-                author={d.author}
-                categoryKey={d.category ?? "general"}
-                timestamp={timeAgo(d.createdAt)}
-                replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
-                views={d.likeCount ?? d.views ?? 0}
-                isPinned={d.isPinned}
-              />
-            ))
+            <>
+              {discussions.map((d) => (
+                <DiscussionCard
+                  key={d.id}
+                  id={d.id}
+                  title={d.title}
+                  excerpt={
+                    d.excerpt ??
+                    truncateDescription(d.content ?? d.description ?? d.title)
+                  }
+                  author={d.author}
+                  categoryKey={d.category ?? "general"}
+                  timestamp={timeAgo(d.createdAt)}
+                  replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
+                  views={d.likeCount ?? d.views ?? 0}
+                  isPinned={d.isPinned}
+                />
+              ))}
+              {hasNextPage && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                  >
+                    {isFetchingNextPage ? "Loading…" : "Load more"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -384,5 +404,6 @@ export default function Community() {
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -23,6 +23,12 @@ import { Switch } from "@/components/ui/switch";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { RefreshCw, LogOut, Trash2, Loader2 } from "lucide-react";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const SETTINGS_PATH = "/settings";
+const settingsTitle = `Settings | ${COMPANY_NAME}`;
+const settingsDescription = `Account, password, preferences, and privacy settings for your ${COMPANY_NAME} profile at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const PRIMARY_RED = "rgb(240, 28, 28)";
 const PASSWORD_MIN = 8;
@@ -284,7 +290,9 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
+        <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
+        <div className="min-h-screen bg-background">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <SkeletonBlock height={32} width={180} className="mb-8 rounded" />
           <div className="space-y-6">
@@ -294,12 +302,15 @@ export default function Settings() {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <>
+        <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-sm w-full rounded-xl border border-white/10 bg-card/50 p-6 text-center">
           <p className="text-foreground font-medium mb-2">Not signed in</p>
           <p className="text-sm text-muted-foreground mb-4">
@@ -315,6 +326,7 @@ export default function Settings() {
           </Button>
         </div>
       </div>
+      </>
     );
   }
 
@@ -322,7 +334,9 @@ export default function Settings() {
   const createdAt = (user as { createdAt?: string }).createdAt;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
+      <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">
           Settings
@@ -685,5 +699,6 @@ export default function Settings() {
         </div>
       </div>
     </div>
+    </>
   );
 }

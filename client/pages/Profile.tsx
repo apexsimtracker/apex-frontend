@@ -9,9 +9,12 @@ import {
   getFollowers,
   getFollowing,
   getProfileSummary,
+  getProfileRaceHistory,
+  RACE_HISTORY_PAGE_SIZE,
   updateMe,
   uploadProfileAvatar,
   type ProfileSummary,
+  type RaceHistoryPageResult,
   type FollowUser,
   type AuthUser,
 } from "@/lib/api";
@@ -23,6 +26,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ProfileView } from "@/components/ProfileView";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+
+const PROFILE_PATH = "/profile";
+const profileTitle = `Profile | ${COMPANY_NAME}`;
+const profileDescription = `Your ${COMPANY_NAME} driver profile, stats, and race history at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const emptyBuckets = {
   Mon: 0,
@@ -136,6 +145,32 @@ export default function Profile() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
+
+  const [raceHistoryPage, setRaceHistoryPage] = useState(1);
+  const [raceHistoryData, setRaceHistoryData] = useState<RaceHistoryPageResult | null>(null);
+  const [raceHistoryLoading, setRaceHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    setRaceHistoryLoading(true);
+    void getProfileRaceHistory({
+      page: raceHistoryPage,
+      limit: RACE_HISTORY_PAGE_SIZE,
+    })
+      .then((data) => {
+        if (!cancelled) setRaceHistoryData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRaceHistoryData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRaceHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, raceHistoryPage]);
 
   const openEditProfile = useCallback(() => {
     if (!user) return;
@@ -354,14 +389,19 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
-        <p className="text-white/60">Loading...</p>
-      </div>
+      <>
+        <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
+        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </>
     );
   }
   if (!user) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
+      <>
+        <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
+        <div className="bg-background min-h-screen flex items-center justify-center p-6">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center max-w-md">
           <p className="text-white/80 mb-4">Not signed in.</p>
           <Link
@@ -373,6 +413,7 @@ export default function Profile() {
           </Link>
         </div>
       </div>
+      </>
     );
   }
 
@@ -402,7 +443,9 @@ export default function Profile() {
     undefined;
 
   return (
-    <div className="bg-background min-h-screen flex flex-col">
+    <>
+      <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
+      <div className="bg-background min-h-screen flex flex-col">
       <ProfileView
         profile={displayProfile}
         avatarUrl={avatarUrl || undefined}
@@ -413,6 +456,15 @@ export default function Profile() {
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
         onEditProfile={openEditProfile}
+        raceHistoryPagination={{
+          page: raceHistoryData?.page ?? raceHistoryPage,
+          limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+          totalPages: raceHistoryData?.totalPages ?? 1,
+          total: raceHistoryData?.total ?? 0,
+          items: raceHistoryData?.items ?? [],
+          loading: raceHistoryLoading,
+          onPageChange: setRaceHistoryPage,
+        }}
       />
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col items-end gap-2">
@@ -669,5 +721,6 @@ export default function Profile() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
