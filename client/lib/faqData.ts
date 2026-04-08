@@ -4,66 +4,134 @@
 
 export interface FaqItem {
   id: string;
+  category: string;
   question: string;
   answer: string;
 }
 
+/** Section order on the FAQ page */
+export const FAQ_CATEGORY_ORDER = [
+  "General",
+  "Sessions & Data",
+  "Apex Pro",
+  "Account",
+] as const;
+
 export const FAQ_ITEMS: FaqItem[] = [
   {
-    id: "what-is-apex",
-    question: "What is Apex?",
+    id: "what-is-apex-sim-tracker",
+    category: "General",
+    question: "What is Apex Sim Tracker?",
     answer:
-      "Apex is a sim racing companion that helps you track sessions, review laps, compare performance on leaderboards, and engage with the community. Upload telemetry or log activities manually to build a clear history of your driving.",
+      "Apex Sim Tracker is a performance tracking platform built for sim racers. Log your sessions, analyse your stats, compete on leaderboards, and track your progress across multiple simulators — all in one place.",
   },
   {
-    id: "upload-sessions",
-    question: "How do I upload a session?",
+    id: "which-simulators-supported",
+    category: "General",
+    question: "Which simulators are supported?",
     answer:
-      "Sign in and use Upload from the navigation to add session files. Supported formats depend on your game and agent setup. You can also log a manual activity if you do not have a file to upload.",
+      "Apex currently supports iRacing and F1 25. More simulators are coming soon — stay tuned for updates.",
   },
   {
-    id: "apex-agent",
-    question: "What is the Apex Agent?",
+    id: "is-apex-free",
+    category: "General",
+    question: "Is Apex free to use?",
     answer:
-      "The Apex Agent is an optional tool (available on Apex Pro) that can send sessions from your PC to your account automatically. Visit the Agent page after upgrading to install and configure it.",
+      "Yes. Apex has a free tier with unlimited session logging and access to core features. Apex Pro (£4.99/month) unlocks additional features including telemetry, auto-uploads, the AI engineer, and access to challenges.",
   },
   {
-    id: "account-email",
-    question: "How do I change my email or password?",
+    id: "how-log-session",
+    category: "Sessions & Data",
+    question: "How do I log a session?",
     answer:
-      "Open Settings from your profile menu. You can update your password in the security section. Email changes may require verification—follow the prompts sent to your inbox.",
+      "You can log sessions manually by entering your data directly, or import session files from your simulator. Apex Pro users also get automatic session uploads, so your data syncs without any extra steps.",
   },
   {
-    id: "leaderboards-challenges",
-    question: "How do leaderboards and challenges work?",
+    id: "session-history-limit",
+    category: "Sessions & Data",
+    question: "Is there a limit on how many sessions I can log?",
     answer:
-      "Leaderboards rank drivers based on criteria set for each season or event. Challenges let you join time-bound goals and compare results with others. Eligibility and scoring are shown on each challenge page.",
+      "No — there is no limit on session history for any user. Log as many sessions as you like on any plan.",
   },
   {
-    id: "privacy-data",
-    question: "Where is my data stored?",
+    id: "data-privacy",
+    category: "Sessions & Data",
+    question: "Is my data private?",
     answer:
-      "Your account and session data are handled according to our Privacy Policy. We use industry-standard practices to protect your information. Review the policy for details on retention, cookies, and analytics.",
+      "Your personal session data and telemetry are private by default and only visible to you. You control what is shared publicly through your privacy settings.",
+  },
+  {
+    id: "whats-in-apex-pro",
+    category: "Apex Pro",
+    question: "What's included in Apex Pro?",
+    answer:
+      "Apex Pro includes: full telemetry access (private to you), automatic session uploads, the AI engineer for personalised performance insights, and access to challenges and competitions. All for £4.99/month.",
+  },
+  {
+    id: "what-is-ai-engineer",
+    category: "Apex Pro",
+    question: "What is the AI engineer?",
+    answer:
+      "The AI engineer analyses your session data and provides personalised coaching insights — highlighting where you're losing time, identifying patterns in your performance, and suggesting areas to focus on to improve your lap times.",
+  },
+  {
+    id: "what-are-challenges",
+    category: "Apex Pro",
+    question: "What are challenges?",
+    answer:
+      "Challenges are time-based competitions where you go up against other Apex Pro users. Beat target lap times, climb the leaderboard, and prove your pace against the community.",
+  },
+  {
+    id: "cancel-apex-pro",
+    category: "Apex Pro",
+    question: "Can I cancel Apex Pro at any time?",
+    answer:
+      "Yes. You can cancel your Apex Pro subscription at any time. You'll retain access until the end of your current billing period.",
+  },
+  {
+    id: "change-password",
+    category: "Account",
+    question: "How do I change my password?",
+    answer:
+      "You can update your password at any time from the Settings page. Enter your current password and your new password to confirm the change.",
   },
   {
     id: "delete-account",
+    category: "Account",
     question: "Can I delete my account?",
     answer:
-      "Yes. In Settings you can request account deletion. Some data may be retained for a short period where required by law or for abuse prevention, as described in our Privacy Policy.",
-  },
-  {
-    id: "support-contact",
-    question: "How do I get help?",
-    answer:
-      "Use the contact email in the site footer for support. Check this FAQ first—many common questions about uploads, Pro, and account settings are covered here.",
+      "Yes. You can delete your account from the Settings page. You'll be asked to confirm with your current password. In line with GDPR, your personal data will be permanently removed upon deletion.",
   },
 ];
+
+export function groupFaqByCategory(items: FaqItem[]): { category: string; items: FaqItem[] }[] {
+  const orderedCategories = new Set<string>(FAQ_CATEGORY_ORDER);
+  const byCategory = new Map<string, FaqItem[]>();
+  for (const item of items) {
+    const list = byCategory.get(item.category);
+    if (list) list.push(item);
+    else byCategory.set(item.category, [item]);
+  }
+  const sections: { category: string; items: FaqItem[] }[] = [];
+  for (const cat of FAQ_CATEGORY_ORDER) {
+    const list = byCategory.get(cat);
+    if (list?.length) sections.push({ category: cat, items: list });
+  }
+  for (const [cat, list] of byCategory) {
+    if (!orderedCategories.has(cat) && list.length) {
+      sections.push({ category: cat, items: list });
+    }
+  }
+  return sections;
+}
 
 export function filterFaqItems(items: FaqItem[], query: string): FaqItem[] {
   const q = query.trim().toLowerCase();
   if (!q) return items;
   return items.filter(
     (item) =>
-      item.question.toLowerCase().includes(q) || item.answer.toLowerCase().includes(q),
+      item.question.toLowerCase().includes(q) ||
+      item.answer.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q),
   );
 }

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { formatLapDelta, formatCarName, formatLapMs } from "@/lib/utils";
 import { getCompetition, getCompetitionSummary, type CompetitionDetail } from "@/lib/api";
@@ -28,42 +28,53 @@ function statusLabel(status: CompetitionDetail["status"]): "Live" | "Upcoming" |
 export default function ChallengeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [challenge, setChallenge] = useState<CompetitionDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!id) {
-      setError("Missing challenge ID");
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
+  const {
+    data: challenge,
+    isPending: loading,
+    error: queryError,
+    isError,
+  } = useQuery({
+    queryKey: ["competitions", "detail", id ?? ""],
+    queryFn: async () => {
+      if (!id) {
+        throw new Error("Missing challenge ID");
+      }
       let data = await getCompetition(id);
       if (!data) {
         const list = await getCompetitionSummary();
         data = list.find((c) => c.id === id) ?? null;
       }
-      if (data) {
-        setChallenge(data as CompetitionDetail);
-        setError(null);
-      } else {
-        setChallenge(null);
-        setError("Challenge not found");
+      if (!data) {
+        throw new Error("Challenge not found");
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load challenge");
-      setChallenge(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return data as CompetitionDetail;
+    },
+    enabled: Boolean(id),
+  });
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const error = isError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to load challenge"
+    : null;
+
+  if (!id) {
+    return (
+      <div className="bg-background min-h-screen">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <button
+            onClick={() => navigate("/challenges")}
+            className="flex items-center gap-2 px-4 py-2 bg-black border border-white/20 text-white hover:bg-black/80 transition-all rounded-lg mb-8 text-sm font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Return
+          </button>
+          <p className="text-muted-foreground py-8">Missing challenge ID</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

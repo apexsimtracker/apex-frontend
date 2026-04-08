@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import FeaturedChallenge from "@/components/FeaturedChallenge";
 import ChallengeCard from "@/components/ChallengeCard";
@@ -7,7 +8,6 @@ import {
   getCompetitionsMeta,
   joinCompetition,
   type CompetitionSummary,
-  type CompetitionsMeta,
 } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
@@ -59,61 +59,62 @@ function competitionToCardProps(c: CompetitionSummary) {
 }
 
 export default function Challenges() {
-  const [items, setItems] = useState<CompetitionSummary[] | null>(null);
-  const [meta, setMeta] = useState<CompetitionsMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [joinError, setJoinError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<
     "all" | "challenges" | "tournaments"
   >("all");
 
-  async function onJoin(id: string) {
-    try {
-      setJoinError(null);
-      setJoiningId(id);
-      await joinCompetition(id);
-      setItems((prev) =>
-        prev ? prev.map((c) => (c.id === id ? { ...c, joined: true } : c)) : prev
+  const {
+    data: items = null,
+    isPending: loading,
+    error: summaryError,
+    isError: summaryFailed,
+  } = useQuery({
+    queryKey: ["competitions", "summary"],
+    queryFn: async () => {
+      const data = await getCompetitionSummary();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
+  const { data: meta = null } = useQuery({
+    queryKey: ["competitions", "meta"],
+    queryFn: () => getCompetitionsMeta(),
+    retry: false,
+  });
+
+  const error = summaryFailed
+    ? summaryError instanceof Error
+      ? summaryError.message
+      : String(summaryError)
+    : null;
+
+  const joinMutation = useMutation({
+    mutationFn: (competitionId: string) => joinCompetition(competitionId),
+    onSuccess: (_, competitionId) => {
+      queryClient.setQueryData<CompetitionSummary[]>(["competitions", "summary"], (prev) =>
+        prev ? prev.map((c) => (c.id === competitionId ? { ...c, joined: true } : c)) : prev
       );
-    } catch (e: unknown) {
+      void queryClient.invalidateQueries({ queryKey: ["competitions", "meta"] });
+    },
+    onError: (e: unknown) => {
       console.error(e);
       setJoinError(
         typeof (e as Error)?.message === "string"
           ? (e as Error).message
           : "Join failed"
       );
-    } finally {
-      setJoiningId(null);
-    }
+    },
+  });
+
+  function onJoin(competitionId: string) {
+    setJoinError(null);
+    joinMutation.mutate(competitionId);
   }
 
-  async function load() {
-    try {
-      setLoading(true);
-      const data = await getCompetitionSummary();
-      const list = Array.isArray(data) ? data : [];
-      setItems(list);
-      setError(null);
-      try {
-        const m = await getCompetitionsMeta();
-        setMeta(m);
-      } catch (e) {
-        console.error("Failed to load competitions meta", e);
-      }
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
+  const joiningId = joinMutation.isPending ? joinMutation.variables ?? null : null;
 
   const q = query.trim().toLowerCase();
   const filtered = !items

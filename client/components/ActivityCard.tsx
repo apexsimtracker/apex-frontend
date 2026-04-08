@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import SimBadge from "./SimBadge";
 import { formatLapMs, formatCarName, cn } from "@/lib/utils";
@@ -75,84 +76,69 @@ function CommentsModal({
   onCommentAdded: () => void;
   onRefreshSession?: () => void;
 }) {
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentsError, setCommentsError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
-  const [commentPending, setCommentPending] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
-  const commentsAbortRef = useRef<AbortController | null>(null);
 
-  const loadComments = useCallback((sid: string) => {
-    commentsAbortRef.current?.abort();
-    const controller = new AbortController();
-    commentsAbortRef.current = controller;
-    setCommentsLoading(true);
-    setCommentsError(null);
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    const token = getToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    fetch(`${API_BASE}/api/sessions/${sid}/comments`, {
-      method: "GET",
-      headers,
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load comments");
-        return res.json();
-      })
-      .then((data: { comments?: CommentItem[] }) => {
-        if (commentsAbortRef.current !== controller) return;
-        setComments(Array.isArray(data?.comments) ? data.comments : []);
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-        if (commentsAbortRef.current !== controller) return;
-        setCommentsError("Can't load comments. Backend may be offline.");
-      })
-      .finally(() => {
-        if (commentsAbortRef.current === controller) {
-          commentsAbortRef.current = null;
-          setCommentsLoading(false);
-        }
-      });
-  }, []);
+  const {
+    data: comments = [],
+    isPending: commentsLoading,
+    isError: commentsFailed,
+    refetch,
+  } = useQuery({
+    queryKey: ["sessions", sessionId, "modal-comments"],
+    queryFn: async () => {
+      const data = await apiGet<{ comments?: CommentItem[] }>(
+        `/api/sessions/${sessionId}/comments`
+      );
+      return Array.isArray(data?.comments) ? data.comments : [];
+    },
+    enabled: isOpen && Boolean(sessionId),
+  });
+
+  const commentsError = commentsFailed
+    ? "Can't load comments. Backend may be offline."
+    : null;
 
   useEffect(() => {
     if (!isOpen || !sessionId) return;
     setCommentText("");
-    setCommentsError(null);
-    loadComments(sessionId);
-    return () => {
-      commentsAbortRef.current?.abort();
-      commentsAbortRef.current = null;
-      setCommentsLoading(false);
-    };
-  }, [isOpen, sessionId, loadComments]);
-
-  const submitComment = useCallback(async () => {
-    const body = commentText.trim();
-    if (!body) return;
-    if (commentPending) return;
-
-    setCommentPending(true);
     setCommentError(null);
+  }, [isOpen, sessionId]);
 
-    try {
-      const data = await apiPost<{ comment: CommentItem }>(
-        `/api/sessions/${sessionId}/comments`,
-        { body }
-      );
-      if (data?.comment) setComments((prev) => [...prev, data.comment]);
+  const postMutation = useMutation({
+    mutationFn: (body: string) =>
+      apiPost<{ comment: CommentItem }>(`/api/sessions/${sessionId}/comments`, {
+        body,
+      }),
+    onSuccess: (data) => {
+      if (data?.comment) {
+        queryClient.setQueryData<CommentItem[]>(
+          ["sessions", sessionId, "modal-comments"],
+          (prev) => [...(prev ?? []), data.comment!]
+        );
+      }
       setCommentText("");
       onCommentAdded();
       onRefreshSession?.();
-    } catch {
+    },
+    onError: () => {
       setCommentError("Can't post right now. Backend may be offline.");
-    } finally {
-      setCommentPending(false);
-    }
-  }, [commentText, sessionId, commentPending, onCommentAdded, onRefreshSession]);
+    },
+  });
+
+  const commentPending = postMutation.isPending;
+
+  const submitComment = useCallback(() => {
+    const body = commentText.trim();
+    if (!body || commentPending) return;
+    setCommentError(null);
+    postMutation.mutate(body);
+  }, [commentText, commentPending, postMutation]);
+
+  const loadComments = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   if (!isOpen) return null;
   if (typeof document === "undefined" || !document.body) return null;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -53,13 +54,43 @@ function isValidEmail(s: string): boolean {
 }
 
 export default function Upgrade() {
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const [upgradeInfo, setUpgradeInfo] = useState<UpgradeInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const [waitlistStatus, setWaitlistStatus] = useState<ProWaitlistStatus | null>(null);
-  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const {
+    data: upgradeInfo,
+    isPending: loading,
+    error: upgradeQueryError,
+    isError: upgradeQueryFailed,
+  } = useQuery({
+    queryKey: ["upgrade", "info"],
+    queryFn: async () => {
+      try {
+        return await getUpgradeInfo();
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          return {
+            effectivePlan: "FREE",
+            canUpgrade: true,
+            message: "Sign in to upgrade to Apex Pro.",
+          } satisfies UpgradeInfo;
+        }
+        throw err;
+      }
+    },
+  });
+
+  const error = upgradeQueryFailed
+    ? upgradeQueryError instanceof Error
+      ? upgradeQueryError.message
+      : "Failed to load upgrade info"
+    : null;
+
+  const { data: waitlistStatus = null, isPending: waitlistLoading } = useQuery({
+    queryKey: ["upgrade", "waitlist", user?.id ?? ""],
+    queryFn: getProWaitlistStatus,
+    enabled: Boolean(user) && Boolean(upgradeInfo?.canUpgrade),
+  });
 
   const [fullName, setFullName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -74,50 +105,6 @@ export default function Upgrade() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-
-    getUpgradeInfo()
-      .then((data) => {
-        setUpgradeInfo(data);
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-          setUpgradeInfo({
-            effectivePlan: "FREE",
-            canUpgrade: true,
-            message: "Sign in to upgrade to Apex Pro.",
-          });
-        } else {
-          setError(err instanceof Error ? err.message : "Failed to load upgrade info");
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!user || !upgradeInfo?.canUpgrade) {
-      setWaitlistStatus(null);
-      return;
-    }
-    let cancelled = false;
-    setWaitlistLoading(true);
-    getProWaitlistStatus()
-      .then((s) => {
-        if (!cancelled) setWaitlistStatus(s);
-      })
-      .catch(() => {
-        if (!cancelled) setWaitlistStatus(null);
-      })
-      .finally(() => {
-        if (!cancelled) setWaitlistLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user, upgradeInfo?.canUpgrade]);
 
   useEffect(() => {
     if (!waitlistStatus?.entry) return;
@@ -169,10 +156,12 @@ export default function Upgrade() {
         ...(company.trim() && { company: company.trim() }),
         ...(message.trim() && { message: message.trim() }),
       });
-      setWaitlistStatus({
-        joined: true,
-        entry: res.entry,
-      });
+      if (user?.id) {
+        queryClient.setQueryData<ProWaitlistStatus>(["upgrade", "waitlist", user.id], {
+          joined: true,
+          entry: res.entry,
+        });
+      }
       setSubmitSuccess(true);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Could not join the waitlist.");

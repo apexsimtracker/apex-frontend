@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Heart, Reply, Eye } from "lucide-react";
 import {
   getDiscussion,
@@ -45,115 +46,90 @@ function CommentAuthorAvatar({ author }: { author: unknown }) {
   );
 }
 
+function discussionLoadErrorMessage(e: unknown): string {
+  if (e instanceof ApiError && e.status === 404) return "Discussion not found.";
+  if (e instanceof ApiError && e.status === 0) return "Failed to load discussion.";
+  return "Failed to load discussion.";
+}
+
 export default function DiscussionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [discussion, setDiscussion] = useState<Discussion | null>(null);
-  const [comments, setComments] = useState<DiscussionComment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [discussionError, setDiscussionError] = useState<string | null>(null);
-  const [commentsError, setCommentsError] = useState<string | null>(null);
+
+  const discussionQuery = useQuery({
+    queryKey: ["discussion", "detail", id ?? ""],
+    queryFn: () => getDiscussion(id!),
+    enabled: Boolean(id),
+    retry: (failureCount, err) =>
+      !(err instanceof ApiError && err.status === 404),
+  });
+
+  const commentsQuery = useQuery({
+    queryKey: ["discussion", "comments", id ?? ""],
+    queryFn: async () => {
+      const raw = await getDiscussionComments(id!);
+      return Array.isArray(raw)
+        ? raw
+        : (raw as { comments?: DiscussionComment[] })?.comments ?? [];
+    },
+    enabled: Boolean(id) && discussionQuery.isSuccess,
+  });
+
+  const discussion = discussionQuery.data ?? null;
+  const comments: DiscussionComment[] = commentsQuery.data ?? [];
+
+  const discussionError = discussionQuery.isError
+    ? discussionLoadErrorMessage(discussionQuery.error)
+    : null;
+
+  const commentsError = commentsQuery.isError
+    ? commentsQuery.error instanceof Error
+      ? commentsQuery.error.message
+      : "Failed to load comments."
+    : null;
+
+  const loading =
+    Boolean(id) &&
+    (discussionQuery.isPending ||
+      (discussionQuery.isSuccess && commentsQuery.isPending));
+
   const [replyBody, setReplyBody] = useState("");
-  const [posting, setPosting] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const [postAvatarFailed, setPostAvatarFailed] = useState(false);
 
-  const loadComments = useCallback(async () => {
-    if (!id) return;
-    try {
-      setCommentsError(null);
-      const data = await getDiscussionComments(id);
-      setComments(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      setCommentsError(e instanceof Error ? e.message : "Failed to load comments.");
-      setComments([]);
-    }
-  }, [id]);
-
-  const handlePostReply = async () => {
-    const body = replyBody.trim();
-    if (!body || !id) return;
-    try {
-      setReplyError(null);
-      setPosting(true);
-      const created = await createDiscussionComment(id, body);
+  const postMutation = useMutation({
+    mutationFn: (body: string) => createDiscussionComment(id!, body),
+    onSuccess: (created) => {
       setReplyBody("");
-      setComments((prev) => [...(prev ?? []), created]);
-    } catch (e) {
+      queryClient.setQueryData<DiscussionComment[]>(
+        ["discussion", "comments", id ?? ""],
+        (prev) => [...(prev ?? []), created]
+      );
+      void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+    },
+    onError: (e: unknown) => {
       console.error(e);
       setReplyError(e instanceof Error ? e.message : "Failed to post reply.");
-    } finally {
-      setPosting(false);
-    }
+    },
+  });
+
+  const posting = postMutation.isPending;
+
+  const handlePostReply = () => {
+    const body = replyBody.trim();
+    if (!body || !id) return;
+    setReplyError(null);
+    postMutation.mutate(body);
+  };
+
+  const loadComments = () => {
+    void commentsQuery.refetch();
   };
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      setDiscussionError("Invalid post ID");
-      setDiscussion(null);
-      setComments([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setDiscussionError(null);
-      setCommentsError(null);
-
-      let disc: Discussion | null = null;
-      try {
-        disc = await getDiscussion(id);
-      } catch (e) {
-        if (cancelled) return;
-        const isApi = e instanceof ApiError;
-        const is404 = isApi && e.status === 404;
-        const isNetwork = isApi && e.status === 0;
-        setDiscussion(null);
-        setComments([]);
-        setDiscussionError(
-          is404
-            ? "Discussion not found."
-            : isNetwork
-              ? "Failed to load discussion."
-              : "Failed to load discussion."
-        );
-        setLoading(false);
-        return;
-      }
-
-      if (cancelled) return;
-      if (disc) {
-        setDiscussion(disc);
-        setDiscussionError(null);
-      }
-
-      let cmts: DiscussionComment[] = [];
-      try {
-        const raw = await getDiscussionComments(id);
-        cmts = Array.isArray(raw) ? raw : (raw as { comments?: DiscussionComment[] })?.comments ?? [];
-        setCommentsError(null);
-      } catch (e) {
-        if (!cancelled) setCommentsError(e instanceof Error ? e.message : "Failed to load comments.");
-      }
-      if (!cancelled) {
-        setComments(cmts);
-        setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
   }, [id]);
 
   useEffect(() => {

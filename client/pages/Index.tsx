@@ -24,10 +24,30 @@ import GoalsBar from "@/components/GoalsBar";
 import { useAuth } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import {
+  ownedProfileUserKey,
+  profileKeys,
+  PROFILE_SUMMARY_ALL_QUERY_FILTER,
+  prefetchOwnProfileQueries,
+} from "@/lib/profileQueryKeys";
 
 const HOME_PATH = "/";
 const HOME_TITLE = `Home | ${COMPANY_NAME}`;
 const HOME_DESCRIPTION = `Your sim racing hub on ${COMPANY_NAME}: activity feed, weekly goals, sessions, and community at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
+
+/** Home feed only (`type: "all"`). Keep in sync with `setQueryData` patch sites in this file. */
+const HOME_ACTIVITY_FEED_QUERY_KEY = [
+  "activity",
+  "feed",
+  "all",
+  ACTIVITY_FEED_DEFAULT_LIMIT,
+] as const;
+
+const HOME_DISCUSSIONS_QUERY_KEY = [
+  "discussions",
+  "home",
+  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+] as const;
 
 type RawActivityItem = SessionItem & {
   type?: "session";
@@ -136,6 +156,7 @@ export default function Index() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [showUploadBanner, setShowUploadBanner] = useState(false);
+  const [homeDiscussionsEnabled, setHomeDiscussionsEnabled] = useState(false);
 
   const {
     data: activityPages,
@@ -146,7 +167,7 @@ export default function Index() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+    queryKey: HOME_ACTIVITY_FEED_QUERY_KEY,
     queryFn: ({ pageParam }) =>
       getActivityFeedPage({
         type: "all",
@@ -155,6 +176,7 @@ export default function Index() {
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    placeholderData: (previousData) => previousData,
   });
 
   const activity = useMemo(
@@ -163,10 +185,11 @@ export default function Index() {
     [activityPages]
   );
 
+  const profileSummaryKey = ownedProfileUserKey(user);
   const { data: profileSummary, isPending: profileSummaryPending } = useQuery({
-    queryKey: ["profile", "summary", user?.id ?? ""],
+    queryKey: profileKeys.summary(profileSummaryKey),
     queryFn: getProfileSummary,
-    enabled: Boolean(user?.id),
+    enabled: Boolean(user),
   });
   const profileWeeklyGoals = profileSummary?.weeklyGoals ?? null;
 
@@ -177,7 +200,7 @@ export default function Index() {
     hasNextPage: discussionsHasNextPage,
     isFetchingNextPage: isFetchingNextDiscussionsPage,
   } = useInfiniteQuery({
-    queryKey: ["discussions", "home", DISCUSSIONS_PAGE_DEFAULT_LIMIT],
+    queryKey: HOME_DISCUSSIONS_QUERY_KEY,
     queryFn: ({ pageParam }) =>
       getDiscussionsPage({
         page: pageParam as number,
@@ -186,6 +209,8 @@ export default function Index() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
+    enabled: homeDiscussionsEnabled,
+    placeholderData: (previousData) => previousData,
   });
 
   const discussions = useMemo(
@@ -208,7 +233,26 @@ export default function Index() {
       : "Failed to load activity";
   }, [activityError, feedError]);
 
-  const feedLoading = activityLoading || discussionsLoading;
+  useEffect(() => {
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) setHomeDiscussionsEnabled(true);
+    };
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof requestIdleCallback !== "undefined") {
+      idleId = requestIdleCallback(run, { timeout: 2000 });
+    } else {
+      timeoutId = setTimeout(run, 1);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
+        cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, []);
 
   useEffect(() => {
     if (searchParams.get("uploaded") === "1") {
@@ -226,7 +270,7 @@ export default function Index() {
   useEffect(() => {
     function handleActivityUpdated() {
       void queryClient.invalidateQueries({ queryKey: ["activity"] });
-      void queryClient.invalidateQueries({ queryKey: ["profile", "summary"] });
+      void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
     }
     if (typeof window !== "undefined") {
       window.addEventListener("apex:activity-updated", handleActivityUpdated);
@@ -237,6 +281,28 @@ export default function Index() {
       }
     };
   }, [queryClient]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) prefetchOwnProfileQueries(queryClient, user);
+    };
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof requestIdleCallback !== "undefined") {
+      idleId = requestIdleCallback(run);
+    } else {
+      timeoutId = setTimeout(run, 1);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
+        cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, [user, queryClient]);
 
   // Group sessions into bundled activities
   const groupedActivity = useMemo<GroupedActivityItem[]>(() => {
@@ -401,7 +467,7 @@ export default function Index() {
             </div>
           )}
 
-          {feedLoading ? (
+          {activityLoading ? (
             <div className="space-y-0">
               <p className="text-sm text-muted-foreground mb-3">Loading activity...</p>
               <FeedSkeletonCard />
@@ -427,9 +493,15 @@ export default function Index() {
                   Failed to load activity
                 </p>
               )}
-              {!error && !feedError && groupedActivity.length === 0 && discussions.length === 0 && (
-                <p className="text-sm text-muted-foreground py-8">No activity yet.</p>
-              )}
+              {!error &&
+                !feedError &&
+                !activityLoading &&
+                homeDiscussionsEnabled &&
+                !discussionsLoading &&
+                groupedActivity.length === 0 &&
+                discussions.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-8">No activity yet.</p>
+                )}
               {!error && !feedError &&
                 groupedActivity.map((item) => {
                   if (item.type === "bundle") {
@@ -440,7 +512,7 @@ export default function Index() {
                         overflowCount={item.overflowCount}
                         onSessionPatch={(id, patch) => {
                           queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                            ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+                            HOME_ACTIVITY_FEED_QUERY_KEY,
                             (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                           );
                         }}
@@ -478,7 +550,7 @@ export default function Index() {
                       comments={session.commentCount ?? 0}
                       onSessionPatch={(id, patch) => {
                         queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                          ["activity", "feed", "all", ACTIVITY_FEED_DEFAULT_LIMIT],
+                          HOME_ACTIVITY_FEED_QUERY_KEY,
                           (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                         );
                       }}
@@ -499,40 +571,49 @@ export default function Index() {
               )}
             </>
           )}
-          {discussions.map((d) => (
-            <DiscussionCard
-              key={d.id}
-              id={d.id}
-              title={d.title}
-              excerpt={
-                d.excerpt ??
-                (() => {
-                  const body = d.description ?? d.content ?? "";
-                  return body
-                    ? body.slice(0, 160) + (body.length > 160 ? "…" : "")
-                    : "";
-                })()
-              }
-              author={d.author}
-              categoryKey={d.category ?? "general"}
-              timestamp={timeAgo(d.createdAt)}
-              replies={d.replies ?? d.commentCount ?? d.commentsCount ?? 0}
-              views={d.views ?? 0}
-              isPinned={d.isPinned}
-            />
-          ))}
-          {discussionsHasNextPage && (
-            <div className="flex justify-center py-6">
-              <button
-                type="button"
-                onClick={() => void fetchNextDiscussionsPage()}
-                disabled={isFetchingNextDiscussionsPage}
-                className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
-              >
-                {isFetchingNextDiscussionsPage ? "Loading…" : "Load more discussions"}
-              </button>
-            </div>
-          )}
+          {homeDiscussionsEnabled &&
+            (discussionsLoading ? (
+              <p className="text-sm text-muted-foreground py-6 mt-6 border-t border-white/5 pt-6">
+                Loading discussions…
+              </p>
+            ) : (
+              <>
+                {discussions.map((d) => (
+                  <DiscussionCard
+                    key={d.id}
+                    id={d.id}
+                    title={d.title}
+                    excerpt={
+                      d.excerpt ??
+                      (() => {
+                        const body = d.description ?? d.content ?? "";
+                        return body
+                          ? body.slice(0, 160) + (body.length > 160 ? "…" : "")
+                          : "";
+                      })()
+                    }
+                    author={d.author}
+                    categoryKey={d.category ?? "general"}
+                    timestamp={timeAgo(d.createdAt)}
+                    replies={d.replies ?? d.commentCount ?? d.commentsCount ?? 0}
+                    views={d.views ?? 0}
+                    isPinned={d.isPinned}
+                  />
+                ))}
+                {discussionsHasNextPage && (
+                  <div className="flex justify-center py-6">
+                    <button
+                      type="button"
+                      onClick={() => void fetchNextDiscussionsPage()}
+                      disabled={isFetchingNextDiscussionsPage}
+                      className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                    >
+                      {isFetchingNextDiscussionsPage ? "Loading…" : "Load more discussions"}
+                    </button>
+                  </div>
+                )}
+              </>
+            ))}
         </div>
       </div>
     </div>

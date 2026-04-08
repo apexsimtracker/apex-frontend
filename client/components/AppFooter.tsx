@@ -20,6 +20,12 @@ export default function AppFooter() {
             <Link to="/faq" className={linkClass}>
               FAQ
             </Link>
+            <span className="text-white/25 mx-1.5" aria-hidden>
+              ·
+            </span>
+            <Link to="/contact" className={linkClass}>
+              Contact us
+            </Link>
           </span>
           <span>
             Company:{" "}

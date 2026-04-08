@@ -1,5 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { prefetchOwnProfileQueries } from "@/lib/profileQueryKeys";
 import { Menu, X, Settings, Bot, Plus, Upload, PenLine, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -75,7 +78,13 @@ export default function Header() {
   const [isMobileCreateOpen, setIsMobileCreateOpen] = useState(false);
   const [logoImgFailed, setLogoImgFailed] = useState(false);
   const navigate = useNavigate();
-   const location = useLocation();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const prefetchOwnProfile = useCallback(() => {
+    prefetchOwnProfileQueries(queryClient, user);
+  }, [queryClient, user]);
 
   const isPathActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -119,6 +128,8 @@ export default function Header() {
             </Link>
             <Link
               to="/profile"
+              onMouseEnter={prefetchOwnProfile}
+              onFocus={prefetchOwnProfile}
               className={`relative text-sm font-medium transition-colors ${
                 isPathActive("/profile")
                   ? "text-white"
@@ -248,6 +259,8 @@ export default function Header() {
             </Link>
             <Link
               to="/profile"
+              onMouseEnter={prefetchOwnProfile}
+              onFocus={prefetchOwnProfile}
               className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isPathActive("/profile")
                   ? "bg-secondary/70 text-white"

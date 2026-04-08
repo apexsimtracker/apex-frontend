@@ -544,6 +544,18 @@ export type Discussion = {
 /** Default page size for GET /api/community/discussions (must match server default). */
 export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 5;
 
+/** Totals per category for community tiles (GET /api/community/discussions/counts). */
+export type DiscussionCategoryCounts = {
+  all: number;
+  setup: number;
+  guides: number;
+  general: number;
+};
+
+export async function getDiscussionCategoryCounts(): Promise<DiscussionCategoryCounts> {
+  return apiGet<DiscussionCategoryCounts>("/api/community/discussions/counts");
+}
+
 export type DiscussionsPageResult = {
   items: Discussion[];
   page: number;
@@ -886,6 +898,34 @@ export async function resendVerificationCode(email: string): Promise<ResendVerif
   return fetchApi<ResendVerificationResponse>("POST", "/api/auth/resend-verification-code", {
     email: email.trim(),
   }, true);
+}
+
+/** POST /api/contact — public contact form; emails support inbox. */
+export type ContactPayload = {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+};
+
+export type ContactResponse = {
+  ok: true;
+};
+
+export async function submitContact(body: ContactPayload): Promise<ContactResponse> {
+  return fetchApi<ContactResponse>(
+    "POST",
+    "/api/contact",
+    {
+      name: body.name.trim(),
+      email: body.email.trim(),
+      ...(body.subject != null && body.subject.trim() !== ""
+        ? { subject: body.subject.trim() }
+        : {}),
+      message: body.message.trim(),
+    },
+    true
+  );
 }
 
 export type LoginResponse = AuthUser & { accessToken?: string };

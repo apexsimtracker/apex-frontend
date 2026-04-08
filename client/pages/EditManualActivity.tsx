@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 import { apiGet, updateManualActivity, ApiError } from "@/lib/api";
 import ManualActivityForm, {
@@ -7,7 +8,6 @@ import ManualActivityForm, {
 } from "@/components/ManualActivityForm";
 
 type FormState = "idle" | "submitting" | "success" | "error";
-type LoadState = "loading" | "ready" | "error";
 
 type SessionDetailForEdit = {
   id: string;
@@ -27,47 +27,40 @@ export default function EditManualActivity() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialData, setInitialData] =
-    useState<ManualActivityInitialData | null>(null);
+  const sid = sessionId?.trim() ?? "";
+
+  const {
+    data: initialData,
+    isPending: loadLoading,
+    error: loadErr,
+    isError: loadFailed,
+  } = useQuery({
+    queryKey: ["sessions", "edit", sid],
+    queryFn: async (): Promise<ManualActivityInitialData> => {
+      const data = await apiGet<SessionDetailForEdit>(`/api/sessions/${sid}`);
+      if (data.source !== "MANUAL_ACTIVITY") {
+        throw new Error("This session cannot be edited.");
+      }
+      return {
+        sim: data.sim,
+        trackId: data.trackId ?? data.track,
+        carId: data.carId ?? data.car,
+        position: data.position,
+        bestLapMs: data.bestLapMs,
+        notes: data.notes,
+      };
+    },
+    enabled: Boolean(sid),
+  });
+
+  const loadError = loadFailed
+    ? loadErr instanceof Error
+      ? loadErr.message
+      : "Failed to load session."
+    : null;
 
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!sessionId) {
-      setLoadState("error");
-      setLoadError("Missing session ID.");
-      return;
-    }
-
-    setLoadState("loading");
-    apiGet<SessionDetailForEdit>(`/api/sessions/${sessionId}`)
-      .then((data) => {
-        if (data.source !== "MANUAL_ACTIVITY") {
-          setLoadState("error");
-          setLoadError("This session cannot be edited.");
-          return;
-        }
-
-        setInitialData({
-          sim: data.sim,
-          trackId: data.trackId ?? data.track,
-          carId: data.carId ?? data.car,
-          position: data.position,
-          bestLapMs: data.bestLapMs,
-          notes: data.notes,
-        });
-        setLoadState("ready");
-      })
-      .catch((err) => {
-        setLoadState("error");
-        setLoadError(
-          err instanceof Error ? err.message : "Failed to load session."
-        );
-      });
-  }, [sessionId]);
 
   async function handleSubmit(data: {
     sim: string;
@@ -98,7 +91,26 @@ export default function EditManualActivity() {
     }
   }
 
-  if (loadState === "loading") {
+  if (!sid) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
+            <p className="text-white/60">Missing session ID.</p>
+            <Link
+              to="/"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Go back
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
@@ -109,14 +121,14 @@ export default function EditManualActivity() {
     );
   }
 
-  if (loadState === "error" || !initialData) {
+  if (loadFailed || !initialData) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
             <p className="text-white/60">{loadError ?? "Failed to load."}</p>
             <Link
-              to={sessionId ? `/sessions/${sessionId}` : "/"}
+              to={sid ? `/sessions/${sid}` : "/"}
               className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />

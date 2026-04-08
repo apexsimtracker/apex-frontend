@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { getLeaderboards, type LeaderboardRow } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
@@ -19,6 +20,8 @@ const TAB_METRICS = {
 
 type TabKey = keyof typeof TAB_METRICS;
 
+const LB_LIMIT = 10;
+
 function formatValue(
   row: LeaderboardRow,
   metric: string
@@ -37,90 +40,30 @@ function formatValue(
   return v != null && Number.isFinite(Number(v)) ? String(Math.floor(Number(v))) : "—";
 }
 
-// In-memory cache keyed by metric (persists across tab switches)
-const leaderboardCache: Record<string, LeaderboardRow[]> = {};
-
 export default function Leaderboards() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("wins");
-  const [rows, setRows] = useState<LeaderboardRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [updating, setUpdating] = useState(false);
-  const [backgroundError, setBackgroundError] = useState<string | null>(null);
-  const activeMetricRef = useRef<string>(TAB_METRICS.wins);
 
   const metric = TAB_METRICS[activeTab];
 
-  // Sync from cache when tab changes, then refetch in background (stale-while-revalidate)
-  useEffect(() => {
-    if (!metric) return;
-    activeMetricRef.current = metric;
-    const cached = leaderboardCache[metric];
+  const {
+    data: rows = [],
+    isPending: loading,
+    isFetching,
+    error,
+    isError,
+  } = useQuery({
+    queryKey: ["leaderboards", metric, LB_LIMIT],
+    queryFn: async () => {
+      const data = await getLeaderboards(metric, LB_LIMIT);
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
 
-    if (cached?.length) {
-      setRows(cached);
-      setLoading(false);
-      setError(null);
-      setBackgroundError(null);
-      setUpdating(true);
-      getLeaderboards(metric, 10)
-        .then((data) => {
-          const arr = Array.isArray(data) ? data : [];
-          leaderboardCache[metric] = arr;
-          if (activeMetricRef.current === metric) setRows(arr);
-        })
-        .catch((e) => {
-          if (activeMetricRef.current === metric)
-            setBackgroundError(e instanceof Error ? e.message : "Failed to update.");
-        })
-        .finally(() => {
-          if (activeMetricRef.current === metric) setUpdating(false);
-        });
-    } else {
-      setLoading(true);
-      setError(null);
-      setBackgroundError(null);
-      getLeaderboards(metric, 10)
-        .then((data) => {
-          const arr = Array.isArray(data) ? data : [];
-          leaderboardCache[metric] = arr;
-          if (activeMetricRef.current === metric) setRows(arr);
-        })
-        .catch((e) => {
-          if (activeMetricRef.current === metric) {
-            setError(e instanceof Error ? e.message : "Failed to load leaderboard.");
-            setRows([]);
-          }
-        })
-        .finally(() => {
-          if (activeMetricRef.current === metric) setLoading(false);
-        });
-    }
-  }, [activeTab, metric]);
-
-  // Auto-refresh current metric when window regains focus
-  useEffect(() => {
-    const onFocus = () => {
-      const m = activeMetricRef.current;
-      if (!m) return;
-      getLeaderboards(m, 10)
-        .then((data) => {
-          const arr = Array.isArray(data) ? data : [];
-          leaderboardCache[m] = arr;
-          if (activeMetricRef.current === m) {
-            setRows(arr);
-            setBackgroundError(null);
-          }
-        })
-        .catch((e) => {
-          if (activeMetricRef.current === m)
-            setBackgroundError(e instanceof Error ? e.message : "Failed to update.");
-        });
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
+  const updating = isFetching && !loading;
+  const err = error instanceof Error ? error.message : isError ? "Failed to load leaderboard." : null;
 
   const getMedalEmoji = (rank: number) => {
     if (rank === 1) return "🥇";
@@ -232,25 +175,22 @@ export default function Leaderboards() {
           {updating && (
             <p className="text-muted-foreground/70 text-xs py-1 mb-2">Updating…</p>
           )}
-          {backgroundError && (
-            <p className="text-muted-foreground/70 text-xs py-1 mb-2">{backgroundError}</p>
-          )}
 
           {loading && (
             <p className="text-muted-foreground text-sm py-8">Loading…</p>
           )}
 
-          {!loading && error && (
-            <p className="text-sm text-muted-foreground py-8">{error}</p>
+          {!loading && isError && (
+            <p className="text-sm text-muted-foreground py-8">{err}</p>
           )}
 
-          {!loading && !error && (!rows || rows.length === 0) && (
+          {!loading && !isError && rows.length === 0 && (
             <p className="text-muted-foreground text-sm py-8">
               No rankings yet.
             </p>
           )}
 
-          {!loading && !error && rows && rows.length > 0 && (
+          {!loading && !isError && rows.length > 0 && (
             <div className="space-y-0">
               {rows.map((row) => {
                 const rank = row.rank ?? 0;

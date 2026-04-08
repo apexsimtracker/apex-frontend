@@ -1,10 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getCatalogs, type CatalogTrack, type CatalogCar } from "@/lib/api";
-
-const cache = new Map<
-  string,
-  { tracks: CatalogTrack[]; cars: CatalogCar[] }
->();
 
 export type UseCatalogsResult = {
   tracks: CatalogTrack[];
@@ -15,54 +10,39 @@ export type UseCatalogsResult = {
 };
 
 export function useCatalogs(sim: string | null): UseCatalogsResult {
-  const [tracks, setTracks] = useState<CatalogTrack[]>([]);
-  const [cars, setCars] = useState<CatalogCar[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const trimmed = sim?.trim() ?? "";
+  const enabled = trimmed.length > 0;
 
-  const fetchCatalogs = useCallback(async (simKey: string) => {
-    const cached = cache.get(simKey);
-    if (cached) {
-      setTracks(cached.tracks);
-      setCars(cached.cars);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getCatalogs(simKey);
+  const { data, isPending, error, refetch } = useQuery({
+    queryKey: ["catalogs", trimmed],
+    queryFn: async () => {
+      const data = await getCatalogs(trimmed);
       const tracksList = Array.isArray(data.tracks) ? data.tracks : [];
       const carsList = Array.isArray(data.cars) ? data.cars : [];
-      cache.set(simKey, { tracks: tracksList, cars: carsList });
-      setTracks(tracksList);
-      setCars(carsList);
-    } catch {
-      setError("Failed to load track/car list.");
-      setTracks([]);
-      setCars([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { tracks: tracksList, cars: carsList };
+    },
+    enabled,
+  });
 
-  const retry = useCallback(() => {
-    if (sim) {
-      cache.delete(sim);
-      void fetchCatalogs(sim);
-    }
-  }, [sim, fetchCatalogs]);
+  const retry = () => {
+    void refetch();
+  };
 
-  useEffect(() => {
-    if (!sim || sim.trim() === "") {
-      setTracks([]);
-      setCars([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    void fetchCatalogs(sim);
-  }, [sim, fetchCatalogs]);
+  if (!enabled) {
+    return {
+      tracks: [],
+      cars: [],
+      loading: false,
+      error: null,
+      retry,
+    };
+  }
 
-  return { tracks, cars, loading, error, retry };
+  return {
+    tracks: data?.tracks ?? [],
+    cars: data?.cars ?? [],
+    loading: isPending,
+    error: error ? "Failed to load track/car list." : null,
+    retry,
+  };
 }

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
@@ -14,7 +15,6 @@ import {
   updateMe,
   uploadProfileAvatar,
   type ProfileSummary,
-  type RaceHistoryPageResult,
   type FollowUser,
   type AuthUser,
 } from "@/lib/api";
@@ -28,6 +28,11 @@ import {
 import { ProfileView } from "@/components/ProfileView";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import {
+  ownedProfileUserKey,
+  profileKeys,
+  PROFILE_SUMMARY_ALL_QUERY_FILTER,
+} from "@/lib/profileQueryKeys";
 
 const PROFILE_PATH = "/profile";
 const profileTitle = `Profile | ${COMPANY_NAME}`;
@@ -128,12 +133,58 @@ async function readImageDimensions(file: File): Promise<{ width: number; height:
 }
 
 export default function Profile() {
+  const queryClient = useQueryClient();
   const { user, loading, refreshMe, setUser } = useAuth();
-  const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [followers, setFollowers] = useState<FollowUser[]>([]);
-  const [following, setFollowing] = useState<FollowUser[]>([]);
-  const [followsLoading, setFollowsLoading] = useState(false);
-  const [followsError, setFollowsError] = useState<string | null>(null);
+  const [raceHistoryPage, setRaceHistoryPage] = useState(1);
+
+  // Summary + race history are token-scoped; run whenever we're authenticated (RequireAuth), even if
+  // `user.id` is missing from the /me payload (some backends omit it briefly).
+  const profileUserKey = ownedProfileUserKey(user);
+  const followsUserId = user?.id?.trim() ?? "";
+
+  const { data: profileSummary } = useQuery({
+    queryKey: profileKeys.summary(profileUserKey),
+    queryFn: getProfileSummary,
+    enabled: Boolean(user),
+  });
+
+  const { data: raceHistoryData, isPending: raceHistoryLoading } = useQuery({
+    queryKey: profileKeys.raceHistory(profileUserKey, raceHistoryPage),
+    queryFn: () =>
+      getProfileRaceHistory({
+        page: raceHistoryPage,
+        limit: RACE_HISTORY_PAGE_SIZE,
+      }),
+    enabled: Boolean(user),
+  });
+
+  const {
+    data: followsData,
+    isPending: followsLoading,
+    error: followsErrorRaw,
+  } = useQuery({
+    queryKey: profileKeys.follows(followsUserId),
+    queryFn: async () => {
+      const [f1, f2] = await Promise.all([
+        getFollowers(followsUserId),
+        getFollowing(followsUserId),
+      ]);
+      return {
+        followers: Array.isArray(f1) ? f1 : [],
+        following: Array.isArray(f2) ? f2 : [],
+      };
+    },
+    enabled: Boolean(followsUserId),
+  });
+
+  const followers = followsData?.followers ?? [];
+  const following = followsData?.following ?? [];
+  const followsError =
+    followsErrorRaw instanceof Error
+      ? followsErrorRaw.message
+      : followsErrorRaw
+        ? "Failed to load followers/following."
+        : null;
   const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -146,31 +197,9 @@ export default function Profile() {
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
 
-  const [raceHistoryPage, setRaceHistoryPage] = useState(1);
-  const [raceHistoryData, setRaceHistoryData] = useState<RaceHistoryPageResult | null>(null);
-  const [raceHistoryLoading, setRaceHistoryLoading] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    let cancelled = false;
-    setRaceHistoryLoading(true);
-    void getProfileRaceHistory({
-      page: raceHistoryPage,
-      limit: RACE_HISTORY_PAGE_SIZE,
-    })
-      .then((data) => {
-        if (!cancelled) setRaceHistoryData(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRaceHistoryData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRaceHistoryLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, raceHistoryPage]);
+  const profile =
+    profileSummary ??
+    (user ? profileSummaryFromMe({ user }) : null);
 
   const openEditProfile = useCallback(() => {
     if (!user) return;
@@ -189,7 +218,7 @@ export default function Profile() {
     setEditError(null);
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profile?.user]);
+  }, [user, profile]);
 
   const handleAvatarFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -232,51 +261,6 @@ export default function Profile() {
     setAvatarError(null);
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   }, [avatarPreview]);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    // Keep an immediate skeleton/profile shell while loading summary.
-    setProfile(profileSummaryFromMe({ user }));
-    (async () => {
-      try {
-        const summary = await getProfileSummary();
-        if (!cancelled) setProfile(summary);
-      } catch {
-        // If summary endpoint fails, keep the /me-derived shell.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    const loadFollows = async () => {
-      if (!user) return;
-      try {
-        setFollowsLoading(true);
-        setFollowsError(null);
-        const [f1, f2] = await Promise.all([
-          getFollowers(user.id),
-          getFollowing(user.id),
-        ]);
-        setFollowers(Array.isArray(f1) ? f1 : []);
-        setFollowing(Array.isArray(f2) ? f2 : []);
-      } catch (e) {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : "Failed to load followers/following.";
-        setFollowsError(msg);
-        setFollowers([]);
-        setFollowing([]);
-      } finally {
-        setFollowsLoading(false);
-      }
-    };
-    loadFollows();
-  }, [user]);
 
   const handleSignOut = () => {
     clearToken();
@@ -332,18 +316,20 @@ export default function Profile() {
           undefined,
       };
       setUser(userWithAvatar);
-      setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              user: {
-                ...prev.user,
-                displayName: updated.displayName ?? trimmedName,
-                tagline: savedBio,
-                bio: savedBio,
-              },
-            }
-          : null
+      queryClient.setQueryData<ProfileSummary>(
+        profileKeys.summary(ownedProfileUserKey(user)),
+        (prev) =>
+          prev
+            ? {
+                ...prev,
+                user: {
+                  ...prev.user,
+                  displayName: updated.displayName ?? trimmedName,
+                  tagline: savedBio,
+                  bio: savedBio,
+                },
+              }
+            : profileSummaryFromMe({ user: userWithAvatar })
       );
 
       // Re-sync from backend only after upload/save has settled.
@@ -372,6 +358,12 @@ export default function Profile() {
         }
       } else {
         await refreshMe();
+      }
+
+      void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
+      const followsId = user.id?.trim();
+      if (followsId) {
+        void queryClient.invalidateQueries({ queryKey: profileKeys.follows(followsId) });
       }
 
       setEditSuccess(true);

@@ -10,3 +10,6 @@ export const SUPPORT_EMAIL: string =
   typeof envSupportEmail === "string" && envSupportEmail.trim()
     ? envSupportEmail.trim()
     : "support@apexsimtracker.com";
+
+/** Brand red for primary actions and accents (aligned with Login, Settings, Community). */
+export const BRAND_RED = "rgb(240, 28, 28)";

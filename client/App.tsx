@@ -36,6 +36,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQPage from "./pages/FAQ";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import ProRequiredBanner from "./components/ProRequiredBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
@@ -96,6 +97,7 @@ export default function App() {
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/faq" element={<FAQPage />} />
                     <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Share2, PenLine, FileText, Pencil, Trash2, Repeat, Timer } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
@@ -238,6 +239,57 @@ type SessionDetailResponse =
       sim?: string | null;
     };
 
+function parseSessionDetailApiResponse(data: SessionDetailResponse): {
+  session: SessionDetail;
+  lapsData: BackendLapLite[] | null;
+  defaultTelemetryLapNumber: number | null;
+  telemetry: TelemetryPayload | null;
+} {
+  if (data && typeof data === "object" && "session" in (data as object)) {
+    const d = data as Exclude<SessionDetailResponse, SessionDetail>;
+    const base =
+      (d.session as any)?.session && typeof (d.session as any).session === "object"
+        ? ((d.session as any).session as SessionDetail)
+        : d.session;
+    const outer = d.session as any;
+    const mergedSession: SessionDetail = {
+      ...(outer && typeof outer === "object" ? outer : {}),
+      ...(base && typeof base === "object" ? base : {}),
+      trackName: (base as any)?.trackName ?? (outer as any)?.trackName ?? (d as any).trackName ?? null,
+      carName: (base as any)?.carName ?? (outer as any)?.carName ?? (d as any).carName ?? null,
+      game: (base as any)?.game ?? (outer as any)?.game ?? (d as any).game ?? null,
+      sim: (base as any)?.sim ?? (outer as any)?.sim ?? (d as any).sim ?? null,
+    };
+    const lapsPayload =
+      (Array.isArray(d.laps) ? d.laps : null) ??
+      (Array.isArray((d as any).laps) ? ((d as any).laps as unknown[]) : null) ??
+      (Array.isArray((outer as any)?.laps) ? ((outer as any).laps as unknown[]) : null) ??
+      (Array.isArray((base as any)?.laps) ? ((base as any).laps as unknown[]) : null);
+
+    const lite =
+      Array.isArray(lapsPayload) &&
+      lapsPayload.length > 0 &&
+      typeof (lapsPayload[0] as any)?.lapNumber === "number" &&
+      typeof (lapsPayload[0] as any)?.lapTimeMs === "number"
+        ? (lapsPayload as BackendLapLite[])
+        : null;
+
+    return {
+      session: mergedSession,
+      lapsData: lite,
+      defaultTelemetryLapNumber: d.defaultTelemetryLapNumber ?? null,
+      telemetry: d.telemetry ?? null,
+    };
+  }
+
+  return {
+    session: data as SessionDetail,
+    lapsData: null,
+    defaultTelemetryLapNumber: null,
+    telemetry: null,
+  };
+}
+
 function pickBestLapNumber(
   laps: NormalizedLap[],
   serverDefault?: number
@@ -404,80 +456,34 @@ export default function SessionDetailPage() {
   const isPro = useIsProUser();
   const { toast } = useToast();
 
-  const [session, setSession] = useState<SessionDetail | null>(null);
-  const [lapsData, setLapsData] = useState<BackendLapLite[] | null>(null);
-  const [defaultTelemetryLapNumber, setDefaultTelemetryLapNumber] = useState<number | null>(null);
-  const [telemetry, setTelemetry] = useState<TelemetryPayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAllLaps, setShowAllLaps] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    apiGet<SessionDetailResponse>(`/api/sessions/${id}`)
-      .then((data) => {
-        if (data && typeof data === "object" && "session" in (data as any)) {
-          const d = data as Exclude<SessionDetailResponse, SessionDetail>;
-          const base =
-            (d.session as any)?.session && typeof (d.session as any).session === "object"
-              ? ((d.session as any).session as SessionDetail)
-              : d.session;
-          const outer = d.session as any;
-          const mergedSession: SessionDetail = {
-            // Preserve any outer fields (some backends nest and keep display fields on the outer object)
-            ...(outer && typeof outer === "object" ? outer : {}),
-            ...(base && typeof base === "object" ? base : {}),
-            // Prefer inner/base values first, then outer, then wrapper top-level
-            trackName: (base as any)?.trackName ?? (outer as any)?.trackName ?? (d as any).trackName ?? null,
-            carName: (base as any)?.carName ?? (outer as any)?.carName ?? (d as any).carName ?? null,
-            game: (base as any)?.game ?? (outer as any)?.game ?? (d as any).game ?? null,
-            sim: (base as any)?.sim ?? (outer as any)?.sim ?? (d as any).sim ?? null,
-          };
-          setSession(mergedSession);
-          const lapsPayload =
-            (Array.isArray(d.laps) ? d.laps : null) ??
-            (Array.isArray((d as any).laps) ? ((d as any).laps as unknown[]) : null) ??
-            (Array.isArray((outer as any)?.laps) ? ((outer as any).laps as unknown[]) : null) ??
-            (Array.isArray((base as any)?.laps) ? ((base as any).laps as unknown[]) : null);
+  const {
+    data: sessionPayload,
+    isPending: loading,
+    error: queryError,
+    isError,
+  } = useQuery({
+    queryKey: ["sessions", "detail", id ?? ""],
+    queryFn: async () => {
+      const raw = await apiGet<SessionDetailResponse>(`/api/sessions/${id!}`);
+      return parseSessionDetailApiResponse(raw);
+    },
+    enabled: Boolean(id),
+  });
 
-          // Only treat as BackendLapLite[] if it matches the expected lite shape.
-          const lite =
-            Array.isArray(lapsPayload) &&
-            lapsPayload.length > 0 &&
-            typeof (lapsPayload[0] as any)?.lapNumber === "number" &&
-            typeof (lapsPayload[0] as any)?.lapTimeMs === "number"
-              ? (lapsPayload as BackendLapLite[])
-              : null;
+  const session = sessionPayload?.session ?? null;
+  const lapsData = sessionPayload?.lapsData ?? null;
+  const defaultTelemetryLapNumber = sessionPayload?.defaultTelemetryLapNumber ?? null;
+  const telemetry = sessionPayload?.telemetry ?? null;
 
-          setLapsData(lite);
-          setDefaultTelemetryLapNumber(d.defaultTelemetryLapNumber ?? null);
-          setTelemetry(d.telemetry ?? null);
-        } else {
-          setSession(data as SessionDetail);
-          setLapsData(null);
-          setDefaultTelemetryLapNumber(null);
-          setTelemetry(null);
-        }
-        setError(null);
-      })
-      .catch((err) => {
-        setError(
-          err instanceof Error ? err.message : "Failed to load session"
-        );
-        setSession(null);
-        setLapsData(null);
-        setDefaultTelemetryLapNumber(null);
-        setTelemetry(null);
-      })
-      .finally(() => setLoading(false));
-  }, [id]);
+  const error = isError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to load session"
+    : null;
 
   if (!id) {
     return (

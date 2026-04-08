@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { ProfileView } from "@/components/ProfileView";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +16,9 @@ import {
   unfollowUser,
   ApiError,
   type ProfileSummary,
-  type RaceHistoryPageResult,
   type FollowUser,
 } from "@/lib/api";
+import { profileKeys } from "@/lib/profileQueryKeys";
 import {
   Dialog,
   DialogContent,
@@ -25,33 +26,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+type ProfileBundle = {
+  profile: ProfileSummary;
+  preview: Awaited<ReturnType<typeof getUserPublicProfile>>;
+};
+
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user: currentUser, loading: authLoading } = useAuth();
 
-  const [profile, setProfile] = useState<ProfileSummary | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const [followers, setFollowers] = useState<FollowUser[]>([]);
-  const [following, setFollowing] = useState<FollowUser[]>([]);
-  const [followsLoading, setFollowsLoading] = useState(false);
-  const [followsError, setFollowsError] = useState<string | null>(null);
-  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
-
-  const [preview, setPreview] = useState<Awaited<
-    ReturnType<typeof getUserPublicProfile>
-  > | null>(null);
-
-  const [followLoading, setFollowLoading] = useState(false);
+  const id = userId?.trim() ?? "";
 
   const [raceHistoryPage, setRaceHistoryPage] = useState(1);
-  const [raceHistoryData, setRaceHistoryData] = useState<RaceHistoryPageResult | null>(null);
-  const [raceHistoryLoading, setRaceHistoryLoading] = useState(false);
-
-  const id = userId?.trim() ?? "";
+  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followActionError, setFollowActionError] = useState<string | null>(null);
 
   useEffect(() => {
     setRaceHistoryPage(1);
@@ -61,101 +52,79 @@ export default function UserProfile() {
     window.scrollTo(0, 0);
   }, [id]);
 
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      setNotFound(true);
-      return;
-    }
+  const profileBundleQuery = useQuery({
+    queryKey: profileKeys.userBundle(id),
+    queryFn: async (): Promise<ProfileBundle> => {
+      const [profile, preview] = await Promise.all([
+        getProfileSummaryForUser(id),
+        getUserPublicProfile(id),
+      ]);
+      return { profile, preview };
+    },
+    enabled: Boolean(id),
+    retry: (failureCount, err) =>
+      !(err instanceof ApiError && err.status === 404),
+  });
 
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
-    setNotFound(false);
-    setProfile(null);
-    setPreview(null);
+  const notFound =
+    profileBundleQuery.error instanceof ApiError &&
+    profileBundleQuery.error.status === 404;
 
-    (async () => {
-      try {
-        const [summary, pub] = await Promise.all([
-          getProfileSummaryForUser(id),
-          getUserPublicProfile(id),
-        ]);
-        if (cancelled) return;
-        setProfile(summary);
-        setPreview(pub);
-      } catch (e: unknown) {
-        if (cancelled) return;
-        if (e instanceof ApiError && e.status === 404) {
-          setNotFound(true);
-        } else {
-          setLoadError(e instanceof Error ? e.message : "Failed to load profile.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+  const loadError =
+    profileBundleQuery.isError &&
+    profileBundleQuery.error &&
+    !(profileBundleQuery.error instanceof ApiError && profileBundleQuery.error.status === 404)
+      ? profileBundleQuery.error instanceof Error
+        ? profileBundleQuery.error.message
+        : "Failed to load profile."
+      : null;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
+  // Race history + follows only need `id` from the URL; they run in parallel with the bundle.
+  // Trade-off: invalid / missing users may 404 the bundle while these requests still fire.
+  const { data: raceHistoryData, isPending: raceHistoryLoading } = useQuery({
+    queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
+    queryFn: () =>
+      getProfileRaceHistoryForUser(id, {
+        page: raceHistoryPage,
+        limit: RACE_HISTORY_PAGE_SIZE,
+      }),
+    enabled: Boolean(id),
+  });
 
-  useEffect(() => {
-    if (!id || notFound || loadError) return;
-    let cancelled = false;
-    setRaceHistoryLoading(true);
-    void getProfileRaceHistoryForUser(id, {
-      page: raceHistoryPage,
-      limit: RACE_HISTORY_PAGE_SIZE,
-    })
-      .then((data) => {
-        if (!cancelled) setRaceHistoryData(data);
-      })
-      .catch(() => {
-        if (!cancelled) setRaceHistoryData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRaceHistoryLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id, raceHistoryPage, notFound, loadError]);
+  const {
+    data: followsData,
+    isPending: followsLoading,
+    error: followsErrorRaw,
+  } = useQuery({
+    queryKey: profileKeys.userFollows(id),
+    queryFn: async () => {
+      const [f1, f2] = await Promise.all([getFollowers(id), getFollowing(id)]);
+      return {
+        followers: Array.isArray(f1) ? f1 : [],
+        following: Array.isArray(f2) ? f2 : [],
+      };
+    },
+    enabled: Boolean(id),
+  });
 
-  useEffect(() => {
-    if (!id || notFound || loadError) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        setFollowsLoading(true);
-        setFollowsError(null);
-        const [f1, f2] = await Promise.all([
-          getFollowers(id),
-          getFollowing(id),
-        ]);
-        if (cancelled) return;
-        setFollowers(Array.isArray(f1) ? f1 : []);
-        setFollowing(Array.isArray(f2) ? f2 : []);
-      } catch (e) {
-        if (cancelled) return;
-        setFollowsError(
-          e instanceof Error ? e.message : "Failed to load followers/following."
-        );
-        setFollowers([]);
-        setFollowing([]);
-      } finally {
-        if (!cancelled) setFollowsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, notFound, loadError]);
+  const followers: FollowUser[] = followsData?.followers ?? [];
+  const following: FollowUser[] = followsData?.following ?? [];
+  const followsError =
+    followsErrorRaw instanceof Error
+      ? followsErrorRaw.message
+      : followsErrorRaw
+        ? "Failed to load followers/following."
+        : null;
+
+  const profile = profileBundleQuery.data?.profile ?? null;
+  const preview = profileBundleQuery.data?.preview ?? null;
+
+  const loading = Boolean(id) && profileBundleQuery.isPending;
 
   const handleToggleFollow = useCallback(async () => {
     if (!currentUser || !id || currentUser.id === id) return;
     setFollowLoading(true);
+    setFollowActionError(null);
     try {
       const isFollowing = preview?.isFollowing ?? false;
       if (isFollowing) {
@@ -164,13 +133,17 @@ export default function UserProfile() {
         await followUser(id);
       }
       const pub = await getUserPublicProfile(id);
-      setPreview(pub);
+      queryClient.setQueryData<ProfileBundle>(profileKeys.userBundle(id), (old) =>
+        old ? { ...old, preview: pub } : old
+      );
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : "Could not update follow status.");
+      setFollowActionError(
+        e instanceof Error ? e.message : "Could not update follow status."
+      );
     } finally {
       setFollowLoading(false);
     }
-  }, [currentUser, id, preview?.isFollowing]);
+  }, [currentUser, id, preview?.isFollowing, queryClient]);
 
   if (!id) {
     return (
@@ -214,7 +187,9 @@ export default function UserProfile() {
     );
   }
 
-  if (loadError || !profile || !preview) {
+  const combinedError = loadError || followActionError;
+
+  if (combinedError || !profile || !preview) {
     return (
       <div className="bg-background min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -227,7 +202,7 @@ export default function UserProfile() {
             <span className="font-medium">Back</span>
           </button>
           <div className="text-center max-w-md mx-auto">
-            <p className="text-destructive text-sm mb-4">{loadError ?? "Something went wrong."}</p>
+            <p className="text-destructive text-sm mb-4">{combinedError ?? "Something went wrong."}</p>
             <Link
               to="/community"
               className="text-primary text-sm underline underline-offset-2"

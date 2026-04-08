@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import DiscussionCard from "@/components/DiscussionCard";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import {
   getDiscussionsPage,
+  getDiscussionCategoryCounts,
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   createDiscussion,
   DISCUSSION_CATEGORIES,
   type Discussion,
   type DiscussionCategory,
 } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
@@ -32,11 +34,20 @@ const TITLE_MAX = 120;
 const DESCRIPTION_MIN = 10;
 const DESCRIPTION_MAX = 5000;
 
+const SEARCH_DEBOUNCE_MS = 300;
+
+const emptyCategoryCounts = {
+  all: 0,
+  setup: 0,
+  guides: 0,
+  general: 0,
+} as const;
+
 export default function Community() {
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<DiscussionCategory>("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
   const [newDiscussionTitle, setNewDiscussionTitle] = useState("");
   const [newDiscussionContent, setNewDiscussionContent] = useState("");
@@ -50,27 +61,18 @@ export default function Community() {
     category?: string;
   }>({});
 
-  const { data: categoryCounts = { all: 0, setup: 0, guides: 0, general: 0 } } = useQuery({
-    queryKey: ["discussions", "category-totals"],
-    queryFn: async () => {
-      const [all, setup, guides, general] = await Promise.all([
-        getDiscussionsPage({ category: "all", page: 1, limit: 1 }),
-        getDiscussionsPage({ category: "setup", page: 1, limit: 1 }),
-        getDiscussionsPage({ category: "guides", page: 1, limit: 1 }),
-        getDiscussionsPage({ category: "general", page: 1, limit: 1 }),
-      ]);
-      return {
-        all: all.total,
-        setup: setup.total,
-        guides: guides.total,
-        general: general.total,
-      };
-    },
+  const {
+    data: categoryCounts = emptyCategoryCounts,
+    isPending: categoryCountsPending,
+  } = useQuery({
+    queryKey: ["discussions", "category-counts"],
+    queryFn: getDiscussionCategoryCounts,
   });
 
   const {
     data: discussionPages,
     isLoading: loading,
+    isFetching,
     error: discussionsQueryError,
     fetchNextPage,
     hasNextPage,
@@ -93,6 +95,7 @@ export default function Community() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
+    placeholderData: (previousData) => previousData,
   });
 
   const discussions = useMemo(
@@ -106,16 +109,9 @@ export default function Community() {
       : "Failed to load discussions."
     : null;
 
-  // Debounce search input -> searchQuery (300ms)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setSearchQuery(searchInput);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
-  const categoryLabel = (value: string) =>
-    DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
+  /** Category/search changed: refetching first page (not “load more”). */
+  const listRefetching =
+    isFetching && !isFetchingNextPage && !loading;
 
   const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
 
@@ -203,7 +199,7 @@ export default function Community() {
         {/* Search and Filter */}
         <div className="mb-8 sm:mb-10 flex flex-col gap-2 sm:flex-row sm:gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-muted-foreground/40" />
+            <Search className="absolute left-2.5 top-3 w-3.5 h-3.5 text-muted-foreground/40" />
             <input
               type="text"
               placeholder="Search..."
@@ -247,11 +243,22 @@ export default function Community() {
               </span>
               <p className="font-medium text-xs">{cat.label}</p>
               <p className="text-xs text-muted-foreground/50 mt-0.5">
-                {categoryCounts[cat.value]}
+                {categoryCountsPending ? "—" : categoryCounts[cat.value]}
               </p>
             </button>
           ))}
         </div>
+
+        {listRefetching && (
+          <div
+            className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] py-2.5 text-xs sm:text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[rgb(240,28,28)]" aria-hidden />
+            <span>Loading discussions…</span>
+          </div>
+        )}
 
         {/* Discussions */}
         <div className="space-y-5 sm:space-y-6">

@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Heart,
@@ -142,45 +143,30 @@ function sessionToView(s: SessionDetail): ActivityView {
 export default function ActivityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activity, setActivity] = useState<ActivityView | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const {
+    data: activity,
+    isPending: loading,
+    error: queryError,
+    isError,
+  } = useQuery({
+    queryKey: ["activity", "detail", id ?? ""],
+    queryFn: async () => {
+      const path = "/api/activity/" + id;
+      const data = (await apiGet(path)) as SessionDetail;
+      return sessionToView(data);
+    },
+    enabled: Boolean(id),
+  });
+
+  const error = isError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to load session"
+    : null;
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) return;
-
-    let cancelled = false;
-
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const path = "/api/activity/" + id;
-        const data = (await apiGet(path)) as SessionDetail;
-
-        if (!cancelled) {
-          const mapped = sessionToView ? sessionToView(data) : (data as any);
-          setActivity(mapped);
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          setError(err?.message ?? "Failed to load session");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
   }, [id]);
 
   if (loading) {
