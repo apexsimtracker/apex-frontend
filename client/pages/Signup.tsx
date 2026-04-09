@@ -1,22 +1,38 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { authRegister } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormRootMessage,
+} from "@/components/ui/form";
+import type { WithRootError } from "@/lib/formWithRootError";
+import { signupFormSchema, type SignupFormValues } from "@/lib/validation/authPages";
+
+const inputClass = "w-full px-3 py-2 border rounded-md bg-transparent";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const form = useForm<WithRootError<SignupFormValues>>({
+    resolver: zodResolver(signupFormSchema),
+    defaultValues: { name: "", email: "", password: "" },
+  });
+
+  async function onSubmit(values: SignupFormValues) {
+    form.clearErrors("root");
     setLoading(true);
-    const trimmedEmail = email.trim();
+    const trimmedEmail = values.email.trim();
     try {
-      const data = await authRegister(trimmedEmail, password, name.trim() || undefined);
+      const data = await authRegister(trimmedEmail, values.password, values.name.trim() || undefined);
       const token = data.accessToken ?? data.token;
       const hasToken = token && typeof token === "string";
 
@@ -30,79 +46,94 @@ export default function Signup() {
       sessionStorage.setItem("apex_verify_email", trimmedEmail);
       navigate("/verify-email", { replace: true, state: { email: trimmedEmail } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed. Email may already exist.");
+      form.setError("root", {
+        type: "server",
+        message:
+          err instanceof Error ? err.message : "Signup failed. Email may already exist.",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-semibold">Create account</h1>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
+          <h1 className="text-xl font-semibold">Create account</h1>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1">
-            Name (optional)
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-            disabled={loading}
-            className="w-full px-3 py-2 border rounded-md bg-transparent"
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name (optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    autoComplete="name"
+                    disabled={loading}
+                    className={inputClass}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            disabled={loading}
-            className="w-full px-3 py-2 border rounded-md bg-transparent"
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    disabled={loading}
+                    className={inputClass}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-            disabled={loading}
-            className="w-full px-3 py-2 border rounded-md bg-transparent"
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={loading}
+                    className={inputClass}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        {error && (
-          <div className="text-sm text-red-500" role="alert">
-            {error}
-          </div>
-        )}
+          <FormRootMessage />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: "rgb(240, 28, 28)" }}
-        >
-          {loading ? "Creating account…" : "Sign up"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: "rgb(240, 28, 28)" }}
+          >
+            {loading ? "Creating account…" : "Sign up"}
+          </button>
+        </form>
+      </Form>
     </div>
   );
 }

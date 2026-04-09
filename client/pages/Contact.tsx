@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Loader2, Mail } from "lucide-react";
@@ -9,17 +10,36 @@ import { submitContact, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import {
+  contactFormSchema,
+  type ContactFormValues,
+} from "@/lib/validation/contact";
 
 const PATH = "/contact";
 
+const defaultValues: ContactFormValues = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+};
+
 export default function Contact() {
   const { toast } = useToast();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues,
+  });
 
   const title = `Contact us | ${COMPANY_NAME}`;
   const description = `Reach ${COMPANY_NAME} support — questions, feedback, and account help at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
@@ -31,10 +51,7 @@ export default function Contact() {
         title: "Message sent",
         description: "Thanks for getting in touch. We’ll get back to you as soon as we can.",
       });
-      setName("");
-      setEmail("");
-      setSubject("");
-      setMessage("");
+      form.reset(defaultValues);
     },
     onError: (err: unknown) => {
       let description =
@@ -50,13 +67,12 @@ export default function Contact() {
     },
   });
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  function onSubmit(values: ContactFormValues) {
     mutation.mutate({
-      name,
-      email,
-      subject: subject.trim() || undefined,
-      message,
+      name: values.name,
+      email: values.email,
+      subject: values.subject.trim() || undefined,
+      message: values.message,
     });
   }
 
@@ -94,101 +110,122 @@ export default function Contact() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="contact-name">Name</Label>
-                  <Input
-                    id="contact-name"
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  <FormField
+                    control={form.control}
                     name="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    maxLength={120}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={pending}
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact-email">Email</Label>
-                  <Input
-                    id="contact-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={pending}
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact-subject">
-                    Subject <span className="text-muted-foreground font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    id="contact-subject"
-                    name="subject"
-                    type="text"
-                    maxLength={200}
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    disabled={pending}
-                    placeholder="Brief summary"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contact-message">Message</Label>
-                  <Textarea
-                    id="contact-message"
-                    name="message"
-                    required
-                    minLength={20}
-                    maxLength={5000}
-                    rows={6}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    disabled={pending}
-                    placeholder="How can we help? (at least 20 characters)"
-                    className="min-h-[120px]"
-                  />
-                  <p className="text-xs text-muted-foreground">Minimum 20 characters.</p>
-                </div>
-
-                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    type="submit"
-                    disabled={pending}
-                    className="w-full sm:w-auto min-w-[10rem] text-white focus-visible:ring-ring"
-                    style={{ backgroundColor: BRAND_RED }}
-                  >
-                    {pending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                        Sending…
-                      </>
-                    ) : (
-                      "Send message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            autoComplete="name"
+                            maxLength={120}
+                            disabled={pending}
+                            placeholder="Your name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground sm:text-right">
-                    <Link to="/faq" className="underline underline-offset-2 hover:text-foreground">
-                      FAQ
-                    </Link>
-                    <span className="text-muted-foreground/50 mx-1.5" aria-hidden>
-                      ·
-                    </span>
-                    <Link to="/about" className="underline underline-offset-2 hover:text-foreground">
-                      About us
-                    </Link>
-                  </p>
-                </div>
-              </form>
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            autoComplete="email"
+                            disabled={pending}
+                            placeholder="you@example.com"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Subject <span className="text-muted-foreground font-normal">(optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            maxLength={200}
+                            disabled={pending}
+                            placeholder="Brief summary"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            maxLength={5000}
+                            rows={6}
+                            disabled={pending}
+                            placeholder="How can we help? (at least 20 characters)"
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Minimum 20 characters.</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                    <Button
+                      type="submit"
+                      disabled={pending}
+                      className="w-full sm:w-auto min-w-[10rem] text-white focus-visible:ring-ring"
+                      style={{ backgroundColor: BRAND_RED }}
+                    >
+                      {pending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          Sending…
+                        </>
+                      ) : (
+                        "Send message"
+                      )}
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground sm:text-right">
+                      <Link to="/faq" className="underline underline-offset-2 hover:text-foreground">
+                        FAQ
+                      </Link>
+                      <span className="text-muted-foreground/50 mx-1.5" aria-hidden>
+                        ·
+                      </span>
+                      <Link to="/about" className="underline underline-offset-2 hover:text-foreground">
+                        About us
+                      </Link>
+                    </p>
+                  </div>
+                </form>
+              </Form>
             </div>
           </div>
         </div>

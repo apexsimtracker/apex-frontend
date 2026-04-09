@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +27,22 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormRootMessage,
+} from "@/components/ui/form";
+import type { WithRootError } from "@/lib/formWithRootError";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  profileEditFormSchema,
+  type ProfileEditFormValues,
+} from "@/lib/validation/profileEdit";
 import { ProfileView } from "@/components/ProfileView";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
@@ -93,16 +111,6 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const MIN_AVATAR_DIMENSION = 400; // Require at least 400x400 for quality
-
-type EditForm = {
-  displayName: string;
-  tagline: string;
-};
-
-const emptyEditForm: EditForm = {
-  displayName: "",
-  tagline: "",
-};
 
 function withCacheBust(url: string, stamp: number): string {
   return `${url}${url.includes("?") ? "&" : "?"}t=${stamp}`;
@@ -188,14 +196,18 @@ export default function Profile() {
   const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<EditForm>(emptyEditForm);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
+
+  const profileEditForm = useForm<WithRootError<ProfileEditFormValues>>({
+    resolver: zodResolver(profileEditFormSchema),
+    defaultValues: { displayName: "", tagline: "" },
+    mode: "onChange",
+  });
 
   const profile =
     profileSummary ??
@@ -208,17 +220,17 @@ export default function Profile() {
       (profile?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
       (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       "";
-    setEditForm({
+    profileEditForm.reset({
       displayName: name,
       tagline: currentBio,
     });
     setAvatarFile(null);
     setAvatarPreview(null);
     setAvatarError(null);
-    setEditError(null);
+    profileEditForm.clearErrors("root");
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profile]);
+  }, [user, profile, profileEditForm]);
 
   const handleAvatarFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -267,17 +279,13 @@ export default function Profile() {
     window.location.href = "/login";
   };
 
-  const handleSaveProfile = async () => {
+  const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
     if (!user) return;
     const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
-    const trimmedName = editForm.displayName.trim();
-    if (trimmedName.length < 2 || trimmedName.length > 40) {
-      setEditError("Display name must be between 2 and 40 characters.");
-      return;
-    }
+    const trimmedName = values.displayName.trim();
     if (avatarError) return;
     setEditLoading(true);
-    setEditError(null);
+    profileEditForm.clearErrors("root");
     try {
       let avatarUrlToSet: string | undefined;
       let uploadedAvatarForSession: string | undefined;
@@ -289,12 +297,12 @@ export default function Profile() {
           uploadedAvatarForSession = withCacheBust(avatarUrlToSet, Date.now());
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Avatar upload failed.";
-          setEditError(msg);
+          profileEditForm.setError("root", { type: "server", message: msg });
           setEditLoading(false);
           return;
         }
       }
-      const bioValue = editForm.tagline.trim() || undefined;
+      const bioValue = values.tagline.trim() || undefined;
       const payload = {
         displayName: trimmedName,
         tagline: bioValue,
@@ -306,7 +314,7 @@ export default function Profile() {
 
       const u = updated as { tagline?: string; bio?: string };
       const savedBio =
-        (u.bio?.trim() ?? u.tagline?.trim() ?? editForm.tagline.trim()) || undefined;
+        (u.bio?.trim() ?? u.tagline?.trim() ?? values.tagline.trim()) || undefined;
 
       const userWithAvatar = {
         ...updated,
@@ -373,7 +381,10 @@ export default function Profile() {
         setEditSuccess(false);
       }, 800);
     } catch (e) {
-      setEditError(e instanceof Error ? e.message : "Failed to update profile.");
+      profileEditForm.setError("root", {
+        type: "server",
+        message: e instanceof Error ? e.message : "Failed to update profile.",
+      });
     } finally {
       setEditLoading(false);
     }
@@ -600,54 +611,64 @@ export default function Profile() {
               Update your display name, bio, and profile picture.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            {editError && (
-              <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
-                {editError}
-              </p>
-            )}
-            {editSuccess && (
-              <p className="text-sm text-green-500 bg-green-500/10 rounded-md px-3 py-2">
-                Profile updated.
-              </p>
-            )}
+          <Form {...profileEditForm}>
+            <form
+              onSubmit={profileEditForm.handleSubmit(onSaveProfileSubmit)}
+              className="space-y-4 pt-2"
+            >
+              <FormRootMessage className="bg-red-500/10 rounded-md px-3 py-2" />
+              {editSuccess && (
+                <p className="text-sm text-green-500 bg-green-500/10 rounded-md px-3 py-2">
+                  Profile updated.
+                </p>
+              )}
 
-            <div>
-              <label htmlFor="edit-displayName" className="block text-sm font-medium text-foreground mb-1">
-                Display name
-              </label>
-              <input
-                id="edit-displayName"
-                type="text"
-                value={editForm.displayName}
-                onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
-                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Your name"
-                maxLength={40}
-                disabled={editLoading}
+              <FormField
+                control={profileEditForm.control}
+                name="displayName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="edit-displayName">Display name</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="edit-displayName"
+                        type="text"
+                        className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        placeholder="Your name"
+                        maxLength={40}
+                        disabled={editLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {field.value.trim().length}/40
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {editForm.displayName.trim().length}/40
-              </p>
-            </div>
 
-            <div>
-              <label htmlFor="edit-tagline" className="block text-sm font-medium text-foreground mb-1">
-                Bio
-              </label>
-              <textarea
-                id="edit-tagline"
-                value={editForm.tagline}
-                onChange={(e) => setEditForm((f) => ({ ...f, tagline: e.target.value }))}
-                className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-y"
-                placeholder="A short bio..."
-                maxLength={160}
-                disabled={editLoading}
+              <FormField
+                control={profileEditForm.control}
+                name="tagline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel htmlFor="edit-tagline">Bio</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="edit-tagline"
+                        className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-y"
+                        placeholder="A short bio..."
+                        maxLength={160}
+                        disabled={editLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground mt-0.5">{field.value.length}/160</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {editForm.tagline.length}/160
-              </p>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -687,29 +708,31 @@ export default function Profile() {
               )}
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleSaveProfile}
-                disabled={editLoading || editForm.displayName.trim().length < 2}
-                className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              >
-                {editLoading ? "Saving…" : "Save"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  clearAvatarSelection();
-                  setEditOpen(false);
-                }}
-                disabled={editLoading}
-                className="px-4 py-2 rounded-lg border border-white/20 text-foreground text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={
+                    editLoading || profileEditForm.watch("displayName").trim().length < 2
+                  }
+                  className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                >
+                  {editLoading ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearAvatarSelection();
+                    setEditOpen(false);
+                  }}
+                  disabled={editLoading}
+                  className="px-4 py-2 rounded-lg border border-white/20 text-foreground text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

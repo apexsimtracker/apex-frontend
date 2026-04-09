@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
 import DiscussionCard from "@/components/DiscussionCard";
@@ -16,6 +18,20 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormRootMessage,
+} from "@/components/ui/form";
+import type { WithRootError } from "@/lib/formWithRootError";
+import {
+  newDiscussionFormSchema,
+  type NewDiscussionFormValues,
+} from "@/lib/validation/community";
 
 const COMMUNITY_PATH = "/community";
 const communityTitle = `Community | ${COMPANY_NAME}`;
@@ -28,11 +44,6 @@ function truncateDescription(text: string): string {
   if (t.length <= DESCRIPTION_TRUNCATE) return t;
   return t.slice(0, DESCRIPTION_TRUNCATE).trim() + "…";
 }
-
-const TITLE_MIN = 3;
-const TITLE_MAX = 120;
-const DESCRIPTION_MIN = 10;
-const DESCRIPTION_MAX = 5000;
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -49,17 +60,28 @@ export default function Community() {
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
-  const [newDiscussionTitle, setNewDiscussionTitle] = useState("");
-  const [newDiscussionContent, setNewDiscussionContent] = useState("");
-  const [newDiscussionCategory, setNewDiscussionCategory] =
-    useState<DiscussionCategory>("setup");
   const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<{
-    title?: string;
-    description?: string;
-    category?: string;
-  }>({});
+
+  const newDiscussionForm = useForm<WithRootError<NewDiscussionFormValues>>({
+    resolver: zodResolver(newDiscussionFormSchema),
+    defaultValues: {
+      category: "setup",
+      title: "",
+      description: "",
+    },
+    mode: "onChange",
+  });
+
+  useEffect(() => {
+    if (showNewDiscussionModal) {
+      newDiscussionForm.reset({
+        category: "setup",
+        title: "",
+        description: "",
+      });
+      newDiscussionForm.clearErrors("root");
+    }
+  }, [showNewDiscussionModal, newDiscussionForm]);
 
   const {
     data: categoryCounts = emptyCategoryCounts,
@@ -115,47 +137,29 @@ export default function Community() {
 
   const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
 
-  const validateForm = (): boolean => {
-    const errs: { title?: string; description?: string; category?: string } = {};
-    const title = newDiscussionTitle.trim();
-    const description = newDiscussionContent.trim();
-    if (!title) errs.title = "Title is required.";
-    else if (title.length < TITLE_MIN) errs.title = `Title must be at least ${TITLE_MIN} characters.`;
-    else if (title.length > TITLE_MAX) errs.title = `Title must be ${TITLE_MAX} characters or less.`;
-    if (!description) errs.description = "Description is required.";
-    else if (description.length < DESCRIPTION_MIN) errs.description = `Description must be at least ${DESCRIPTION_MIN} characters.`;
-    else if (description.length > DESCRIPTION_MAX) errs.description = `Description must be ${DESCRIPTION_MAX} characters or less.`;
-    const validCategory = createCategories.some((c) => c.value === newDiscussionCategory);
-    if (!validCategory) errs.category = "Please select a category.";
-    setValidationErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleCreateDiscussion = async () => {
-    setCreateError(null);
-    setValidationErrors({});
-    if (!validateForm()) return;
-
-    const title = newDiscussionTitle.trim();
-    const description = newDiscussionContent.trim();
-
+  const onCreateDiscussion = async (values: NewDiscussionFormValues) => {
+    newDiscussionForm.clearErrors("root");
     try {
       setCreating(true);
       await createDiscussion({
-        category: newDiscussionCategory,
-        title,
-        description,
+        category: values.category,
+        title: values.title.trim(),
+        description: values.description.trim(),
       });
       await queryClient.invalidateQueries({ queryKey: ["discussions"] });
       setShowNewDiscussionModal(false);
-      setNewDiscussionTitle("");
-      setNewDiscussionContent("");
-      setNewDiscussionCategory("setup");
-      setValidationErrors({});
-      setCreateError(null);
+      newDiscussionForm.reset({
+        category: "setup",
+        title: "",
+        description: "",
+      });
+      newDiscussionForm.clearErrors("root");
     } catch (e) {
       console.error(e);
-      setCreateError(e instanceof Error ? e.message : "Failed to create discussion.");
+      newDiscussionForm.setError("root", {
+        type: "server",
+        message: e instanceof Error ? e.message : "Failed to create discussion.",
+      });
     } finally {
       setCreating(false);
     }
@@ -164,11 +168,7 @@ export default function Community() {
   const closeModal = () => {
     if (creating) return;
     setShowNewDiscussionModal(false);
-    setNewDiscussionTitle("");
-    setNewDiscussionContent("");
-    setNewDiscussionCategory("setup");
-    setCreateError(null);
-    setValidationErrors({});
+    newDiscussionForm.clearErrors("root");
   };
 
   const hasFilters = selectedCategory !== "all" || searchQuery.trim().length > 0;
@@ -319,94 +319,109 @@ export default function Community() {
               Create New Discussion
             </h2>
 
-            {createError && (
-              <div className="mb-4 text-sm text-neutral-400">{createError}</div>
-            )}
+            <Form {...newDiscussionForm}>
+              <form onSubmit={newDiscussionForm.handleSubmit(onCreateDiscussion)}>
+                <FormRootMessage className="mb-4 text-xs" />
 
-            {/* Category Selection — backend values: setup | guides | general */}
-            <div className="mb-6">
-              <label className="text-sm font-medium text-foreground mb-3 block">
-                Category
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {createCategories.map((cat) => (
+                <FormField
+                  control={newDiscussionForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem className="mb-6">
+                      <FormLabel className="text-sm font-medium text-foreground mb-3 block">
+                        Category
+                      </FormLabel>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {createCategories.map((cat) => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => {
+                              field.onChange(cat.value);
+                            }}
+                            className={`p-3 rounded-lg border transition-all text-sm font-medium ${
+                              field.value === cat.value
+                                ? "border-2 text-foreground"
+                                : "border text-foreground hover:border-white/10"
+                            }`}
+                            style={
+                              field.value === cat.value
+                                ? { borderColor: "rgb(240, 28, 28)" }
+                                : {}
+                            }
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={newDiscussionForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="mb-6">
+                      <FormLabel className="text-sm font-medium text-foreground mb-0.5 block">
+                        Discussion Title
+                      </FormLabel>
+                      <FormControl>
+                        <input
+                          type="text"
+                          placeholder="What's your question or topic?"
+                          disabled={creating}
+                          className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={newDiscussionForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="mb-6">
+                      <FormLabel className="text-sm font-medium text-foreground mb-0.5 block">
+                        Description
+                      </FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="Describe your discussion in detail..."
+                          disabled={creating}
+                          className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none h-32"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex gap-3 justify-end">
                   <button
-                    key={cat.value}
                     type="button"
-                    onClick={() => setNewDiscussionCategory(cat.value)}
-                    className={`p-3 rounded-lg border transition-all text-sm font-medium ${
-                      newDiscussionCategory === cat.value
-                        ? "border-2 text-foreground"
-                        : "border text-foreground hover:border-white/10"
-                    }`}
-                    style={
-                      newDiscussionCategory === cat.value
-                        ? { borderColor: "rgb(240, 28, 28)" }
-                        : {}
-                    }
+                    onClick={closeModal}
+                    disabled={creating}
+                    className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg font-medium transition-colors disabled:opacity-50"
                   >
-                    {cat.label}
+                    Cancel
                   </button>
-                ))}
-              </div>
-              {validationErrors.category && (
-                <p className="mt-1 text-xs text-neutral-400">{validationErrors.category}</p>
-              )}
-            </div>
-
-            {/* Title */}
-            <div className="mb-6">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Discussion Title
-              </label>
-              <input
-                type="text"
-                placeholder="What's your question or topic?"
-                value={newDiscussionTitle}
-                onChange={(e) => setNewDiscussionTitle(e.target.value)}
-                className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              {validationErrors.title && (
-                <p className="mt-1 text-xs text-neutral-400">{validationErrors.title}</p>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="mb-6">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Description
-              </label>
-              <textarea
-                placeholder="Describe your discussion in detail..."
-                value={newDiscussionContent}
-                onChange={(e) => setNewDiscussionContent(e.target.value)}
-                className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none h-32"
-              />
-              {validationErrors.description && (
-                <p className="mt-1 text-xs text-neutral-400">{validationErrors.description}</p>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={closeModal}
-                disabled={creating}
-                className="px-6 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg font-medium transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateDiscussion}
-                disabled={creating}
-                className="px-6 py-2 disabled:opacity-50 text-white rounded-lg font-medium transition-all"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              >
-                {creating ? "Creating…" : "Create"}
-              </button>
-            </div>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="px-6 py-2 disabled:opacity-50 text-white rounded-lg font-medium transition-all"
+                    style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                  >
+                    {creating ? "Creating…" : "Create"}
+                  </button>
+                </div>
+              </form>
+            </Form>
           </div>
         </div>
       )}

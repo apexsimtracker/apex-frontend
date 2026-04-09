@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
@@ -21,6 +23,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { SkeletonBlock } from "@/components/ui/skeleton";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormRootMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import type { WithRootError } from "@/lib/formWithRootError";
+import {
+  settingsDisplayNameSchema,
+  settingsChangePasswordSchema,
+  deleteAccountSchema,
+  type SettingsDisplayNameValues,
+  type SettingsChangePasswordValues,
+  type DeleteAccountFormValues,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} from "@/lib/validation/settingsForms";
 import { cn } from "@/lib/utils";
 import { RefreshCw, LogOut, Trash2, Loader2 } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
@@ -31,8 +54,6 @@ const settingsTitle = `Settings | ${COMPANY_NAME}`;
 const settingsDescription = `Account, password, preferences, and privacy settings for your ${COMPANY_NAME} profile at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const PRIMARY_RED = "rgb(240, 28, 28)";
-const PASSWORD_MIN = 8;
-const PASSWORD_MAX = 200;
 const DELETE_CONFIRM_PHRASE = "DELETE";
 
 function SettingsCard({
@@ -104,56 +125,79 @@ export default function Settings() {
   const { user, loading, setUser } = useAuth();
 
   const [settings, setSettings] = useState<ApexSettings>(() => getApexSettings());
-  const [displayNameInput, setDisplayNameInput] = useState("");
   const [savingDisplayName, setSavingDisplayName] = useState(false);
-  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
   const [displayNameSuccess, setDisplayNameSuccess] = useState(false);
-  const [changePwCurrent, setChangePwCurrent] = useState("");
-  const [changePwNew, setChangePwNew] = useState("");
-  const [changePwError, setChangePwError] = useState<string | null>(null);
   const [changePwSubmitting, setChangePwSubmitting] = useState(false);
   const [changePwSuccess, setChangePwSuccess] = useState(false);
   const [testApiStatus, setTestApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [testApiMessage, setTestApiMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const displayNameForm = useForm<WithRootError<SettingsDisplayNameValues>>({
+    resolver: zodResolver(settingsDisplayNameSchema),
+    defaultValues: { displayName: "" },
+    mode: "onChange",
+  });
+
+  const changePasswordForm = useForm<WithRootError<SettingsChangePasswordValues>>({
+    resolver: zodResolver(settingsChangePasswordSchema),
+    defaultValues: { currentPassword: "", newPassword: "" },
+  });
+
+  const deleteAccountForm = useForm<WithRootError<DeleteAccountFormValues>>({
+    resolver: zodResolver(deleteAccountSchema(DELETE_CONFIRM_PHRASE)),
+    defaultValues: { password: "", confirmPhrase: "" },
+  });
 
   useEffect(() => {
     if (user) {
-      setDisplayNameInput((user as { displayName?: string }).displayName ?? user.email ?? "");
+      displayNameForm.reset({
+        displayName: (user as { displayName?: string }).displayName ?? user.email ?? "",
+      });
     }
-  }, [user]);
+  }, [user, displayNameForm]);
+
+  useEffect(() => {
+    if (deleteDialogOpen) {
+      deleteAccountForm.reset({ password: "", confirmPhrase: "" });
+    }
+  }, [deleteDialogOpen, deleteAccountForm]);
 
   const currentDisplayName = (user as { displayName?: string })?.displayName ?? user?.email ?? "";
-  const trimmedDisplayName = displayNameInput.trim();
-  const displayNameValid = trimmedDisplayName.length >= 2 && trimmedDisplayName.length <= 40;
+  const displayNameWatch = displayNameForm.watch("displayName");
+  const trimmedDisplayName = displayNameWatch.trim();
   const displayNameChanged = trimmedDisplayName !== currentDisplayName;
-  const saveDisplayNameDisabled = !displayNameValid || !displayNameChanged || savingDisplayName;
+  const displayNameValid = settingsDisplayNameSchema.safeParse({ displayName: displayNameWatch }).success;
+  const saveDisplayNameDisabled =
+    !displayNameValid || !displayNameChanged || savingDisplayName;
 
-  const handleSaveDisplayName = useCallback(async () => {
-    const trimmed = displayNameInput.trim();
-    if (trimmed.length < 2 || trimmed.length > 40 || trimmed === currentDisplayName || savingDisplayName) return;
-    setDisplayNameError(null);
-    setDisplayNameSuccess(false);
-    setSavingDisplayName(true);
-    // Update auth user immediately so the new name shows even if the request fails (e.g. connection lost).
-    if (user) {
-      setUser({ ...user, displayName: trimmed });
-    }
-    try {
-      const updated = await updateMe({ displayName: trimmed });
-      setUser(updated);
-      setDisplayNameSuccess(true);
-      setTimeout(() => setDisplayNameSuccess(false), 2000);
-    } catch (e) {
-      setDisplayNameError(e instanceof Error ? e.message : "Failed to save display name.");
-    } finally {
-      setSavingDisplayName(false);
-    }
-  }, [displayNameInput, currentDisplayName, savingDisplayName, setUser, user]);
+  const onSaveDisplayName = useCallback(
+    async (values: SettingsDisplayNameValues) => {
+      const trimmed = values.displayName.trim();
+      if (trimmed === currentDisplayName || savingDisplayName) return;
+      displayNameForm.clearErrors("root");
+      setDisplayNameSuccess(false);
+      setSavingDisplayName(true);
+      if (user) {
+        setUser({ ...user, displayName: trimmed });
+      }
+      try {
+        const updated = await updateMe({ displayName: trimmed });
+        setUser(updated);
+        setDisplayNameSuccess(true);
+        setTimeout(() => setDisplayNameSuccess(false), 2000);
+      } catch (e) {
+        displayNameForm.setError("root", {
+          type: "server",
+          message: e instanceof Error ? e.message : "Failed to save display name.",
+        });
+      } finally {
+        setSavingDisplayName(false);
+      }
+    },
+    [currentDisplayName, savingDisplayName, setUser, user]
+  );
 
   useEffect(() => {
     setApexSettings(settings);
@@ -173,10 +217,9 @@ export default function Settings() {
   }, [navigate]);
 
   const resetDeleteDialog = useCallback(() => {
-    setDeletePassword("");
-    setDeleteConfirmText("");
-    setDeleteError(null);
-  }, []);
+    deleteAccountForm.reset({ password: "", confirmPhrase: "" });
+    deleteAccountForm.clearErrors("root");
+  }, [deleteAccountForm]);
 
   const handleDeleteDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -186,38 +229,32 @@ export default function Settings() {
     [resetDeleteDialog]
   );
 
-  const deleteConfirmValid =
-    deletePassword.length > 0 && deleteConfirmText.trim() === DELETE_CONFIRM_PHRASE;
-  const handleConfirmDeleteAccount = useCallback(async () => {
-    if (!deleteConfirmValid || deleteSubmitting) return;
-    setDeleteError(null);
-    setDeleteSubmitting(true);
-    try {
-      await deleteAccount(deletePassword);
-      clearToken();
-      setUser(null);
-      setDeleteDialogOpen(false);
-      resetDeleteDialog();
-      navigate("/login", { replace: true });
-    } catch (e) {
-      const msg =
-        e instanceof ApiError
-          ? e.message
-          : e instanceof Error
+  const onConfirmDeleteAccount = useCallback(
+    async (values: DeleteAccountFormValues) => {
+      if (deleteSubmitting) return;
+      deleteAccountForm.clearErrors("root");
+      setDeleteSubmitting(true);
+      try {
+        await deleteAccount(values.password);
+        clearToken();
+        setUser(null);
+        setDeleteDialogOpen(false);
+        resetDeleteDialog();
+        navigate("/login", { replace: true });
+      } catch (e) {
+        const msg =
+          e instanceof ApiError
             ? e.message
-            : "Could not delete account.";
-      setDeleteError(msg);
-    } finally {
-      setDeleteSubmitting(false);
-    }
-  }, [
-    deleteConfirmValid,
-    deletePassword,
-    deleteSubmitting,
-    navigate,
-    resetDeleteDialog,
-    setUser,
-  ]);
+            : e instanceof Error
+              ? e.message
+              : "Could not delete account.";
+        deleteAccountForm.setError("root", { type: "server", message: msg });
+      } finally {
+        setDeleteSubmitting(false);
+      }
+    },
+    [deleteAccountForm, deleteSubmitting, navigate, resetDeleteDialog, setUser]
+  );
 
   const handleTestApi = useCallback(async () => {
     setTestApiStatus("loading");
@@ -232,51 +269,46 @@ export default function Settings() {
     }
   }, []);
 
-  const trimmedNewPw = changePwNew.trim();
-  const currentPasswordValid = changePwCurrent.length > 0;
+  const changePwWatch = changePasswordForm.watch();
+  const trimmedNewPw = changePwWatch.newPassword?.trim() ?? "";
+  const currentPasswordValid = (changePwWatch.currentPassword?.length ?? 0) > 0;
   const newPasswordValid =
     trimmedNewPw.length >= PASSWORD_MIN && trimmedNewPw.length <= PASSWORD_MAX;
   const newPasswordTooLong = trimmedNewPw.length > PASSWORD_MAX;
   const passwordsSameAsCurrent =
-    changePwCurrent.trim() === trimmedNewPw && trimmedNewPw.length > 0;
+    changePwWatch.currentPassword?.trim() === trimmedNewPw && trimmedNewPw.length > 0;
   const updatePasswordDisabled =
     !currentPasswordValid ||
     !newPasswordValid ||
     passwordsSameAsCurrent ||
     changePwSubmitting;
 
-  const handleChangePassword = useCallback(async () => {
-    if (changePwSubmitting) return;
-    const trimmedNew = changePwNew.trim();
-    if (
-      changePwCurrent.length === 0 ||
-      trimmedNew.length < PASSWORD_MIN ||
-      trimmedNew.length > PASSWORD_MAX ||
-      changePwCurrent.trim() === trimmedNew
-    ) {
-      return;
-    }
-    setChangePwError(null);
-    setChangePwSuccess(false);
-    setChangePwSubmitting(true);
-    try {
-      await changePassword(changePwCurrent, trimmedNew);
-      setChangePwCurrent("");
-      setChangePwNew("");
-      setChangePwSuccess(true);
-      setTimeout(() => setChangePwSuccess(false), 2500);
-    } catch (e) {
-      const msg =
-        e instanceof ApiError
-          ? e.message
-          : e instanceof Error
+  const onChangePassword = useCallback(
+    async (values: SettingsChangePasswordValues) => {
+      if (changePwSubmitting) return;
+      const trimmedNew = values.newPassword.trim();
+      changePasswordForm.clearErrors("root");
+      setChangePwSuccess(false);
+      setChangePwSubmitting(true);
+      try {
+        await changePassword(values.currentPassword, trimmedNew);
+        changePasswordForm.reset({ currentPassword: "", newPassword: "" });
+        setChangePwSuccess(true);
+        setTimeout(() => setChangePwSuccess(false), 2500);
+      } catch (e) {
+        const msg =
+          e instanceof ApiError
             ? e.message
-            : "Could not update password.";
-      setChangePwError(msg);
-    } finally {
-      setChangePwSubmitting(false);
-    }
-  }, [changePwCurrent, changePwNew, changePwSubmitting]);
+            : e instanceof Error
+              ? e.message
+              : "Could not update password.";
+        changePasswordForm.setError("root", { type: "server", message: msg });
+      } finally {
+        setChangePwSubmitting(false);
+      }
+    },
+    [changePasswordForm, changePwSubmitting]
+  );
   /** Only for local/dev builds — never expose API host / connectivity test in production. */
   const showDevSystemStatus = import.meta.env.DEV;
   const envLabel = import.meta.env.MODE === "production" ? "production" : "development";
@@ -366,31 +398,45 @@ export default function Settings() {
             title="Display name"
             description="Update your display name (2–40 characters)."
           >
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                value={displayNameInput}
-                onChange={(e) => {
-                  setDisplayNameInput(e.target.value);
-                  setDisplayNameError(null);
-                }}
-                placeholder="Display name"
-                disabled={savingDisplayName}
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent text-sm disabled:opacity-50"
-              />
-              <Button
-                type="button"
-                disabled={saveDisplayNameDisabled}
-                onClick={handleSaveDisplayName}
-                className="sm:w-auto"
-                style={saveDisplayNameDisabled ? undefined : { backgroundColor: PRIMARY_RED }}
+            <Form {...displayNameForm}>
+              <form
+                onSubmit={displayNameForm.handleSubmit(onSaveDisplayName)}
+                className="flex flex-col gap-2"
               >
-                {savingDisplayName ? "Saving…" : "Save"}
-              </Button>
-            </div>
-            {displayNameError && (
-              <p className="text-xs text-destructive mt-2">{displayNameError}</p>
-            )}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <FormField
+                    control={displayNameForm.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem className="flex-1 min-w-0">
+                        <FormControl>
+                          <Input
+                            placeholder="Display name"
+                            disabled={savingDisplayName}
+                            className="px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent text-sm disabled:opacity-50"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              displayNameForm.clearErrors("root");
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={saveDisplayNameDisabled}
+                    className="sm:w-auto"
+                    style={saveDisplayNameDisabled ? undefined : { backgroundColor: PRIMARY_RED }}
+                  >
+                    {savingDisplayName ? "Saving…" : "Save"}
+                  </Button>
+                </div>
+                <FormRootMessage className="text-xs mt-0" />
+              </form>
+            </Form>
             {displayNameSuccess && (
               <p className="text-xs text-green-500 mt-2">Saved</p>
             )}
@@ -479,75 +525,102 @@ export default function Settings() {
             title="Security"
             description="Enter your current password and a new password (8–200 characters)."
           >
-            <div className="space-y-3 max-w-xs">
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={changePwCurrent}
-                onChange={(e) => {
-                  setChangePwCurrent(e.target.value);
-                  setChangePwError(null);
-                  setChangePwSuccess(false);
-                }}
-                placeholder="Current password"
-                disabled={changePwSubmitting}
-                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
-              />
-              {!currentPasswordValid && changePwCurrent.length === 0 && changePwNew.length > 0 && (
-                <p className="text-xs text-amber-500">Current password is required.</p>
-              )}
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={changePwNew}
-                onChange={(e) => {
-                  setChangePwNew(e.target.value);
-                  setChangePwError(null);
-                  setChangePwSuccess(false);
-                }}
-                placeholder="New password"
-                disabled={changePwSubmitting}
-                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
-              />
-              {changePwNew.length > 0 && trimmedNewPw.length < PASSWORD_MIN && (
-                <p className="text-xs text-amber-500">
-                  New password must be at least {PASSWORD_MIN} characters.
-                </p>
-              )}
-              {newPasswordTooLong && (
-                <p className="text-xs text-amber-500">
-                  New password must be at most {PASSWORD_MAX} characters.
-                </p>
-              )}
-              {passwordsSameAsCurrent && newPasswordValid && currentPasswordValid && (
-                <p className="text-xs text-amber-500">
-                  New password must be different from your current password.
-                </p>
-              )}
-              {changePwError && (
-                <p className="text-xs text-destructive">{changePwError}</p>
-              )}
-              {changePwSuccess && (
-                <p className="text-xs text-green-500">Password updated.</p>
-              )}
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={updatePasswordDisabled}
-                aria-busy={changePwSubmitting}
-                onClick={handleChangePassword}
-                className={updatePasswordDisabled ? "opacity-60 cursor-not-allowed" : undefined}
+            <Form {...changePasswordForm}>
+              <form
+                onSubmit={changePasswordForm.handleSubmit(onChangePassword)}
+                className="space-y-3 max-w-xs"
               >
-                {changePwSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
-                    Updating…
-                  </>
-                ) : (
-                  "Update password"
+                <FormField
+                  control={changePasswordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="Current password"
+                          disabled={changePwSubmitting}
+                          className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            changePasswordForm.clearErrors("root");
+                            setChangePwSuccess(false);
+                          }}
+                        />
+                      </FormControl>
+                      {!currentPasswordValid &&
+                        changePwWatch.currentPassword?.length === 0 &&
+                        (changePwWatch.newPassword?.length ?? 0) > 0 && (
+                          <p className="text-xs text-amber-500">Current password is required.</p>
+                        )}
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={changePasswordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="New password"
+                          disabled={changePwSubmitting}
+                          className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            changePasswordForm.clearErrors("root");
+                            setChangePwSuccess(false);
+                          }}
+                        />
+                      </FormControl>
+                      {(changePwWatch.newPassword?.length ?? 0) > 0 &&
+                        trimmedNewPw.length < PASSWORD_MIN && (
+                          <p className="text-xs text-amber-500">
+                            New password must be at least {PASSWORD_MIN} characters.
+                          </p>
+                        )}
+                      {newPasswordTooLong && (
+                        <p className="text-xs text-amber-500">
+                          New password must be at most {PASSWORD_MAX} characters.
+                        </p>
+                      )}
+                      {passwordsSameAsCurrent && newPasswordValid && currentPasswordValid && (
+                        <p className="text-xs text-amber-500">
+                          New password must be different from your current password.
+                        </p>
+                      )}
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )}
+                />
+                <FormRootMessage className="text-xs" />
+                {changePwSuccess && (
+                  <p className="text-xs text-green-500">Password updated.</p>
                 )}
-              </Button>
-            </div>
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  disabled={updatePasswordDisabled}
+                  aria-busy={changePwSubmitting}
+                  className={updatePasswordDisabled ? "opacity-60 cursor-not-allowed" : undefined}
+                >
+                  {changePwSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                      Updating…
+                    </>
+                  ) : (
+                    "Update password"
+                  )}
+                </Button>
+              </form>
+            </Form>
           </SettingsCard>
 
           {/* Account – Log out + Delete */}
@@ -591,64 +664,84 @@ export default function Settings() {
                         </span>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="space-y-3 py-2">
-                      <input
-                        type="password"
-                        autoComplete="current-password"
-                        value={deletePassword}
-                        onChange={(e) => {
-                          setDeletePassword(e.target.value);
-                          setDeleteError(null);
-                        }}
-                        placeholder="Current password"
-                        disabled={deleteSubmitting}
-                        className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
-                      />
-                      <input
-                        type="text"
-                        autoComplete="off"
-                        value={deleteConfirmText}
-                        onChange={(e) => {
-                          setDeleteConfirmText(e.target.value);
-                          setDeleteError(null);
-                        }}
-                        placeholder={`Type ${DELETE_CONFIRM_PHRASE}`}
-                        disabled={deleteSubmitting}
-                        className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
-                      />
-                      {deleteError && (
-                        <p className="text-xs text-destructive">{deleteError}</p>
-                      )}
-                    </div>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel
-                        type="button"
-                        disabled={deleteSubmitting}
-                        className="border-white/20"
+                    <Form {...deleteAccountForm}>
+                      <form
+                        onSubmit={deleteAccountForm.handleSubmit(onConfirmDeleteAccount)}
+                        className="space-y-3 py-2"
                       >
-                        Cancel
-                      </AlertDialogCancel>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        disabled={!deleteConfirmValid || deleteSubmitting}
-                        onClick={handleConfirmDeleteAccount}
-                        className={
-                          !deleteConfirmValid || deleteSubmitting
-                            ? "opacity-60 cursor-not-allowed"
-                            : undefined
-                        }
-                      >
-                        {deleteSubmitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
-                            Deleting…
-                          </>
-                        ) : (
-                          "Delete permanently"
-                        )}
-                      </Button>
-                    </AlertDialogFooter>
+                        <FormField
+                          control={deleteAccountForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  autoComplete="current-password"
+                                  placeholder="Current password"
+                                  disabled={deleteSubmitting}
+                                  className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    deleteAccountForm.clearErrors("root");
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={deleteAccountForm.control}
+                          name="confirmPhrase"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  autoComplete="off"
+                                  placeholder={`Type ${DELETE_CONFIRM_PHRASE}`}
+                                  disabled={deleteSubmitting}
+                                  className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    deleteAccountForm.clearErrors("root");
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                        <FormRootMessage className="text-xs" />
+                        <AlertDialogFooter className="gap-2 sm:gap-0">
+                          <AlertDialogCancel
+                            type="button"
+                            disabled={deleteSubmitting}
+                            className="border-white/20"
+                          >
+                            Cancel
+                          </AlertDialogCancel>
+                          <Button
+                            type="submit"
+                            variant="destructive"
+                            disabled={deleteSubmitting}
+                            className={deleteSubmitting ? "opacity-60 cursor-not-allowed" : undefined}
+                          >
+                            {deleteSubmitting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                                Deleting…
+                              </>
+                            ) : (
+                              "Delete permanently"
+                            )}
+                          </Button>
+                        </AlertDialogFooter>
+                      </form>
+                    </Form>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
