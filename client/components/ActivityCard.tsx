@@ -171,7 +171,7 @@ function CommentsModal({
               <p className="text-xs text-zinc-500">{commentsError}</p>
               <button
                 type="button"
-                onClick={() => loadComments(sessionId)}
+                onClick={() => loadComments()}
                 className="text-xs text-zinc-400 hover:text-zinc-300 underline"
               >
                 Retry

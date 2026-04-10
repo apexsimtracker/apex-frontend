@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
@@ -11,7 +11,7 @@ import {
   isNetworkError,
   getDiscussionsPage,
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
-  getActivityFeedPage,
+  getActivityHomeFeedPage,
   ACTIVITY_FEED_DEFAULT_LIMIT,
   getProfileSummary,
   type ActivityFeedPageResult,
@@ -34,14 +34,6 @@ import {
 const HOME_PATH = "/";
 const HOME_TITLE = `Home | ${COMPANY_NAME}`;
 const HOME_DESCRIPTION = `Your sim racing hub on ${COMPANY_NAME}: activity feed, weekly goals, sessions, and community at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
-
-/** Home feed only (`type: "all"`). Keep in sync with `setQueryData` patch sites in this file. */
-const HOME_ACTIVITY_FEED_QUERY_KEY = [
-  "activity",
-  "feed",
-  "all",
-  ACTIVITY_FEED_DEFAULT_LIMIT,
-] as const;
 
 const HOME_DISCUSSIONS_QUERY_KEY = [
   "discussions",
@@ -158,6 +150,20 @@ export default function Index() {
   const [showUploadBanner, setShowUploadBanner] = useState(false);
   const [homeDiscussionsEnabled, setHomeDiscussionsEnabled] = useState(false);
 
+  /** Home feed (`type: "all"`); includes user id so cache does not leak across accounts. Match `setQueryData` patch sites. */
+  const homeActivityFeedQueryKey = useMemo(
+    () =>
+      [
+        "activity",
+        "feed",
+        "home",
+        user?.id ?? "_",
+        "all",
+        ACTIVITY_FEED_DEFAULT_LIMIT,
+      ] as const,
+    [user?.id]
+  );
+
   const {
     data: activityPages,
     isLoading: activityLoading,
@@ -167,9 +173,9 @@ export default function Index() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: HOME_ACTIVITY_FEED_QUERY_KEY,
+    queryKey: homeActivityFeedQueryKey,
     queryFn: ({ pageParam }) =>
-      getActivityFeedPage({
+      getActivityHomeFeedPage({
         type: "all",
         page: pageParam as number,
         limit: ACTIVITY_FEED_DEFAULT_LIMIT,
@@ -177,6 +183,7 @@ export default function Index() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
     placeholderData: (previousData) => previousData,
+    enabled: Boolean(user),
   });
 
   const activity = useMemo(
@@ -310,8 +317,8 @@ export default function Index() {
   }, [activity]);
 
   const weeklyStats = useMemo(() => {
-    // Signed-in: only server weeklySnapshot (user + ISO week). Do not use the global feed here —
-    // the feed is everyone’s sessions, so it briefly showed non-zero then flipped to real user stats.
+    // Signed-in: only server weeklySnapshot (user + ISO week). Do not derive weekly stats from the home feed —
+    // even though it is personalized, client-side rollups can still race or disagree with the server snapshot.
     if (user?.id) {
       const snap = profileSummary?.weeklySnapshot;
       if (snap) {
@@ -512,7 +519,7 @@ export default function Index() {
                         overflowCount={item.overflowCount}
                         onSessionPatch={(id, patch) => {
                           queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                            HOME_ACTIVITY_FEED_QUERY_KEY,
+                            homeActivityFeedQueryKey,
                             (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                           );
                         }}
@@ -550,7 +557,7 @@ export default function Index() {
                       comments={session.commentCount ?? 0}
                       onSessionPatch={(id, patch) => {
                         queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                          HOME_ACTIVITY_FEED_QUERY_KEY,
+                          homeActivityFeedQueryKey,
                           (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                         );
                       }}

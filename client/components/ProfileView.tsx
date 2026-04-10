@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, Loader2, User } from "lucide-react";
 import type { ProfileSummary, RaceHistoryPageResult } from "../lib/api";
 import { RaceHistoryPagination } from "./RaceHistoryPagination";
 import {
@@ -180,9 +180,27 @@ export function ProfileView({
                       type="button"
                       onClick={onToggleFollow}
                       disabled={followLoading}
-                      className="px-3 py-1 rounded-lg text-xs font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-foreground transition-colors disabled:opacity-50"
+                      aria-busy={followLoading}
+                      className="inline-flex items-center justify-center gap-1.5 min-w-[7.5rem] px-3 py-1 rounded-lg text-xs font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-foreground transition-colors disabled:opacity-80 disabled:cursor-wait"
                     >
-                      {followLoading ? "…" : isFollowing ? "Unfollow" : "Follow"}
+                      {followLoading ? (
+                        <>
+                          <Loader2
+                            className="h-3.5 w-3.5 shrink-0 animate-spin"
+                            aria-hidden
+                          />
+                          <span>{isFollowing ? "Unfollowing…" : "Following…"}</span>
+                          <span className="sr-only">
+                            {isFollowing
+                              ? "Unfollowing, please wait"
+                              : "Following, please wait"}
+                          </span>
+                        </>
+                      ) : isFollowing ? (
+                        "Unfollow"
+                      ) : (
+                        "Follow"
+                      )}
                     </button>
                   )}
                   {isCurrentUser && onEditProfile && (

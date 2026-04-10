@@ -9,15 +9,13 @@ import { clearToken } from "@/auth/token";
 import {
   resolveApiUrl,
   authMe,
-  getFollowers,
-  getFollowing,
   getProfileSummary,
   getProfileRaceHistory,
+  getUserPublicProfile,
   RACE_HISTORY_PAGE_SIZE,
   updateMe,
   uploadProfileAvatar,
   type ProfileSummary,
-  type FollowUser,
   type AuthUser,
 } from "@/lib/api";
 import {
@@ -44,6 +42,7 @@ import {
   type ProfileEditFormValues,
 } from "@/lib/validation/profileEdit";
 import { ProfileView } from "@/components/ProfileView";
+import { FollowListDialog } from "@/components/FollowListDialog";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 import {
@@ -166,33 +165,12 @@ export default function Profile() {
     enabled: Boolean(user),
   });
 
-  const {
-    data: followsData,
-    isPending: followsLoading,
-    error: followsErrorRaw,
-  } = useQuery({
-    queryKey: profileKeys.follows(followsUserId),
-    queryFn: async () => {
-      const [f1, f2] = await Promise.all([
-        getFollowers(followsUserId),
-        getFollowing(followsUserId),
-      ]);
-      return {
-        followers: Array.isArray(f1) ? f1 : [],
-        following: Array.isArray(f2) ? f2 : [],
-      };
-    },
+  const { data: publicPreview } = useQuery({
+    queryKey: profileKeys.publicPreview(followsUserId),
+    queryFn: () => getUserPublicProfile(followsUserId),
     enabled: Boolean(followsUserId),
   });
 
-  const followers = followsData?.followers ?? [];
-  const following = followsData?.following ?? [];
-  const followsError =
-    followsErrorRaw instanceof Error
-      ? followsErrorRaw.message
-      : followsErrorRaw
-        ? "Failed to load followers/following."
-        : null;
   const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -371,7 +349,12 @@ export default function Profile() {
       void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
       const followsId = user.id?.trim();
       if (followsId) {
-        void queryClient.invalidateQueries({ queryKey: profileKeys.follows(followsId) });
+        void queryClient.invalidateQueries({
+          queryKey: profileKeys.publicPreview(followsId),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["profile", "followList", followsId],
+        });
       }
 
       setEditSuccess(true);
@@ -453,8 +436,8 @@ export default function Profile() {
         profile={displayProfile}
         avatarUrl={avatarUrl || undefined}
         bio={bioForDisplay}
-        followersCount={followers.length}
-        followingCount={following.length}
+        followersCount={publicPreview?.followersCount ?? 0}
+        followingCount={publicPreview?.followingCount ?? 0}
         isCurrentUser
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
@@ -484,115 +467,13 @@ export default function Profile() {
           </button>
         </div>
       </div>
-      <Dialog
+      <FollowListDialog
+        key={`${followsUserId}-${openList ?? "closed"}`}
         open={openList !== null}
         onOpenChange={(open) => !open && setOpenList(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {openList === "followers" ? "Followers" : "Following"}
-            </DialogTitle>
-          </DialogHeader>
-          {followsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : followsError ? (
-            <p className="text-sm text-destructive">{followsError}</p>
-          ) : openList === "followers" ? (
-            followers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No followers yet.</p>
-            ) : (
-              <ul className="mt-2 space-y-2">
-                {followers.map((f) => {
-                  const name =
-                    (typeof f.displayName === "string"
-                      ? f.displayName.trim()
-                      : "") || (f.email?.trim() ?? "—");
-                  const initials =
-                    name && name.length >= 2
-                      ? name.slice(0, 2).toUpperCase()
-                      : name.slice(0, 1).toUpperCase() || "?";
-                  return (
-                    <li
-                      key={f.id}
-                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
-                        {resolveApiUrl(f.avatarUrl) ? (
-                          <img
-                            src={resolveApiUrl(f.avatarUrl)!}
-                            alt={name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          initials
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {name}
-                        </p>
-                        {f.bio && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {f.bio}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )
-          ) : openList === "following" ? (
-            following.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Not following anyone yet.
-              </p>
-            ) : (
-              <ul className="mt-2 space-y-2">
-                {following.map((f) => {
-                  const name =
-                    (typeof f.displayName === "string"
-                      ? f.displayName.trim()
-                      : "") || (f.email?.trim() ?? "—");
-                  const initials =
-                    name && name.length >= 2
-                      ? name.slice(0, 2).toUpperCase()
-                      : name.slice(0, 1).toUpperCase() || "?";
-                  return (
-                    <li
-                      key={f.id}
-                      className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden">
-                        {resolveApiUrl(f.avatarUrl) ? (
-                          <img
-                            src={resolveApiUrl(f.avatarUrl)!}
-                            alt={name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          initials
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {name}
-                        </p>
-                        {f.bio && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {f.bio}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )
-          ) : null}
-        </DialogContent>
-      </Dialog>
+        userId={followsUserId}
+        listKind={openList}
+      />
 
       {/* Edit Profile modal */}
       <Dialog

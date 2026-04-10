@@ -161,8 +161,10 @@ export async function fetchApi<T>(
   skipAuthExpiredCheck = false
 ): Promise<T> {
   const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+  const hasJsonBody = body !== undefined;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    // Only when we send a body: Fastify rejects Content-Type: application/json with an empty body.
+    ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
@@ -176,7 +178,7 @@ export async function fetchApi<T>(
     res = await fetch(url, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: hasJsonBody ? JSON.stringify(body) : undefined,
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");
@@ -300,22 +302,6 @@ export type ProfileSummary = {
   weeklyGoals?: WeeklyGoalsSummary;
 };
 
-// Social / follow system
-export type FollowUser = {
-  id: string;
-  displayName?: string | null;
-  email?: string | null;
-  avatarUrl?: string | null;
-  bio?: string | null;
-  followersCount?: number;
-  followingCount?: number;
-};
-
-export type FollowStatus = {
-  following: boolean;
-  mutual?: boolean;
-};
-
 // Profile summary endpoint is optional; current backend may not implement it yet.
 // Prefer authMe() for current user; this function is not used by the main profile page.
 export async function getProfileSummary(): Promise<ProfileSummary> {
@@ -390,6 +376,9 @@ export type UserPublicProfile = {
   followingCount: number;
   isFollowing: boolean;
 };
+
+/** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
+export type FollowUser = UserPublicProfile;
 
 export async function getUserPublicProfile(userId: string): Promise<UserPublicProfile> {
   return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
@@ -665,30 +654,138 @@ export async function createDiscussionComment(
   );
 }
 
+/** Default page size for follower/following lists (must match server FOLLOW_LIST_DEFAULT_LIMIT). */
+export const FOLLOW_LIST_PAGE_SIZE = RACE_HISTORY_PAGE_SIZE;
+
+export type FollowListPageResult = {
+  items: FollowUser[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+/** GET /api/users/:id/follow-status */
+export type FollowRelationshipStatus = {
+  isFollowing: boolean;
+};
+
+function followListParamsToSearch(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+}): string {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.q?.trim()) sp.set("q", params.q.trim());
+  const q = sp.toString();
+  return q ? `?${q}` : "";
+}
+
+/** Backend may return paginated object or legacy raw array; UI always needs `items`. */
+function filterFollowUsersByQuery(items: FollowUser[], q: string): FollowUser[] {
+  const tokens = q
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  if (tokens.length === 0) return items;
+  return items.filter((u) => {
+    const name = (u.displayName ?? "").toLowerCase();
+    const haystack = name;
+    return tokens.every((t) => haystack.includes(t));
+  });
+}
+
+function normalizeFollowListPageResult(
+  raw: FollowListPageResult | FollowUser[] | null | undefined,
+  fallbackPage: number,
+  fallbackLimit: number,
+  searchQ: string
+): FollowListPageResult {
+  if (Array.isArray(raw)) {
+    let items = raw;
+    const q = searchQ.trim();
+    if (q) {
+      items = filterFollowUsersByQuery(items, q);
+    }
+    const total = items.length;
+    const totalPages = total === 0 ? 1 : Math.max(1, Math.ceil(total / fallbackLimit));
+    const page = Math.min(Math.max(1, fallbackPage), totalPages);
+    const skip = (page - 1) * fallbackLimit;
+    const pageItems = items.slice(skip, skip + fallbackLimit);
+    return {
+      items: pageItems,
+      page,
+      limit: fallbackLimit,
+      total,
+      totalPages,
+    };
+  }
+  if (raw && typeof raw === "object" && Array.isArray((raw as FollowListPageResult).items)) {
+    return raw as FollowListPageResult;
+  }
+  return {
+    items: [],
+    page: fallbackPage,
+    limit: fallbackLimit,
+    total: 0,
+    totalPages: 1,
+  };
+}
+
 // Follow / social API
-export async function followUser(userId: string): Promise<FollowStatus> {
-  // POST /api/users/:id/follow
-  return apiPost<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow`);
+/** POST returns updated target user preview; 201. */
+export async function followUser(userId: string): Promise<UserPublicProfile> {
+  return apiPost<UserPublicProfile>(
+    `/api/users/${encodeURIComponent(userId)}/follow`,
+    {}
+  );
 }
 
-export async function unfollowUser(userId: string): Promise<FollowStatus> {
-  // DELETE /api/users/:id/follow
-  return apiDelete<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow`);
+/** DELETE usually returns updated preview; may return `{ message }` when target vanished. */
+export async function unfollowUser(
+  userId: string
+): Promise<UserPublicProfile | { message: string }> {
+  return apiDelete<UserPublicProfile | { message: string }>(
+    `/api/users/${encodeURIComponent(userId)}/follow`
+  );
 }
 
-export async function getFollowers(userId: string): Promise<FollowUser[]> {
-  // GET /api/users/:id/followers
-  return apiGet<FollowUser[]>(`/api/users/${encodeURIComponent(userId)}/followers`);
+/** GET /api/users/:id/followers — paginated (or legacy array). */
+export async function getFollowersPage(
+  userId: string,
+  params?: { page?: number; limit?: number; q?: string }
+): Promise<FollowListPageResult> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
+  const q = params?.q?.trim() ?? "";
+  const raw = await apiGet<FollowListPageResult | FollowUser[]>(
+    `/api/users/${encodeURIComponent(userId)}/followers${followListParamsToSearch(params)}`
+  );
+  return normalizeFollowListPageResult(raw, page, limit, q);
 }
 
-export async function getFollowing(userId: string): Promise<FollowUser[]> {
-  // GET /api/users/:id/following
-  return apiGet<FollowUser[]>(`/api/users/${encodeURIComponent(userId)}/following`);
+/** GET /api/users/:id/following — paginated (or legacy array). */
+export async function getFollowingPage(
+  userId: string,
+  params?: { page?: number; limit?: number; q?: string }
+): Promise<FollowListPageResult> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
+  const q = params?.q?.trim() ?? "";
+  const raw = await apiGet<FollowListPageResult | FollowUser[]>(
+    `/api/users/${encodeURIComponent(userId)}/following${followListParamsToSearch(params)}`
+  );
+  return normalizeFollowListPageResult(raw, page, limit, q);
 }
 
-export async function getFollowStatus(userId: string): Promise<FollowStatus> {
-  // GET /api/users/:id/follow-status
-  return apiGet<FollowStatus>(`/api/users/${encodeURIComponent(userId)}/follow-status`);
+export async function getFollowStatus(userId: string): Promise<FollowRelationshipStatus> {
+  return apiGet<FollowRelationshipStatus>(
+    `/api/users/${encodeURIComponent(userId)}/follow-status`
+  );
 }
 
 // Leaderboards
@@ -1039,6 +1136,39 @@ export async function getActivityFeedPage(options: {
     limit?: number;
     hasMore?: boolean;
   }>(`/api/activity?${q.toString()}`);
+
+  const items = Array.isArray(raw?.items) ? raw.items : [];
+  return {
+    items: items.map(normalizeFeedSession),
+    page: typeof raw?.page === "number" ? raw.page : page,
+    limit: typeof raw?.limit === "number" ? raw.limit : limit,
+    hasMore: Boolean(raw?.hasMore),
+  };
+}
+
+/**
+ * Home feed only: sessions from the current user and users they follow (GET /api/activity/home).
+ * Requires authentication; callers should only invoke when a session token exists.
+ */
+export async function getActivityHomeFeedPage(options: {
+  type?: SessionsFilterType;
+  page?: number;
+  limit?: number;
+}): Promise<ActivityFeedPageResult> {
+  const type = options.type ?? "all";
+  const page = options.page ?? 1;
+  const limit = options.limit ?? ACTIVITY_FEED_DEFAULT_LIMIT;
+  const q = new URLSearchParams({
+    type,
+    page: String(page),
+    limit: String(limit),
+  });
+  const raw = await apiGet<{
+    items?: unknown[];
+    page?: number;
+    limit?: number;
+    hasMore?: boolean;
+  }>(`/api/activity/home?${q.toString()}`);
 
   const items = Array.isArray(raw?.items) ? raw.items : [];
   return {
