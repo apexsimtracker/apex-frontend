@@ -40,7 +40,7 @@ function CircularProgress({
   const offset = circumference - progress * circumference;
 
   return (
-    <svg width={size} height={size} className="transform -rotate-90">
+    <svg width={size} height={size} className="-rotate-90">
       {/* Background circle */}
       <circle
         cx={size / 2}
@@ -83,7 +83,7 @@ function GoalItem({ goal }: { goal: Goal }) {
       <div className="text-center">
         <div className="text-sm font-semibold">
           <span style={{ color: "rgb(240, 28, 28)" }}>{goal.current}</span>
-          <span className="text-white font-normal">/{goal.target}</span>
+          <span className="font-normal text-white">/{goal.target}</span>
         </div>
         <div className="text-[10px] text-white">{goal.label}</div>
       </div>
@@ -102,21 +102,21 @@ export default function GoalsBar({
   const goals: Goal[] = [
     {
       id: "races",
-      icon: <Flag className="w-5 h-5" />,
+      icon: <Flag className="size-5" />,
       current: races,
       target: racesTarget,
       label: "Races",
     },
     {
       id: "podiums",
-      icon: <Trophy className="w-5 h-5" />,
+      icon: <Trophy className="size-5" />,
       current: podiums,
       target: podiumsTarget,
       label: "Podiums",
     },
     {
       id: "laps",
-      icon: <Gauge className="w-5 h-5" />,
+      icon: <Gauge className="size-5" />,
       current: laps,
       target: lapsTarget,
       label: "Laps",
@@ -124,9 +124,9 @@ export default function GoalsBar({
   ];
 
   return (
-    <div className="mt-6 rounded-lg border border-white/6 bg-card/20 backdrop-blur-lg px-4 py-3">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-medium text-white uppercase tracking-wider">Weekly Goals</h2>
+    <div className="border-white/6 mt-6 rounded-lg border bg-card/20 px-4 py-3 backdrop-blur-lg">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-white">Weekly Goals</h2>
       </div>
       
       <div className="flex items-center justify-around">

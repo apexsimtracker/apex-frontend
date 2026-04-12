@@ -116,10 +116,10 @@ export default function UploadPage() {
   return (
     <>
       <PageMeta title={uploadTitle} description={uploadDescription} path={UPLOAD_PATH} />
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
-          <div className="text-center mb-6">
+          <div className="mb-6 text-center">
             <h1 className="text-xl font-semibold text-white">Upload Session</h1>
             <p className="mt-1 text-sm text-white/60">
               Upload telemetry files manually.
@@ -129,9 +129,9 @@ export default function UploadPage() {
           {isUploading ? (
             <div className="py-12 text-center">
               <div className="mb-4 flex justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-white/60" />
+                <Loader2 className="size-10 animate-spin text-white/60" />
               </div>
-              <p className="text-white font-medium">Processing session…</p>
+              <p className="font-medium text-white">Processing session…</p>
               <p className="mt-1 text-sm text-white/50">
                 This may take a moment.
               </p>
@@ -143,7 +143,7 @@ export default function UploadPage() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 className={`
-                  relative rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer
+                  relative cursor-pointer rounded-lg border-2 border-dashed p-8 transition-colors
                   ${isDragOver ? "border-white/40 bg-white/5" : "border-white/10 hover:border-white/20"}
                 `}
                 onClick={() => fileInputRef.current?.click()}
@@ -159,8 +159,8 @@ export default function UploadPage() {
                 <div className="flex flex-col items-center text-center">
                   {file ? (
                     <>
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/5">
-                        <FileText className="h-5 w-5 text-white/60" />
+                      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/5">
+                        <FileText className="size-5 text-white/60" />
                       </div>
                       <p className="text-sm font-medium text-white">
                         {file.name}
@@ -171,8 +171,8 @@ export default function UploadPage() {
                     </>
                   ) : (
                     <>
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/5">
-                        <UploadIcon className="h-5 w-5 text-white/60" />
+                      <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/5">
+                        <UploadIcon className="size-5 text-white/60" />
                       </div>
                       <p className="text-sm text-white/70">
                         Drag & drop your .ibt file here
@@ -187,7 +187,7 @@ export default function UploadPage() {
 
               {uploadState === "error" && errorMessage && (
                 <div className="mt-4 flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
-                  <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                  <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-400" />
                   <p className="text-sm text-red-400">{errorMessage}</p>
                 </div>
               )}
@@ -212,16 +212,16 @@ export default function UploadPage() {
               </div>
 
               {/* Manual activity link */}
-              <div className="mt-6 pt-6 border-t border-white/10">
+              <div className="mt-6 border-t border-white/10 pt-6">
                 <div className="text-center">
-                  <p className="text-xs text-white/40 mb-3">
-                    Don't have a telemetry file?
+                  <p className="mb-3 text-xs text-white/40">
+                    Don&apos;t have a telemetry file?
                   </p>
                   <Link
                     to="/manual"
-                    className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
                   >
-                    <PenLine className="h-4 w-4" />
+                    <PenLine className="size-4" />
                     Log a manual activity
                   </Link>
                 </div>

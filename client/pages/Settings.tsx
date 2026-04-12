@@ -28,7 +28,6 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
   FormRootMessage,
 } from "@/components/ui/form";
@@ -77,11 +76,11 @@ function SettingsCard({
         className
       )}
     >
-      <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-1">
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-foreground">
         {title}
       </h2>
       {description && (
-        <p className="text-xs text-muted-foreground mb-4">{description}</p>
+        <p className="mb-4 text-xs text-muted-foreground">{description}</p>
       )}
       {children}
     </section>
@@ -98,14 +97,14 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3 border-b border-white/5 last:border-0">
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
         )}
       </div>
-      <div className="flex-shrink-0">{children}</div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
@@ -196,7 +195,7 @@ export default function Settings() {
         setSavingDisplayName(false);
       }
     },
-    [currentDisplayName, savingDisplayName, setUser, user]
+    [currentDisplayName, savingDisplayName, setUser, user, displayNameForm]
   );
 
   useEffect(() => {
@@ -325,7 +324,7 @@ export default function Settings() {
       <>
         <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
         <div className="min-h-screen bg-background">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
           <SkeletonBlock height={32} width={180} className="mb-8 rounded" />
           <div className="space-y-6">
             <SkeletonBlock height={120} className="rounded-xl" />
@@ -342,10 +341,10 @@ export default function Settings() {
     return (
       <>
         <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-sm w-full rounded-xl border border-white/10 bg-card/50 p-6 text-center">
-          <p className="text-foreground font-medium mb-2">Not signed in</p>
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm rounded-xl border border-white/10 bg-card/50 p-6 text-center">
+          <p className="mb-2 font-medium text-foreground">Not signed in</p>
+          <p className="mb-4 text-sm text-muted-foreground">
             Sign in to manage your settings.
           </p>
           <Button
@@ -369,8 +368,8 @@ export default function Settings() {
     <>
       <PageMeta title={settingsTitle} description={settingsDescription} path={SETTINGS_PATH} />
       <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <h1 className="mb-8 text-2xl font-bold text-foreground sm:text-3xl">
           Settings
         </h1>
 
@@ -380,15 +379,15 @@ export default function Settings() {
             <div className="space-y-3 text-sm">
               <div>
                 <span className="text-muted-foreground">Display name</span>
-                <p className="text-foreground font-medium mt-0.5">{displayName || "—"}</p>
+                <p className="mt-0.5 font-medium text-foreground">{displayName || "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Email</span>
-                <p className="text-foreground font-medium mt-0.5">{user.email ?? "—"}</p>
+                <p className="mt-0.5 font-medium text-foreground">{user.email ?? "—"}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Member since</span>
-                <p className="text-foreground font-medium mt-0.5">{formatCreatedAt(createdAt)}</p>
+                <p className="mt-0.5 font-medium text-foreground">{formatCreatedAt(createdAt)}</p>
               </div>
             </div>
           </SettingsCard>
@@ -403,17 +402,17 @@ export default function Settings() {
                 onSubmit={displayNameForm.handleSubmit(onSaveDisplayName)}
                 className="flex flex-col gap-2"
               >
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <FormField
                     control={displayNameForm.control}
                     name="displayName"
                     render={({ field }) => (
-                      <FormItem className="flex-1 min-w-0">
+                      <FormItem className="min-w-0 flex-1">
                         <FormControl>
                           <Input
                             placeholder="Display name"
                             disabled={savingDisplayName}
-                            className="px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent text-sm disabled:opacity-50"
+                            className="rounded-lg border border-white/10 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
@@ -434,11 +433,11 @@ export default function Settings() {
                     {savingDisplayName ? "Saving…" : "Save"}
                   </Button>
                 </div>
-                <FormRootMessage className="text-xs mt-0" />
+                <FormRootMessage className="mt-0 text-xs" />
               </form>
             </Form>
             {displayNameSuccess && (
-              <p className="text-xs text-green-500 mt-2">Saved</p>
+              <p className="mt-2 text-xs text-green-500">Saved</p>
             )}
           </SettingsCard>
 
@@ -447,7 +446,7 @@ export default function Settings() {
             title="Notifications"
             description="Manage how you receive updates. Stored locally for now."
           >
-            <div className="divide-y divide-white/5 -mx-1">
+            <div className="-mx-1 divide-y divide-white/5">
               <SettingsRow
                 label="Email notifications"
                 description="Updates via email"
@@ -498,7 +497,7 @@ export default function Settings() {
 
           {/* Privacy */}
           <SettingsCard title="Privacy" description="Control what others can see.">
-            <div className="divide-y divide-white/5 -mx-1">
+            <div className="-mx-1 divide-y divide-white/5">
               <SettingsRow
                 label="Private profile"
                 description="Visible to friends only"
@@ -528,7 +527,7 @@ export default function Settings() {
             <Form {...changePasswordForm}>
               <form
                 onSubmit={changePasswordForm.handleSubmit(onChangePassword)}
-                className="space-y-3 max-w-xs"
+                className="max-w-xs space-y-3"
               >
                 <FormField
                   control={changePasswordForm.control}
@@ -541,7 +540,7 @@ export default function Settings() {
                           autoComplete="current-password"
                           placeholder="Current password"
                           disabled={changePwSubmitting}
-                          className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                          className="w-full rounded-lg border border-white/10 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -570,7 +569,7 @@ export default function Settings() {
                           autoComplete="new-password"
                           placeholder="New password"
                           disabled={changePwSubmitting}
-                          className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                          className="w-full rounded-lg border border-white/10 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -608,11 +607,11 @@ export default function Settings() {
                   variant="destructive"
                   disabled={updatePasswordDisabled}
                   aria-busy={changePwSubmitting}
-                  className={updatePasswordDisabled ? "opacity-60 cursor-not-allowed" : undefined}
+                  className={updatePasswordDisabled ? "cursor-not-allowed opacity-60" : undefined}
                 >
                   {changePwSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
                       Updating…
                     </>
                   ) : (
@@ -629,14 +628,14 @@ export default function Settings() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full sm:w-auto border-white/20 text-foreground hover:bg-white/10"
+                className="w-full border-white/20 text-foreground hover:bg-white/10 sm:w-auto"
                 onClick={handleLogout}
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="mr-2 size-4" />
                 Log out
               </Button>
-              <div className="pt-2 border-t border-white/5">
-                <p className="text-xs text-muted-foreground mb-2">
+              <div className="border-t border-white/5 pt-2">
+                <p className="mb-2 text-xs text-muted-foreground">
                   Permanently remove access and anonymize your personal data on our servers. Your
                   public posts may remain with the label &quot;Deleted User.&quot; This cannot be
                   undone.
@@ -647,13 +646,13 @@ export default function Settings() {
                     variant="destructive"
                     onClick={() => setDeleteDialogOpen(true)}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="mr-2 size-4" />
                     Delete account
                   </Button>
-                  <AlertDialogContent className="bg-card border-white/10 sm:max-w-md">
+                  <AlertDialogContent className="border-white/10 bg-card sm:max-w-md">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-foreground">Delete account</AlertDialogTitle>
-                      <AlertDialogDescription className="text-left space-y-3">
+                      <AlertDialogDescription className="space-y-3 text-left">
                         <span className="block">
                           This will sign you out everywhere, revoke sessions, and anonymize your
                           email, password, name, avatar, and bio. You will not be able to sign in
@@ -680,7 +679,7 @@ export default function Settings() {
                                   autoComplete="current-password"
                                   placeholder="Current password"
                                   disabled={deleteSubmitting}
-                                  className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                                  className="w-full rounded-lg border border-white/10 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                                   {...field}
                                   onChange={(e) => {
                                     field.onChange(e);
@@ -703,7 +702,7 @@ export default function Settings() {
                                   autoComplete="off"
                                   placeholder={`Type ${DELETE_CONFIRM_PHRASE}`}
                                   disabled={deleteSubmitting}
-                                  className="w-full px-3 py-2 rounded-lg border border-white/10 bg-background/80 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent disabled:opacity-50"
+                                  className="w-full rounded-lg border border-white/10 bg-background/80 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                                   {...field}
                                   onChange={(e) => {
                                     field.onChange(e);
@@ -728,11 +727,11 @@ export default function Settings() {
                             type="submit"
                             variant="destructive"
                             disabled={deleteSubmitting}
-                            className={deleteSubmitting ? "opacity-60 cursor-not-allowed" : undefined}
+                            className={deleteSubmitting ? "cursor-not-allowed opacity-60" : undefined}
                           >
                             {deleteSubmitting ? (
                               <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden />
+                                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
                                 Deleting…
                               </>
                             ) : (
@@ -760,9 +759,9 @@ export default function Settings() {
                 </p>
                 <p>
                   <span className="text-muted-foreground">API host:</span>{" "}
-                  <span className="text-foreground font-mono text-xs">{apiHost}</span>
+                  <span className="font-mono text-xs text-foreground">{apiHost}</span>
                 </p>
-                <div className="flex flex-wrap items-center gap-2 mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -774,7 +773,7 @@ export default function Settings() {
                       "Testing…"
                     ) : (
                       <>
-                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                        <RefreshCw className="mr-1.5 size-3.5" />
                         Test API
                       </>
                     )}

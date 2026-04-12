@@ -82,14 +82,14 @@ export default function Contact() {
     <>
       <PageMeta title={title} description={description} path={PATH} />
       <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+          <div className="mx-auto max-w-3xl">
             <header className="mb-8 text-center sm:mb-10">
-              <p className="mb-3 text-sm font-semibold text-foreground uppercase tracking-wider">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
                 Support
               </p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Contact us</h1>
-              <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Contact us</h1>
+              <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
                 Questions about your account, Apex Pro, or the product? Send a message and we’ll reply by
                 email. We typically respond within a few business days.
               </p>
@@ -97,7 +97,7 @@ export default function Contact() {
 
             <div className="rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6">
               <div className="mb-6 flex items-start gap-3 rounded-lg border border-white/10 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <p>
                   Prefer email directly?{" "}
                   <a
@@ -158,7 +158,7 @@ export default function Contact() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Subject <span className="text-muted-foreground font-normal">(optional)</span>
+                          Subject <span className="font-normal text-muted-foreground">(optional)</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -200,12 +200,12 @@ export default function Contact() {
                     <Button
                       type="submit"
                       disabled={pending}
-                      className="w-full sm:w-auto min-w-[10rem] text-white focus-visible:ring-ring"
+                      className="w-full min-w-40 text-white focus-visible:ring-ring sm:w-auto"
                       style={{ backgroundColor: BRAND_RED }}
                     >
                       {pending ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
                           Sending…
                         </>
                       ) : (
@@ -216,7 +216,7 @@ export default function Contact() {
                       <Link to="/faq" className="underline underline-offset-2 hover:text-foreground">
                         FAQ
                       </Link>
-                      <span className="text-muted-foreground/50 mx-1.5" aria-hidden>
+                      <span className="mx-1.5 text-muted-foreground/50" aria-hidden>
                         ·
                       </span>
                       <Link to="/about" className="underline underline-offset-2 hover:text-foreground">

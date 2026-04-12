@@ -64,10 +64,10 @@ export default function App() {
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
-            <div className="flex flex-col min-h-screen bg-background">
+            <div className="flex min-h-screen flex-col bg-background">
               <Header />
               <ProRequiredBanner />
-              <main className="flex flex-1 flex-col min-h-0">
+              <main className="flex min-h-0 flex-1 flex-col">
                 <GlobalErrorBoundary>
                   <Routes>
                     <Route path="/" element={<Index />} />

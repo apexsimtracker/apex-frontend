@@ -93,15 +93,15 @@ export default function EditManualActivity() {
 
   if (!sid) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
             <p className="text-white/60">Missing session ID.</p>
             <Link
               to="/"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Go back
             </Link>
           </div>
@@ -112,9 +112,9 @@ export default function EditManualActivity() {
 
   if (loadLoading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="size-8 animate-spin text-white/40" />
           <p className="text-sm text-white/60">Loading activity…</p>
         </div>
       </div>
@@ -123,15 +123,15 @@ export default function EditManualActivity() {
 
   if (loadFailed || !initialData) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
             <p className="text-white/60">{loadError ?? "Failed to load."}</p>
             <Link
               to={sid ? `/sessions/${sid}` : "/"}
-              className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Go back
             </Link>
           </div>
@@ -141,10 +141,10 @@ export default function EditManualActivity() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
-          <div className="text-center mb-6">
+          <div className="mb-6 text-center">
             <h1 className="text-xl font-semibold text-white">
               Edit Manual Activity
             </h1>
@@ -156,11 +156,11 @@ export default function EditManualActivity() {
           {formState === "success" ? (
             <div className="py-8 text-center">
               <div className="mb-4 flex justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                <div className="flex size-12 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle className="size-6 text-green-500" />
                 </div>
               </div>
-              <p className="text-white font-medium">Activity updated!</p>
+              <p className="font-medium text-white">Activity updated!</p>
               <p className="mt-1 text-sm text-white/50">
                 Redirecting to session…
               </p>
@@ -179,9 +179,9 @@ export default function EditManualActivity() {
           <div className="mt-6 text-center">
             <Link
               to={`/sessions/${sessionId}`}
-              className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Back to Session
             </Link>
           </div>

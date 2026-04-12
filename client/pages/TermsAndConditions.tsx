@@ -12,10 +12,10 @@ export default function TermsAndConditions() {
     <>
       <PageMeta title={title} description={description} path={path} />
       <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <article className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <article className="mx-auto max-w-3xl">
             <header className="mb-10 border-b border-white/10 pb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 Terms &amp; Conditions
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -23,7 +23,7 @@ export default function TermsAndConditions() {
               </p>
             </header>
 
-            <div className="space-y-8 text-sm text-foreground/90 leading-relaxed [&_strong]:text-foreground [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white">
+            <div className="space-y-8 text-sm leading-relaxed text-foreground/90 [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white [&_strong]:text-foreground">
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">1. Agreement</h2>
                 <p>
@@ -63,7 +63,7 @@ export default function TermsAndConditions() {
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">5. Acceptable use</h2>
                 <p>You agree not to:</p>
-                <ul className="list-disc pl-5 space-y-1.5 text-foreground/90">
+                <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>Violate applicable law or third-party rights;</li>
                   <li>Upload malware, probe or test vulnerabilities, or interfere with the Service or its users;</li>
                   <li>Scrape, data-mine, or use automated means to access the Service except as we expressly permit;</li>
@@ -156,10 +156,10 @@ export default function TermsAndConditions() {
                 </p>
               </section>
 
-              <footer className="pt-8 border-t border-white/10 mt-10">
+              <footer className="mt-10 border-t border-white/10 pt-8">
                 <p className="text-xs text-muted-foreground">
                   See also our{" "}
-                  <Link to="/privacy-policy" className="text-white/50 hover:text-white/70 transition-colors underline underline-offset-2">
+                  <Link to="/privacy-policy" className="text-white/50 underline underline-offset-2 transition-colors hover:text-white/70">
                     Privacy Policy
                   </Link>
                   .

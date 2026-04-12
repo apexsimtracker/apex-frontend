@@ -47,7 +47,7 @@ export default function WeeklySnapshot({
 }: WeeklySnapshotProps) {
   if (loading) {
     return (
-      <div className="rounded-lg border border-white/6 bg-card/20 backdrop-blur-lg p-4">
+      <div className="border-white/6 rounded-lg border bg-card/20 p-4 backdrop-blur-lg">
         <div className="flex items-center justify-between">
           <SkeletonBlock height={20} width={180} className="bg-white/10" rounded="md" />
         </div>
@@ -83,7 +83,7 @@ export default function WeeklySnapshot({
         : `-${formatDuration(Math.abs(trackTimeDelta))}`;
 
   return (
-    <div className="rounded-lg border border-white/6 bg-card/20 backdrop-blur-lg p-4">
+    <div className="border-white/6 rounded-lg border bg-card/20 p-4 backdrop-blur-lg">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-white">
           Your Weekly Snapshot

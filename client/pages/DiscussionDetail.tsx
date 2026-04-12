@@ -10,7 +10,6 @@ import {
   ApiError,
   resolveDiscussionAvatarSrc,
   getDiscussionAuthorId,
-  type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
@@ -34,13 +33,13 @@ function CommentAuthorAvatar({ author }: { author: unknown }) {
       <img
         src={src}
         alt={label}
-        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+        className="size-9 shrink-0 rounded-full object-cover"
         onError={() => setFailed(true)}
       />
     );
   }
   return (
-    <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-xs font-medium flex-shrink-0">
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/70">
       {initials}
     </div>
   );
@@ -138,13 +137,13 @@ export default function DiscussionDetail() {
 
   if (!id) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <p className="text-muted-foreground">Invalid post ID.</p>
@@ -155,13 +154,13 @@ export default function DiscussionDetail() {
 
   if (loading) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <p className="text-muted-foreground">Loading discussion...</p>
@@ -172,19 +171,19 @@ export default function DiscussionDetail() {
 
   if (discussionError || !discussion) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <p className="text-muted-foreground">{discussionError ?? "Post not found."}</p>
           <button
             onClick={() => navigate("/community")}
-            className="mt-4 text-primary hover:underline font-medium"
+            className="mt-4 font-medium text-primary hover:underline"
           >
             Back to Community
           </button>
@@ -205,41 +204,41 @@ export default function DiscussionDetail() {
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+          className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
           <span className="font-medium">Back</span>
         </button>
 
-        <div className="bg-card rounded-2xl border border overflow-hidden">
-          <div className="px-6 py-4 border-b border">
+        <div className="overflow-hidden rounded-2xl border bg-card">
+          <div className="border px-6 py-4">
             <button
               onClick={() => {
                 if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
               }}
-              className="w-full flex items-center gap-3 mb-4 hover:opacity-80 transition-opacity group text-left"
+              className="group mb-4 flex w-full items-center gap-3 text-left transition-opacity hover:opacity-80"
             >
               {showPostAvatar ? (
                 <img
                   src={avatarSrc!}
                   alt={authorDisplay}
-                  className="w-10 h-10 rounded-full object-cover group-hover:ring-2 group-hover:ring-primary transition-all"
+                  className="size-10 rounded-full object-cover transition-all group-hover:ring-2 group-hover:ring-primary"
                   onError={() => setPostAvatarFailed(true)}
                 />
               ) : (
                 <div
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 text-sm font-medium group-hover:ring-2 group-hover:ring-primary transition-all"
+                  className="flex size-10 items-center justify-center rounded-full bg-white/10 text-sm font-medium text-white/70 transition-all group-hover:ring-2 group-hover:ring-primary"
                   aria-label={`Avatar for ${authorDisplay}`}
                 >
                   {initials}
                 </div>
               )}
               <div className="flex-1">
-                <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
                   {authorDisplay}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -248,40 +247,40 @@ export default function DiscussionDetail() {
               </div>
             </button>
 
-            <div className="flex gap-2 mb-4">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-secondary text-foreground rounded-full text-xs font-medium">
+            <div className="mb-4 flex gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
                 <DiscussionCategoryIcon
                   categoryKey={discussion.category ?? "general"}
-                  className="w-3.5 h-3.5 opacity-90"
+                  className="size-3.5 opacity-90"
                 />
                 {categoryLabel(discussion.category)}
               </span>
               {discussion.isPinned && (
-                <span className="inline-block px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                   Pinned
                 </span>
               )}
             </div>
           </div>
 
-          <div className="px-6 py-6">
-            <h1 className="text-3xl font-bold text-foreground mb-4">
+          <div className="p-6">
+            <h1 className="mb-4 text-3xl font-bold text-foreground">
               {discussion.title}
             </h1>
-            <p className="text-muted-foreground whitespace-pre-wrap">
+            <p className="whitespace-pre-wrap text-muted-foreground">
               {description}
             </p>
           </div>
 
-          <div className="px-6 py-4 border-t border flex items-center gap-6">
+          <div className="flex items-center gap-6 border px-6 py-4">
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Heart className="w-4 h-4" />
+              <Heart className="size-4" />
               <span className="text-xs font-medium">
                 {discussion.likeCount ?? discussion.views ?? 0}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Reply className="w-4 h-4" />
+              <Reply className="size-4" />
               <span className="text-xs font-medium">
                 {discussion.commentCount ??
                   discussion.commentsCount ??
@@ -290,7 +289,7 @@ export default function DiscussionDetail() {
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Eye className="w-4 h-4" />
+              <Eye className="size-4" />
               <span className="text-xs font-medium">
                 {discussion.views ?? 0}
               </span>
@@ -299,7 +298,7 @@ export default function DiscussionDetail() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-foreground mb-6">
+          <h2 className="mb-6 text-xl font-bold text-foreground">
             Replies ({(comments ?? []).length})
           </h2>
 
@@ -317,7 +316,7 @@ export default function DiscussionDetail() {
           )}
 
           {!commentsError && (comments ?? []).length === 0 && (
-            <p className="text-muted-foreground text-sm">No comments yet.</p>
+            <p className="text-sm text-muted-foreground">No comments yet.</p>
           )}
 
           {(comments ?? []).length > 0 && (
@@ -325,9 +324,9 @@ export default function DiscussionDetail() {
               {(comments ?? []).map((c) => (
                 <div
                   key={c.id}
-                  className="bg-card rounded-2xl border border p-6"
+                  className="rounded-2xl border bg-card p-6"
                 >
-                  <div className="flex items-start gap-3 mb-3">
+                  <div className="mb-3 flex items-start gap-3">
                     <CommentAuthorAvatar author={c.author} />
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">
@@ -338,7 +337,7 @@ export default function DiscussionDetail() {
                       </p>
                     </div>
                   </div>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
+                  <p className="whitespace-pre-wrap text-muted-foreground">
                     {c.body}
                   </p>
                 </div>
@@ -346,12 +345,12 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          <div className="mt-8 bg-card rounded-2xl border border p-6">
+          <div className="mt-8 rounded-2xl border bg-card p-6">
             {replyError && (
               <p className="mb-3 text-sm text-neutral-400">{replyError}</p>
             )}
             <textarea
-              className="w-full px-4 py-3 bg-secondary border border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary resize-none"
+              className="w-full resize-none rounded-lg border bg-secondary px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               rows={4}
               placeholder="Write a reply…"
               value={replyBody}
@@ -363,7 +362,7 @@ export default function DiscussionDetail() {
                 type="button"
                 onClick={handlePostReply}
                 disabled={!replyBody.trim() || posting}
-                className="px-6 py-2 bg-primary text-primary-foreground disabled:opacity-50 rounded-lg font-medium transition-colors hover:opacity-90"
+                className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
               >
                 {posting ? "Posting…" : "Post Reply"}
               </button>

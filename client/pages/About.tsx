@@ -38,13 +38,13 @@ export default function About() {
     <>
       <PageMeta title={title} description={description} path={PATH} />
       <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+          <div className="mx-auto max-w-3xl">
             <header className="mb-10 text-center sm:mb-12">
-              <p className="mb-3 text-sm font-semibold text-foreground uppercase tracking-wider">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
                 About us
               </p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                 Built by a racer.
                 <span
                   className="block sm:inline sm:before:content-['\00a0']"
@@ -58,12 +58,12 @@ export default function About() {
             <div className="flex flex-col gap-6">
               <SectionCard>
                 <div
-                  className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted/50"
+                  className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg border border-border bg-muted/50"
                   style={{ color: BRAND_RED }}
                 >
-                  <Target className="h-6 w-6" aria-hidden />
+                  <Target className="size-6" aria-hidden />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3 text-center">
+                <h2 className="mb-3 text-center text-sm font-semibold uppercase tracking-wider text-foreground">
                   The founder
                 </h2>
                 <p className="text-center text-sm font-medium text-foreground">Hugo Cook</p>
@@ -77,15 +77,15 @@ export default function About() {
 
               <SectionCard>
                 <div
-                  className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted/50"
+                  className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg border border-border bg-muted/50"
                   style={{ color: BRAND_RED }}
                 >
-                  <Flag className="h-6 w-6" aria-hidden />
+                  <Flag className="size-6" aria-hidden />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4 text-center">
+                <h2 className="mb-4 text-center text-sm font-semibold uppercase tracking-wider text-foreground">
                   Our story
                 </h2>
-                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed text-center max-w-2xl mx-auto">
+                <div className="mx-auto max-w-2xl space-y-4 text-center text-sm leading-relaxed text-muted-foreground">
                   <p>
                     Apex Sim Tracker was founded by Hugo Cook — a professional racing driver competing in
                     the British GT Championship with Barwell Motorsport, driving the #63 Lamborghini
@@ -109,22 +109,22 @@ export default function About() {
 
               <SectionCard>
                 <div
-                  className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted/50"
+                  className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg border border-border bg-muted/50"
                   style={{ color: BRAND_RED }}
                 >
-                  <Sparkles className="h-6 w-6" aria-hidden />
+                  <Sparkles className="size-6" aria-hidden />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4 text-center">
+                <h2 className="mb-4 text-center text-sm font-semibold uppercase tracking-wider text-foreground">
                   Our mission
                 </h2>
-                <div className="space-y-4 text-sm sm:text-base text-muted-foreground leading-relaxed text-center max-w-2xl mx-auto">
+                <div className="mx-auto max-w-2xl space-y-4 text-center text-sm leading-relaxed text-muted-foreground sm:text-base">
                   <p>
                     Sim racing is no longer just a hobby. It&apos;s how drivers train, how talent gets
                     discovered, and how a generation of racers is pushing the boundaries of what&apos;s
                     possible behind a wheel. We believe those drivers deserve professional-grade tools to
                     match their ambition.
                   </p>
-                  <p className="text-foreground font-medium">
+                  <p className="font-medium text-foreground">
                     Our mission is simple: give every sim racer — from weekend warrior to esports
                     professional — the data and insights they need to find the limit and go beyond it.
                   </p>
@@ -132,10 +132,10 @@ export default function About() {
               </SectionCard>
 
               <SectionCard>
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4 text-center">
+                <h2 className="mb-4 text-center text-sm font-semibold uppercase tracking-wider text-foreground">
                   What makes us different
                 </h2>
-                <div className="space-y-4 text-sm text-muted-foreground leading-relaxed text-center max-w-2xl mx-auto">
+                <div className="mx-auto max-w-2xl space-y-4 text-center text-sm leading-relaxed text-muted-foreground">
                   <p>
                     Most tracking tools are built around a single simulator. Apex is different.
                     Whether you&apos;re setting lap times on iRacing, chasing pole in F1 25, or pushing
@@ -150,10 +150,10 @@ export default function About() {
               </SectionCard>
 
               <section className="text-center">
-                <h2 className="mb-3 text-sm font-semibold text-foreground uppercase tracking-wider">
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
                   One place for every sim
                 </h2>
-                <p className="mx-auto mb-4 max-w-md text-sm text-muted-foreground leading-relaxed">
+                <p className="mx-auto mb-4 max-w-md text-sm leading-relaxed text-muted-foreground">
                   Compare and track progress across the titles you already run — no more siloed
                   spreadsheets.
                 </p>
@@ -169,9 +169,9 @@ export default function About() {
                 </ul>
               </section>
 
-              <div className="rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6 text-center">
+              <div className="rounded-xl border border-white/10 bg-card/50 p-5 text-center sm:p-6">
                 <p className="text-sm font-medium text-foreground">Have questions about Apex?</p>
-                <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground leading-relaxed">
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
                   Plans, sessions, Apex Pro, and more — we&apos;ve answered the common ones in our FAQ.
                 </p>
                 <Button asChild className="mt-5 text-white focus-visible:ring-ring" style={{ backgroundColor: BRAND_RED }}>

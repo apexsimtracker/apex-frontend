@@ -39,14 +39,14 @@ export function RaceHistoryPagination({
         activeLinkClassName="!border-[rgba(240,28,28,0.45)] !bg-[rgba(240,28,28,0.1)]"
         previousLabel={
           <span className="inline-flex items-center gap-1">
-            <ChevronLeft className="h-4 w-4 shrink-0" />
+            <ChevronLeft className="size-4 shrink-0" />
             Previous
           </span>
         }
         nextLabel={
           <span className="inline-flex items-center gap-1">
             Next
-            <ChevronRight className="h-4 w-4 shrink-0" />
+            <ChevronRight className="size-4 shrink-0" />
           </span>
         }
         previousClassName="inline-block"

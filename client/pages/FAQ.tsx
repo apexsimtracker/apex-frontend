@@ -43,13 +43,13 @@ export default function FAQPage() {
     <>
       <PageMeta title={title} description={description} path={PATH} />
       <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="max-w-3xl mx-auto">
-            <header className="text-center mb-8 sm:mb-10">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <header className="mb-8 text-center sm:mb-10">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                 Frequently Asked Questions
               </h1>
-              <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Search by keyword to jump to an answer, or browse the topics below. Still stuck? Reach out via the
                 support email in the footer.
               </p>
@@ -60,7 +60,7 @@ export default function FAQPage() {
                 Search frequently asked questions
               </label>
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden
               />
               <Input
@@ -81,7 +81,7 @@ export default function FAQPage() {
                   variant="ghost"
                   size="sm"
                   onClick={resetSearch}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-9 text-muted-foreground hover:text-foreground"
+                  className="absolute right-1 top-1/2 h-9 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Clear search"
                 >
                   Clear
@@ -89,7 +89,7 @@ export default function FAQPage() {
               )}
             </div>
 
-            <p className="text-xs sm:text-sm text-muted-foreground mb-6" aria-live="polite">
+            <p className="mb-6 text-xs text-muted-foreground sm:text-sm" aria-live="polite">
               Showing {shown} of {total} questions
             </p>
 
@@ -98,7 +98,7 @@ export default function FAQPage() {
                 className="rounded-xl border border-white/10 bg-card/50 px-6 py-10 text-center"
                 role="status"
               >
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="mb-6 text-sm text-muted-foreground">
                   No questions found matching your search.
                 </p>
                 <Button
@@ -167,7 +167,7 @@ function FaqCategorySection({
     <section aria-labelledby={`faq-section-${sectionSlug}`}>
       <h2
         id={`faq-section-${sectionSlug}`}
-        className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3"
+        className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground"
       >
         {category}
       </h2>
@@ -182,12 +182,12 @@ function FaqCategorySection({
           <AccordionItem
             key={item.id}
             value={item.id}
-            className="border-0 rounded-lg border border-white/10 bg-card/50 px-1 sm:px-2 data-[state=open]:ring-1 data-[state=open]:ring-[rgb(240,28,28)] transition-colors"
+            className="rounded-lg border border-white/10 bg-card/50 px-1 transition-colors data-[state=open]:ring-1 data-[state=open]:ring-[rgb(240,28,28)] sm:px-2"
           >
-            <AccordionTrigger className="text-left text-sm sm:text-[15px] text-foreground hover:no-underline py-4 px-3 rounded-md hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(240,28,28)] focus-visible:ring-offset-2 focus-visible:ring-offset-background [&[data-state=open]]:text-foreground">
+            <AccordionTrigger className="rounded-md px-3 py-4 text-left text-sm text-foreground hover:bg-muted/50 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(240,28,28)] focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-[15px] [&[data-state=open]]:text-foreground">
               {item.question}
             </AccordionTrigger>
-            <AccordionContent className="text-sm text-muted-foreground leading-relaxed px-3 pb-4">
+            <AccordionContent className="px-3 pb-4 text-sm leading-relaxed text-muted-foreground">
               {item.answer}
             </AccordionContent>
           </AccordionItem>

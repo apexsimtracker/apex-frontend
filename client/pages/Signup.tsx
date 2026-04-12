@@ -57,7 +57,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold">Create account</h1>
@@ -127,7 +127,7 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             {loading ? "Creating account…" : "Sign up"}

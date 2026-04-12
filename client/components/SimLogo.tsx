@@ -24,7 +24,7 @@ export function SimLogo({ sim, className, width = 120, height = 32 }: SimLogoPro
       loading="lazy"
       decoding="async"
       className={cn(
-        "h-7 w-auto max-w-[140px] object-contain object-left shrink-0 select-none",
+        "h-7 w-auto max-w-[140px] shrink-0 select-none object-contain object-left",
         className
       )}
     />

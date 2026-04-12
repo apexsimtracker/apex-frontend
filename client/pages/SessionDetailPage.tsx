@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Share2, PenLine, FileText, Pencil, Trash2, Repeat, Timer } from "lucide-react";
+import { Share2, PenLine, Pencil, Trash2, Repeat, Timer } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
-import { formatSessionTypeUpper, formatSessionType, getSimDisplayName } from "@/lib/sim";
+import { formatSessionTypeUpper, formatSessionType } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
@@ -359,7 +359,7 @@ function TelemetryTracesCard({
 
   return (
     <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs uppercase tracking-wider text-white/50">
             Telemetry Analysis
@@ -370,16 +370,16 @@ function TelemetryTracesCard({
         </div>
         <div className="flex items-center gap-2 text-[11px] text-white/60">
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-sky-400" /> Speed
+            <span className="size-2 rounded-full bg-sky-400" /> Speed
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" /> Throttle
+            <span className="size-2 rounded-full bg-emerald-400" /> Throttle
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber-400" /> Brake
+            <span className="size-2 rounded-full bg-amber-400" /> Brake
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-violet-400" /> Gear
+            <span className="size-2 rounded-full bg-violet-400" /> Gear
           </span>
         </div>
       </div>
@@ -389,10 +389,10 @@ function TelemetryTracesCard({
           <p className="text-sm text-white/60">Telemetry unavailable for this session.</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-white/10 bg-black/20 overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-white/10 bg-black/20">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="w-full h-[220px] block"
+            className="block h-[220px] w-full"
             preserveAspectRatio="none"
             aria-label="Telemetry traces"
           >
@@ -487,28 +487,28 @@ export default function SessionDetailPage() {
 
   if (!id) {
     return (
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <p className="text-muted-foreground">Missing session ID.</p>
       </div>
     );
   }
   if (loading) {
     return (
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 flex-wrap mb-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <SkeletonBlock height={12} width={72} />
               <SkeletonBlock height={24} width={64} rounded="lg" />
             </div>
             <SkeletonBlock height={32} width={280} className="mt-1" rounded="lg" />
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex shrink-0 gap-2">
             <SkeletonBlock height={40} width={88} rounded="lg" />
             <SkeletonBlock height={40} width={72} rounded="lg" />
           </div>
         </div>
-        <div className="grid gap-4 mb-8 grid-cols-3 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-3 gap-4 sm:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -521,9 +521,9 @@ export default function SessionDetailPage() {
         </div>
         <SkeletonBlock
           height={320}
-          className="w-full rounded-lg border border-white/10 mb-8"
+          className="mb-8 w-full rounded-lg border border-white/10"
         />
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SkeletonBlock height={200} className="rounded-lg border border-white/10" />
           <SkeletonBlock height={200} className="rounded-lg border border-white/10" />
         </div>
@@ -532,7 +532,7 @@ export default function SessionDetailPage() {
   }
   if (error || !session) {
     return (
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <p className="text-muted-foreground">
           {error ?? `Session detail coming soon: ${id}`}
         </p>
@@ -569,7 +569,6 @@ export default function SessionDetailPage() {
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
   const canEditOrDelete = isManual && isOwner;
-  const bestLapMs = session.bestLapMs ?? null;
   const isRace =
     session.sessionType === "RACE" || session.sessionType === "QUALIFY";
   const showPosition = isRace && session.position != null;
@@ -656,17 +655,17 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs uppercase tracking-wider text-[rgb(240,28,28)]">
               {sessionTypeLabel}
             </p>
             <SimBadge sim={resolved.sim ?? session.sim} />
             {isManual && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-violet-500/10 text-violet-300 border-violet-500/20">
-                <PenLine className="h-3 w-3" />
+              <span className="inline-flex items-center gap-1 rounded border border-violet-500/20 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-violet-300">
+                <PenLine className="size-3" />
                 Manual
               </span>
             )}
@@ -680,7 +679,7 @@ export default function SessionDetailPage() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {canEditOrDelete && (
             <>
               <button
@@ -696,25 +695,25 @@ export default function SessionDetailPage() {
                     },
                   })
                 }
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
               >
-                <Repeat className="w-4 h-4" />
+                <Repeat className="size-4" />
                 Log Again
               </button>
               <button
                 type="button"
                 onClick={() => navigate(`/manual/${id}/edit`)}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="size-4" />
                 Edit
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="size-4" />
                 Delete
               </button>
             </>
@@ -733,7 +732,7 @@ export default function SessionDetailPage() {
               {copied ? "Copied!" : (
                 <>
                   Share
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="size-4" />
                 </>
               )}
             </button>
@@ -742,13 +741,13 @@ export default function SessionDetailPage() {
       </div>
 
       <div
-        className={`grid gap-4 mb-8 ${
+        className={`mb-8 grid gap-4 ${
           showPosition ? "grid-cols-4" : "grid-cols-3"
         }`}
       >
         {showPosition && (
           <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+            <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
               Position
             </p>
             <p className="text-lg font-semibold text-white">
@@ -763,7 +762,7 @@ export default function SessionDetailPage() {
           </div>
         )}
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+          <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
             Best Lap
           </p>
           <p className="text-lg font-semibold text-white">
@@ -771,7 +770,7 @@ export default function SessionDetailPage() {
           </p>
         </div>
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+          <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
             Total Laps
           </p>
           <p className="text-lg font-semibold text-white">
@@ -779,7 +778,7 @@ export default function SessionDetailPage() {
           </p>
         </div>
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-wider text-white/50 mb-1">
+          <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
             Car
           </p>
           <p className="text-lg font-semibold text-white">
@@ -790,7 +789,7 @@ export default function SessionDetailPage() {
 
       <>
         {!hasNoLaps && bestLapLapNumber != null && (
-          <div className="mt-8 mb-2 text-sm text-white/60">
+          <div className="mb-2 mt-8 text-sm text-white/60">
             Best lap was{" "}
             <span className="text-white">Lap {bestLapLapNumber}</span>
             {improvementMs > 0 ? (
@@ -808,15 +807,15 @@ export default function SessionDetailPage() {
 
           {/* Ideal Lap — best S1 + S2 + S3 + lap time across like lap table */}
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-            <div className="text-xs uppercase tracking-wider text-white/50 mb-1.5">
+            <div className="mb-1.5 text-xs uppercase tracking-wider text-white/50">
               Ideal Lap
             </div>
-            <div className="grid grid-cols-4 gap-2 items-end">
+            <div className="grid grid-cols-4 items-end gap-2">
               <div className="text-right">
                 <div className="text-xs uppercase tracking-wider text-white/50">
                   S1
                 </div>
-                <div className="mt-0.5 text-base font-semibold text-purple-400 font-mono">
+                <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
                   {bestS1Insights != null && Number.isFinite(bestS1Insights)
                     ? formatLapMs(bestS1Insights)
                     : "—"}
@@ -826,7 +825,7 @@ export default function SessionDetailPage() {
                 <div className="text-xs uppercase tracking-wider text-white/50">
                   S2
                 </div>
-                <div className="mt-0.5 text-base font-semibold text-purple-400 font-mono">
+                <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
                   {bestS2Insights != null && Number.isFinite(bestS2Insights)
                     ? formatLapMs(bestS2Insights)
                     : "—"}
@@ -836,7 +835,7 @@ export default function SessionDetailPage() {
                 <div className="text-xs uppercase tracking-wider text-white/50">
                   S3
                 </div>
-                <div className="mt-0.5 text-base font-semibold text-purple-400 font-mono">
+                <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
                   {bestS3Insights != null && Number.isFinite(bestS3Insights)
                     ? formatLapMs(bestS3Insights)
                     : "—"}
@@ -846,33 +845,33 @@ export default function SessionDetailPage() {
                 <div className="text-xs uppercase tracking-wider text-white/50">
                   Time
                 </div>
-                <div className="mt-0.5 text-base font-semibold text-purple-400 font-mono">
+                <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
                   {formatLapMs(idealLapMs)}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] overflow-hidden">
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white/60">
                     Lap
                   </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/60">
                     S1
                   </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/60">
                     S2
                   </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/60">
                     S3
                   </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/60">
                     Time
                   </th>
-                  <th className="text-right text-xs font-semibold text-white/60 uppercase tracking-wider py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-white/60">
                     DELTA
                   </th>
                 </tr>
@@ -882,11 +881,11 @@ export default function SessionDetailPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="py-10 px-4 text-center"
+                      className="px-4 py-10 text-center"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
-                          <Timer className="h-5 w-5 text-white/45" />
+                        <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
+                          <Timer className="size-5 text-white/45" />
                         </div>
                         <div className="text-sm text-white/60">
                           No laps recorded yet. Add your first lap to get started.
@@ -915,12 +914,12 @@ export default function SessionDetailPage() {
                           : undefined
                       }
                     >
-                      <td className="py-3 px-4 font-medium text-white">
+                      <td className="px-4 py-3 font-medium text-white">
                         {row.lap}
                         {isFastest && " 🏁"}
                       </td>
                       <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
+                        className={`px-4 py-3 text-right font-mono text-sm ${
                           row.sector1Ms === bestS1 && Number.isFinite(bestS1)
                             ? "text-purple-400"
                             : "text-white/80"
@@ -929,7 +928,7 @@ export default function SessionDetailPage() {
                         {formatLapMs(row.sector1Ms)}
                       </td>
                       <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
+                        className={`px-4 py-3 text-right font-mono text-sm ${
                           row.sector2Ms === bestS2 && Number.isFinite(bestS2)
                             ? "text-purple-400"
                             : "text-white/80"
@@ -938,7 +937,7 @@ export default function SessionDetailPage() {
                         {formatLapMs(row.sector2Ms)}
                       </td>
                       <td
-                        className={`py-3 px-4 text-right font-mono text-sm ${
+                        className={`px-4 py-3 text-right font-mono text-sm ${
                           row.sector3Ms === bestS3 && Number.isFinite(bestS3)
                             ? "text-purple-400"
                             : "text-white/80"
@@ -946,13 +945,13 @@ export default function SessionDetailPage() {
                       >
                         {formatLapMs(row.sector3Ms)}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono">
+                      <td className="px-4 py-3 text-right font-mono">
                         <span className={lapColorClass(row.timeMs)}>
                           {formatLapMs(row.timeMs)}
                         </span>
                       </td>
                       <td
-                        className={`py-3 px-4 text-right ${
+                        className={`px-4 py-3 text-right ${
                           row.timeMs === bestLapMsFromLaps
                             ? "text-sm font-medium text-white"
                             : "text-sm text-white/60"
@@ -967,7 +966,7 @@ export default function SessionDetailPage() {
               </tbody>
             </table>
             {canShowMoreLaps && (
-              <div className="px-4 py-3 border-t border-white/10 flex justify-end bg-white/[0.02]">
+              <div className="flex justify-end border-t border-white/10 bg-white/[0.02] px-4 py-3">
                 <button
                   type="button"
                   className="text-xs font-medium text-white/70 hover:text-white"
@@ -997,7 +996,7 @@ export default function SessionDetailPage() {
               </div>
             )
           ) : totalLapsCount > 0 ? <></> : (
-            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center relative overflow-hidden">
+            <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center">
               {/* Subtle preview background */}
               <div
                 aria-hidden="true"
@@ -1005,7 +1004,7 @@ export default function SessionDetailPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
                 <svg
-                  className="absolute inset-0 w-full h-full"
+                  className="absolute inset-0 size-full"
                   viewBox="0 0 1000 260"
                   preserveAspectRatio="none"
                 >
@@ -1085,7 +1084,7 @@ export default function SessionDetailPage() {
                       : "Needs consistency"}
               </div>
             </div>
-            <div className="mt-4 h-2 w-full rounded-full bg-white/10 overflow-hidden">
+            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-white/40"
                 style={{ width: `${consistency ?? 0}%` }}
@@ -1099,7 +1098,7 @@ export default function SessionDetailPage() {
             </h3>
             <div className="mt-4 space-y-4">
               {insights.map((i, idx) => (
-                <div key={idx} className="flex gap-4 items-start">
+                <div key={idx} className="flex items-start gap-4">
                   <div className="text-lg">{i.icon}</div>
                   <div>
                     <div className="font-medium text-white">{i.title}</div>
@@ -1110,7 +1109,7 @@ export default function SessionDetailPage() {
             </div>
             {session.compareToPrevious && (
               <div className="mt-6 border-t border-white/5 pt-4">
-                <div className="text-xs text-neutral-400 tracking-wide">
+                <div className="text-xs tracking-wide text-neutral-400">
                   COMPARED TO PREVIOUS SESSION
                 </div>
                 <div className="mt-2 space-y-1 text-sm text-neutral-300">

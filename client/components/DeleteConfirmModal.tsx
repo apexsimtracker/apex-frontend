@@ -56,16 +56,16 @@ export default function DeleteConfirmModal({
           type="button"
           onClick={handleClose}
           disabled={isDeleting}
-          className="absolute right-4 top-4 p-1 text-white/40 hover:text-white transition-colors disabled:opacity-50"
+          className="absolute right-4 top-4 p-1 text-white/40 transition-colors hover:text-white disabled:opacity-50"
           aria-label="Close"
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </button>
 
         {/* Icon */}
-        <div className="flex justify-center mb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
-            <AlertTriangle className="h-6 w-6 text-red-400" />
+        <div className="mb-4 flex justify-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-red-500/10">
+            <AlertTriangle className="size-6 text-red-400" />
           </div>
         </div>
 
@@ -78,7 +78,7 @@ export default function DeleteConfirmModal({
         {/* Error */}
         {error && (
           <div className="mt-4 rounded-lg bg-red-500/10 px-3 py-2">
-            <p className="text-sm text-red-400 text-center">{error}</p>
+            <p className="text-center text-sm text-red-400">{error}</p>
           </div>
         )}
 
@@ -99,7 +99,7 @@ export default function DeleteConfirmModal({
           >
             {isDeleting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 Deleting…
               </>
             ) : (

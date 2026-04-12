@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
@@ -117,15 +117,15 @@ function deltaNumber(curr: number, prev: number) {
 
 function FeedSkeletonCard() {
   return (
-    <div className="rounded-lg border border-white/6 bg-card/20 overflow-hidden mb-6">
-      <div className="px-4 sm:px-5 py-3 sm:py-3.5 flex items-center gap-3">
+    <div className="border-white/6 mb-6 overflow-hidden rounded-lg border bg-card/20">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
         <SkeletonBlock height={36} width={36} rounded="full" />
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1.5">
           <SkeletonBlock height={14} width={80} />
           <SkeletonBlock height={12} width={56} />
         </div>
       </div>
-      <div className="px-4 sm:px-5 pt-1.5 pb-4 sm:pb-5">
+      <div className="px-4 pb-4 pt-1.5 sm:px-5 sm:pb-5">
         <SkeletonBlock height={12} width={64} className="mb-2" />
         <SkeletonBlock height={20} width="75%" className="mb-3" />
         <SkeletonBlock height={14} width={96} className="mb-4" />
@@ -135,7 +135,7 @@ function FeedSkeletonCard() {
         </div>
         <SkeletonBlock height={16} width={112} className="mt-4" />
       </div>
-      <div className="px-4 sm:px-5 py-2.5 flex items-center gap-4 border-t border-white/5">
+      <div className="flex items-center gap-4 border-t border-white/5 px-4 py-2.5 sm:px-5">
         <SkeletonBlock height={14} width={48} />
         <SkeletonBlock height={14} width={56} />
       </div>
@@ -432,9 +432,9 @@ export default function Index() {
   return (
     <>
       <PageMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path={HOME_PATH} />
-      <div className="bg-background min-h-screen">
+      <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <WeeklySnapshot
           loading={weeklySnapshotLoading}
           sessionsCount={weeklyStats.sessionsCount}
@@ -459,24 +459,24 @@ export default function Index() {
         <div className="mt-6">
           {showUploadBanner && (
             <div className="mb-4 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3">
-              <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+              <CheckCircle className="size-5 shrink-0 text-green-500" />
               <p className="flex-1 text-sm text-green-400">
                 Your session was uploaded and processed successfully.
               </p>
               <button
                 type="button"
                 onClick={() => setShowUploadBanner(false)}
-                className="p-1 text-green-400/60 hover:text-green-400 transition-colors"
+                className="p-1 text-green-400/60 transition-colors hover:text-green-400"
                 aria-label="Dismiss"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </button>
             </div>
           )}
 
           {activityLoading ? (
             <div className="space-y-0">
-              <p className="text-sm text-muted-foreground mb-3">Loading activity...</p>
+              <p className="mb-3 text-sm text-muted-foreground">Loading activity...</p>
               <FeedSkeletonCard />
               <FeedSkeletonCard />
               <FeedSkeletonCard />
@@ -485,7 +485,9 @@ export default function Index() {
             <>
               {feedError && (
                 <div className="mb-3 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
-                  <div>Can't reach Apex backend. Check it's running.</div>
+                  <div>
+                    Can&apos;t reach Apex backend. Check it&apos;s running.
+                  </div>
                   <button
                     type="button"
                     className="mt-2 text-sm text-zinc-200 hover:text-white"
@@ -496,7 +498,7 @@ export default function Index() {
                 </div>
               )}
               {error && !feedError && (
-                <p className="text-sm text-destructive mb-6">
+                <p className="mb-6 text-sm text-destructive">
                   Failed to load activity
                 </p>
               )}
@@ -507,7 +509,7 @@ export default function Index() {
                 !discussionsLoading &&
                 groupedActivity.length === 0 &&
                 discussions.length === 0 && (
-                  <p className="text-sm text-muted-foreground py-8">No activity yet.</p>
+                  <p className="py-8 text-sm text-muted-foreground">No activity yet.</p>
                 )}
               {!error && !feedError &&
                 groupedActivity.map((item) => {
@@ -570,7 +572,7 @@ export default function Index() {
                     type="button"
                     onClick={() => void fetchNextPage()}
                     disabled={isFetchingNextPage}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
                   >
                     {isFetchingNextPage ? "Loading…" : "Load more"}
                   </button>
@@ -580,7 +582,7 @@ export default function Index() {
           )}
           {homeDiscussionsEnabled &&
             (discussionsLoading ? (
-              <p className="text-sm text-muted-foreground py-6 mt-6 border-t border-white/5 pt-6">
+              <p className="mt-6 border-t border-white/5 py-6 text-sm text-muted-foreground">
                 Loading discussions…
               </p>
             ) : (
@@ -613,7 +615,7 @@ export default function Index() {
                       type="button"
                       onClick={() => void fetchNextDiscussionsPage()}
                       disabled={isFetchingNextDiscussionsPage}
-                      className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                      className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
                     >
                       {isFetchingNextDiscussionsPage ? "Loading…" : "Load more discussions"}
                     </button>

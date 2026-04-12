@@ -41,23 +41,23 @@ function FollowRow({ f, onNavigate }: { f: FollowUser; onNavigate: () => void })
       <Link
         to={`/user/${encodeURIComponent(f.id)}`}
         onClick={onNavigate}
-        className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2 hover:bg-card/60 transition-colors"
+        className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2 transition-colors hover:bg-card/60"
       >
-        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-semibold text-white/80 overflow-hidden shrink-0">
+        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-semibold text-white/80">
           {resolveApiUrl(f.avatarUrl) ? (
             <img
               src={resolveApiUrl(f.avatarUrl)!}
               alt=""
-              className="w-8 h-8 rounded-full object-cover"
+              className="size-8 rounded-full object-cover"
             />
           ) : (
             initials
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{name}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{name}</p>
           {f.bio && (
-            <p className="text-xs text-muted-foreground truncate">{f.bio}</p>
+            <p className="truncate text-xs text-muted-foreground">{f.bio}</p>
           )}
         </div>
       </Link>
@@ -131,7 +131,7 @@ export function FollowListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] flex flex-col gap-0 sm:max-w-md">
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
             {listKind === "followers"
@@ -142,8 +142,8 @@ export function FollowListDialog({
           </DialogTitle>
         </DialogHeader>
         {enabled && (
-          <div className="relative mt-4 mb-3">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <div className="relative mb-3 mt-4">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search by name or email…"
@@ -154,13 +154,13 @@ export function FollowListDialog({
             />
           </div>
         )}
-        <div className="overflow-y-auto min-h-0 flex-1 -mx-1 px-1">
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
           {!enabled ? null : isPending ? (
-            <p className="text-sm text-muted-foreground py-4">Loading…</p>
+            <p className="py-4 text-sm text-muted-foreground">Loading…</p>
           ) : errMsg ? (
-            <p className="text-sm text-destructive py-4">{errMsg}</p>
+            <p className="py-4 text-sm text-destructive">{errMsg}</p>
           ) : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">
+            <p className="py-4 text-sm text-muted-foreground">
               {debouncedSearch.trim()
                 ? listKind === "followers"
                   ? "No followers match your search."
@@ -182,8 +182,8 @@ export function FollowListDialog({
           )}
         </div>
         {enabled && !isPending && !errMsg && total > 0 && (
-          <div className="mt-4 pt-2 border-t border-white/10 shrink-0 space-y-3">
-            <p className="text-xs text-center text-muted-foreground">
+          <div className="mt-4 shrink-0 space-y-3 border-t border-white/10 pt-2">
+            <p className="text-center text-xs text-muted-foreground">
               Showing {rangeStart}–{rangeEnd} of {total}
             </p>
             {totalPages > 1 && (

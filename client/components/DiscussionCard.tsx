@@ -49,9 +49,9 @@ export default function DiscussionCard({
 
   return (
     <Link to={`/discussion/${id}`}>
-      <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6">
+      <div className="border-white/6 mb-6 cursor-pointer overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm active:bg-card/30 active:shadow-md">
         {/* Header */}
-        <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-white/3">
+        <div className="border-white/3 border-b px-4 py-3 sm:px-5 sm:py-3.5">
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             <button
               onClick={(e) => {
@@ -59,55 +59,55 @@ export default function DiscussionCard({
                 e.stopPropagation();
                 if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
               }}
-              className="flex items-center gap-2 sm:gap-3 flex-1 hover:opacity-80 transition-opacity group text-left"
+              className="group flex flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80 sm:gap-3"
             >
               {showAvatar ? (
                 <img
                   src={avatarSrc!}
                   alt={authorDisplay}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:ring-1.5 group-hover:ring-primary transition-all flex-shrink-0"
+                  className="group-hover:ring-1.5 size-8 shrink-0 rounded-full object-cover transition-all group-hover:ring-primary sm:size-9"
                   onError={() => setAvatarLoadFailed(true)}
                 />
               ) : (
                 <div
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:ring-1.5 group-hover:ring-primary transition-all text-white/70 text-xs font-medium"
+                  className="group-hover:ring-1.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/70 transition-all group-hover:ring-primary sm:size-9"
                   aria-label={`Avatar for ${authorDisplay}`}
                 >
                   {initials}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white group-hover:text-primary transition-colors text-xs sm:text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-white transition-colors group-hover:text-primary sm:text-sm">
                   {authorDisplay}
                 </p>
-                <p className="text-xs text-white/50 mt-0.5">{timestamp}</p>
+                <p className="mt-0.5 text-xs text-white/50">{timestamp}</p>
               </div>
             </button>
             {isPinned && (
               <div
-                className="text-xs sm:text-sm flex-shrink-0 flex items-center"
+                className="flex shrink-0 items-center text-xs sm:text-sm"
                 style={{ color: "rgb(240, 28, 28)" }}
               >
-                <Pin className="w-4 h-4" aria-hidden />
+                <Pin className="size-4" aria-hidden />
               </div>
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-4 sm:px-5 py-4 sm:py-5">
+        <div className="p-4 sm:p-5">
           {/* Category */}
-          <div className="mb-3 flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 pr-2 py-1 text-white/60 rounded-md text-xs font-medium bg-white/2 ml-0">
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            <span className="bg-white/2 ml-0 inline-flex items-center gap-1.5 rounded-md py-1 pr-2 text-xs font-medium text-white/60">
               <DiscussionCategoryIcon
                 categoryKey={categoryKey}
-                className="w-3.5 h-3.5 text-white/70"
+                className="size-3.5 text-white/70"
               />
               {categoryLabel}
             </span>
             {isPinned && (
               <span
-                className="inline-block px-2 py-1 rounded-md text-xs font-medium bg-[rgba(240,28,28,0.06)] text-[rgb(240,28,28)]"
+                className="inline-block rounded-md bg-[rgba(240,28,28,0.06)] px-2 py-1 text-xs font-medium text-[rgb(240,28,28)]"
               >
                 Pinned
               </span>
@@ -115,23 +115,23 @@ export default function DiscussionCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-xs sm:text-sm font-semibold text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+          <h3 className="mb-2 line-clamp-2 text-xs font-semibold leading-snug text-white transition-colors group-hover:text-primary sm:text-sm">
             {title}
           </h3>
 
           {/* Excerpt */}
-          <p className="text-xs text-white/60 line-clamp-2 mb-3 leading-relaxed">
+          <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-white/60">
             {excerpt}
           </p>
 
           {/* Footer */}
           <div className="flex items-center gap-4 text-xs text-white/50">
             <div className="flex items-center gap-1">
-              <MessageCircle className="w-3 h-3" />
+              <MessageCircle className="size-3" />
               <span className="font-medium">{replies ?? 0}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
+              <Eye className="size-3" />
               <span className="font-medium">{views ?? 0}</span>
             </div>
           </div>

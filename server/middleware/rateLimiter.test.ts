@@ -1,74 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import express, { Express } from "express";
+import express from "express";
 import { createRateLimiter } from "./rateLimiter";
-
-function createTestApp(limiter: ReturnType<typeof createRateLimiter>): Express {
-  const app = express();
-  
-  // Mock requestId middleware
-  app.use((req, _res, next) => {
-    req.requestId = "test-request-id";
-    next();
-  });
-
-  app.post("/test", limiter, (_req, res) => {
-    res.json({ success: true });
-  });
-
-  return app;
-}
-
-async function makeRequest(app: Express, ip = "127.0.0.1") {
-  const req = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-forwarded-for": ip,
-    },
-  };
-
-  return new Promise<{ status: number; body: unknown; headers: Record<string, string> }>((resolve) => {
-    const mockReq = {
-      method: "POST",
-      path: "/test",
-      originalUrl: "/test",
-      headers: { "x-forwarded-for": ip },
-      ip,
-      socket: { remoteAddress: ip },
-      requestId: "test-request-id",
-    } as unknown as express.Request;
-
-    const responseHeaders: Record<string, string> = {};
-    let statusCode = 200;
-    let responseBody: unknown;
-
-    const mockRes = {
-      setHeader: (name: string, value: string | number) => {
-        responseHeaders[name.toLowerCase()] = String(value);
-        return mockRes;
-      },
-      status: (code: number) => {
-        statusCode = code;
-        return mockRes;
-      },
-      json: (body: unknown) => {
-        responseBody = body;
-        resolve({ status: statusCode, body: responseBody, headers: responseHeaders });
-        return mockRes;
-      },
-    } as unknown as express.Response;
-
-    const limiter = createRateLimiter({
-      windowMs: 60000,
-      maxRequests: 3,
-      keyGenerator: () => `test:${ip}`,
-    });
-
-    limiter(mockReq, mockRes, () => {
-      mockRes.json({ success: true });
-    });
-  });
-}
 
 describe("rateLimiter", () => {
   beforeEach(() => {
@@ -91,7 +23,6 @@ describe("rateLimiter", () => {
       requestId: "test-id",
     } as unknown as express.Request;
 
-    let statusCode = 200;
     const responseHeaders: Record<string, string> = {};
 
     const mockRes = {
@@ -99,10 +30,7 @@ describe("rateLimiter", () => {
         responseHeaders[name.toLowerCase()] = String(value);
         return mockRes;
       },
-      status: (code: number) => {
-        statusCode = code;
-        return mockRes;
-      },
+      status: () => mockRes,
       json: () => mockRes,
     } as unknown as express.Response;
 
@@ -274,7 +202,6 @@ describe("rateLimiter", () => {
     expect(statusCode).toBe(429);
 
     // Second IP - request passes (different key)
-    statusCode = 200;
     currentIp = "192.168.1.2";
     limiter(createMockReq(currentIp), mockRes, next);
     expect(next).toHaveBeenCalledTimes(2);

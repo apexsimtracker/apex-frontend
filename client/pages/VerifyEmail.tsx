@@ -125,13 +125,13 @@ export default function VerifyEmail() {
     (sessionStorage.getItem(PENDING_VERIFY_KEY) ?? "").trim().length > 0;
   if (!email.trim() && !hasStoredEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-xl font-semibold text-foreground">Verification</h1>
-          <p className="text-muted-foreground text-sm">Missing email. Please sign up again.</p>
+          <p className="text-sm text-muted-foreground">Missing email. Please sign up again.</p>
           <Link
             to="/signup"
-            className="inline-block px-4 py-2 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
+            className="inline-block rounded-md px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             Go to Sign up
@@ -147,15 +147,15 @@ export default function VerifyEmail() {
   const canResend = hasEmail && resendCooldown === 0 && !resendLoading;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold text-foreground">Verify your email</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             We sent a verification code to your email.
           </p>
           {hasEmail && (
-            <p className="text-foreground/90 text-sm font-medium break-all">{email}</p>
+            <p className="break-all text-sm font-medium text-foreground/90">{email}</p>
           )}
 
           <FormField
@@ -170,7 +170,7 @@ export default function VerifyEmail() {
                     autoComplete="one-time-code"
                     disabled={loading}
                     placeholder="Enter code"
-                    className="w-full px-3 py-2 border border-white/10 rounded-md bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/50"
                     {...field}
                   />
                 </FormControl>
@@ -189,7 +189,7 @@ export default function VerifyEmail() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             {loading ? "Verifying…" : "Verify"}
@@ -200,7 +200,7 @@ export default function VerifyEmail() {
               type="button"
               disabled={!canResend}
               onClick={handleResend}
-              className="w-full px-3 py-2 rounded-md border border-white/20 bg-transparent text-sm font-medium text-foreground hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-md border border-white/20 bg-transparent px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {resendCooldown > 0
                 ? `Resend available in ${resendCooldown}s`
@@ -210,7 +210,7 @@ export default function VerifyEmail() {
             </button>
             <Link
               to="/login"
-              className="text-sm text-muted-foreground hover:text-foreground underline"
+              className="text-sm text-muted-foreground underline hover:text-foreground"
             >
               Back to Sign in
             </Link>

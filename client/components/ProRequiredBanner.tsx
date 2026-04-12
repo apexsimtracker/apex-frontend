@@ -21,10 +21,10 @@ export default function ProRequiredBanner() {
   if (!visible) return null;
 
   return (
-    <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-orange-500/10">
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-amber-200">
               Apex Pro Required
             </p>
@@ -32,21 +32,21 @@ export default function ProRequiredBanner() {
               Automatic telemetry uploads require Apex Pro.
             </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
               onClick={() => navigate("/upgrade")}
-              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-black hover:bg-amber-400 transition-colors"
+              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-black transition-colors hover:bg-amber-400"
             >
               Upgrade
             </button>
             <button
               type="button"
               onClick={() => setVisible(false)}
-              className="p-1 text-amber-200/60 hover:text-amber-200 transition-colors"
+              className="p-1 text-amber-200/60 transition-colors hover:text-amber-200"
               aria-label="Dismiss"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
         </div>

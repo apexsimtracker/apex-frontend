@@ -9,7 +9,7 @@ const pkg = JSON.parse(
 const appVersion = pkg.version ?? "1.0.0";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode: _mode }) => ({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },

@@ -76,7 +76,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold">Sign in</h1>
@@ -134,7 +134,7 @@ export default function Login() {
                   if (e) sessionStorage.setItem("apex_verify_email", e);
                   navigate("/verify-email", { state: { email: e } });
                 }}
-                className="text-sm text-foreground underline hover:no-underline font-medium text-left"
+                className="text-left text-sm font-medium text-foreground underline hover:no-underline"
               >
                 Go to verification
               </button>
@@ -145,7 +145,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => navigate("/forgot-password")}
-              className="text-muted-foreground hover:text-foreground underline"
+              className="text-muted-foreground underline hover:text-foreground"
             >
               Forgot password?
             </button>
@@ -154,16 +154,16 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
 
-          <p className="text-center pt-2">
+          <p className="pt-2 text-center">
             <Link
               to="/signup"
-              className="text-sm text-muted-foreground hover:text-foreground underline"
+              className="text-sm text-muted-foreground underline hover:text-foreground"
             >
               Don&apos;t have an account? Create one
             </Link>

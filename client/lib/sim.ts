@@ -219,7 +219,7 @@ export function simHasLicenseClass(sim: string | null | undefined): boolean {
  */
 export function formatSessionType(
   type: string | null | undefined,
-  sim?: string | null
+  _sim?: string | null
 ): string {
   if (!type) return "Session";
   
@@ -254,7 +254,7 @@ export function formatSessionType(
  */
 export function formatSessionTypeUpper(
   type: string | null | undefined,
-  sim?: string | null
+  _sim?: string | null
 ): string {
-  return formatSessionType(type, sim).toUpperCase();
+  return formatSessionType(type, _sim).toUpperCase();
 }

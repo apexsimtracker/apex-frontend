@@ -197,7 +197,7 @@ export default function ManualActivityForm({
 
         {!recentLoading && recentItems.length > 0 && !catalogsLoading && (
           <div>
-            <p className="text-xs font-medium text-white/50 mb-2">Recent</p>
+            <p className="mb-2 text-xs font-medium text-white/50">Recent</p>
             <div className="flex flex-wrap gap-2">
               {recentItems.map((item) => (
                 <button
@@ -205,7 +205,7 @@ export default function ManualActivityForm({
                   type="button"
                   onClick={() => handleRecentChipClick(item)}
                   disabled={isSubmitting}
-                  className="inline-flex items-center rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/10 hover:text-white/90 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white/90 disabled:opacity-50"
                 >
                   {getRecentChipLabel(item)}
                 </button>
@@ -272,8 +272,8 @@ export default function ManualActivityForm({
               <FormLabel htmlFor="track" className="text-white/80">
                 Track <span className="text-red-400">*</span>
                 {catalogsLoading && sim && (
-                  <span className="ml-2 text-xs text-white/50 font-normal">
-                    <Loader2 className="inline h-3 w-3 animate-spin mr-0.5 align-middle" />
+                  <span className="ml-2 text-xs font-normal text-white/50">
+                    <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
                     Loading…
                   </span>
                 )}
@@ -313,8 +313,8 @@ export default function ManualActivityForm({
               <FormLabel htmlFor="car" className="text-white/80">
                 Car <span className="text-white/40">(optional)</span>
                 {catalogsLoading && sim && (
-                  <span className="ml-2 text-xs text-white/50 font-normal">
-                    <Loader2 className="inline h-3 w-3 animate-spin mr-0.5 align-middle" />
+                  <span className="ml-2 text-xs font-normal text-white/50">
+                    <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
                     Loading…
                   </span>
                 )}
@@ -347,10 +347,10 @@ export default function ManualActivityForm({
         />
 
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-1.5">
+          <label className="mb-1.5 block text-sm font-medium text-white/80">
             Finishing position <span className="text-white/40">(optional)</span>
           </label>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] gap-2 items-start w-full">
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] items-start gap-2">
             <FormField
               control={form.control}
               name="position"
@@ -373,13 +373,13 @@ export default function ManualActivityForm({
                 </FormItem>
               )}
             />
-            <span className="text-xs text-white/60 text-center mt-3">out of</span>
+            <span className="mt-3 text-center text-xs text-white/60">out of</span>
             <div className="flex gap-1">
               <FormField
                 control={form.control}
                 name="totalDrivers"
                 render={({ field }) => (
-                  <FormItem className="space-y-0 flex-1">
+                  <FormItem className="flex-1 space-y-0">
                     <FormControl>
                       <input
                         id="totalDrivers"
@@ -397,7 +397,7 @@ export default function ManualActivityForm({
                   </FormItem>
                 )}
               />
-              <span className="text-xs text-white/60 shrink-0 mt-3">drivers</span>
+              <span className="mt-3 shrink-0 text-xs text-white/60">drivers</span>
             </div>
           </div>
           <p className="mt-1 text-xs text-white/40">
@@ -451,7 +451,7 @@ export default function ManualActivityForm({
                   disabled={isSubmitting}
                   placeholder="Any notes about this session…"
                   rows={3}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 resize-none disabled:opacity-50"
+                  className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
                   {...field}
                 />
               </FormControl>
@@ -462,7 +462,7 @@ export default function ManualActivityForm({
 
         {formErrors.root?.message ? (
           <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
-            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
             <FormRootMessage className="flex-1" />
           </div>
         ) : null}
@@ -474,7 +474,7 @@ export default function ManualActivityForm({
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
               {submittingLabel}
             </>
           ) : (

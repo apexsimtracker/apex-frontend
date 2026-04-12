@@ -36,6 +36,8 @@
     "client/**/*",
     "server/**/*",
     "shared/**/*",
+    "netlify/**/*",
+    "tailwind.config.ts",
     "vite.config.ts",
     "vite.config.server.ts"
   ],

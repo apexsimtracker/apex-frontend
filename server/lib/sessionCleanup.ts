@@ -1,5 +1,3 @@
-import { config } from "../config";
-
 // Placeholder for session cleanup
 // This will be implemented when Prisma/database is set up
 

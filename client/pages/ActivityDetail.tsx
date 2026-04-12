@@ -45,11 +45,6 @@ export type SessionDetail = {
   comments?: number | null;
 };
 
-// Helper to convert username to URL slug
-const userNameToSlug = (name: string) => {
-  return name.toLowerCase().replace(/\s+/g, "-");
-};
-
 // Helper to get ordinal suffix
 const getOrdinalSuffix = (num: number) => {
   if (num % 100 >= 11 && num % 100 <= 13) return "th";
@@ -113,15 +108,6 @@ function sessionToView(s: SessionDetail): ActivityView {
     any.circuit,
     any.circuitName
   );
-  const car = pickFirstString(
-    s.carName,
-    any.carName,
-    any.car_name,
-    s.car,
-    any.car,
-    any.vehicle,
-    any.vehicleName
-  );
   return {
     userName: s.driverName,
     userAvatar: s.userAvatar ?? null,
@@ -171,13 +157,13 @@ export default function ActivityDetail() {
 
   if (loading) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <p className="text-muted-foreground">Loading session...</p>
@@ -188,13 +174,13 @@ export default function ActivityDetail() {
 
   if (error || !activity) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <p className="text-destructive">{error ?? "Session not found."}</p>
@@ -204,31 +190,31 @@ export default function ActivityDetail() {
   }
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+          className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
           <span className="font-medium">Back</span>
         </button>
 
         {/* Main Activity Card */}
-        <div className="bg-card rounded-2xl border border overflow-hidden mb-8">
+        <div className="mb-8 overflow-hidden rounded-2xl border bg-card">
           {/* Header with user info */}
-          <div className="px-6 py-4 border-b border">
+          <div className="border px-6 py-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-1 items-center gap-3">
                 {resolveApiUrl(activity.userAvatar) ? (
                   <img
                     src={resolveApiUrl(activity.userAvatar)!}
                     alt={activity.userName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="size-10 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-muted border border-white/10 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                  <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-muted text-xs font-semibold text-muted-foreground">
                     {(activity.userName || "?")
                       .trim()
                       .split(" ")
@@ -239,7 +225,7 @@ export default function ActivityDetail() {
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
                     {activity.userName}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -250,7 +236,7 @@ export default function ActivityDetail() {
               <button
                 type="button"
                 onClick={() => id && navigate(`/sessions/${id}`)}
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="text-muted-foreground transition-colors hover:text-primary"
                 aria-label="View session detail"
               >
                 •••
@@ -259,32 +245,32 @@ export default function ActivityDetail() {
           </div>
 
           {/* Content */}
-          <div className="px-6 py-6">
+          <div className="p-6">
             {/* Track and Game info */}
             <div className="mb-6">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {activity.game}
               </p>
-              <h1 className="text-3xl font-bold text-foreground mb-4">
+              <h1 className="mb-4 text-3xl font-bold text-foreground">
                 {activity.track}
               </h1>
             </div>
 
             {/* Race Result Section */}
             <div
-              className={`rounded-xl p-6 mb-6 border ${
+              className={`mb-6 rounded-xl border p-6 ${
                 activity.position === 1
-                  ? "bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950/20 dark:to-yellow-900/10 border-yellow-200 dark:border-yellow-800/30"
+                  ? "border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:border-yellow-800/30 dark:from-yellow-950/20 dark:to-yellow-900/10"
                   : activity.position === 2
-                    ? "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950/20 dark:to-gray-900/10 border-gray-200 dark:border-gray-800/30"
+                    ? "border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 dark:border-gray-800/30 dark:from-gray-950/20 dark:to-gray-900/10"
                     : activity.position === 3
-                      ? "bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/10 border-orange-200 dark:border-orange-800/30"
-                      : "bg-secondary border"
+                      ? "border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 dark:border-orange-800/30 dark:from-orange-950/20 dark:to-orange-900/10"
+                      : "border bg-secondary"
               }`}
             >
-              <div className="flex items-center gap-4 mb-4">
+              <div className="mb-4 flex items-center gap-4">
                 <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-black text-2xl ${
+                  className={`flex size-16 items-center justify-center rounded-full text-2xl font-bold text-black ${
                     activity.position === 1
                       ? "bg-gold"
                       : activity.position === 2
@@ -301,7 +287,7 @@ export default function ActivityDetail() {
                 </div>
                 <div>
                   <p
-                    className={`text-xs font-medium uppercase tracking-wide mb-1 ${
+                    className={`mb-1 text-xs font-medium uppercase tracking-wide ${
                       activity.position === 1
                         ? "text-gold"
                         : "text-muted-foreground"
@@ -311,7 +297,7 @@ export default function ActivityDetail() {
                   </p>
                   <p className="text-3xl font-bold text-foreground">
                     {activity.position}
-                    <span className="text-base ml-1">
+                    <span className="ml-1 text-base">
                       {getOrdinalSuffix(activity.position)} Place
                     </span>
                   </p>
@@ -322,7 +308,7 @@ export default function ActivityDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+                  <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                     Fastest Lap
                   </p>
                   <p className="text-lg font-bold text-foreground">
@@ -330,7 +316,7 @@ export default function ActivityDetail() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+                  <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                     Race Time
                   </p>
                   <p className="text-lg font-bold text-foreground">
@@ -341,54 +327,54 @@ export default function ActivityDetail() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+            <div className="mb-8 grid grid-cols-3 gap-4">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Total KM Driven
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {activity.totalKm}
                 </p>
               </div>
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Avg Lap Time
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {activity.avgLapTime}
                 </p>
               </div>
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Apex Score
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-2xl font-bold text-foreground">
                     {activity.apexScore}
                   </p>
-                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  <TrendingUp className="size-5 text-green-500" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="px-6 py-4 border-t border flex items-center justify-between">
+          <div className="flex items-center justify-between border px-6 py-4">
             <div className="flex items-center gap-6">
               <button
                 type="button"
                 onClick={() => id && navigate(`/sessions/${id}`)}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors group"
+                className="group flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
               >
-                <Heart className="w-4 h-4 group-hover:fill-primary" />
+                <Heart className="size-4 group-hover:fill-primary" />
                 <span className="text-xs font-medium">{activity.likes}</span>
               </button>
               <button
                 type="button"
                 onClick={() => id && navigate(`/sessions/${id}`)}
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-primary"
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle className="size-4" />
                 <span className="text-xs font-medium">{activity.comments}</span>
               </button>
             </div>
@@ -402,18 +388,18 @@ export default function ActivityDetail() {
                   }).catch(() => {});
                 }
               }}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-muted-foreground transition-colors hover:text-primary"
               aria-label="Share"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="size-4" />
             </button>
           </div>
         </div>
 
         {/* Lap History Section */}
-        <div className="bg-card rounded-2xl border border p-6 mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-5 h-5 text-primary" />
+        <div className="mb-8 rounded-2xl border bg-card p-6">
+          <div className="mb-6 flex items-center gap-2">
+            <TrendingUp className="size-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Lap History</h2>
           </div>
 
@@ -421,20 +407,20 @@ export default function ActivityDetail() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border">
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                <tr className="border">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Lap
                   </th>
-                  <th className="text-right text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Time
                   </th>
-                  <th className="text-right text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Sector 1
                   </th>
-                  <th className="text-right text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Sector 2
                   </th>
-                  <th className="text-right text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Sector 3
                   </th>
                 </tr>
@@ -480,20 +466,20 @@ export default function ActivityDetail() {
                 ].map((lap) => (
                   <tr
                     key={lap.lap}
-                    className={`border-b border hover:bg-secondary transition-colors`}
+                    className={`border transition-colors hover:bg-secondary`}
                     style={
                       lap.isFastest
                         ? { backgroundColor: "rgba(240, 28, 28, 0.05)" }
                         : {}
                     }
                   >
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <span className="font-medium text-foreground">
                         {lap.lap}
                         {lap.isFastest && " 🏁"}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="px-4 py-3 text-right">
                       <span
                         className={`font-bold`}
                         style={
@@ -503,13 +489,13 @@ export default function ActivityDetail() {
                         {lap.time}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right text-muted-foreground">
+                    <td className="px-4 py-3 text-right text-muted-foreground">
                       {lap.s1}
                     </td>
-                    <td className="py-3 px-4 text-right text-muted-foreground">
+                    <td className="px-4 py-3 text-right text-muted-foreground">
                       {lap.s2}
                     </td>
-                    <td className="py-3 px-4 text-right text-muted-foreground">
+                    <td className="px-4 py-3 text-right text-muted-foreground">
                       {lap.s3}
                     </td>
                   </tr>
@@ -520,14 +506,14 @@ export default function ActivityDetail() {
         </div>
 
         {/* Light Analysis Section */}
-        <div className="bg-card rounded-2xl border border p-6">
-          <h2 className="text-xl font-bold text-foreground mb-6">
+        <div className="rounded-2xl border bg-card p-6">
+          <h2 className="mb-6 text-xl font-bold text-foreground">
             Analysis & Highlights
           </h2>
 
           <div className="space-y-4">
-            <div className="bg-secondary rounded-lg p-4">
-              <p className="text-sm font-semibold text-foreground mb-1">
+            <div className="rounded-lg bg-secondary p-4">
+              <p className="mb-1 text-sm font-semibold text-foreground">
                 ✅ Strong Start
               </p>
               <p className="text-sm text-muted-foreground">
@@ -536,8 +522,8 @@ export default function ActivityDetail() {
               </p>
             </div>
 
-            <div className="bg-secondary rounded-lg p-4">
-              <p className="text-sm font-semibold text-foreground mb-1">
+            <div className="rounded-lg bg-secondary p-4">
+              <p className="mb-1 text-sm font-semibold text-foreground">
                 🎯 Consistent Pace
               </p>
               <p className="text-sm text-muted-foreground">
@@ -546,8 +532,8 @@ export default function ActivityDetail() {
               </p>
             </div>
 
-            <div className="bg-secondary rounded-lg p-4">
-              <p className="text-sm font-semibold text-foreground mb-1">
+            <div className="rounded-lg bg-secondary p-4">
+              <p className="mb-1 text-sm font-semibold text-foreground">
                 ⚡ Fastest Lap Performance
               </p>
               <p className="text-sm text-muted-foreground">
@@ -556,8 +542,8 @@ export default function ActivityDetail() {
               </p>
             </div>
 
-            <div className="bg-secondary rounded-lg p-4">
-              <p className="text-sm font-semibold text-foreground mb-1">
+            <div className="rounded-lg bg-secondary p-4">
+              <p className="mb-1 text-sm font-semibold text-foreground">
                 🔧 Tire Management
               </p>
               <p className="text-sm text-muted-foreground">

@@ -72,15 +72,15 @@ function timeAgo(createdAt: string | Date): string {
 
 function SessionCardSkeleton() {
   return (
-    <div className="rounded-lg border border-white/6 bg-card/20 overflow-hidden mb-6">
-      <div className="px-4 sm:px-5 py-3 sm:py-3.5 flex items-center gap-3">
+    <div className="border-white/6 mb-6 overflow-hidden rounded-lg border bg-card/20">
+      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
         <SkeletonBlock height={36} width={36} rounded="full" />
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1.5">
           <SkeletonBlock height={14} width={80} />
           <SkeletonBlock height={12} width={56} />
         </div>
       </div>
-      <div className="px-4 sm:px-5 pt-1.5 pb-4 sm:pb-5">
+      <div className="px-4 pb-4 pt-1.5 sm:px-5 sm:pb-5">
         <SkeletonBlock height={12} width={64} className="mb-2" />
         <SkeletonBlock height={20} width="75%" className="mb-3" />
         <SkeletonBlock height={14} width={112} className="mb-4" />
@@ -89,7 +89,7 @@ function SessionCardSkeleton() {
           <SkeletonBlock height={64} className="flex-1" rounded="lg" />
         </div>
       </div>
-      <div className="px-4 sm:px-5 py-2.5 flex items-center gap-4 border-t border-white/5">
+      <div className="flex items-center gap-4 border-t border-white/5 px-4 py-2.5 sm:px-5">
         <SkeletonBlock height={14} width={48} />
         <SkeletonBlock height={14} width={56} />
       </div>
@@ -111,16 +111,16 @@ function EmptyManual() {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8 text-center">
       <p className="text-white/70">No manual activities yet.</p>
-      <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+      <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
         <Button asChild className="bg-white text-black hover:bg-white/90">
           <Link to="/manual">
-            <PenLine className="h-4 w-4 mr-2" />
+            <PenLine className="mr-2 size-4" />
             Log Manual Activity
           </Link>
         </Button>
         <Button variant="outline" asChild className="border-white/10 text-white/80 hover:bg-white/10">
           <Link to="/upload">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 size-4" />
             Upload Session
           </Link>
         </Button>
@@ -134,24 +134,24 @@ function EmptyTelemetry() {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8 text-center">
       <p className="text-white/70">No telemetry sessions yet.</p>
-      <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+      <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
         <Button asChild className="bg-white text-black hover:bg-white/90">
           <Link to="/upload">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 size-4" />
             Upload Session
           </Link>
         </Button>
         {isPro ? (
           <Button variant="outline" asChild className="border-white/10 text-white/80 hover:bg-white/10">
             <Link to="/agent">
-              <Cpu className="h-4 w-4 mr-2" />
+              <Cpu className="mr-2 size-4" />
               Get the Agent
             </Link>
           </Button>
         ) : (
           <Button variant="outline" asChild className="border-amber-500/30 text-amber-400/90 hover:bg-amber-500/10">
             <Link to="/upgrade">
-              <Zap className="h-4 w-4 mr-2" />
+              <Zap className="mr-2 size-4" />
               Upgrade for Agent
             </Link>
           </Button>
@@ -262,19 +262,19 @@ export default function Sessions() {
   const showEmptyTelemetry = isEmpty && validType === "telemetry";
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {showOnboardingBanner && (
-          <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.04] p-4 sm:p-5 relative">
+          <div className="relative mb-6 rounded-lg border border-white/10 bg-white/[0.04] p-4 sm:p-5">
             <button
               type="button"
               onClick={dismissOnboarding}
-              className="absolute right-3 top-3 p-1 text-white/50 hover:text-white rounded transition-colors"
+              className="absolute right-3 top-3 rounded p-1 text-white/50 transition-colors hover:text-white"
               aria-label="Dismiss"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
-            <h2 className="text-base font-semibold text-white pr-8">
+            <h2 className="pr-8 text-base font-semibold text-white">
               Welcome to Apex
             </h2>
             <p className="mt-1 text-sm text-white/60">
@@ -288,9 +288,9 @@ export default function Sessions() {
                   setShowOnboardingBanner(false);
                   navigate("/upload");
                 }}
-                className="bg-white text-black hover:bg-white/90 text-sm"
+                className="bg-white text-sm text-black hover:bg-white/90"
               >
-                <Upload className="h-4 w-4 mr-1.5" />
+                <Upload className="mr-1.5 size-4" />
                 Upload Session
               </Button>
               <Button
@@ -300,9 +300,9 @@ export default function Sessions() {
                   setShowOnboardingBanner(false);
                   navigate("/manual");
                 }}
-                className="border-white/20 text-white/80 hover:bg-white/10 text-sm"
+                className="border-white/20 text-sm text-white/80 hover:bg-white/10"
               >
-                <PenLine className="h-4 w-4 mr-1.5" />
+                <PenLine className="mr-1.5 size-4" />
                 Log Manual Activity
               </Button>
               {isPro ? (
@@ -313,9 +313,9 @@ export default function Sessions() {
                     setShowOnboardingBanner(false);
                     navigate("/agent");
                   }}
-                  className="border-white/20 text-white/80 hover:bg-white/10 text-sm"
+                  className="border-white/20 text-sm text-white/80 hover:bg-white/10"
                 >
-                  <Cpu className="h-4 w-4 mr-1.5" />
+                  <Cpu className="mr-1.5 size-4" />
                   Set up Apex Agent
                 </Button>
               ) : (
@@ -326,9 +326,9 @@ export default function Sessions() {
                     setShowOnboardingBanner(false);
                     navigate("/upgrade");
                   }}
-                  className="border-amber-500/30 text-amber-400/90 hover:bg-amber-500/10 text-sm"
+                  className="border-amber-500/30 text-sm text-amber-400/90 hover:bg-amber-500/10"
                 >
-                  <Zap className="h-4 w-4 mr-1.5" />
+                  <Zap className="mr-1.5 size-4" />
                   See Apex Pro
                 </Button>
               )}
@@ -336,7 +336,7 @@ export default function Sessions() {
           </div>
         )}
 
-        <h1 className="text-xl sm:text-2xl font-semibold text-white mb-6">
+        <h1 className="mb-6 text-xl font-semibold text-white sm:text-2xl">
           Sessions
         </h1>
 
@@ -345,12 +345,12 @@ export default function Sessions() {
           onValueChange={setTab}
           className="w-full"
         >
-          <TabsList className="bg-white/5 border border-white/10 rounded-lg p-0.5 h-auto">
+          <TabsList className="h-auto rounded-lg border border-white/10 bg-white/5 p-0.5">
             {TAB_VALUES.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="rounded-md px-4 py-2 text-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60"
+                className="rounded-md px-4 py-2 text-sm text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
               >
                 {tab.label}
               </TabsTrigger>
@@ -363,7 +363,7 @@ export default function Sessions() {
 
               {!loading && error && (
                 <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
-                  <p className="text-red-400/90 text-sm">{error}</p>
+                  <p className="text-sm text-red-400/90">{error}</p>
                   <Button
                     variant="outline"
                     className="mt-4 border-white/20 text-white/80"
@@ -444,7 +444,7 @@ export default function Sessions() {
                         type="button"
                         onClick={() => void fetchNextPage()}
                         disabled={isFetchingNextPage}
-                        className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 hover:bg-white/[0.08] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                        className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
                       >
                         {isFetchingNextPage ? "Loading…" : "Load more"}
                       </button>

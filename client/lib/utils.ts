@@ -244,7 +244,7 @@ export function formatTrackName(track: string | null | undefined): string {
   if (!s) return "—";
 
   const tokens = s
-    .split(/[\s_\-]+/)
+    .split(/[\s_-]+/)
     .map((t) => t.trim())
     .filter(Boolean);
 

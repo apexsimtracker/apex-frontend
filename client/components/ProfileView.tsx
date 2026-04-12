@@ -8,7 +8,6 @@ import {
   formatCarName,
   formatAvgFinishOneDecimal,
   formatTrackName,
-  cn,
 } from "../lib/utils";
 import SimBadge from "./SimBadge";
 import { SimLogo } from "./SimLogo";
@@ -116,47 +115,47 @@ export function ProfileView({
   const maxWeekly = Math.max(...weeklyValues, 1);
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12 sm:pt-4 sm:pb-16">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-4 lg:px-8">
         {onBack && (
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 sm:mb-8 transition-colors"
+            className="mb-6 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground sm:mb-8"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
         )}
 
         {/* Profile Header - HERO */}
-        <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 p-5 sm:p-8 mb-8 sm:mb-10">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-7 justify-between">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1">
+        <div className="border-white/6 mb-8 rounded-lg border bg-card/20 p-5 backdrop-blur-lg sm:mb-10 sm:p-8">
+          <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:mb-7 sm:flex-row sm:items-start sm:gap-6">
+            <div className="flex flex-1 flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
               {showAvatarImg ? (
                 <img
                   src={String(avatarSrc).trim()}
                   alt="Profile"
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-1 ring-white/5 flex-shrink-0"
+                  className="size-16 shrink-0 rounded-full object-cover ring-1 ring-white/5 sm:size-20"
                 />
               ) : (
                 <div
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-muted border border-white/10 flex items-center justify-center flex-shrink-0 text-muted-foreground"
+                  className="flex size-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-muted text-muted-foreground sm:size-20"
                   aria-label="Profile picture placeholder"
                 >
-                  <User className="w-8 h-8 sm:w-10 sm:h-10" />
+                  <User className="size-8 sm:size-10" />
                 </div>
               )}
-              <div className="text-center sm:text-left flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">
+              <div className="flex-1 text-center sm:text-left">
+                <h1 className="mb-0.5 text-xl font-bold text-foreground sm:mb-1 sm:text-2xl">
                   {displayName}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 justify-center sm:justify-start text-xs mb-1">
+                <div className="mb-1 flex flex-wrap items-center justify-center gap-4 text-xs sm:justify-start">
                   {typeof followersCount === "number" && typeof followingCount === "number" && (
                     <>
                       <button
                         type="button"
                         onClick={onOpenFollowers}
-                        className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
                       >
                         <span className="font-semibold text-foreground">
                           {followersCount}
@@ -166,7 +165,7 @@ export function ProfileView({
                       <button
                         type="button"
                         onClick={onOpenFollowing}
-                        className="flex items-center gap-1 text-muted-foreground/70 hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
                       >
                         <span className="font-semibold text-foreground">
                           {followingCount}
@@ -181,12 +180,12 @@ export function ProfileView({
                       onClick={onToggleFollow}
                       disabled={followLoading}
                       aria-busy={followLoading}
-                      className="inline-flex items-center justify-center gap-1.5 min-w-[7.5rem] px-3 py-1 rounded-lg text-xs font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-foreground transition-colors disabled:opacity-80 disabled:cursor-wait"
+                      className="inline-flex min-w-[7.5rem] items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-white/10 disabled:cursor-wait disabled:opacity-80"
                     >
                       {followLoading ? (
                         <>
                           <Loader2
-                            className="h-3.5 w-3.5 shrink-0 animate-spin"
+                            className="size-3.5 shrink-0 animate-spin"
                             aria-hidden
                           />
                           <span>{isFollowing ? "Unfollowing…" : "Following…"}</span>
@@ -207,20 +206,20 @@ export function ProfileView({
                     <button
                       type="button"
                       onClick={onEditProfile}
-                      className="text-muted-foreground/70 hover:text-foreground transition-colors font-medium underline underline-offset-2"
+                      className="font-medium text-muted-foreground/70 underline underline-offset-2 transition-colors hover:text-foreground"
                     >
                       Edit Profile
                     </button>
                   )}
                 </div>
                 {profile.user.streakDays > 0 && (
-                  <div className="text-xs text-neutral-400 mt-1">
+                  <div className="mt-1 text-xs text-neutral-400">
                     {profile.user.streakDays === 1
                       ? "1 day driving streak"
                       : `${profile.user.streakDays} days driving streak`}
                   </div>
                 )}
-                <p className="text-muted-foreground/80 text-sm leading-relaxed mt-1 mb-2 sm:mb-3">
+                <p className="mb-2 mt-1 text-sm leading-relaxed text-muted-foreground/80 sm:mb-3">
                   {bio?.trim() ||
                     user.bio?.trim() ||
                     user.tagline?.trim() ||
@@ -228,18 +227,18 @@ export function ProfileView({
                 </p>
               </div>
             </div>
-            <div className="text-center sm:text-right sm:min-w-max space-y-3">
-              <p className="text-xs font-semibold text-foreground mb-1">
+            <div className="space-y-3 text-center sm:min-w-max sm:text-right">
+              <p className="mb-1 text-xs font-semibold text-foreground">
                 {profile.user.level != null
                   ? `Level ${profile.user.level}`
                   : "—"}
               </p>
-              <p className="text-xs text-muted-foreground/60 mb-1.5">
+              <p className="mb-1.5 text-xs text-muted-foreground/60">
                 {profile.user.levelProgressPct != null
                   ? `${profile.user.levelProgressPct}% to next`
                   : "—"}
               </p>
-              <div className="w-24 sm:w-32 h-0.5 mx-auto sm:mx-0 bg-secondary/30 rounded-full overflow-hidden">
+              <div className="mx-auto h-0.5 w-24 overflow-hidden rounded-full bg-secondary/30 sm:mx-0 sm:w-32">
                 <div
                   className="h-full rounded-full"
                   style={{
@@ -252,52 +251,52 @@ export function ProfileView({
           </div>
 
           {/* Key Stats - Subtle Minimal Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-5">
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-5">
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 Races
               </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground sm:text-base">
                 {profile.totals?.races ?? 0}
               </p>
             </div>
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 Wins
               </p>
-              <p className="text-sm sm:text-base font-semibold text-yellow-200">
+              <p className="text-sm font-semibold text-yellow-200 sm:text-base">
                 {safeValue(profile.totals?.wins)}
               </p>
             </div>
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 Podiums
               </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground sm:text-base">
                 {safeValue(profile.totals?.podiums)}
               </p>
             </div>
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 Poles
               </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground sm:text-base">
                 {safeValue(profile.totals?.poles)}
               </p>
             </div>
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 FL
               </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground sm:text-base">
                 {profile.totals?.fastestLaps ?? 0}
               </p>
             </div>
             <div className="text-center sm:text-left">
-              <p className="text-xs text-muted-foreground/50 uppercase mb-1">
+              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
                 Avg
               </p>
-              <p className="text-sm sm:text-base font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground sm:text-base">
                 {formatAvgFinishOneDecimal(profile.totals?.avgFinish)}
               </p>
             </div>
@@ -309,7 +308,7 @@ export function ProfileView({
           profile.insight.body && (
             <Link
               to={`/sessions/${profile.insight.sessionId}`}
-              className="mt-6 block rounded-2xl border border-white/5 bg-white/[0.02] p-4 hover:bg-white/[0.04] transition-colors"
+              className="mt-6 block rounded-2xl border border-white/5 bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.04]"
             >
               <div className="text-xs tracking-wide text-neutral-400">
                 {profile.insight.title.toUpperCase()}
@@ -321,23 +320,23 @@ export function ProfileView({
           )}
 
         {/* Placeholder Content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 p-6 md:col-span-2">
-            <h2 className="text-sm font-semibold text-foreground mb-6 uppercase tracking-widest">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="border-white/6 rounded-lg border bg-card/20 p-6 backdrop-blur-lg md:col-span-2">
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-foreground">
               Weekly Stats
             </h2>
 
             {/* Weekly Chart */}
             <div className="mb-8">
               {weeklyTotal === 0 ? (
-                <div className="h-[220px] flex flex-col items-center justify-center text-center text-neutral-400">
+                <div className="flex h-[220px] flex-col items-center justify-center text-center text-neutral-400">
                   <div className="text-sm">No sessions this week yet.</div>
                   <div className="mt-1 text-xs text-neutral-500">
                     Run a session to start building your weekly pattern.
                   </div>
                 </div>
               ) : (
-                <div className="flex items-end justify-between gap-2 h-[160px] mb-4">
+                <div className="mb-4 flex h-[160px] items-end justify-between gap-2">
                   {(
                     [
                       "Mon",
@@ -354,11 +353,11 @@ export function ProfileView({
                     return (
                       <div
                         key={day}
-                        className="flex-1 flex flex-col items-center gap-2"
+                        className="flex flex-1 flex-col items-center gap-2"
                       >
-                        <div className="w-full h-[160px] flex items-end justify-center relative">
+                        <div className="relative flex h-[160px] w-full items-end justify-center">
                           <div
-                            className="w-full rounded-lg transition-all duration-300 cursor-pointer relative group"
+                            className="group relative w-full cursor-pointer rounded-lg transition-all duration-300"
                             style={{
                               height: `${heightPct}%`,
                               background:
@@ -396,9 +395,9 @@ export function ProfileView({
             </div>
 
             {/* Weekly Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Total Races
                 </p>
                 <p className="text-2xl font-bold text-foreground">
@@ -406,7 +405,7 @@ export function ProfileView({
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Wins
                 </p>
                 <p className="text-2xl font-bold text-yellow-200">
@@ -414,7 +413,7 @@ export function ProfileView({
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Avg Finish
                 </p>
                 <p className="text-2xl font-bold text-foreground">
@@ -422,7 +421,7 @@ export function ProfileView({
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Total KM
                 </p>
                 <p className="text-2xl font-bold text-black dark:text-white">
@@ -432,12 +431,12 @@ export function ProfileView({
             </div>
           </div>
 
-          <div className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 p-6">
-            <h2 className="text-sm font-semibold text-foreground mb-6 uppercase tracking-widest">
+          <div className="border-white/6 rounded-lg border bg-card/20 p-6 backdrop-blur-lg">
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-foreground">
               Most-Played
             </h2>
             {(profile.mostPlayed?.length ?? 0) === 0 ? (
-              <div className="h-[220px] flex flex-col items-center justify-center text-center text-neutral-400">
+              <div className="flex h-[220px] flex-col items-center justify-center text-center text-neutral-400">
                 <div className="text-sm">No sessions recorded yet.</div>
                 <div className="mt-1 text-xs text-neutral-500">
                   Your most-played sims will appear here.
@@ -448,8 +447,8 @@ export function ProfileView({
                 {(profile.mostPlayed ?? []).map((sim) => (
                   <div key={sim.sim}>
                     <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1 flex items-center gap-2">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <div className="mb-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <p className="font-semibold text-foreground">
                             {getSimDisplayName(sim.sim)}
                           </p>
@@ -457,7 +456,7 @@ export function ProfileView({
                         </div>
 
                       </div>
-                      <div className="flex-1 w-10 h-10 flex items-center justify-end">
+                      <div className="flex size-10 flex-1 items-center justify-end">
                         <SimLogo sim={sim.sim} />
                       </div>
                     </div>
@@ -465,7 +464,7 @@ export function ProfileView({
                     <p className="text-xs text-muted-foreground">
                       {sim.km != null ? `${sim.km} km` : "—"}
                     </p>
-                    <div className="h-2 bg-secondary/40 rounded-full overflow-hidden">
+                    <div className="h-2 overflow-hidden rounded-full bg-secondary/40">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -474,7 +473,7 @@ export function ProfileView({
                         }}
                       ></div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {sim.pctOfTotal.toFixed(0)}% of total • {sim.sessions}{" "}
                       sessions
                     </p>
@@ -486,35 +485,35 @@ export function ProfileView({
         </div>
 
         {/* Race History Section */}
-        <div className="mt-12 bg-card/40 backdrop-blur-xl rounded-lg border border-white/10 dark:border-white/10 p-8">
-          <h2 className="text-2xl font-bold text-foreground mb-8">
+        <div className="mt-12 rounded-lg border border-white/10 bg-card/40 p-8 backdrop-blur-xl dark:border-white/10">
+          <h2 className="mb-8 text-2xl font-bold text-foreground">
             Race History
           </h2>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead>
-                <tr className="border-b border">
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                <tr className="border">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Date
                   </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     SIM
                   </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Car
                   </th>
-                  <th className="text-left text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Track
                   </th>
-                  <th className="text-center text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Position
                   </th>
-                  <th className="text-center text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Quali Pos
                   </th>
-                  <th className="text-right text-xs font-bold text-muted-foreground uppercase tracking-wide py-3 px-4">
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Best Lap
                   </th>
                 </tr>
@@ -524,7 +523,7 @@ export function ProfileView({
                   <tr>
                     <td
                       colSpan={7}
-                      className="py-10 text-center text-muted-foreground text-sm"
+                      className="py-10 text-center text-sm text-muted-foreground"
                     >
                       Loading race history…
                     </td>
@@ -544,49 +543,49 @@ export function ProfileView({
                     <tr
                       key={race.id}
                       onClick={() => navigate(`/sessions/${race.id}`)}
-                      className="border-b border hover:bg-secondary transition-colors cursor-pointer"
+                      className="cursor-pointer border transition-colors hover:bg-secondary"
                     >
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(race.date).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <SimBadge sim={race.sim} size="md" />
                           {race.source === "MANUAL_ACTIVITY" && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-white/5 text-white/60 border-white/10">
+                            <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
                               Manual
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatCarName(race.car)}
                       </td>
-                      <td className="py-3 px-4 text-sm text-foreground">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {formatTrackName(race.track)}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${race.position === 1
-                            ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${race.position === 1
+                            ? "bg-yellow-50 text-gold dark:bg-yellow-950/20"
                             : race.position === 2
-                              ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
+                              ? "bg-gray-100 text-silver dark:bg-gray-800/40"
                               : race.position === 3
-                                ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
+                                ? "bg-orange-50 text-bronze dark:bg-orange-950/20"
                                 : "bg-secondary text-foreground"
                             }`}
                         >
                           {race.position ?? "—"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <span className="text-sm font-bold text-foreground">
                           {race.source === "MANUAL_ACTIVITY"
                             ? "—"
                             : (race.qualiPos ?? "—")}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right text-sm font-medium text-foreground">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                         {formatLapMs(race.bestLapMs)}
                       </td>
                     </tr>
@@ -597,13 +596,13 @@ export function ProfileView({
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
+          <div className="space-y-4 md:hidden">
             {raceHistoryLoading && raceHistory.length === 0 ? (
-              <div className="py-10 text-center text-muted-foreground text-sm">
+              <div className="py-10 text-center text-sm text-muted-foreground">
                 Loading race history…
               </div>
             ) : raceHistory.length === 0 ? (
-              <div className="py-10 text-center text-neutral-400 text-sm">
+              <div className="py-10 text-center text-sm text-neutral-400">
                 Your race history will appear here after your first race
                 session.
               </div>
@@ -612,14 +611,14 @@ export function ProfileView({
                 <div
                   key={race.id}
                   onClick={() => navigate(`/sessions/${race.id}`)}
-                  className="border border/40 rounded-lg p-4 hover:bg-secondary/20 transition-colors cursor-pointer"
+                  className="border/40 cursor-pointer rounded-lg border p-4 transition-colors hover:bg-secondary/20"
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex items-center justify-between">
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
                         <SimBadge sim={race.sim} size="md" />
                         {race.source === "MANUAL_ACTIVITY" && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-white/5 text-white/60 border-white/10">
+                          <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
                             Manual
                           </span>
                         )}
@@ -629,12 +628,12 @@ export function ProfileView({
                       </p>
                     </div>
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${race.position === 1
-                        ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
+                      className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${race.position === 1
+                        ? "bg-yellow-50 text-gold dark:bg-yellow-950/20"
                         : race.position === 2
-                          ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
+                          ? "bg-gray-100 text-silver dark:bg-gray-800/40"
                           : race.position === 3
-                            ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
+                            ? "bg-orange-50 text-bronze dark:bg-orange-950/20"
                             : "bg-secondary text-foreground"
                         }`}
                     >
@@ -696,8 +695,8 @@ export function ProfileView({
           )}
 
           {/* Game Stats Summary */}
-          <div className="mt-10 pt-10 border-t border/20">
-            <h3 className="text-xl font-bold text-foreground mb-6">
+          <div className="border/20 mt-10 border-t pt-10">
+            <h3 className="mb-6 text-xl font-bold text-foreground">
               Stats by Game
             </h3>
             {(profile.statsByGame?.length ?? 0) === 0 ? (
@@ -705,14 +704,14 @@ export function ProfileView({
                 Stats by game will appear after you record sessions.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {(profile.statsByGame ?? []).map((game) => (
                   <div
                     key={game.sim}
-                    className="bg-secondary/20 rounded-2xl p-5"
+                    className="rounded-2xl bg-secondary/20 p-5"
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <h4 className="font-bold text-foreground text-base">
+                    <div className="mb-3 flex items-center gap-2">
+                      <h4 className="text-base font-bold text-foreground">
                         {getSimDisplayName(game.sim)}
                       </h4>
                       <SimBadge sim={game.sim} />
@@ -752,7 +751,7 @@ export function ProfileView({
                           {game.fastestLaps}
                         </span>
                       </div>
-                      <div className="border-t border pt-2 mt-2">
+                      <div className="mt-2 border pt-2">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Win %</span>
                           <span className="font-semibold text-foreground">

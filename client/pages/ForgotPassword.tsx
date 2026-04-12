@@ -88,13 +88,13 @@ function EmailStepForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "rgb(240, 28, 28)" }}
         >
           {loading ? "Sending code…" : "Send code"}
         </button>
 
-        <p className="text-center text-sm text-muted-foreground pt-2">
+        <p className="pt-2 text-center text-sm text-muted-foreground">
           <button
             type="button"
             onClick={() => navigate("/login")}
@@ -135,7 +135,7 @@ function CodeStepForm({
       >
         <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
         <p className="text-sm text-muted-foreground">We sent a 6‑digit verification code to:</p>
-        <p className="text-sm font-medium text-foreground break-all">{emailDisplay}</p>
+        <p className="break-all text-sm font-medium text-foreground">{emailDisplay}</p>
 
         <FormField
           control={form.control}
@@ -170,24 +170,24 @@ function CodeStepForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "rgb(240, 28, 28)" }}
         >
           {loading ? "Verifying…" : "Verify code"}
         </button>
 
-        <div className="flex items-center justify-between text-sm pt-2">
+        <div className="flex items-center justify-between pt-2 text-sm">
           <button
             type="button"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground underline"
+            className="text-muted-foreground underline hover:text-foreground"
           >
             Change email
           </button>
           <button
             type="button"
             onClick={() => void onResend()}
-            className="text-muted-foreground hover:text-foreground underline"
+            className="text-muted-foreground underline hover:text-foreground"
           >
             Resend code
           </button>
@@ -269,7 +269,7 @@ function ResetStepForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-3 py-2 rounded-md text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "rgb(240, 28, 28)" }}
         >
           {loading ? "Saving…" : "Reset password"}
@@ -304,19 +304,19 @@ export default function ForgotPassword() {
     if (step === "email") {
       emailForm.reset({ email });
     }
-  }, [step, email, emailForm.reset]);
+  }, [step, email, emailForm]);
 
   useEffect(() => {
     if (step === "code") {
       codeForm.reset({ code });
     }
-  }, [step, code, codeForm.reset]);
+  }, [step, code, codeForm]);
 
   useEffect(() => {
     if (step === "reset") {
       resetForm.reset({ password: "", confirmPassword: "" });
     }
-  }, [step, resetForm.reset]);
+  }, [step, resetForm]);
 
   const trimmedEmail = email.trim();
 
@@ -479,7 +479,7 @@ export default function ForgotPassword() {
         <button
           type="button"
           onClick={() => navigate("/login")}
-          className="w-full px-3 py-2 rounded-md text-white font-medium hover:opacity-90 transition-opacity"
+          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: "rgb(240, 28, 28)" }}
         >
           Back to sign in
@@ -488,5 +488,5 @@ export default function ForgotPassword() {
     );
   }
 
-  return <div className="min-h-screen flex items-center justify-center p-4">{content}</div>;
+  return <div className="flex min-h-screen items-center justify-center p-4">{content}</div>;
 }

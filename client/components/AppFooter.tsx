@@ -7,7 +7,7 @@ const linkClass =
 export default function AppFooter() {
   return (
     <footer className="mt-auto border-t border-white/5 py-4">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/40">
           <span>
             Support:{" "}
@@ -20,7 +20,7 @@ export default function AppFooter() {
             <Link to="/faq" className={linkClass}>
               FAQ
             </Link>
-            <span className="text-white/25 mx-1.5" aria-hidden>
+            <span className="mx-1.5 text-white/25" aria-hidden>
               ·
             </span>
             <Link to="/contact" className={linkClass}>
@@ -38,7 +38,7 @@ export default function AppFooter() {
             <Link to="/terms-and-conditions" className={linkClass}>
               Terms
             </Link>
-            <span className="text-white/25 mx-1.5" aria-hidden>
+            <span className="mx-1.5 text-white/25" aria-hidden>
               ·
             </span>
             <Link to="/privacy-policy" className={linkClass}>

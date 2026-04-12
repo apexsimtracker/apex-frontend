@@ -75,23 +75,23 @@ export default function Leaderboards() {
   return (
     <>
       <PageMeta title={leaderboardsTitle} description={leaderboardsDescription} path={LEADERBOARDS_PATH} />
-      <div className="bg-background min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {/* Header */}
         <div className="mb-10 sm:mb-16">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 sm:mb-3">
+          <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
             Leaderboards
           </h1>
-          <p className="text-muted-foreground/70 max-w-2xl text-xs sm:text-sm leading-relaxed">
+          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
             Compete and climb the rankings.
           </p>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex gap-4 sm:gap-8 mb-8 sm:mb-12 overflow-x-auto pb-2 border-b border-white/3">
+        <div className="border-white/3 mb-8 flex gap-4 overflow-x-auto border-b pb-2 sm:mb-12 sm:gap-8">
           <button
             onClick={() => setActiveTab("wins")}
-            className={`pb-2 transition-all whitespace-nowrap ${
+            className={`whitespace-nowrap pb-2 transition-all ${
               activeTab === "wins"
                 ? "border-b-2 text-foreground"
                 : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -102,12 +102,12 @@ export default function Leaderboards() {
                 : {}
             }
           >
-            <p className="font-semibold text-sm">Most Wins</p>
+            <p className="text-sm font-semibold">Most Wins</p>
           </button>
 
           <button
             onClick={() => setActiveTab("races")}
-            className={`pb-2 transition-all whitespace-nowrap ${
+            className={`whitespace-nowrap pb-2 transition-all ${
               activeTab === "races"
                 ? "border-b-2 text-foreground"
                 : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -118,12 +118,12 @@ export default function Leaderboards() {
                 : {}
             }
           >
-            <p className="font-semibold text-sm">Most Races</p>
+            <p className="text-sm font-semibold">Most Races</p>
           </button>
 
           <button
             onClick={() => setActiveTab("podiums")}
-            className={`pb-2 transition-all whitespace-nowrap ${
+            className={`whitespace-nowrap pb-2 transition-all ${
               activeTab === "podiums"
                 ? "border-b-2 text-foreground"
                 : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -134,12 +134,12 @@ export default function Leaderboards() {
                 : {}
             }
           >
-            <p className="font-semibold text-sm">Podiums</p>
+            <p className="text-sm font-semibold">Podiums</p>
           </button>
 
           <button
             onClick={() => setActiveTab("fastestlaps")}
-            className={`pb-2 transition-all whitespace-nowrap ${
+            className={`whitespace-nowrap pb-2 transition-all ${
               activeTab === "fastestlaps"
                 ? "border-b-2 text-foreground"
                 : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -150,12 +150,12 @@ export default function Leaderboards() {
                 : {}
             }
           >
-            <p className="font-semibold text-sm">Fastest Laps</p>
+            <p className="text-sm font-semibold">Fastest Laps</p>
           </button>
 
           <button
             onClick={() => setActiveTab("avgfinish")}
-            className={`pb-2 transition-all whitespace-nowrap ${
+            className={`whitespace-nowrap pb-2 transition-all ${
               activeTab === "avgfinish"
                 ? "border-b-2 text-foreground"
                 : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
@@ -166,26 +166,26 @@ export default function Leaderboards() {
                 : {}
             }
           >
-            <p className="font-semibold text-sm">Avg Finish</p>
+            <p className="text-sm font-semibold">Avg Finish</p>
           </button>
         </div>
 
         {/* Leaderboard */}
         <div>
           {updating && (
-            <p className="text-muted-foreground/70 text-xs py-1 mb-2">Updating…</p>
+            <p className="mb-2 py-1 text-xs text-muted-foreground/70">Updating…</p>
           )}
 
           {loading && (
-            <p className="text-muted-foreground text-sm py-8">Loading…</p>
+            <p className="py-8 text-sm text-muted-foreground">Loading…</p>
           )}
 
           {!loading && isError && (
-            <p className="text-sm text-muted-foreground py-8">{err}</p>
+            <p className="py-8 text-sm text-muted-foreground">{err}</p>
           )}
 
           {!loading && !isError && rows.length === 0 && (
-            <p className="text-muted-foreground text-sm py-8">
+            <p className="py-8 text-sm text-muted-foreground">
               No rankings yet.
             </p>
           )}
@@ -204,17 +204,17 @@ export default function Leaderboards() {
                     onClick={() => {
                       if (uid) navigate(`/user/${encodeURIComponent(uid)}`);
                     }}
-                    className={`w-full transition-all hover:bg-white/2 text-left border-b border-white/3 px-3 sm:px-4 ${
+                    className={`hover:bg-white/2 border-white/3 w-full border-b px-3 text-left transition-all sm:px-4 ${
                       rank <= 3 ? "py-3 sm:py-4" : "py-2.5 sm:py-3"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       {/* Rank */}
-                      <div className="w-5 sm:w-6 flex items-center justify-center flex-shrink-0">
+                      <div className="flex w-5 shrink-0 items-center justify-center sm:w-6">
                         <span
                           className={`font-bold tabular-nums ${
                             rank <= 3
-                              ? "text-xs sm:text-sm text-white"
+                              ? "text-xs text-white sm:text-sm"
                               : "text-xs text-white/60"
                           }`}
                         >
@@ -223,9 +223,9 @@ export default function Leaderboards() {
                       </div>
 
                       {/* Driver Name */}
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p
-                          className={`truncate transition-colors text-xs sm:text-sm ${
+                          className={`truncate text-xs transition-colors sm:text-sm ${
                             rank <= 3
                               ? "font-semibold text-white"
                               : "font-medium text-white/70"
@@ -236,12 +236,12 @@ export default function Leaderboards() {
                       </div>
 
                       {/* Value */}
-                      <div className="flex items-center justify-end flex-shrink-0 min-w-12 sm:min-w-14">
+                      <div className="flex min-w-12 shrink-0 items-center justify-end sm:min-w-14">
                         <p
                           className={`font-bold tabular-nums ${
                             rank <= 3
-                              ? "text-base sm:text-lg text-white"
-                              : "text-xs sm:text-sm text-white/60"
+                              ? "text-base text-white sm:text-lg"
+                              : "text-xs text-white/60 sm:text-sm"
                           }`}
                         >
                           {value}

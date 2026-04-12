@@ -139,45 +139,45 @@ export default function RaceDetail() {
   }, [id]);
 
   return (
-    <div className="bg-background min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+          className="mb-4 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-5" />
           <span className="font-medium">Back</span>
         </button>
 
         {/* Demo banner */}
-        <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-100">
+        <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-xs text-yellow-100 sm:text-sm">
           Demo race view <span className="font-semibold">(mock data)</span> —
           this page shows sample race data for design/demo purposes only.
         </div>
 
         {/* Race Header */}
-        <div className="bg-card rounded-2xl border border overflow-hidden mb-8">
+        <div className="mb-8 overflow-hidden rounded-2xl border bg-card">
           <div className="px-6 py-8">
-            <div className="flex items-start justify-between mb-6">
+            <div className="mb-6 flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
+                <h1 className="mb-2 text-3xl font-bold text-foreground">
                   {race.track}
                 </h1>
                 <p className="text-muted-foreground">{formatSimEnum(race.sim)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-1">
+                <p className="mb-1 text-sm text-muted-foreground">
                   {race.date}
                 </p>
                 <span
-                  className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
+                  className={`inline-block rounded-full px-4 py-2 text-sm font-bold ${
                     race.position === 1
-                      ? "bg-yellow-50 dark:bg-yellow-950/20 text-gold"
+                      ? "bg-yellow-50 text-gold dark:bg-yellow-950/20"
                       : race.position === 2
-                        ? "bg-gray-100 dark:bg-gray-800/40 text-silver"
+                        ? "bg-gray-100 text-silver dark:bg-gray-800/40"
                         : race.position === 3
-                          ? "bg-orange-50 dark:bg-orange-950/20 text-bronze"
+                          ? "bg-orange-50 text-bronze dark:bg-orange-950/20"
                           : "bg-secondary text-foreground"
                   }`}
                 >
@@ -187,15 +187,15 @@ export default function RaceDetail() {
             </div>
 
             {/* Race Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                   Car
                 </p>
                 <p className="font-semibold text-foreground">{formatCarName(race.car)}</p>
               </div>
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                   Best Lap
                 </p>
                 <p
@@ -205,14 +205,14 @@ export default function RaceDetail() {
                   {race.isFastestLap && " 🏁"}
                 </p>
               </div>
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                   Quali Position
                 </p>
                 <p className="font-semibold text-foreground">{race.qualiPos}</p>
               </div>
-              <div className="bg-secondary rounded-lg p-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">
+              <div className="rounded-lg bg-secondary p-4">
+                <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                   Total Laps
                 </p>
                 <p className="font-semibold text-foreground">
@@ -224,42 +224,42 @@ export default function RaceDetail() {
         </div>
 
         {/* Detailed Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-2">
           {/* Race Metrics */}
-          <div className="bg-card rounded-2xl border border p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Gauge className="w-5 h-5 text-primary" />
+          <div className="rounded-2xl border bg-card p-6">
+            <div className="mb-6 flex items-center gap-2">
+              <Gauge className="size-5 text-primary" />
               <h2 className="text-xl font-bold text-foreground">
                 Race Metrics
               </h2>
             </div>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-3 border-b border">
+              <div className="flex items-center justify-between border py-3">
                 <span className="text-muted-foreground">Race Time</span>
                 <span className="font-semibold text-foreground">
                   {race.raceTime}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border">
+              <div className="flex items-center justify-between border py-3">
                 <span className="text-muted-foreground">Avg Lap Time</span>
                 <span className="font-semibold text-foreground">
                   {race.avgLapTime}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border">
+              <div className="flex items-center justify-between border py-3">
                 <span className="text-muted-foreground">Top Speed</span>
                 <span className="font-semibold text-foreground">
                   {race.topSpeed}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3 border-b border">
+              <div className="flex items-center justify-between border py-3">
                 <span className="text-muted-foreground">Lowest Speed</span>
                 <span className="font-semibold text-foreground">
                   {race.lowestSpeed}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-3">
+              <div className="flex items-center justify-between py-3">
                 <span className="text-muted-foreground">Fuel Used</span>
                 <span className="font-semibold text-foreground">
                   {race.fuelUsed}
@@ -269,21 +269,21 @@ export default function RaceDetail() {
           </div>
 
           {/* Tire & Car Status */}
-          <div className="bg-card rounded-2xl border border p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Droplet className="w-5 h-5 text-primary" />
+          <div className="rounded-2xl border bg-card p-6">
+            <div className="mb-6 flex items-center gap-2">
+              <Droplet className="size-5 text-primary" />
               <h2 className="text-xl font-bold text-foreground">Tire Wear</h2>
             </div>
 
             <div className="space-y-6">
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="text-muted-foreground">Front Tires</span>
                   <span className="font-semibold text-foreground">
                     {race.tireWear.front}%
                   </span>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-2 overflow-hidden rounded-full bg-secondary">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -295,13 +295,13 @@ export default function RaceDetail() {
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="text-muted-foreground">Rear Tires</span>
                   <span className="font-semibold text-foreground">
                     {race.tireWear.rear}%
                   </span>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-2 overflow-hidden rounded-full bg-secondary">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -312,8 +312,8 @@ export default function RaceDetail() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-3">
+              <div className="border pt-4">
+                <p className="mb-3 text-xs font-medium uppercase text-muted-foreground">
                   Performance Analysis
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground">
@@ -328,23 +328,23 @@ export default function RaceDetail() {
         </div>
 
         {/* Lap Chart */}
-        <div className="bg-card rounded-2xl border border p-6 mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-5 h-5 text-primary" />
+        <div className="mb-8 rounded-2xl border bg-card p-6">
+          <div className="mb-6 flex items-center gap-2">
+            <TrendingUp className="size-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Lap Times</h2>
           </div>
 
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
             {race.lapTimes.map((time, index) => (
               <div
                 key={index}
-                className={`p-3 rounded-lg text-center border ${
+                className={`rounded-lg border p-3 text-center ${
                   time === race.bestLap
-                    ? "bg-purple-500/10 border-purple-500/30 text-purple-500"
-                    : "bg-secondary border"
+                    ? "border-purple-500/30 bg-purple-500/10 text-purple-500"
+                    : "border bg-secondary"
                 }`}
               >
-                <p className="text-xs font-bold text-muted-foreground mb-1">
+                <p className="mb-1 text-xs font-bold text-muted-foreground">
                   Lap {index + 1}
                 </p>
                 <p className="font-bold text-foreground">{time}</p>
@@ -352,9 +352,9 @@ export default function RaceDetail() {
             ))}
           </div>
 
-          <div className="mt-6 p-4 bg-secondary rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              <Clock className="w-4 h-4 inline mr-2" />
+          <div className="mt-6 rounded-lg bg-secondary p-4">
+            <p className="mb-2 text-sm text-muted-foreground">
+              <Clock className="mr-2 inline size-4" />
               Best lap achieved on lap{" "}
               <span className="font-bold text-foreground">10</span> with time{" "}
               <span className="font-bold text-purple-500">{race.bestLap}</span>
@@ -363,42 +363,42 @@ export default function RaceDetail() {
         </div>
 
         {/* Position History */}
-        <div className="bg-card rounded-2xl border border p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Target className="w-5 h-5 text-primary" />
+        <div className="rounded-2xl border bg-card p-6">
+          <div className="mb-6 flex items-center gap-2">
+            <Target className="size-5 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Race Progress</h2>
           </div>
 
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="mb-4 text-sm text-muted-foreground">
               Started in position {race.positionHistory[0]}, finished in
               position{" "}
               <span className="font-bold text-foreground">{race.position}</span>
             </p>
 
-            <div className="flex items-end justify-between gap-2 h-32">
+            <div className="flex h-32 items-end justify-between gap-2">
               {race.positionHistory.map((pos, index) => (
                 <div
                   key={index}
-                  className="flex-1 relative group"
+                  className="group relative flex-1"
                   style={{
                     height: `${((race.totalLaps - pos + 1) / race.totalLaps) * 100}%`,
                   }}
                 >
                   <div
-                    className="w-full h-full rounded-lg transition-all cursor-pointer relative"
+                    className="relative size-full cursor-pointer rounded-lg transition-all"
                     style={{
                       background:
                         "linear-gradient(to top, rgb(240, 28, 28), rgba(240, 28, 28, 0.6))",
                     }}
                   >
                     {index % 3 === 0 && (
-                      <span className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-bold text-primary-foreground opacity-75">
+                      <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-bold text-primary-foreground opacity-75">
                         P{pos}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-center mt-2 text-muted-foreground">
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
                     L{index + 1}
                   </p>
                 </div>

@@ -12,10 +12,10 @@ export default function PrivacyPolicy() {
     <>
       <PageMeta title={title} description={description} path={path} />
       <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-          <article className="max-w-3xl mx-auto">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <article className="mx-auto max-w-3xl">
             <header className="mb-10 border-b border-white/10 pb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 Privacy Policy
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
               </p>
             </header>
 
-            <div className="space-y-8 text-sm text-foreground/90 leading-relaxed [&_strong]:text-foreground [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white">
+            <div className="space-y-8 text-sm leading-relaxed text-foreground/90 [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white [&_strong]:text-foreground">
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">1. Introduction</h2>
                 <p>
@@ -46,7 +46,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">3. Data we collect</h2>
                 <p>Depending on how you use the Service, we may process:</p>
-                <ul className="list-disc pl-5 space-y-1.5 text-foreground/90">
+                <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>
                     <strong>Account and contact data:</strong> for example your email address and profile details you
                     choose to provide when you register or communicate with us.
@@ -75,7 +75,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">4. How we use your data</h2>
                 <p>We use personal data to:</p>
-                <ul className="list-disc pl-5 space-y-1.5 text-foreground/90">
+                <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>Provide, secure, and maintain the Service;</li>
                   <li>Create and manage your account and authenticate you;</li>
                   <li>Communicate with you about the Service, support requests, and important notices;</li>
@@ -87,7 +87,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">5. Legal bases (UK GDPR)</h2>
                 <p>We rely on one or more of the following legal bases:</p>
-                <ul className="list-disc pl-5 space-y-1.5 text-foreground/90">
+                <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>
                     <strong>Contract:</strong> processing necessary to provide the Service you request (for example
                     account management).
@@ -148,7 +148,7 @@ export default function PrivacyPolicy() {
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">10. Your rights</h2>
                 <p>Under UK data protection law you may have the right to:</p>
-                <ul className="list-disc pl-5 space-y-1.5 text-foreground/90">
+                <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>Access your personal data;</li>
                   <li>Rectify inaccurate data;</li>
                   <li>Erase data in certain circumstances;</li>
@@ -202,10 +202,10 @@ export default function PrivacyPolicy() {
                 </p>
               </section>
 
-              <footer className="pt-8 border-t border-white/10 mt-10">
+              <footer className="mt-10 border-t border-white/10 pt-8">
                 <p className="text-xs text-muted-foreground">
                   See also our{" "}
-                  <Link to="/terms-and-conditions" className="text-white/50 hover:text-white/70 transition-colors underline underline-offset-2">
+                  <Link to="/terms-and-conditions" className="text-white/50 underline underline-offset-2 transition-colors hover:text-white/70">
                     Terms &amp; Conditions
                   </Link>
                   .

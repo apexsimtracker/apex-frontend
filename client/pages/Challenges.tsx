@@ -147,7 +147,7 @@ export default function Challenges() {
     return (
       <>
         <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <p className="text-muted-foreground">Loading competitions…</p>
         </div>
       </>
@@ -158,7 +158,7 @@ export default function Challenges() {
     return (
       <>
         <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <p className="text-muted-foreground">{error}</p>
         </div>
       </>
@@ -169,7 +169,7 @@ export default function Challenges() {
     return (
       <>
         <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <p className="text-muted-foreground">
             No competitions available right now.
           </p>
@@ -181,28 +181,28 @@ export default function Challenges() {
   return (
     <>
       <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-      <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 sm:mb-3">
+          <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
             Challenges & Tournaments
           </h1>
-          <p className="text-muted-foreground/70 max-w-2xl text-xs sm:text-sm leading-relaxed">
+          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
             Compete in live challenges, qualify for tournaments, and climb the
             leaderboards.
           </p>
         </div>
 
         {/* Search */}
-        <div className="mb-12 flex-1 relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground/40" />
+        <div className="relative mb-12 flex-1">
+          <Search className="absolute left-3 top-3 size-4 text-muted-foreground/40" />
           <input
             type="text"
             placeholder="Search challenges, tracks, tournaments..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-card/15 border border-white/4 rounded-lg text-foreground placeholder-muted-foreground/40 focus:outline-none focus:border-primary/40 text-sm transition-colors"
+            className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-10 pr-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-primary/40 focus:outline-none"
           />
         </div>
 
@@ -221,10 +221,10 @@ export default function Challenges() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-8 mb-10 border-b border-white/3 pb-4">
+        <div className="border-white/3 mb-10 flex gap-8 border-b pb-4">
           <button
             onClick={() => setActiveTab("all")}
-            className={`text-sm font-medium transition-colors relative ${
+            className={`relative text-sm font-medium transition-colors ${
               activeTab === "all"
                 ? "text-foreground"
                 : "text-muted-foreground/60 hover:text-muted-foreground"
@@ -233,14 +233,14 @@ export default function Challenges() {
             All Competitions
             {activeTab === "all" && (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5"
+                className="absolute inset-x-0 bottom-0 h-0.5"
                 style={{ backgroundColor: "rgb(240, 28, 28)" }}
               />
             )}
           </button>
           <button
             onClick={() => setActiveTab("challenges")}
-            className={`text-sm font-medium transition-colors relative ${
+            className={`relative text-sm font-medium transition-colors ${
               activeTab === "challenges"
                 ? "text-foreground"
                 : "text-muted-foreground/60 hover:text-muted-foreground"
@@ -249,14 +249,14 @@ export default function Challenges() {
             Challenges
             {activeTab === "challenges" && (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5"
+                className="absolute inset-x-0 bottom-0 h-0.5"
                 style={{ backgroundColor: "rgb(240, 28, 28)" }}
               />
             )}
           </button>
           <button
             onClick={() => setActiveTab("tournaments")}
-            className={`text-sm font-medium transition-colors relative ${
+            className={`relative text-sm font-medium transition-colors ${
               activeTab === "tournaments"
                 ? "text-foreground"
                 : "text-muted-foreground/60 hover:text-muted-foreground"
@@ -265,7 +265,7 @@ export default function Challenges() {
             Tournaments
             {activeTab === "tournaments" && (
               <div
-                className="absolute bottom-0 left-0 right-0 h-0.5"
+                className="absolute inset-x-0 bottom-0 h-0.5"
                 style={{ backgroundColor: "rgb(240, 28, 28)" }}
               />
             )}
@@ -276,16 +276,16 @@ export default function Challenges() {
         {(activeTab === "all" || activeTab === "challenges") && (
           <div className="mb-16">
             <div className="mb-6">
-              <h2 className="text-xs font-semibold text-foreground uppercase tracking-widest">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-foreground">
                 ⚡ Weekly Challenges
               </h2>
-              <p className="text-xs text-muted-foreground/50 mt-1">
+              <p className="mt-1 text-xs text-muted-foreground/50">
                 Fast, repeatable competitions with instant feedback
               </p>
             </div>
             <div className="space-y-5 sm:space-y-6">
               {items && q.length > 0 && filtered.length === 0 ? (
-                <p className="text-neutral-400 text-sm py-8">
+                <p className="py-8 text-sm text-neutral-400">
                   No competitions match your search.
                 </p>
               ) : (
@@ -306,17 +306,17 @@ export default function Challenges() {
         {/* Tournaments Section */}
         {(activeTab === "all" || activeTab === "tournaments") && (
           <div className="mb-16">
-            <div className="mb-6 pt-8 border-t border-white/3">
-              <h2 className="text-xs font-semibold text-foreground uppercase tracking-widest">
+            <div className="border-white/3 mb-6 border-t pt-8">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-foreground">
                 🏆 Tournaments
               </h2>
-              <p className="text-xs text-muted-foreground/50 mt-1">
+              <p className="mt-1 text-xs text-muted-foreground/50">
                 Structured competitions with prizes and leaderboards
               </p>
             </div>
             <div className="space-y-5 sm:space-y-6">
               {items && q.length > 0 && filtered.length === 0 ? (
-                <p className="text-neutral-400 text-sm py-8">
+                <p className="py-8 text-sm text-neutral-400">
                   No competitions match your search.
                 </p>
               ) : (
@@ -335,19 +335,19 @@ export default function Challenges() {
         )}
 
         {/* Info Section */}
-        <div className="mt-16 pt-12 border-t border-white/3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="border-white/3 mt-16 border-t pt-12">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-2">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
                 This Week
               </p>
               <p className="text-2xl font-bold text-white">
                 {meta?.activeChallenges ?? "—"}
               </p>
-              <p className="text-xs text-white/60 mt-1">Active challenges</p>
+              <p className="mt-1 text-xs text-white/60">Active challenges</p>
             </div>
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-2">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
                 Your Rank
               </p>
               <p
@@ -364,16 +364,16 @@ export default function Challenges() {
               >
                 {yourRank != null ? `#${yourRank}` : "Unranked"}
               </p>
-              <p className="text-xs text-white/60 mt-1">Overall leaderboard</p>
+              <p className="mt-1 text-xs text-white/60">Overall leaderboard</p>
             </div>
             <div>
-              <p className="text-xs text-white/50 uppercase tracking-widest font-semibold mb-2">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
                 Joined
               </p>
               <p className="text-2xl font-bold text-white">
                 {meta?.joinedThisSeason ?? "—"}
               </p>
-              <p className="text-xs text-white/60 mt-1">
+              <p className="mt-1 text-xs text-white/60">
                 Challenges this season
               </p>
             </div>

@@ -101,7 +101,6 @@ export default function BundledActivityCard({
   );
 
   const firstSession = sessions[0];
-  const driverName = firstSession?.driverName ?? "Unknown Driver";
   const profileOwnerId = (() => {
     const s = firstSession as unknown as {
       authorId?: string | null;
@@ -116,7 +115,7 @@ export default function BundledActivityCard({
 
   return (
     <div
-      className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm transition-all duration-300 mb-6"
+      className="border-white/6 mb-6 overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm"
       role="region"
       aria-label={`Bundle of ${sessions.length} sessions`}
       onKeyDown={handleKeyDown}
@@ -125,39 +124,39 @@ export default function BundledActivityCard({
       {/* Carousel */}
       <div className="relative">
         {/* Carousel Controls */}
-        <div className="absolute top-1/2 left-2 z-20 -translate-y-1/2">
+        <div className="absolute left-2 top-1/2 z-20 -translate-y-1/2">
           <button
             type="button"
             onClick={handlePrev}
             disabled={currentIndex === 0}
             aria-label="Previous session"
-            className={`p-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur-sm transition-all ${
+            className={`rounded-full border border-white/10 bg-black/50 p-1.5 backdrop-blur-sm transition-all ${
               currentIndex === 0
-                ? "opacity-30 cursor-not-allowed"
-                : "hover:bg-black/70 hover:border-white/20"
+                ? "cursor-not-allowed opacity-30"
+                : "hover:border-white/20 hover:bg-black/70"
             }`}
           >
-            <ChevronLeft className="w-4 h-4 text-white" />
+            <ChevronLeft className="size-4 text-white" />
           </button>
         </div>
-        <div className="absolute top-1/2 right-2 z-20 -translate-y-1/2">
+        <div className="absolute right-2 top-1/2 z-20 -translate-y-1/2">
           <button
             type="button"
             onClick={handleNext}
             disabled={currentIndex === sessions.length - 1}
             aria-label="Next session"
-            className={`p-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur-sm transition-all ${
+            className={`rounded-full border border-white/10 bg-black/50 p-1.5 backdrop-blur-sm transition-all ${
               currentIndex === sessions.length - 1
-                ? "opacity-30 cursor-not-allowed"
-                : "hover:bg-black/70 hover:border-white/20"
+                ? "cursor-not-allowed opacity-30"
+                : "hover:border-white/20 hover:bg-black/70"
             }`}
           >
-            <ChevronRight className="w-4 h-4 text-white" />
+            <ChevronRight className="size-4 text-white" />
           </button>
         </div>
 
         {/* Current Session Card */}
-        <div className="px-2 py-2">
+        <div className="p-2">
           <ActivityCard
             id={currentSession.id}
             profileUserId={profileOwnerId}
@@ -199,9 +198,9 @@ export default function BundledActivityCard({
               }}
               aria-label={`Go to session ${i + 1}`}
               aria-current={i === currentIndex ? "true" : undefined}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${
+              className={`size-1.5 rounded-full transition-all ${
                 i === currentIndex
-                  ? "bg-primary w-3"
+                  ? "w-3 bg-primary"
                   : "bg-white/30 hover:bg-white/50"
               }`}
             />

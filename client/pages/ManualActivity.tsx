@@ -69,10 +69,10 @@ export default function ManualActivity() {
   return (
     <>
       <PageMeta title={manualTitle} description={manualDescription} path={MANUAL_PATH} />
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6">
-          <div className="text-center mb-6">
+          <div className="mb-6 text-center">
             <h1 className="text-xl font-semibold text-white">
               Log Manual Activity
             </h1>
@@ -84,11 +84,11 @@ export default function ManualActivity() {
           {formState === "success" ? (
             <div className="py-8 text-center">
               <div className="mb-4 flex justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                <div className="flex size-12 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle className="size-6 text-green-500" />
                 </div>
               </div>
-              <p className="text-white font-medium">Activity logged!</p>
+              <p className="font-medium text-white">Activity logged!</p>
               <p className="mt-1 text-sm text-white/50">
                 Redirecting to session…
               </p>
@@ -108,9 +108,9 @@ export default function ManualActivity() {
           <div className="mt-6 text-center">
             <Link
               to="/upload"
-              className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Back to Upload
             </Link>
           </div>

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
@@ -145,25 +145,25 @@ function CommentsModal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md max-h-[80vh] rounded-t-lg sm:rounded-lg border border-white/10 bg-card/20 backdrop-blur-lg shadow-xl flex flex-col"
+        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-lg border border-white/10 bg-card/20 shadow-xl backdrop-blur-lg sm:rounded-lg"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <h3 className="text-sm font-semibold text-white">Comments</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-white/50 hover:text-white p-1"
+            className="p-1 text-white/50 hover:text-white"
           >
-            <X className="w-4 h-4" />
+            <X className="size-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {commentsLoading ? (
             <p className="text-xs text-zinc-500">Loading comments…</p>
           ) : commentsError ? (
@@ -172,7 +172,7 @@ function CommentsModal({
               <button
                 type="button"
                 onClick={() => loadComments()}
-                className="text-xs text-zinc-400 hover:text-zinc-300 underline"
+                className="text-xs text-zinc-400 underline hover:text-zinc-300"
               >
                 Retry
               </button>
@@ -185,7 +185,7 @@ function CommentsModal({
                 <li key={c.id} className="text-sm text-white/80">
                   <p>{c.body}</p>
                   {c.createdAt && (
-                    <p className="text-xs text-white/50 mt-0.5">
+                    <p className="mt-0.5 text-xs text-white/50">
                       {new Date(c.createdAt).toLocaleString()}
                     </p>
                   )}
@@ -194,7 +194,7 @@ function CommentsModal({
             </ul>
           )}
         </div>
-        <div className="p-4 border-t border-white/10 flex flex-col gap-2">
+        <div className="flex flex-col gap-2 border-t border-white/10 p-4">
           <div className="flex gap-2">
             <input
               type="text"
@@ -214,7 +214,7 @@ function CommentsModal({
             <button
               type="button"
               disabled={commentPending || !commentText.trim()}
-              className={`rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15 disabled:pointer-events-none ${commentPending || !commentText.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15 disabled:pointer-events-none ${commentPending || !commentText.trim() ? "cursor-not-allowed opacity-50" : ""}`}
               onClick={() => void submitComment()}
             >
               {commentPending ? "Posting…" : "Post"}
@@ -263,32 +263,32 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
   if (showPosition && !showBest) {
     return (
       <div className="grid grid-cols-2 gap-4">
-        <div className={`${getPodiumColor(pos)} rounded-lg p-3 flex items-center justify-between`}>
+        <div className={`${getPodiumColor(pos)} flex items-center justify-between rounded-lg p-3`}>
           <div>
-            <p className="text-xs font-medium text-white/70 uppercase mb-0.5">
+            <p className="mb-0.5 text-xs font-medium uppercase text-white/70">
               Position
             </p>
             <p
-              className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
+              className={`leading-tight ${pos <= 3 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
             >
               {pos}
               {total > 0 && (
-                <span className="text-xs font-medium ml-0.5">/ {total}</span>
+                <span className="ml-0.5 text-xs font-medium">/ {total}</span>
               )}
             </p>
           </div>
           {pos >= 1 && pos <= 3 && (
-            <div className="text-xl sm:text-2xl flex-shrink-0" aria-hidden>
+            <div className="shrink-0 text-xl sm:text-2xl" aria-hidden>
               {["🥇", "🥈", "🥉"][pos - 1]}
             </div>
           )}
         </div>
 
         <div>
-          <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+          <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
             Car
           </p>
-          <p className="text-xs sm:text-sm font-semibold text-white truncate">
+          <p className="truncate text-xs font-semibold text-white sm:text-sm">
             {item.vehicleDisplay ?? formatCarName(item.car)}
           </p>
         </div>
@@ -300,23 +300,23 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
     <>
       {showPosition && (
         <div
-          className={`${getPodiumColor(pos)} rounded-lg p-3 mb-4 flex items-center justify-between`}
+          className={`${getPodiumColor(pos)} mb-4 flex items-center justify-between rounded-lg p-3`}
         >
           <div>
-            <p className="text-xs font-medium text-white/70 uppercase mb-0.5">
+            <p className="mb-0.5 text-xs font-medium uppercase text-white/70">
               Position
             </p>
             <p
-              className={`leading-tight ${pos <= 3 ? "text-lg sm:text-xl font-semibold" : "text-base sm:text-lg font-semibold"}`}
+              className={`leading-tight ${pos <= 3 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
             >
               {pos}
               {total > 0 && (
-                <span className="text-xs font-medium ml-0.5">/ {total}</span>
+                <span className="ml-0.5 text-xs font-medium">/ {total}</span>
               )}
             </p>
           </div>
           {pos >= 1 && pos <= 3 && (
-            <div className="text-xl sm:text-2xl flex-shrink-0" aria-hidden>
+            <div className="shrink-0 text-xl sm:text-2xl" aria-hidden>
               {["🥇", "🥈", "🥉"][pos - 1]}
             </div>
           )}
@@ -327,20 +327,20 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
       <div className={`grid ${showBest ? "grid-cols-2" : "grid-cols-1"} gap-4`}>
         {showBest && (
           <div>
-            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+            <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
               Fastest
             </p>
-            <p className="text-xs sm:text-sm font-semibold text-white">
+            <p className="text-xs font-semibold text-white sm:text-sm">
               {lapTimeDisplay}
             </p>
           </div>
         )}
 
         <div>
-          <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+          <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
             Car
           </p>
-          <p className="text-xs sm:text-sm font-semibold text-white truncate">
+          <p className="truncate text-xs font-semibold text-white sm:text-sm">
             {item.vehicleDisplay ?? formatCarName(item.car)}
           </p>
         </div>
@@ -353,7 +353,7 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
 function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
   return (
     <div>
-      <div className="rounded-lg border border-white/5 bg-white/5 px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-4 py-3">
         <div>
           <div className="text-xs uppercase tracking-wider text-white/50">
             Best Lap
@@ -394,14 +394,14 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
 
   return (
     <div>
-      <div className="text-xs text-white/50 mb-3">{metaLine}</div>
+      <div className="mb-3 text-xs text-white/50">{metaLine}</div>
       <div className="grid grid-cols-2 gap-4">
         {item.bestLapMs != null && (
           <div>
-            <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+            <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
               Best Lap
             </p>
-            <p className="text-xs sm:text-sm font-semibold text-white">
+            <p className="text-xs font-semibold text-white sm:text-sm">
               {formatLapMs(item.bestLapMs)}
             </p>
           </div>
@@ -411,23 +411,23 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           const total = activityPositionValue(item.totalRacers);
           return (
             <div>
-              <p className="text-xs font-medium text-white/50 uppercase tracking-widest mb-1">
+              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
                 Position
               </p>
               <div
                 // className={`rounded-lg py-2 flex items-center justify-between gap-2 ${getPodiumColor(pos)}`}
-                className={cn("rounded-lg py-2 flex items-center justify-between gap-2", getPodiumColor(pos),
+                className={cn("flex items-center justify-between gap-2 rounded-lg py-2", getPodiumColor(pos),
                   pos <= 3 && "px-4"
                 )}
               >
-                <p className="text-xs sm:text-sm font-semibold text-white">
+                <p className="text-xs font-semibold text-white sm:text-sm">
                   P{pos}
                   {total > 0 && (
                     <span className="text-white/60"> / {total}</span>
                   )}
                 </p>
                 {pos >= 1 && pos <= 3 && (
-                  <span className="text-lg flex-shrink-0" aria-hidden>
+                  <span className="shrink-0 text-lg" aria-hidden>
                     {["🥇", "🥈", "🥉"][pos - 1]}
                   </span>
                 )}
@@ -493,17 +493,17 @@ function RaceCardContent({
 
   return (
     <div
-      className="bg-card/20 backdrop-blur-lg rounded-lg border border-white/6 overflow-hidden shadow-none hover:shadow-sm active:bg-card/30 active:shadow-md transition-all duration-300 cursor-pointer mb-6"
+      className="border-white/6 mb-6 cursor-pointer overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm active:bg-card/30 active:shadow-md"
       onClick={handleShellClick}
     >
       {/* Header with user info */}
-      <div className="px-4 sm:px-5 py-2.5 sm:py-3">
+      <div className="px-4 py-2.5 sm:px-5 sm:py-3">
         {profileUserId ? (
           <div className="w-full">
             <button
               type="button"
               data-feed-profile-header
-              className="flex items-center gap-2 sm:gap-3 text-left rounded-lg -mx-1 px-1 py-0.5 hover:bg-white/5 transition-colors max-w-full"
+              className="-mx-1 flex max-w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-white/5 sm:gap-3"
               onClick={(e) => {
                 e.stopPropagation();
                 navigate(`/user/${encodeURIComponent(profileUserId)}`);
@@ -513,10 +513,10 @@ function RaceCardContent({
                 <img
                   src={avatarSrc}
                   alt={item.userName}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover flex-shrink-0"
+                  className="size-8 shrink-0 rounded-full object-cover sm:size-9"
                 />
               ) : (
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 text-xs font-semibold text-white/80 flex items-center justify-center flex-shrink-0">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/80 sm:size-9">
                   {(item.userName || "?")
                     .trim()
                     .split(" ")
@@ -527,25 +527,25 @@ function RaceCardContent({
                 </div>
               )}
 
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white text-xs sm:text-sm min-w-0 truncate">
+              <div className="min-w-0 flex-1">
+                <p className="min-w-0 truncate text-xs font-medium text-white sm:text-sm">
                   {item.userName}
                 </p>
 
-                <p className="text-xs text-white/50 mt-0.5">{item.timestamp}</p>
+                <p className="mt-0.5 text-xs text-white/50">{item.timestamp}</p>
               </div>
             </button>
           </div>
         ) : (
-          <div className="w-full flex items-center gap-2 sm:gap-3">
+          <div className="flex w-full items-center gap-2 sm:gap-3">
             {avatarSrc && avatarSrc.trim().length > 0 ? (
               <img
                 src={avatarSrc}
                 alt={item.userName}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover flex-shrink-0"
+                className="size-8 shrink-0 rounded-full object-cover sm:size-9"
               />
             ) : (
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 text-xs font-semibold text-white/80 flex items-center justify-center flex-shrink-0">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/80 sm:size-9">
                 {(item.userName || "?")
                   .trim()
                   .split(" ")
@@ -555,30 +555,30 @@ function RaceCardContent({
                   .join("") || "?"}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-white text-xs sm:text-sm">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-white sm:text-sm">
                 {item.userName}
               </p>
-              <p className="text-xs text-white/50 mt-0.5">{item.timestamp}</p>
+              <p className="mt-0.5 text-xs text-white/50">{item.timestamp}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="px-4 sm:px-5 pt-1 pb-3 sm:pt-1 sm:pb-4 flex gap-4 relative">
+      <div className="relative flex gap-4 px-4 pb-3 pt-1 sm:px-5 sm:pb-4 sm:pt-1">
         {/* Left side - Stats and info */}
-        <div className="flex-1 relative z-10">
+        <div className="relative z-10 flex-1">
           {/* Track and Game info */}
           <div className="mb-3">
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="text-xs uppercase tracking-wider font-medium text-[rgb(240,28,28)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-xs font-medium uppercase tracking-wider text-[rgb(240,28,28)]">
                   {sessionTypeLabel}
                 </div>
                 <SimBadge sim={item.sim} />
                 {isManual && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium tracking-wide rounded border bg-white/5 text-white/60 border-white/10">
+                  <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
                     Manual
                   </span>
                 )}
@@ -611,7 +611,7 @@ function RaceCardContent({
       </div>
 
       {/* Footer with actions */}
-      <div className="px-4 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between border-t border-white/3 bg-white/2">
+      <div className="border-white/3 bg-white/2 flex items-center justify-between border-t px-4 py-2 sm:px-5 sm:py-2.5">
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
@@ -625,10 +625,10 @@ function RaceCardContent({
               e.stopPropagation();
               void onLikeClick(e);
             }}
-            className={`flex items-center gap-1 transition-colors group py-1 px-1 ${likedByMe ? "text-red-400 hover:text-red-300" : "text-white/60 hover:text-white/80"} ${likePending ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`group flex items-center gap-1 p-1 transition-colors ${likedByMe ? "text-red-400 hover:text-red-300" : "text-white/60 hover:text-white/80"} ${likePending ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <Heart
-              className={`w-3.5 h-3.5 ${likedByMe ? "fill-red-400" : "group-hover:fill-primary"}`}
+              className={`size-3.5 ${likedByMe ? "fill-red-400" : "group-hover:fill-primary"}`}
             />
             <span className="text-xs">{likeCount}</span>
           </button>
@@ -642,9 +642,9 @@ function RaceCardContent({
               e.stopPropagation();
               onCommentClick(e);
             }}
-            className="flex items-center gap-1 text-white/60 hover:text-white/80 transition-colors py-1 px-1"
+            className="flex items-center gap-1 p-1 text-white/60 transition-colors hover:text-white/80"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
+            <MessageCircle className="size-3.5" />
             <span className="text-xs text-white/60">{commentCount}</span>
           </button>
         </div>
@@ -660,10 +660,10 @@ function RaceCardContent({
               }).catch(() => { });
             }
           }}
-          className="text-white/40 hover:text-white/60 transition-colors p-1"
+          className="p-1 text-white/40 transition-colors hover:text-white/60"
           aria-label="Share"
         >
-          <Share2 className="w-3.5 h-3.5" />
+          <Share2 className="size-3.5" />
         </button>
       </div>
     </div>
@@ -722,6 +722,7 @@ export default function ActivityCard(props: ActivityCardProps) {
   const [likePending, setLikePending] = useState(false);
 
   // Only sync from props when the card identity changes (different session)
+  /* eslint-disable react-hooks/exhaustive-deps -- deliberate: sync local state on session id only; callbacks use stable prop subset */
   useEffect(() => {
     setLikedByMe(props.likedByMe ?? false);
     setLikeCount(props.likeCount ?? props.likes ?? 0);
@@ -804,6 +805,7 @@ export default function ActivityCard(props: ActivityCardProps) {
     },
     [props.onSessionPatch]
   );
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const closeCommentsModal = useCallback(() => {
     setCommentsOpen(false);

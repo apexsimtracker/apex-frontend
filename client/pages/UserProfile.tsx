@@ -124,9 +124,9 @@ export default function UserProfile() {
 
   if (!id) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <p className="text-center text-foreground text-lg">Invalid profile link.</p>
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <p className="text-center text-lg text-foreground">Invalid profile link.</p>
         </div>
       </div>
     );
@@ -138,7 +138,7 @@ export default function UserProfile() {
 
   if (loading || authLoading) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center p-6">
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <p className="text-white/60">Loading...</p>
       </div>
     );
@@ -146,18 +146,18 @@ export default function UserProfile() {
 
   if (notFound) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
           <div className="text-center">
-            <p className="text-foreground text-lg">User not found</p>
+            <p className="text-lg text-foreground">User not found</p>
           </div>
         </div>
       </div>
@@ -168,21 +168,21 @@ export default function UserProfile() {
 
   if (combinedError || !profile || !preview) {
     return (
-      <div className="bg-background min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="size-5" />
             <span className="font-medium">Back</span>
           </button>
-          <div className="text-center max-w-md mx-auto">
-            <p className="text-destructive text-sm mb-4">{combinedError ?? "Something went wrong."}</p>
+          <div className="mx-auto max-w-md text-center">
+            <p className="mb-4 text-sm text-destructive">{combinedError ?? "Something went wrong."}</p>
             <Link
               to="/community"
-              className="text-primary text-sm underline underline-offset-2"
+              className="text-sm text-primary underline underline-offset-2"
             >
               Back to community
             </Link>
@@ -210,7 +210,7 @@ export default function UserProfile() {
   const showFollowUi = Boolean(currentUser && currentUser.id !== id);
 
   return (
-    <div className="bg-background min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <ProfileView
         profile={displayProfile}
         onBack={() => navigate(-1)}

@@ -107,9 +107,8 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
   };
 }
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-const MIN_AVATAR_DIMENSION = 400; // Require at least 400x400 for quality
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB (matches API)
 
 function withCacheBust(url: string, stamp: number): string {
   return `${url}${url.includes("?") ? "&" : "?"}t=${stamp}`;
@@ -220,7 +219,7 @@ export default function Profile() {
     setAvatarFile(null);
     if (!file) return;
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setAvatarError("Please choose a JPEG, PNG, GIF, or WebP image.");
+      setAvatarError("Please choose a JPEG, PNG, or WebP image.");
       return;
     }
     if (file.size > MAX_AVATAR_SIZE_BYTES) {
@@ -229,11 +228,7 @@ export default function Profile() {
     }
     void (async () => {
       try {
-        const { width, height } = await readImageDimensions(file);
-        if (width < MIN_AVATAR_DIMENSION || height < MIN_AVATAR_DIMENSION) {
-          setAvatarError(`Image must be at least ${MIN_AVATAR_DIMENSION}x${MIN_AVATAR_DIMENSION}px.`);
-          return;
-        }
+        await readImageDimensions(file);
         setAvatarFile(file);
         setAvatarPreview(URL.createObjectURL(file));
       } catch {
@@ -377,7 +372,7 @@ export default function Profile() {
     return (
       <>
         <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
-        <div className="bg-background min-h-screen flex items-center justify-center p-6">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <p className="text-white/60">Loading...</p>
         </div>
       </>
@@ -387,12 +382,12 @@ export default function Profile() {
     return (
       <>
         <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
-        <div className="bg-background min-h-screen flex items-center justify-center p-6">
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 sm:p-8 text-center max-w-md">
-          <p className="text-white/80 mb-4">Not signed in.</p>
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="max-w-md rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center sm:p-8">
+          <p className="mb-4 text-white/80">Not signed in.</p>
           <Link
             to="/login"
-            className="inline-block px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="inline-block rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             Go to Login
@@ -431,7 +426,7 @@ export default function Profile() {
   return (
     <>
       <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
-      <div className="bg-background min-h-screen flex flex-col">
+      <div className="flex min-h-screen flex-col bg-background">
       <ProfileView
         profile={displayProfile}
         avatarUrl={avatarUrl || undefined}
@@ -452,7 +447,7 @@ export default function Profile() {
           onPageChange: setRaceHistoryPage,
         }}
       />
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col items-end gap-2">
           {memberSince && (
             <p className="text-sm text-white/50">Member since {memberSince}</p>
@@ -460,7 +455,7 @@ export default function Profile() {
           <button
             type="button"
             onClick={handleSignOut}
-            className="px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             Sign out
@@ -485,7 +480,7 @@ export default function Profile() {
           }
         }}
       >
-        <DialogContent className="bg-card border-white/10 sm:max-w-md">
+        <DialogContent className="border-white/10 bg-card sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
             <DialogDescription>
@@ -497,9 +492,9 @@ export default function Profile() {
               onSubmit={profileEditForm.handleSubmit(onSaveProfileSubmit)}
               className="space-y-4 pt-2"
             >
-              <FormRootMessage className="bg-red-500/10 rounded-md px-3 py-2" />
+              <FormRootMessage className="rounded-md bg-red-500/10 px-3 py-2" />
               {editSuccess && (
-                <p className="text-sm text-green-500 bg-green-500/10 rounded-md px-3 py-2">
+                <p className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-500">
                   Profile updated.
                 </p>
               )}
@@ -521,7 +516,7 @@ export default function Profile() {
                         {...field}
                       />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {field.value.trim().length}/40
                     </p>
                     <FormMessage />
@@ -538,25 +533,25 @@ export default function Profile() {
                     <FormControl>
                       <Textarea
                         id="edit-tagline"
-                        className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[80px] resize-y"
+                        className="min-h-[80px] w-full resize-y rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                         placeholder="A short bio..."
                         maxLength={160}
                         disabled={editLoading}
                         {...field}
                       />
                     </FormControl>
-                    <p className="text-xs text-muted-foreground mt-0.5">{field.value.length}/160</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{field.value.length}/160</p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Profile picture
               </label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Choose an image from your device (JPEG, PNG, GIF, or WebP, at least 400x400, max 5 MB).
+              <p className="mb-2 text-xs text-muted-foreground">
+                Choose an image from your device (JPEG, PNG, or WebP, max 5 MB). Images are cropped to a square on upload.
               </p>
               <input
                 ref={avatarInputRef}
@@ -568,20 +563,20 @@ export default function Profile() {
                 disabled={editLoading}
               />
               {avatarError && (
-                <p className="text-sm text-destructive mt-1.5">{avatarError}</p>
+                <p className="mt-1.5 text-sm text-destructive">{avatarError}</p>
               )}
               {avatarPreview && (
                 <div className="mt-3 flex items-center gap-3">
                   <img
                     src={avatarPreview}
                     alt="Preview"
-                    className="w-16 h-16 rounded-full object-cover border border-white/10 bg-muted"
+                    className="size-16 rounded-full border border-white/10 bg-muted object-cover"
                   />
                   <button
                     type="button"
                     onClick={clearAvatarSelection}
                     disabled={editLoading}
-                    className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2"
+                    className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -595,7 +590,7 @@ export default function Profile() {
                   disabled={
                     editLoading || profileEditForm.watch("displayName").trim().length < 2
                   }
-                  className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={{ backgroundColor: "rgb(240, 28, 28)" }}
                 >
                   {editLoading ? "Saving…" : "Save"}
@@ -607,7 +602,7 @@ export default function Profile() {
                     setEditOpen(false);
                   }}
                   disabled={editLoading}
-                  className="px-4 py-2 rounded-lg border border-white/20 text-foreground text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+                  className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/5 disabled:opacity-50"
                 >
                   Cancel
                 </button>

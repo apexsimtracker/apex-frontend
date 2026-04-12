@@ -92,27 +92,27 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[hsl(var(--background))]/80 backdrop-blur-md shadow-[0_18px_40px_rgba(0,0,0,0.55)] transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 gap-4">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[hsl(var(--background))]/80 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md transition-colors">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
           <Link
             to="/"
-            className="flex items-center flex-shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 rounded-lg -ml-1 px-1"
+            className="group -ml-1 flex shrink-0 items-center rounded-lg px-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
           >
             {logoImgFailed ? (
-              <ApexLogo className="h-9 sm:h-10 w-auto min-w-[80px] transition-transform group-hover:scale-[1.03]" />
+              <ApexLogo className="h-9 w-auto min-w-[80px] transition-transform group-hover:scale-[1.03] sm:h-10" />
             ) : (
               <img
                 src="/logo.png?v=4"
                 alt="Apex Logo"
-                className="h-9 sm:h-10 w-auto max-w-[112px] object-contain object-center transition-transform group-hover:scale-[1.03]"
+                className="h-9 w-auto max-w-[112px] object-contain object-center transition-transform group-hover:scale-[1.03] sm:h-10"
                 onError={() => setLogoImgFailed(true)}
               />
             )}
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          <nav className="hidden items-center gap-6 md:flex lg:gap-8">
             <Link
               to="/"
               className={`relative text-sm font-medium transition-colors ${
@@ -123,7 +123,7 @@ export default function Header() {
             >
               Home
               {isPathActive("/") && (
-                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
             <Link
@@ -138,7 +138,7 @@ export default function Header() {
             >
               Profile
               {isPathActive("/profile") && (
-                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
             <Link
@@ -151,7 +151,7 @@ export default function Header() {
             >
               Community
               {isPathActive("/community") && (
-                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
             <Link
@@ -164,7 +164,7 @@ export default function Header() {
             >
               Challenges
               {isPathActive("/challenges") && (
-                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
             <Link
@@ -177,19 +177,19 @@ export default function Header() {
             >
               Leaderboards
               {isPathActive("/leaderboards") && (
-                <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
           </nav>
 
           {/* Desktop Controls */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden items-center gap-2 md:flex">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white text-black text-sm font-medium border border-black/5 shadow-sm hover:bg-white/95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-black/5 bg-white px-3.5 py-1.5 text-sm font-medium text-black shadow-sm transition-all hover:bg-white/95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="size-4" />
                   Create
                 </button>
               </DropdownMenuTrigger>
@@ -198,46 +198,46 @@ export default function Header() {
                   className="cursor-pointer"
                   onClick={() => navigate("/upload")}
                 >
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="mr-2 size-4" />
                   Upload Session
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => navigate("/manual")}
                 >
-                  <PenLine className="w-4 h-4 mr-2" />
+                  <PenLine className="mr-2 size-4" />
                   Log Manual Activity
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Link
               to="/agent"
-              className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+              className="group rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Agent"
               title="Agent"
             >
-              <Bot className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
+              <Bot className="size-5 text-foreground/70 transition-colors group-hover:text-foreground" />
             </Link>
             <Link
               to="/settings"
-              className="group p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+              className="group rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
               aria-label="Settings"
               title="Settings"
             >
-              <Settings className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
+              <Settings className="size-5 text-foreground/70 transition-colors group-hover:text-foreground" />
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 hover:bg-secondary/70 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+              className="rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
             >
               {isMenuOpen ? (
-                <X className="w-5 h-5" />
+                <X className="size-5" />
               ) : (
-                <Menu className="w-5 h-5" />
+                <Menu className="size-5" />
               )}
             </button>
           </div>
@@ -245,13 +245,13 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-white/10 space-y-1">
+          <nav className="space-y-1 border-t border-white/10 py-4 md:hidden">
             <Link
               to="/"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isPathActive("/")
                   ? "bg-secondary/70 text-white"
-                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+                  : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -261,10 +261,10 @@ export default function Header() {
               to="/profile"
               onMouseEnter={prefetchOwnProfile}
               onFocus={prefetchOwnProfile}
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isPathActive("/profile")
                   ? "bg-secondary/70 text-white"
-                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+                  : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -272,10 +272,10 @@ export default function Header() {
             </Link>
             <Link
               to="/community"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isPathActive("/community")
                   ? "bg-secondary/70 text-white"
-                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+                  : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -283,10 +283,10 @@ export default function Header() {
             </Link>
             <Link
               to="/challenges"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isPathActive("/challenges")
                   ? "bg-secondary/70 text-white"
-                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+                  : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -294,28 +294,28 @@ export default function Header() {
             </Link>
             <Link
               to="/leaderboards"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 isPathActive("/leaderboards")
                   ? "bg-secondary/70 text-white"
-                  : "text-foreground/80 hover:text-foreground hover:bg-secondary/60"
+                  : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
               }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Leaderboards
             </Link>
             {/* Mobile Create Section */}
-            <div className="border-t border mt-2 pt-2">
+            <div className="mt-2 border pt-2">
               <button
                 type="button"
                 onClick={() => setIsMobileCreateOpen(!isMobileCreateOpen)}
-                className="flex items-center justify-between w-full px-4 py-2 text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+                className="flex w-full items-center justify-between rounded-lg px-4 py-2 font-medium text-foreground transition-colors hover:bg-secondary"
               >
                 <span className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
+                  <Plus className="size-4" />
                   Create
                 </span>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
+                  className={`size-4 transition-transform ${
                     isMobileCreateOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -324,24 +324,24 @@ export default function Header() {
                 <div className="ml-4 mt-1 space-y-1">
                   <Link
                     to="/upload"
-                    className="flex items-center gap-2 px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-secondary rounded-lg transition-colors text-sm"
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground"
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsMobileCreateOpen(false);
                     }}
                   >
-                    <Upload className="w-4 h-4" />
+                    <Upload className="size-4" />
                     Upload Session
                   </Link>
                   <Link
                     to="/manual"
-                    className="flex items-center gap-2 px-4 py-2 text-foreground/80 hover:text-foreground hover:bg-secondary rounded-lg transition-colors text-sm"
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-foreground"
                     onClick={() => {
                       setIsMenuOpen(false);
                       setIsMobileCreateOpen(false);
                     }}
                   >
-                    <PenLine className="w-4 h-4" />
+                    <PenLine className="size-4" />
                     Log Manual Activity
                   </Link>
                 </div>
@@ -349,14 +349,14 @@ export default function Header() {
             </div>
             <Link
               to="/agent"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className="block rounded-lg px-4 py-2 font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
               onClick={() => setIsMenuOpen(false)}
             >
               Agent
             </Link>
             <Link
               to="/settings"
-              className="block px-4 py-2 text-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+              className="block rounded-lg px-4 py-2 font-medium text-foreground transition-colors hover:bg-secondary hover:text-foreground"
               onClick={() => setIsMenuOpen(false)}
             >
               Settings

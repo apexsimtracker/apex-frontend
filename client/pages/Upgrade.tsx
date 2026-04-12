@@ -158,12 +158,12 @@ export default function Upgrade() {
   return (
     <>
       <PageMeta title={upgradeTitle} description={upgradeDescription} path={UPGRADE_PATH} />
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8">
           <div className="text-center">
-            <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-              <Sparkles className="h-7 w-7 text-amber-500" />
+            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-full bg-amber-500/10">
+              <Sparkles className="size-7 text-amber-500" />
             </div>
             <h1 className="text-2xl font-semibold text-white">Apex Pro</h1>
             <p className="mt-2 text-white/60">
@@ -177,8 +177,8 @@ export default function Upgrade() {
                 key={feature.text}
                 className="flex items-center gap-3 text-sm text-white/80"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
-                  <feature.icon className="h-4 w-4 text-amber-500" />
+                <div className="flex size-8 items-center justify-center rounded-lg bg-white/5">
+                  <feature.icon className="size-4 text-amber-500" />
                 </div>
                 <span>{feature.text}</span>
               </div>
@@ -188,7 +188,7 @@ export default function Upgrade() {
           <div className="mt-8">
             {loading ? (
               <div className="flex justify-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+                <Loader2 className="size-6 animate-spin text-white/40" />
               </div>
             ) : error ? (
               <div className="rounded-lg bg-red-500/10 p-4 text-center">
@@ -206,7 +206,7 @@ export default function Upgrade() {
 
                 {authLoading || waitlistLoading ? (
                   <div className="flex justify-center py-6">
-                    <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+                    <Loader2 className="size-6 animate-spin text-white/40" />
                   </div>
                 ) : !user ? (
                   <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-center">
@@ -337,11 +337,11 @@ export default function Upgrade() {
                       <Button
                         type="submit"
                         disabled={submitting}
-                        className="w-full bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-amber-500 text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {submitting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 size-4 animate-spin" />
                             Saving…
                           </>
                         ) : waitlistStatus?.joined ? (
@@ -355,13 +355,13 @@ export default function Upgrade() {
                 )}
               </div>
             ) : (
-              <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4">
+              <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
                 <div className="flex items-center justify-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500">
-                    <Check className="h-4 w-4 text-black" />
+                  <div className="flex size-6 items-center justify-center rounded-full bg-green-500">
+                    <Check className="size-4 text-black" />
                   </div>
                   <span className="text-sm font-medium text-green-400">
-                    You're already on Apex Pro
+                    You&apos;re already on Apex Pro
                   </span>
                 </div>
               </div>
@@ -371,9 +371,9 @@ export default function Upgrade() {
           <div className="mt-8 text-center">
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="size-4" />
               Back to Home
             </Link>
           </div>

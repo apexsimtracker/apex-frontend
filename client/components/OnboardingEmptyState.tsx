@@ -12,7 +12,7 @@ export default function OnboardingEmptyState() {
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8 sm:p-10">
-      <div className="max-w-md mx-auto text-center">
+      <div className="mx-auto max-w-md text-center">
         <h2 className="text-2xl font-semibold text-white">Welcome to Apex</h2>
         <p className="mt-2 text-white/60">
           Track your sim racing performance automatically or upload sessions
@@ -22,20 +22,20 @@ export default function OnboardingEmptyState() {
         <div className="mt-8 space-y-4">
           <Button
             onClick={() => navigate("/upload")}
-            className="w-full bg-white text-black hover:bg-white/90 h-11"
+            className="h-11 w-full bg-white text-black hover:bg-white/90"
             size="lg"
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 size-4" />
             Upload a Session
           </Button>
 
           <Button
             onClick={() => navigate("/manual")}
             variant="outline"
-            className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10 h-11"
+            className="h-11 w-full border-white/10 bg-white/5 text-white hover:bg-white/10"
             size="lg"
           >
-            <PenLine className="h-4 w-4 mr-2" />
+            <PenLine className="mr-2 size-4" />
             Log Manual Activity
           </Button>
 
@@ -51,7 +51,7 @@ export default function OnboardingEmptyState() {
           {isPro ? (
             <div className="rounded-lg border border-white/10 bg-white/[0.03] p-5">
               <div className="flex items-center justify-center gap-2 text-white/80">
-                <Cpu className="h-4 w-4" />
+                <Cpu className="size-4" />
                 <span className="text-sm font-medium">
                   Use the Apex Agent for automatic uploads.
                 </span>
@@ -67,7 +67,7 @@ export default function OnboardingEmptyState() {
           ) : (
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-5">
               <div className="flex items-center justify-center gap-2 text-amber-400/90">
-                <Zap className="h-4 w-4" />
+                <Zap className="size-4" />
                 <span className="text-sm font-medium">
                   Automatic uploads are available with Apex Pro.
                 </span>
