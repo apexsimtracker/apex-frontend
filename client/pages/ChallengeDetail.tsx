@@ -1,9 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { formatLapDelta, formatCarName, formatLapMs } from "@/lib/utils";
-import { getCompetition, getCompetitionSummary, type CompetitionDetail } from "@/lib/api";
+import {
+  getCompetition,
+  getCompetitionSummary,
+  getCompetitions,
+  mapCompetitionsToPublicSummaries,
+  type CompetitionDetail,
+} from "@/lib/api";
 import { formatSimEnum } from "@/lib/enumFormat";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formatRemaining = (sec: number) => {
   const s = Math.max(0, Math.floor(sec));
@@ -28,6 +37,7 @@ function statusLabel(status: CompetitionDetail["status"]): "Live" | "Upcoming" |
 export default function ChallengeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const {
     data: challenge,
@@ -35,15 +45,21 @@ export default function ChallengeDetail() {
     error: queryError,
     isError,
   } = useQuery({
-    queryKey: ["competitions", "detail", id ?? ""],
+    queryKey: ["competitions", "detail", id ?? "", user?.id ?? "anonymous"],
     queryFn: async () => {
       if (!id) {
         throw new Error("Missing challenge ID");
       }
       let data = await getCompetition(id);
       if (!data) {
-        const list = await getCompetitionSummary();
-        data = list.find((c) => c.id === id) ?? null;
+        if (user) {
+          const list = await getCompetitionSummary();
+          data = list.find((c) => c.id === id) ?? null;
+        } else {
+          const raw = await getCompetitions();
+          const list = mapCompetitionsToPublicSummaries(Array.isArray(raw) ? raw : []);
+          data = list.find((c) => c.id === id) ?? null;
+        }
       }
       if (!data) {
         throw new Error("Challenge not found");
@@ -62,6 +78,12 @@ export default function ChallengeDetail() {
   if (!id) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Challenges | ${COMPANY_NAME}`}
+          description={`Sim racing challenges on ${COMPANY_NAME}.`}
+          path="/challenges"
+          noindex
+        />
         <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <button
             onClick={() => navigate("/challenges")}
@@ -78,15 +100,28 @@ export default function ChallengeDetail() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <p className="text-muted-foreground">Loading challenge…</p>
-      </div>
+      <>
+        <PageMeta
+          title={`Challenge | ${COMPANY_NAME}`}
+          description={`Loading challenge on ${COMPANY_NAME}.`}
+          path={`/challenge/${id ?? ""}`}
+        />
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+          <p className="text-muted-foreground">Loading challenge…</p>
+        </div>
+      </>
     );
   }
 
   if (error || !challenge) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Challenge | ${COMPANY_NAME}`}
+          description={error ?? "Challenge not found."}
+          path={`/challenge/${id ?? ""}`}
+          noindex
+        />
         <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <button
             onClick={() => navigate("/challenges")}
@@ -109,8 +144,18 @@ export default function ChallengeDetail() {
         ? `Starts ${new Date(challenge.startsAt).toLocaleString()}`
         : null;
 
+  const challengeDesc =
+    challenge.description?.trim() ||
+    `${formatSimEnum(challenge.sim)} · ${challenge.track} — ${COMPANY_NAME} challenge.`;
+
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title={`${challenge.title} | ${COMPANY_NAME}`}
+        description={`${challengeDesc.slice(0, 160)}${challengeDesc.length > 160 ? "…" : ""}`}
+        path={`/challenge/${id}`}
+        ogType="article"
+      />
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         {/* Back Button */}
         <button
@@ -195,12 +240,11 @@ export default function ChallengeDetail() {
                         key={i}
                         className="flex items-start gap-3 text-sm text-white/70"
                       >
-                        <span
-                          className="font-bold"
+                        <Check
+                          className="mt-0.5 size-4 shrink-0 stroke-[3]"
                           style={{ color: "rgb(240, 28, 28)" }}
-                        >
-                          ✓
-                        </span>
+                          aria-hidden
+                        />
                         <span>{rule}</span>
                       </li>
                     ))}

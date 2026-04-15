@@ -1,7 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Share2, PenLine, Pencil, Trash2, Repeat, Timer } from "lucide-react";
+import {
+  Share2,
+  PenLine,
+  Pencil,
+  Trash2,
+  Repeat,
+  Timer,
+  CheckCircle,
+  Zap,
+  Flag,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
@@ -9,11 +20,13 @@ import { formatSessionTypeUpper, formatSessionType } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
+import PageMeta from "@/components/PageMeta";
+import SessionShareModal from "@/components/SessionShareModal";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 
-type Insight = { title: string; description: string; icon: string };
+type Insight = { title: string; description: string; icon: LucideIcon };
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -110,28 +123,28 @@ function buildInsights(session: SessionDetail): Insight[] {
     insights.push({
       title: "Session Completed",
       description: "You completed at least one full lap.",
-      icon: "✅",
+      icon: CheckCircle,
     });
   }
   if ((session.lapCount ?? 0) >= 3) {
     insights.push({
       title: "Good Track Time",
       description: "You spent meaningful time learning the circuit.",
-      icon: "⏱️",
+      icon: Timer,
     });
   }
   if (session.bestLapMs && session.bestLapMs < 120000) {
     insights.push({
       title: "Strong Pace",
       description: "Lap time shows competitive speed.",
-      icon: "⚡",
+      icon: Zap,
     });
   }
   if (insights.length === 0) {
     insights.push({
       title: "Warmup Session",
       description: "No completed laps recorded yet.",
-      icon: "🏁",
+      icon: Flag,
     });
   }
   return insights;
@@ -457,7 +470,7 @@ export default function SessionDetailPage() {
   const { toast } = useToast();
 
   const [showAllLaps, setShowAllLaps] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const {
@@ -476,6 +489,11 @@ export default function SessionDetailPage() {
 
   const session = sessionPayload?.session ?? null;
   const lapsData = sessionPayload?.lapsData ?? null;
+
+  const shareUrl = useMemo(() => {
+    if (!id || typeof window === "undefined") return "";
+    return `${window.location.origin}/sessions/${id}`;
+  }, [id]);
   const defaultTelemetryLapNumber = sessionPayload?.defaultTelemetryLapNumber ?? null;
   const telemetry = sessionPayload?.telemetry ?? null;
 
@@ -635,6 +653,10 @@ export default function SessionDetailPage() {
     Array.isArray(telemetry.speed) &&
     telemetry.speed.length > 1;
 
+  const sessionShareText = buildShareText(session);
+  const sessionShareTitle =
+    sessionShareText.split("\n")[0]?.trim() || "Apex session";
+
   async function handleDelete() {
     if (!id) return;
 
@@ -656,6 +678,11 @@ export default function SessionDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <PageMeta
+        title={sessionShareTitle}
+        description={sessionShareText}
+        path={`/sessions/${id}`}
+      />
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -718,23 +745,14 @@ export default function SessionDetailPage() {
               </button>
             </>
           )}
-          {session != null && (
+          {session != null && id && (
             <button
               type="button"
               className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-white/80 hover:bg-white/[0.06]"
-              onClick={async () => {
-                const text = buildShareText(session);
-                await navigator.clipboard.writeText(text);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              }}
+              onClick={() => setShareModalOpen(true)}
             >
-              {copied ? "Copied!" : (
-                <>
-                  Share
-                  <Share2 className="size-4" />
-                </>
-              )}
+              Share
+              <Share2 className="size-4" />
             </button>
           )}
         </div>
@@ -898,11 +916,16 @@ export default function SessionDetailPage() {
                   const isFastest =
                     bestLapMsFromLaps != null &&
                     row.timeMs === bestLapMsFromLaps;
-                  const deltaContent =
+                  const deltaContent: ReactNode =
                     bestLapMsFromLaps == null
                       ? "—"
                       : row.timeMs === bestLapMsFromLaps
-                        ? "🏁 BEST"
+                        ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Flag className="size-3.5 shrink-0" aria-hidden />
+                              BEST
+                            </span>
+                          )
                         : formatDeltaMs(row.timeMs - bestLapMsFromLaps);
                   return (
                     <tr
@@ -915,8 +938,12 @@ export default function SessionDetailPage() {
                       }
                     >
                       <td className="px-4 py-3 font-medium text-white">
-                        {row.lap}
-                        {isFastest && " 🏁"}
+                        <span className="inline-flex items-center gap-1.5">
+                          {row.lap}
+                          {isFastest && (
+                            <Flag className="size-4 shrink-0 text-white/90" aria-hidden />
+                          )}
+                        </span>
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-mono text-sm ${
@@ -995,7 +1022,7 @@ export default function SessionDetailPage() {
                 </p>
               </div>
             )
-          ) : totalLapsCount > 0 ? <></> : (
+          ) : (
             <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center">
               {/* Subtle preview background */}
               <div
@@ -1053,11 +1080,12 @@ export default function SessionDetailPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => navigate("/upgrade")}
+                  onClick={() => {}}
+                  disabled
                   className="mt-5 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-500/40"
-                  style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                  style={{ backgroundColor: "rgb(240, 28, 28)", cursor: "not-allowed" }}
                 >
-                  Upgrade to Apex Pro
+                  Coming soon
                 </button>
               </div>
             </div>
@@ -1097,15 +1125,18 @@ export default function SessionDetailPage() {
               Analysis & Highlights
             </h3>
             <div className="mt-4 space-y-4">
-              {insights.map((i, idx) => (
+              {insights.map((i, idx) => {
+                const InsightIcon = i.icon;
+                return (
                 <div key={idx} className="flex items-start gap-4">
-                  <div className="text-lg">{i.icon}</div>
+                  <InsightIcon className="mt-0.5 size-5 shrink-0 text-white/70" aria-hidden />
                   <div>
                     <div className="font-medium text-white">{i.title}</div>
                     <div className="text-sm text-white/60">{i.description}</div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {session.compareToPrevious && (
               <div className="mt-6 border-t border-white/5 pt-4">
@@ -1162,6 +1193,13 @@ export default function SessionDetailPage() {
         onConfirm={handleDelete}
         title="Delete this manual activity?"
         message="This cannot be undone."
+      />
+
+      <SessionShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareUrl={shareUrl}
+        shareText={sessionShareText}
       />
     </div>
   );

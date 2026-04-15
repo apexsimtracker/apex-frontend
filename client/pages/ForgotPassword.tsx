@@ -27,6 +27,8 @@ import {
   type ForgotCodeFormValues,
   type ForgotResetFormValues,
 } from "@/lib/validation/authPages";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
 
 type Step = "email" | "code" | "reset" | "done";
 
@@ -488,5 +490,15 @@ export default function ForgotPassword() {
     );
   }
 
-  return <div className="flex min-h-screen items-center justify-center p-4">{content}</div>;
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMeta
+        title={`Reset password | ${COMPANY_NAME}`}
+        description={`Reset your ${COMPANY_NAME} account password.`}
+        path="/forgot-password"
+        noindex
+      />
+      {content}
+    </div>
+  );
 }

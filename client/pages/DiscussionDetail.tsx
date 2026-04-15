@@ -1,20 +1,57 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ArrowLeft, Heart, Reply, Eye } from "lucide-react";
 import {
   getDiscussion,
   getDiscussionComments,
   createDiscussionComment,
   DISCUSSION_CATEGORIES,
+  DISCUSSION_COMMENTS_PAGE_SIZE,
   ApiError,
   resolveDiscussionAvatarSrc,
   getDiscussionAuthorId,
+  likeDiscussion,
+  unlikeDiscussion,
+  recordDiscussionView,
+  type Discussion,
   type DiscussionComment,
+  type DiscussionCommentsPageResult,
 } from "@/lib/api";
+import type { AuthRedirectState } from "@/auth/authRedirect";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import { useAuth } from "@/contexts/AuthContext";
-import { timeAgo, getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
+import {
+  timeAgo,
+  getDiscussionAuthorDisplay,
+  getDiscussionAuthorInitials,
+  formatCompactCount,
+  cn,
+} from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
+import { COMPANY_NAME } from "@/lib/siteMeta";
+
+/** Persists one UUID per browser for anonymous view dedupe; signing in uses a separate server-side key (may double-count once — MVP). */
+const ANON_VIEWER_STORAGE_KEY = "apex_discussion_anon_viewer";
+
+function getOrCreateAnonymousViewerId(): string {
+  try {
+    let v = localStorage.getItem(ANON_VIEWER_STORAGE_KEY);
+    if (!v) {
+      v = crypto.randomUUID();
+      localStorage.setItem(ANON_VIEWER_STORAGE_KEY, v);
+    }
+    return v;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 function categoryLabel(value: string) {
   return DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
@@ -54,6 +91,7 @@ function discussionLoadErrorMessage(e: unknown): string {
 export default function DiscussionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -65,19 +103,21 @@ export default function DiscussionDetail() {
       !(err instanceof ApiError && err.status === 404),
   });
 
+  const [commentsPage, setCommentsPage] = useState(1);
+
   const commentsQuery = useQuery({
-    queryKey: ["discussion", "comments", id ?? ""],
-    queryFn: async () => {
-      const raw = await getDiscussionComments(id!);
-      return Array.isArray(raw)
-        ? raw
-        : (raw as { comments?: DiscussionComment[] })?.comments ?? [];
-    },
+    queryKey: ["discussion", "comments", id ?? "", commentsPage],
+    queryFn: () =>
+      getDiscussionComments(id!, {
+        page: commentsPage,
+        limit: DISCUSSION_COMMENTS_PAGE_SIZE,
+      }),
     enabled: Boolean(id) && discussionQuery.isSuccess,
+    placeholderData: keepPreviousData,
   });
 
   const discussion = discussionQuery.data ?? null;
-  const comments: DiscussionComment[] = commentsQuery.data ?? [];
+  const comments: DiscussionComment[] = commentsQuery.data?.items ?? [];
 
   const discussionError = discussionQuery.isError
     ? discussionLoadErrorMessage(discussionQuery.error)
@@ -92,7 +132,9 @@ export default function DiscussionDetail() {
   const loading =
     Boolean(id) &&
     (discussionQuery.isPending ||
-      (discussionQuery.isSuccess && commentsQuery.isPending));
+      (discussionQuery.isSuccess &&
+        !commentsQuery.data &&
+        commentsQuery.isPending));
 
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -100,17 +142,62 @@ export default function DiscussionDetail() {
 
   const postMutation = useMutation({
     mutationFn: (body: string) => createDiscussionComment(id!, body),
-    onSuccess: (created) => {
+    onSuccess: () => {
       setReplyBody("");
-      queryClient.setQueryData<DiscussionComment[]>(
-        ["discussion", "comments", id ?? ""],
-        (prev) => [...(prev ?? []), created]
+      if (!id) return;
+      const pageResult = queryClient.getQueryData<DiscussionCommentsPageResult>([
+        "discussion",
+        "comments",
+        id,
+        commentsPage,
+      ]);
+      const disc = queryClient.getQueryData<Discussion>(["discussion", "detail", id]);
+      const prevTotal =
+        pageResult?.total ??
+        disc?.commentsCount ??
+        disc?.commentCount ??
+        disc?.replies ??
+        0;
+      const newTotal = prevTotal + 1;
+      setCommentsPage(
+        Math.max(1, Math.ceil(newTotal / DISCUSSION_COMMENTS_PAGE_SIZE))
       );
+      queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) => {
+        if (!prev) return prev;
+        const prevCount =
+          prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
+        const nextCount = prevCount + 1;
+        return {
+          ...prev,
+          commentsCount: nextCount,
+          commentCount: nextCount,
+          replies: nextCount,
+        };
+      });
+      void queryClient.invalidateQueries({ queryKey: ["discussion", "comments", id] });
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
     onError: (e: unknown) => {
       console.error(e);
       setReplyError(e instanceof Error ? e.message : "Failed to post reply.");
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error("Missing discussion id");
+      const current = queryClient.getQueryData<Discussion>(["discussion", "detail", id]);
+      return current?.likedByMe ? unlikeDiscussion(id) : likeDiscussion(id);
+    },
+    onSuccess: (data) => {
+      if (!id) return;
+      queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) =>
+        prev ? { ...prev, likeCount: data.likeCount, likedByMe: data.likedByMe } : prev
+      );
+      void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+    },
+    onError: () => {
+      if (id) void queryClient.invalidateQueries({ queryKey: ["discussion", "detail", id] });
     },
   });
 
@@ -123,6 +210,19 @@ export default function DiscussionDetail() {
     postMutation.mutate(body);
   };
 
+  const handleLikeClick = () => {
+    if (!user) {
+      const state: AuthRedirectState = {
+        message: "Sign in to like posts.",
+        from: `${location.pathname}${location.search}`,
+      };
+      navigate("/login", { state });
+      return;
+    }
+    if (!id || likeMutation.isPending) return;
+    likeMutation.mutate();
+  };
+
   const loadComments = () => {
     void commentsQuery.refetch();
   };
@@ -132,12 +232,47 @@ export default function DiscussionDetail() {
   }, [id]);
 
   useEffect(() => {
+    setCommentsPage(1);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || !discussionQuery.isSuccess || !discussion) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const res = user
+          ? await recordDiscussionView(id)
+          : await recordDiscussionView(id, { anonymousId: getOrCreateAnonymousViewerId() });
+        if (cancelled) return;
+        queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) =>
+          prev ? { ...prev, views: res.views } : prev
+        );
+        if (res.recorded) {
+          void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+        }
+      } catch {
+        /* view registration is best-effort */
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, discussionQuery.isSuccess, discussion?.id, user?.id, queryClient]);
+
+  useEffect(() => {
     setPostAvatarFailed(false);
   }, [discussion?.id, user?.id, user?.avatarUrl]);
 
   if (!id) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Community | ${COMPANY_NAME}`}
+          description={`Discussions on ${COMPANY_NAME}.`}
+          path="/community"
+          noindex
+        />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
@@ -155,6 +290,11 @@ export default function DiscussionDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Discussion | ${COMPANY_NAME}`}
+          description={`Community discussion on ${COMPANY_NAME}.`}
+          path={`/discussion/${id ?? ""}`}
+        />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
@@ -172,6 +312,12 @@ export default function DiscussionDetail() {
   if (discussionError || !discussion) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Discussion | ${COMPANY_NAME}`}
+          description={discussionError ?? "Discussion not found."}
+          path={`/discussion/${id ?? ""}`}
+          noindex
+        />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
@@ -203,8 +349,37 @@ export default function DiscussionDetail() {
   const showPostAvatar = Boolean(avatarSrc?.trim()) && !postAvatarFailed;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
+  const discussionSnippet =
+    typeof description === "string"
+      ? `${description.trim().slice(0, 160)}${description.trim().length > 160 ? "…" : ""}`
+      : `${discussion.title} — ${COMPANY_NAME} community`;
+
+  const repliesTotal =
+    commentsQuery.data?.total ??
+    discussion.commentCount ??
+    discussion.commentsCount ??
+    discussion.replies ??
+    0;
+  const commentsPageSize =
+    commentsQuery.data?.limit ?? DISCUSSION_COMMENTS_PAGE_SIZE;
+  const commentsTotalPages = commentsQuery.data?.totalPages ?? 1;
+  const commentsRange =
+    repliesTotal === 0
+      ? null
+      : {
+          start: (commentsPage - 1) * commentsPageSize + 1,
+          end: Math.min(commentsPage * commentsPageSize, repliesTotal),
+        };
+
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title={`${discussion.title} | ${COMPANY_NAME}`}
+        description={discussionSnippet}
+        path={`/discussion/${id}`}
+        image={avatarSrc}
+        ogType="article"
+      />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(-1)}
@@ -273,25 +448,53 @@ export default function DiscussionDetail() {
           </div>
 
           <div className="flex items-center gap-6 border px-6 py-4">
+            <button
+              type="button"
+              onClick={handleLikeClick}
+              disabled={likeMutation.isPending}
+              aria-pressed={Boolean(discussion.likedByMe)}
+              aria-label={discussion.likedByMe ? "Unlike post" : "Like post"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60",
+                discussion.likedByMe && "text-rose-500 hover:text-rose-500"
+              )}
+            >
+              <Heart
+                className={cn("size-4 shrink-0", discussion.likedByMe && "fill-current")}
+              />
+              <span
+                className="text-xs font-medium tabular-nums"
+                title={String(discussion.likeCount ?? 0)}
+              >
+                {formatCompactCount(discussion.likeCount ?? 0)}
+              </span>
+            </button>
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Heart className="size-4" />
-              <span className="text-xs font-medium">
-                {discussion.likeCount ?? discussion.views ?? 0}
+              <Reply className="size-4 shrink-0" />
+              <span
+                className="text-xs font-medium tabular-nums"
+                title={String(
+                  discussion.commentCount ??
+                    discussion.commentsCount ??
+                    discussion.replies ??
+                    0
+                )}
+              >
+                {formatCompactCount(
+                  discussion.commentCount ??
+                    discussion.commentsCount ??
+                    discussion.replies ??
+                    0
+                )}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Reply className="size-4" />
-              <span className="text-xs font-medium">
-                {discussion.commentCount ??
-                  discussion.commentsCount ??
-                  discussion.replies ??
-                  0}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Eye className="size-4" />
-              <span className="text-xs font-medium">
-                {discussion.views ?? 0}
+              <Eye className="size-4 shrink-0" />
+              <span
+                className="text-xs font-medium tabular-nums"
+                title={String(discussion.views ?? 0)}
+              >
+                {formatCompactCount(discussion.views ?? 0)}
               </span>
             </div>
           </div>
@@ -299,7 +502,7 @@ export default function DiscussionDetail() {
 
         <div className="mt-8">
           <h2 className="mb-6 text-xl font-bold text-foreground">
-            Replies ({(comments ?? []).length})
+            Replies ({repliesTotal})
           </h2>
 
           {commentsError && (
@@ -315,11 +518,11 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          {!commentsError && (comments ?? []).length === 0 && (
+          {!commentsError && repliesTotal === 0 && (
             <p className="text-sm text-muted-foreground">No comments yet.</p>
           )}
 
-          {(comments ?? []).length > 0 && (
+          {!commentsError && repliesTotal > 0 && (
             <div className="space-y-4">
               {(comments ?? []).map((c) => (
                 <div
@@ -342,6 +545,23 @@ export default function DiscussionDetail() {
                   </p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!commentsError && repliesTotal > 0 && (
+            <div className="mt-6 space-y-3">
+              {commentsRange && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Showing {commentsRange.start}–{commentsRange.end} of{" "}
+                  {repliesTotal}
+                </p>
+              )}
+              <RaceHistoryPagination
+                page={commentsPage}
+                totalPages={commentsTotalPages}
+                onPageChange={setCommentsPage}
+                disabled={commentsQuery.isFetching}
+              />
             </div>
           )}
 

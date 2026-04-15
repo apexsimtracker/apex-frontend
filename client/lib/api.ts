@@ -437,6 +437,27 @@ function normalizeCompetitionSummaryRow(row: CompetitionSummary): CompetitionSum
   };
 }
 
+/**
+ * Maps GET /api/competitions (public, no auth) into CompetitionSummary rows so
+ * /challenges can load for logged-out users. User-specific fields are null; join uses login redirect.
+ */
+export function mapCompetitionsToPublicSummaries(list: Competition[]): CompetitionSummary[] {
+  const now = Date.now();
+  return list.map((c) =>
+    normalizeCompetitionSummaryRow({
+      ...c,
+      yourBestLapMs: null,
+      fastestLapMs: null,
+      yourPosition: null,
+      timeRemainingSec:
+        c.endsAt != null
+          ? Math.max(0, Math.floor((new Date(c.endsAt).getTime() - now) / 1000))
+          : null,
+      joined: false,
+    })
+  );
+}
+
 export async function getCompetitionSummary(): Promise<CompetitionSummary[]> {
   const raw = await apiGet<CompetitionSummary[]>("/api/competitions/summary");
   return Array.isArray(raw) ? raw.map(normalizeCompetitionSummaryRow) : [];
@@ -521,7 +542,10 @@ export type Discussion = {
   author: DiscussionAuthor;
   category: string;
   createdAt: string;
+  /** From GET /api/community/discussions (list + detail). */
   likeCount?: number;
+  /** Present when the request is authenticated; whether the current user liked this post. */
+  likedByMe?: boolean;
   commentCount?: number;
   /** Backend list/detail uses `commentsCount`. */
   commentsCount?: number;
@@ -635,13 +659,79 @@ export type DiscussionComment = {
   createdAt: string;
 };
 
+/** Default page size for discussion replies (must match server DISCUSSION_COMMENTS_DEFAULT_LIMIT). */
+export const DISCUSSION_COMMENTS_PAGE_SIZE = 10;
+
+export type DiscussionCommentsPageResult = {
+  items: DiscussionComment[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+/** Normalize GET /discussions/:id/comments — supports paginated JSON or legacy bare array. */
+function normalizeDiscussionCommentsPage(
+  raw: unknown,
+  fallbackLimit: number
+): DiscussionCommentsPageResult {
+  if (Array.isArray(raw)) {
+    return {
+      items: raw as DiscussionComment[],
+      page: 1,
+      limit: fallbackLimit,
+      total: raw.length,
+      totalPages: 1,
+    };
+  }
+  if (raw && typeof raw === "object") {
+    const o = raw as Record<string, unknown>;
+    const items = Array.isArray(o.items)
+      ? (o.items as DiscussionComment[])
+      : Array.isArray(o.comments)
+        ? (o.comments as DiscussionComment[])
+        : [];
+    const limit =
+      typeof o.limit === "number" && Number.isFinite(o.limit)
+        ? o.limit
+        : fallbackLimit;
+    const page =
+      typeof o.page === "number" && Number.isFinite(o.page) && o.page >= 1
+        ? Math.floor(o.page)
+        : 1;
+    const total =
+      typeof o.total === "number" && Number.isFinite(o.total)
+        ? o.total
+        : items.length;
+    const totalPages =
+      typeof o.totalPages === "number" && Number.isFinite(o.totalPages) && o.totalPages >= 1
+        ? Math.floor(o.totalPages)
+        : total === 0
+          ? 1
+          : Math.max(1, Math.ceil(total / limit));
+    return { items, page, limit, total, totalPages };
+  }
+  return {
+    items: [],
+    page: 1,
+    limit: fallbackLimit,
+    total: 0,
+    totalPages: 1,
+  };
+}
+
 export async function getDiscussionComments(
-  id: string
-): Promise<DiscussionComment[]> {
-  const raw = await apiGet<DiscussionComment[] | { comments?: DiscussionComment[] }>(
-    `/api/community/discussions/${id}/comments`
+  id: string,
+  params?: { page?: number; limit?: number }
+): Promise<DiscussionCommentsPageResult> {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  const q = sp.toString();
+  const raw = await apiGet<unknown>(
+    `/api/community/discussions/${encodeURIComponent(id)}/comments${q ? `?${q}` : ""}`
   );
-  return Array.isArray(raw) ? raw : raw?.comments ?? [];
+  return normalizeDiscussionCommentsPage(raw, DISCUSSION_COMMENTS_PAGE_SIZE);
 }
 
 export async function createDiscussionComment(
@@ -652,6 +742,38 @@ export async function createDiscussionComment(
     `/api/community/discussions/${id}/comments`,
     { body: body.trim() }
   );
+}
+
+export type DiscussionLikeResponse = {
+  likeCount: number;
+  likedByMe: boolean;
+};
+
+export async function likeDiscussion(id: string): Promise<DiscussionLikeResponse> {
+  return apiPost<DiscussionLikeResponse>(`/api/community/discussions/${id}/like`);
+}
+
+export async function unlikeDiscussion(id: string): Promise<DiscussionLikeResponse> {
+  return apiDelete<DiscussionLikeResponse>(`/api/community/discussions/${id}/like`);
+}
+
+/** POST /api/community/discussions/:id/view — idempotent per viewer; optional anonymousId when logged out. */
+export type DiscussionViewResponse = {
+  views: number;
+  recorded: boolean;
+};
+
+export async function recordDiscussionView(
+  id: string,
+  options?: { anonymousId?: string }
+): Promise<DiscussionViewResponse> {
+  const anon = options?.anonymousId?.trim();
+  if (anon) {
+    return apiPost<DiscussionViewResponse>(`/api/community/discussions/${id}/view`, {
+      anonymousId: anon,
+    });
+  }
+  return apiPost<DiscussionViewResponse>(`/api/community/discussions/${id}/view`, undefined);
 }
 
 /** Default page size for follower/following lists (must match server FOLLOW_LIST_DEFAULT_LIMIT). */

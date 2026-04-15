@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, User } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, User } from "lucide-react";
 import type { ProfileSummary, RaceHistoryPageResult } from "../lib/api";
 import { RaceHistoryPagination } from "./RaceHistoryPagination";
 import {
@@ -668,7 +668,11 @@ export function ProfileView({
                         {race.source === "MANUAL_ACTIVITY" ? "Manual" : "Status"}
                       </p>
                       <p className="font-bold text-foreground">
-                        {race.source === "MANUAL_ACTIVITY" ? "—" : "✓"}
+                        {race.source === "MANUAL_ACTIVITY" ? (
+                          "—"
+                        ) : (
+                          <CheckCircle className="inline-block size-5 text-green-600 dark:text-green-500" aria-label="Completed" />
+                        )}
                       </p>
                     </div>
                   </div>

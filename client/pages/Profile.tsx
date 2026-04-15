@@ -143,7 +143,7 @@ export default function Profile() {
   const { user, loading, refreshMe, setUser } = useAuth();
   const [raceHistoryPage, setRaceHistoryPage] = useState(1);
 
-  // Summary + race history are token-scoped; run whenever we're authenticated (RequireAuth), even if
+  // Summary + race history are token-scoped; run whenever we're authenticated (ProtectedRoute), even if
   // `user.id` is missing from the /me payload (some backends omit it briefly).
   const profileUserKey = ownedProfileUserKey(user);
   const followsUserId = user?.id?.trim() ?? "";
@@ -423,9 +423,20 @@ export default function Profile() {
     (displayProfile.user as { bio?: string; tagline?: string }).tagline?.trim() ??
     undefined;
 
+  const profileSeoTitle = `${accountName} | ${COMPANY_NAME}`;
+  const profileSeoDescription =
+    bioForDisplay && bioForDisplay.trim().length > 0
+      ? `${bioForDisplay.trim().slice(0, 160)}${bioForDisplay.length > 160 ? "…" : ""}`
+      : `${accountName}'s ${COMPANY_NAME} driver profile, stats, and race history at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
+
   return (
     <>
-      <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} />
+      <PageMeta
+        title={profileSeoTitle}
+        description={profileSeoDescription}
+        path={PROFILE_PATH}
+        image={avatarUrl}
+      />
       <div className="flex min-h-screen flex-col bg-background">
       <ProfileView
         profile={displayProfile}

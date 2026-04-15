@@ -1,17 +1,22 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Search, Trophy, Zap } from "lucide-react";
 import FeaturedChallenge from "@/components/FeaturedChallenge";
 import ChallengeCard from "@/components/ChallengeCard";
 import {
   getCompetitionSummary,
+  getCompetitions,
   getCompetitionsMeta,
   joinCompetition,
+  mapCompetitionsToPublicSummaries,
   type CompetitionSummary,
 } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import { useAuth } from "@/contexts/AuthContext";
+import type { AuthRedirectState } from "@/auth/authRedirect";
 
 const CHALLENGES_PATH = "/challenges";
 const challengesTitle = `Challenges | ${COMPANY_NAME}`;
@@ -60,6 +65,9 @@ function competitionToCardProps(c: CompetitionSummary) {
 
 export default function Challenges() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [joinError, setJoinError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<
@@ -72,17 +80,23 @@ export default function Challenges() {
     error: summaryError,
     isError: summaryFailed,
   } = useQuery({
-    queryKey: ["competitions", "summary"],
+    queryKey: ["competitions", "summary", user?.id ?? "anonymous"],
     queryFn: async () => {
-      const data = await getCompetitionSummary();
-      return Array.isArray(data) ? data : [];
+      if (user) {
+        const data = await getCompetitionSummary();
+        return Array.isArray(data) ? data : [];
+      }
+      const raw = await getCompetitions();
+      return mapCompetitionsToPublicSummaries(Array.isArray(raw) ? raw : []);
     },
   });
 
+  /** Rank / joined counts require auth; listing is public via GET /api/competitions when logged out. */
   const { data: meta = null } = useQuery({
-    queryKey: ["competitions", "meta"],
+    queryKey: ["competitions", "meta", user?.id],
     queryFn: () => getCompetitionsMeta(),
     retry: false,
+    enabled: Boolean(user),
   });
 
   const error = summaryFailed
@@ -110,6 +124,14 @@ export default function Challenges() {
   });
 
   function onJoin(competitionId: string) {
+    if (!user) {
+      const state: AuthRedirectState = {
+        message: "Sign in to join challenges and track your results.",
+        from: `${location.pathname}${location.search}`,
+      };
+      navigate("/login", { state });
+      return;
+    }
     setJoinError(null);
     joinMutation.mutate(competitionId);
   }
@@ -276,8 +298,9 @@ export default function Challenges() {
         {(activeTab === "all" || activeTab === "challenges") && (
           <div className="mb-16">
             <div className="mb-6">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-foreground">
-                ⚡ Weekly Challenges
+              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground">
+                <Zap className="size-4 shrink-0 text-foreground" aria-hidden />
+                Weekly Challenges
               </h2>
               <p className="mt-1 text-xs text-muted-foreground/50">
                 Fast, repeatable competitions with instant feedback
@@ -307,8 +330,9 @@ export default function Challenges() {
         {(activeTab === "all" || activeTab === "tournaments") && (
           <div className="mb-16">
             <div className="border-white/3 mb-6 border-t pt-8">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-foreground">
-                🏆 Tournaments
+              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground">
+                <Trophy className="size-4 shrink-0 text-foreground" aria-hidden />
+                Tournaments
               </h2>
               <p className="mt-1 text-xs text-muted-foreground/50">
                 Structured competitions with prizes and leaderboards

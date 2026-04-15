@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,8 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import { useAuth } from "@/contexts/AuthContext";
+import type { AuthRedirectState } from "@/auth/authRedirect";
 import {
   Form,
   FormControl,
@@ -56,6 +59,9 @@ const emptyCategoryCounts = {
 
 export default function Community() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<DiscussionCategory>("all");
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
@@ -171,6 +177,18 @@ export default function Community() {
     newDiscussionForm.clearErrors("root");
   };
 
+  const openNewDiscussion = useCallback(() => {
+    if (!user) {
+      const state: AuthRedirectState = {
+        message: "Sign in to start a discussion.",
+        from: `${location.pathname}${location.search}`,
+      };
+      navigate("/login", { state });
+      return;
+    }
+    setShowNewDiscussionModal(true);
+  }, [user, navigate, location.pathname, location.search]);
+
   const hasFilters = selectedCategory !== "all" || searchQuery.trim().length > 0;
   const emptyMessage =
     loading || error
@@ -209,7 +227,8 @@ export default function Community() {
             />
           </div>
           <button
-            onClick={() => setShowNewDiscussionModal(true)}
+            type="button"
+            onClick={openNewDiscussion}
             className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors sm:px-4 sm:py-2 sm:text-sm"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
@@ -289,7 +308,7 @@ export default function Community() {
                   categoryKey={d.category ?? "general"}
                   timestamp={timeAgo(d.createdAt)}
                   replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
-                  views={d.likeCount ?? d.views ?? 0}
+                  views={d.views ?? 0}
                   isPinned={d.isPinned}
                 />
               ))}

@@ -3,7 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, MessageCircle, Pin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
-import { getDiscussionAuthorDisplay, getDiscussionAuthorInitials } from "@/lib/utils";
+import {
+  getDiscussionAuthorDisplay,
+  getDiscussionAuthorInitials,
+  formatCompactCount,
+} from "@/lib/utils";
 import {
   getDiscussionCategoryLabel,
   resolveDiscussionAvatarSrc,
@@ -128,11 +132,15 @@ export default function DiscussionCard({
           <div className="flex items-center gap-4 text-xs text-white/50">
             <div className="flex items-center gap-1">
               <MessageCircle className="size-3" />
-              <span className="font-medium">{replies ?? 0}</span>
+              <span className="font-medium tabular-nums" title={String(replies ?? 0)}>
+                {formatCompactCount(replies ?? 0)}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Eye className="size-3" />
-              <span className="font-medium">{views ?? 0}</span>
+              <span className="font-medium tabular-nums" title={String(views ?? 0)}>
+                {formatCompactCount(views ?? 0)}
+              </span>
             </div>
           </div>
         </div>

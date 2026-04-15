@@ -24,7 +24,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
-import RequireAuth from "./auth/RequireAuth";
+import ProtectedRoute from "./auth/ProtectedRoute";
 import Upload from "./pages/Upload";
 import ManualActivity from "./pages/ManualActivity";
 import EditManualActivity from "./pages/EditManualActivity";
@@ -70,22 +70,71 @@ export default function App() {
               <main className="flex min-h-0 flex-1 flex-col">
                 <GlobalErrorBoundary>
                   <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute message="Sign in to view your activity feed.">
+                          <Index />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute message="Sign in to view your profile and stats.">
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/user/:userId" element={<UserProfile />} />
                     <Route path="/community" element={<Community />} />
                     <Route path="/challenges" element={<Challenges />} />
                     <Route path="/challenge/:id" element={<ChallengeDetail />} />
                     <Route path="/leaderboards" element={<Leaderboards />} />
-                    <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute message="Sign in to manage your account settings.">
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route path="/upload" element={<Upload />} />
-                    <Route path="/manual" element={<ManualActivity />} />
-                    <Route path="/manual/:sessionId/edit" element={<EditManualActivity />} />
-                    <Route path="/upgrade" element={<Upgrade />} />
+                    <Route
+                      path="/upload"
+                      element={
+                        <ProtectedRoute message="Sign in to upload sessions.">
+                          <Upload />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/manual"
+                      element={
+                        <ProtectedRoute message="Sign in to log a session.">
+                          <ManualActivity />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/manual/:sessionId/edit"
+                      element={
+                        <ProtectedRoute message="Sign in to edit your session.">
+                          <EditManualActivity />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/upgrade"
+                      element={
+                        <ProtectedRoute message="Sign in to join Apex Pro or the waitlist.">
+                          <Upgrade />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/agent" element={<Agent />} />
                     <Route path="/activity/:id" element={<ActivityDetail />} />
                     <Route path="/sessions" element={<Sessions />} />

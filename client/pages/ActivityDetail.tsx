@@ -3,13 +3,20 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  CheckCircle,
+  Flag,
   Heart,
   MessageCircle,
   Share2,
+  Target,
   TrendingUp,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import { apiGet, resolveApiUrl } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -158,6 +165,11 @@ export default function ActivityDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Activity | ${COMPANY_NAME}`}
+          description={`Sim racing session on ${COMPANY_NAME}.`}
+          path={`/activity/${id ?? ""}`}
+        />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
@@ -175,6 +187,12 @@ export default function ActivityDetail() {
   if (error || !activity) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Activity not found | ${COMPANY_NAME}`}
+          description={error ?? "This session could not be loaded."}
+          path={`/activity/${id ?? ""}`}
+          noindex
+        />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
@@ -189,8 +207,19 @@ export default function ActivityDetail() {
     );
   }
 
+  const activityDesc = `${activity.userName} · ${activity.track} · ${activity.game}${
+    activity.position ? ` · P${activity.position}` : ""
+  } on ${COMPANY_NAME}.`;
+
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title={`${activity.track} · ${activity.userName} | ${COMPANY_NAME}`}
+        description={activityDesc}
+        path={`/activity/${id}`}
+        image={resolveApiUrl(activity.userAvatar)}
+        ogType="article"
+      />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
@@ -283,7 +312,7 @@ export default function ActivityDetail() {
                   {activity.position === 1 && "🥇"}
                   {activity.position === 2 && "🥈"}
                   {activity.position === 3 && "🥉"}
-                  {activity.position > 3 && activity.position}
+                  {activity.position != null && activity.position > 3 && activity.position}
                 </div>
                 <div>
                   <p
@@ -474,9 +503,11 @@ export default function ActivityDetail() {
                     }
                   >
                     <td className="px-4 py-3">
-                      <span className="font-medium text-foreground">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                         {lap.lap}
-                        {lap.isFastest && " 🏁"}
+                        {lap.isFastest && (
+                          <Flag className="size-4 shrink-0 text-primary" aria-hidden />
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -513,8 +544,9 @@ export default function ActivityDetail() {
 
           <div className="space-y-4">
             <div className="rounded-lg bg-secondary p-4">
-              <p className="mb-1 text-sm font-semibold text-foreground">
-                ✅ Strong Start
+              <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <CheckCircle className="size-4 shrink-0 text-green-600 dark:text-green-500" aria-hidden />
+                Strong Start
               </p>
               <p className="text-sm text-muted-foreground">
                 Great launch control on lap 1. You were quick to build a
@@ -523,8 +555,9 @@ export default function ActivityDetail() {
             </div>
 
             <div className="rounded-lg bg-secondary p-4">
-              <p className="mb-1 text-sm font-semibold text-foreground">
-                🎯 Consistent Pace
+              <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Target className="size-4 shrink-0 text-foreground" aria-hidden />
+                Consistent Pace
               </p>
               <p className="text-sm text-muted-foreground">
                 Your lap times stayed within 0.5 seconds throughout the race,
@@ -533,8 +566,9 @@ export default function ActivityDetail() {
             </div>
 
             <div className="rounded-lg bg-secondary p-4">
-              <p className="mb-1 text-sm font-semibold text-foreground">
-                ⚡ Fastest Lap Performance
+              <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Zap className="size-4 shrink-0 text-amber-500" aria-hidden />
+                Fastest Lap Performance
               </p>
               <p className="text-sm text-muted-foreground">
                 Best lap came on lap 3. You gained 0.3s in Sector 2 compared to
@@ -543,8 +577,9 @@ export default function ActivityDetail() {
             </div>
 
             <div className="rounded-lg bg-secondary p-4">
-              <p className="mb-1 text-sm font-semibold text-foreground">
-                🔧 Tire Management
+              <p className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Wrench className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                Tire Management
               </p>
               <p className="text-sm text-muted-foreground">
                 Excellent tire management. Your pace remained strong until the

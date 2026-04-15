@@ -33,7 +33,7 @@ import {
 
 const HOME_PATH = "/";
 const HOME_TITLE = `Home | ${COMPANY_NAME}`;
-const HOME_DESCRIPTION = `Your sim racing hub on ${COMPANY_NAME}: activity feed, weekly goals, sessions, and community at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
+const HOME_DESCRIPTION = `${COMPANY_NAME} — sim racing hub: activity feed, weekly goals, sessions, leaderboards, challenges, and community at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 const HOME_DISCUSSIONS_QUERY_KEY = [
   "discussions",

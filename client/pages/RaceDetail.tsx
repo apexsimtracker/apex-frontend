@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import {
   ArrowLeft,
   Clock,
+  Flag,
   Gauge,
   Target,
   TrendingUp,
@@ -10,6 +11,8 @@ import {
 } from "lucide-react";
 import { formatCarName } from "@/lib/utils";
 import { formatSimEnum } from "@/lib/enumFormat";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
 
 // Mock race data database
 const racesDatabase: Record<string, any> = {
@@ -138,8 +141,17 @@ export default function RaceDetail() {
     window.scrollTo(0, 0);
   }, [id]);
 
+  const raceDesc = `${formatSimEnum(race.sim)} at ${race.track} on ${race.date} · ${race.driver}`;
+
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title={`${race.track} · ${race.date} | ${COMPANY_NAME}`}
+        description={raceDesc}
+        path={`/race/${id ?? ""}`}
+        image={race.driverAvatar}
+        ogType="article"
+      />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
@@ -199,10 +211,12 @@ export default function RaceDetail() {
                   Best Lap
                 </p>
                 <p
-                  className={`font-semibold ${race.isFastestLap ? "text-purple-500 dark:text-purple-400" : "text-foreground"}`}
+                  className={`inline-flex flex-wrap items-center gap-1.5 font-semibold ${race.isFastestLap ? "text-purple-500 dark:text-purple-400" : "text-foreground"}`}
                 >
                   {race.bestLap}
-                  {race.isFastestLap && " 🏁"}
+                  {race.isFastestLap && (
+                    <Flag className="size-4 shrink-0" aria-hidden />
+                  )}
                 </p>
               </div>
               <div className="rounded-lg bg-secondary p-4">

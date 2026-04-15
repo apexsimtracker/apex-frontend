@@ -23,8 +23,14 @@ import {
   type ActivityItem as GroupedActivityItem,
 } from "@/lib/groupSessions";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 
 const ONBOARDED_KEY = "apex_onboarded";
+
+const SESSIONS_PATH = "/sessions";
+const sessionsTitle = `Sessions | ${COMPANY_NAME}`;
+const sessionsDescription = `Browse sim racing sessions and telemetry on ${COMPANY_NAME} at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
 function setOnboarded() {
   if (typeof localStorage !== "undefined") {
@@ -263,6 +269,7 @@ export default function Sessions() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta title={sessionsTitle} description={sessionsDescription} path={SESSIONS_PATH} />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {showOnboardingBanner && (
           <div className="relative mb-6 rounded-lg border border-white/10 bg-white/[0.04] p-4 sm:p-5">

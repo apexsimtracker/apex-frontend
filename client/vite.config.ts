@@ -37,6 +37,11 @@ export default defineConfig({
     },
   },
 
+  // Sitemap: `public/sitemap.xml` is static — include only public, indexable paths (community,
+  // challenges, leaderboards, sessions, marketing/legal). Omit `/` (auth-only feed), `/login`,
+  // `/signup`, and ProtectedRoute paths (`/profile`, `/settings`, `/upload`, `/manual`, `/upgrade`).
+  // Dynamic URLs (e.g. /discussion/:id) need a build script or CMS if you want them listed.
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname),

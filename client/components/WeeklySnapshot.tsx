@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatDuration } from "@/lib/utils";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 
@@ -8,7 +9,12 @@ function TrendChip({
   improvement: boolean | null;
   displayText: string;
 }) {
-  const arrow = improvement === null ? null : improvement ? "▲" : "▼";
+  const arrow =
+    improvement === null ? null : improvement ? (
+      <ChevronUp className="size-3.5 shrink-0" aria-hidden />
+    ) : (
+      <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+    );
   const textColor =
     improvement === null
       ? "text-white/40"

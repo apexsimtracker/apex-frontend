@@ -17,6 +17,8 @@ import {
   type ProfileSummary,
 } from "@/lib/api";
 import { profileKeys } from "@/lib/profileQueryKeys";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 
 type ProfileBundle = {
   profile: ProfileSummary;
@@ -125,6 +127,12 @@ export default function UserProfile() {
   if (!id) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Profile | ${COMPANY_NAME}`}
+          description={`${COMPANY_NAME} driver profiles and race history.`}
+          path="/"
+          noindex
+        />
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <p className="text-center text-lg text-foreground">Invalid profile link.</p>
         </div>
@@ -138,15 +146,29 @@ export default function UserProfile() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <p className="text-white/60">Loading...</p>
-      </div>
+      <>
+        <PageMeta
+          title={`Profile | ${COMPANY_NAME}`}
+          description={`${COMPANY_NAME} driver profile on ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`}
+          path={`/user/${id}`}
+        />
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+          <p className="text-white/60">Loading...</p>
+        </div>
+      </>
     );
   }
 
   if (notFound) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`User not found | ${COMPANY_NAME}`}
+          description="This profile does not exist or was removed."
+          path={`/user/${id}`}
+          setCanonical={false}
+          noindex
+        />
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <button
             type="button"
@@ -169,6 +191,12 @@ export default function UserProfile() {
   if (combinedError || !profile || !preview) {
     return (
       <div className="min-h-screen bg-background">
+        <PageMeta
+          title={`Profile | ${COMPANY_NAME}`}
+          description={combinedError ?? "Could not load profile."}
+          path={`/user/${id}`}
+          noindex
+        />
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <button
             type="button"
@@ -209,8 +237,24 @@ export default function UserProfile() {
 
   const showFollowUi = Boolean(currentUser && currentUser.id !== id);
 
+  const displayName =
+    preview.displayName?.trim() || profile.user.displayName?.trim() || "Driver";
+  const userSeoDescription = (() => {
+    const t = bio?.trim() ?? "";
+    if (t.length > 0) {
+      return `${t.slice(0, 160)}${t.length > 160 ? "…" : ""}`;
+    }
+    return `${displayName} on ${COMPANY_NAME} — stats, race history, and community.`;
+  })();
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <PageMeta
+        title={`${displayName} | ${COMPANY_NAME}`}
+        description={userSeoDescription}
+        path={`/user/${id}`}
+        image={avatarUrl}
+      />
       <ProfileView
         profile={displayProfile}
         onBack={() => navigate(-1)}

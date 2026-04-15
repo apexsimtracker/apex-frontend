@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import { loginFormSchema, type LoginFormValues } from "@/lib/validation/authPages";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
+import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,6 +30,8 @@ export default function Login() {
     resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  const authRedirect = parseAuthRedirectState(location.state);
 
   useEffect(() => {
     const state = location.state as { emailVerified?: boolean } | null;
@@ -56,7 +61,8 @@ export default function Login() {
       }
       localStorage.setItem("apex_token", token);
       window.dispatchEvent(new Event("apex:auth"));
-      navigate("/profile", { replace: true });
+      const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
+      navigate(returnTo, { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setEmailNotVerified(true);
@@ -77,12 +83,23 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMeta
+        title={`Sign in | ${COMPANY_NAME}`}
+        description={`Sign in to ${COMPANY_NAME} — your sim racing hub.`}
+        path="/login"
+        noindex
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold">Sign in</h1>
           {emailVerifiedMessage && (
             <p className="text-sm text-green-500" role="status">
               Email verified. You can sign in now.
+            </p>
+          )}
+          {authRedirect.message && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {authRedirect.message}
             </p>
           )}
 
@@ -163,6 +180,7 @@ export default function Login() {
           <p className="pt-2 text-center">
             <Link
               to="/signup"
+              state={location.state}
               className="text-sm text-muted-foreground underline hover:text-foreground"
             >
               Don&apos;t have an account? Create one

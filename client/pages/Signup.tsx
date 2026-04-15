@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authRegister } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,11 +15,16 @@ import {
 } from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import { signupFormSchema, type SignupFormValues } from "@/lib/validation/authPages";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
+import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
 
 const inputClass = "w-full px-3 py-2 border rounded-md bg-transparent";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const authRedirect = parseAuthRedirectState(location.state);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<WithRootError<SignupFormValues>>({
@@ -39,7 +44,8 @@ export default function Signup() {
       if (hasToken && !data.requiresVerification) {
         localStorage.setItem("apex_token", token as string);
         window.dispatchEvent(new Event("apex:auth"));
-        navigate("/profile", { replace: true });
+        const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
+        navigate(returnTo, { replace: true });
         return;
       }
 
@@ -58,9 +64,20 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMeta
+        title={`Create account | ${COMPANY_NAME}`}
+        description={`Join ${COMPANY_NAME} — sim racing sessions, leaderboards, and community.`}
+        path="/signup"
+        noindex
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold">Create account</h1>
+          {authRedirect.message && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {authRedirect.message}
+            </p>
+          )}
 
           <FormField
             control={form.control}
@@ -132,6 +149,34 @@ export default function Signup() {
           >
             {loading ? "Creating account…" : "Sign up"}
           </button>
+
+          <p className="pt-2 text-center text-sm text-muted-foreground">
+            By signing up, you agree to our{" "}
+            <Link
+              to="/terms-and-conditions"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/privacy-policy"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
+
+          <p className="pt-2 text-center">
+            <Link
+              to="/login"
+              state={location.state}
+              className="text-sm text-muted-foreground underline hover:text-foreground"
+            >
+              Already have an account? Sign in
+            </Link>
+          </p>
         </form>
       </Form>
     </div>

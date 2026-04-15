@@ -18,6 +18,8 @@ import {
   verifyEmailCodeSchema,
   type VerifyEmailCodeValues,
 } from "@/lib/validation/authPages";
+import PageMeta from "@/components/PageMeta";
+import { COMPANY_NAME } from "@/lib/siteMeta";
 
 const PENDING_VERIFY_KEY = "apex_verify_email";
 const RESEND_COOLDOWN_SEC = 60;
@@ -126,6 +128,12 @@ export default function VerifyEmail() {
   if (!email.trim() && !hasStoredEmail) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
+        <PageMeta
+          title={`Verify email | ${COMPANY_NAME}`}
+          description={`Verify your ${COMPANY_NAME} account email.`}
+          path="/verify-email"
+          noindex
+        />
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-xl font-semibold text-foreground">Verification</h1>
           <p className="text-sm text-muted-foreground">Missing email. Please sign up again.</p>
@@ -148,6 +156,12 @@ export default function VerifyEmail() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMeta
+        title={`Verify email | ${COMPANY_NAME}`}
+        description={`Verify your ${COMPANY_NAME} account email.`}
+        path="/verify-email"
+        noindex
+      />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
           <h1 className="text-xl font-semibold text-foreground">Verify your email</h1>

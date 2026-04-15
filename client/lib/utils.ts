@@ -25,6 +25,15 @@ export function getDiscussionAuthorInitials(displayName: string): string {
   return s.slice(0, 1).toUpperCase();
 }
 
+/** Compact counts for UI (e.g. 1.2K, 100K, 3.5M). */
+export function formatCompactCount(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return "0";
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n);
+}
+
 export const formatLapMs = (ms: number | null | undefined): string => {
   if (!ms || !Number.isFinite(ms)) return "—";
   const minutes = Math.floor(ms / 60000);

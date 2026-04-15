@@ -21,6 +21,7 @@ const NotFound = () => {
         description="The page you are looking for could not be found on Apex."
         path={location.pathname || "/"}
         setCanonical={false}
+        noindex
       />
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="w-full max-w-lg rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] sm:p-10">
