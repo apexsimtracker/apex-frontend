@@ -113,6 +113,56 @@ export function parseLapTimeToMs(input: string): number | null {
   return null;
 }
 
+/** Same bounds as server manual lap validation (ms). */
+const MANUAL_LAP_MS_MIN = 10_000;
+const MANUAL_LAP_MS_MAX = 3_600_000;
+
+/**
+ * Strict manual-entry lap time (must match exactly).
+ * - `m:ss.mmm` — minutes (digits), colon, seconds `00`–`59`, dot, milliseconds exactly 3 digits (e.g. `1:32.456`, `0:59.900`)
+ * - `ss.mmm` — total seconds (digits), dot, milliseconds exactly 3 digits (e.g. `92.456`)
+ * Rejects: missing milliseconds, wrong second width with colon, loose padding, extra text.
+ */
+export function parseStrictManualLapTimeToMs(input: string): number | null {
+  const s = input.trim().replace(",", ".");
+  if (!s) return null;
+
+  const withColon = /^(\d+):([0-5]\d)\.(\d{3})$/;
+  const m1 = s.match(withColon);
+  if (m1) {
+    const mins = parseInt(m1[1]!, 10);
+    const secs = parseInt(m1[2]!, 10);
+    const ms = parseInt(m1[3]!, 10);
+    const total = mins * 60_000 + secs * 1_000 + ms;
+    if (
+      !Number.isFinite(total) ||
+      total < MANUAL_LAP_MS_MIN ||
+      total > MANUAL_LAP_MS_MAX
+    ) {
+      return null;
+    }
+    return total;
+  }
+
+  const secondsOnly = /^(\d+)\.(\d{3})$/;
+  const m2 = s.match(secondsOnly);
+  if (m2) {
+    const secs = parseInt(m2[1]!, 10);
+    const ms = parseInt(m2[2]!, 10);
+    const total = secs * 1_000 + ms;
+    if (
+      !Number.isFinite(total) ||
+      total < MANUAL_LAP_MS_MIN ||
+      total > MANUAL_LAP_MS_MAX
+    ) {
+      return null;
+    }
+    return total;
+  }
+
+  return null;
+}
+
 export const formatLapDelta = (ms: number | null | undefined): string => {
   if (!ms || !Number.isFinite(ms)) return "—";
   return `${(ms / 1000).toFixed(3)}s`;

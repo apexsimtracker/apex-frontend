@@ -12,16 +12,24 @@ type FormState = "idle" | "submitting" | "success" | "error";
 type SessionDetailForEdit = {
   id: string;
   sim?: string | null;
+  simKey?: string | null;
   track?: string | null;
   trackId?: string | null;
   car?: string | null;
   carId?: string | null;
   position?: number | null;
+  totalDrivers?: number | null;
   bestLapMs?: number | null;
+  sessionType?: string | null;
   notes?: string | null;
-  source?: string | null;
-  userId?: string | null;
+  laps?: Array<{ lap?: number; timeMs?: number; lapTimeMs?: number }>;
 };
+
+function simKeyToFormSim(k: string | undefined | null): string {
+  const u = (k ?? "").toLowerCase();
+  if (u === "f1_25") return "F1_25";
+  return "IRACING";
+}
 
 export default function EditManualActivity() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -38,15 +46,25 @@ export default function EditManualActivity() {
     queryKey: ["sessions", "edit", sid],
     queryFn: async (): Promise<ManualActivityInitialData> => {
       const data = await apiGet<SessionDetailForEdit>(`/api/sessions/${sid}`);
-      if (data.source !== "MANUAL_ACTIVITY") {
+      const st = String(data.sessionType ?? "").toUpperCase();
+      if (st !== "MANUAL_ACTIVITY") {
         throw new Error("This session cannot be edited.");
       }
+
+      const lapsRaw = Array.isArray(data.laps) ? data.laps : [];
+      const lapsMs = [...lapsRaw]
+        .filter((l) => l && typeof (l.timeMs ?? l.lapTimeMs) === "number")
+        .sort((a, b) => (a.lap ?? 0) - (b.lap ?? 0))
+        .map((l) => Number(l.timeMs ?? l.lapTimeMs));
+
       return {
-        sim: data.sim,
-        trackId: data.trackId ?? data.track,
-        carId: data.carId ?? data.car,
+        sim: simKeyToFormSim(data.simKey),
+        trackId: data.trackId ?? data.track ?? "",
+        carId: data.carId ?? data.car ?? "",
         position: data.position,
-        bestLapMs: data.bestLapMs,
+        totalDrivers: data.totalDrivers,
+        lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
+        bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
         notes: data.notes,
       };
     },
@@ -67,6 +85,8 @@ export default function EditManualActivity() {
     trackId: string;
     carId?: string;
     position?: number;
+    totalDrivers?: number;
+    laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
   }) {

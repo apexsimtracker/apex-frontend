@@ -1,11 +1,21 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MessageCircle, Share2, X } from "lucide-react";
 import SimBadge from "./SimBadge";
-import { formatLapMs, formatCarName, cn } from "@/lib/utils";
-import { apiGet, apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
+import SessionShareModal from "@/components/SessionShareModal";
+import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
+import { formatLapMs, formatCarName, formatCompactCount, cn } from "@/lib/utils";
+import {
+  apiGet,
+  apiPost,
+  API_BASE,
+  resolveApiUrl,
+  getSessionCommentsPage,
+  SESSION_COMMENTS_PAGE_DEFAULT_LIMIT,
+} from "@/lib/api";
+import { buildSessionShareText } from "@/lib/sessionShareText";
 import { getToken } from "@/auth/token";
 import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
@@ -61,7 +71,9 @@ const getPodiumColor = (pos: number) => {
   return "";
 };
 
-type CommentItem = { id: string; body: string; createdAt?: string };
+type CommentItem = { id: string; body: string; createdAt?: string; userId?: string };
+
+const COMMENTS_MODAL_LIMIT = SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
 
 function CommentsModal({
   sessionId,
@@ -79,48 +91,63 @@ function CommentsModal({
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
-
-  const {
-    data: comments = [],
-    isPending: commentsLoading,
-    isError: commentsFailed,
-    refetch,
-  } = useQuery({
-    queryKey: ["sessions", sessionId, "modal-comments"],
-    queryFn: async () => {
-      const data = await apiGet<{ comments?: CommentItem[] }>(
-        `/api/sessions/${sessionId}/comments`
-      );
-      return Array.isArray(data?.comments) ? data.comments : [];
-    },
-    enabled: isOpen && Boolean(sessionId),
-  });
-
-  const commentsError = commentsFailed
-    ? "Can't load comments. Backend may be offline."
-    : null;
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!isOpen || !sessionId) return;
     setCommentText("");
     setCommentError(null);
+    setPage(1);
   }, [isOpen, sessionId]);
+
+  const {
+    data: commentsPage,
+    isPending: commentsLoading,
+    isError: commentsFailed,
+    refetch,
+  } = useQuery({
+    queryKey: ["sessions", sessionId, "modal-comments", page, COMMENTS_MODAL_LIMIT],
+    queryFn: () => getSessionCommentsPage(sessionId, { page, limit: COMMENTS_MODAL_LIMIT }),
+    enabled: isOpen && Boolean(sessionId),
+  });
+
+  const comments = commentsPage?.comments ?? [];
+  const total = commentsPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / COMMENTS_MODAL_LIMIT) || 1);
+  const range =
+    total === 0
+      ? null
+      : {
+          start: (page - 1) * COMMENTS_MODAL_LIMIT + 1,
+          end: Math.min(page * COMMENTS_MODAL_LIMIT, total),
+        };
+
+  const commentsError = commentsFailed
+    ? "Can't load comments. Backend may be offline."
+    : null;
 
   const postMutation = useMutation({
     mutationFn: (body: string) =>
       apiPost<{ comment: CommentItem }>(`/api/sessions/${sessionId}/comments`, {
         body,
       }),
-    onSuccess: (data) => {
-      if (data?.comment) {
-        queryClient.setQueryData<CommentItem[]>(
-          ["sessions", sessionId, "modal-comments"],
-          (prev) => [...(prev ?? []), data.comment!]
-        );
-      }
+    onSuccess: async () => {
       setCommentText("");
       onCommentAdded();
       onRefreshSession?.();
+      try {
+        const { total: freshTotal } = await getSessionCommentsPage(sessionId, {
+          page: 1,
+          limit: COMMENTS_MODAL_LIMIT,
+        });
+        const lastPage = Math.max(1, Math.ceil(freshTotal / COMMENTS_MODAL_LIMIT) || 1);
+        setPage(lastPage);
+      } catch {
+        setPage(1);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
     },
     onError: () => {
       setCommentError("Can't post right now. Backend may be offline.");
@@ -194,6 +221,21 @@ function CommentsModal({
             </ul>
           )}
         </div>
+        {total > 0 && !commentsLoading && !commentsError && (
+          <div className="space-y-3 border-t border-white/5 px-4 py-3">
+            {range && (
+              <p className="text-center text-xs text-zinc-500">
+                Showing {range.start}–{range.end} of {total}
+              </p>
+            )}
+            <RaceHistoryPagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              disabled={commentsLoading}
+            />
+          </div>
+        )}
         <div className="flex flex-col gap-2 border-t border-white/10 p-4">
           <div className="flex gap-2">
             <input
@@ -454,6 +496,7 @@ function RaceCardContent({
   likePending,
   onLikeClick,
   onCommentClick,
+  onShareClick,
 }: {
   item: ActivityCardItem;
   /** When set, avatar + name navigate here; clicks stop propagation so the card shell opens the session only for other areas. */
@@ -465,6 +508,7 @@ function RaceCardContent({
   likePending: boolean;
   onLikeClick: (e: React.MouseEvent) => void;
   onCommentClick: (e: React.MouseEvent) => void;
+  onShareClick: (e: React.MouseEvent) => void;
 }) {
   const navigate = useNavigate();
   const goToSession = () => navigate(`/sessions/${item.id}`);
@@ -630,7 +674,7 @@ function RaceCardContent({
             <Heart
               className={`size-3.5 ${likedByMe ? "fill-red-400" : "group-hover:fill-primary"}`}
             />
-            <span className="text-xs">{likeCount}</span>
+            <span className="text-xs">{formatCompactCount(likeCount)}</span>
           </button>
           <button
             type="button"
@@ -645,7 +689,7 @@ function RaceCardContent({
             className="flex items-center gap-1 p-1 text-white/60 transition-colors hover:text-white/80"
           >
             <MessageCircle className="size-3.5" />
-            <span className="text-xs text-white/60">{commentCount}</span>
+            <span className="text-xs text-white/60">{formatCompactCount(commentCount)}</span>
           </button>
         </div>
         <button
@@ -653,12 +697,7 @@ function RaceCardContent({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (typeof navigator !== "undefined" && navigator.share) {
-              navigator.share({
-                title: `${cleanTitle(item)} – ${item.userName}`,
-                url: `${window.location.origin}/sessions/${item.id}`,
-              }).catch(() => { });
-            }
+            onShareClick(e);
           }}
           className="p-1 text-white/40 transition-colors hover:text-white/60"
           aria-label="Share"
@@ -686,7 +725,7 @@ interface ActivityCardProps {
   track: string;
   position: number | null;
   totalRacers: number | null;
-  sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "UNKNOWN";
+  sessionType?: string | null;
   sim?: string | null;
   source?: string | null;
   bestLapMs?: number | null;
@@ -720,6 +759,44 @@ export default function ActivityCard(props: ActivityCardProps) {
   );
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [likePending, setLikePending] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    return `${window.location.origin}/sessions/${props.id}`;
+  }, [props.id]);
+
+  const shareText = useMemo(
+    () =>
+      buildSessionShareText({
+        sessionType: props.sessionType,
+        track: props.track,
+        car: props.car,
+        vehicleDisplay: props.vehicleDisplay,
+        lapCount: props.lapCount,
+        bestLapMs: props.bestLapMs,
+        consistencyScore: props.consistencyScore,
+        sim: props.sim,
+        source: props.source,
+      }),
+    [
+      props.sessionType,
+      props.track,
+      props.car,
+      props.vehicleDisplay,
+      props.lapCount,
+      props.bestLapMs,
+      props.consistencyScore,
+      props.sim,
+      props.source,
+    ]
+  );
+
+  const onShareClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShareModalOpen(true);
+  }, []);
 
   // Only sync from props when the card identity changes (different session)
   /* eslint-disable react-hooks/exhaustive-deps -- deliberate: sync local state on session id only; callbacks use stable prop subset */
@@ -848,6 +925,7 @@ export default function ActivityCard(props: ActivityCardProps) {
         likePending={likePending}
         onLikeClick={onLikeClick}
         onCommentClick={onCommentClick}
+        onShareClick={onShareClick}
       />
       <CommentsModal
         sessionId={props.id}
@@ -855,6 +933,12 @@ export default function ActivityCard(props: ActivityCardProps) {
         onClose={closeCommentsModal}
         onCommentAdded={onCommentAdded}
         onRefreshSession={() => refreshSessionSocial(props.id)}
+      />
+      <SessionShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareUrl={shareUrl}
+        shareText={shareText}
       />
     </>
   );

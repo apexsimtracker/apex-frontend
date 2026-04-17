@@ -23,99 +23,15 @@ import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import PageMeta from "@/components/PageMeta";
 import SessionShareModal from "@/components/SessionShareModal";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { SkeletonBlock } from "@/components/ui/skeleton";
+import {
+  buildSessionShareText,
+  calcConsistencyScore,
+  resolveSessionFields,
+} from "@/lib/sessionShareText";
 
 type Insight = { title: string; description: string; icon: LucideIcon };
-
-function pickFirstString(...candidates: unknown[]): string | null {
-  for (const c of candidates) {
-    if (typeof c === "string") {
-      const t = c.trim();
-      if (t && t !== "—") return t;
-    }
-  }
-  return null;
-}
-
-function resolveSessionFields(session: SessionDetail): {
-  track: string | null;
-  sim: string | null;
-  car: string | null;
-  carRawForFormat: string | null;
-} {
-  // Some backends nest fields under session/session, details, or meta.
-  const s0 = session as any;
-  const s =
-    s0 && typeof s0 === "object" && s0.session && typeof s0.session === "object"
-      ? s0.session
-      : s0;
-  const meta = (s0 as any)?.meta ?? (s as any)?.meta;
-  const details = (s0 as any)?.details ?? (s as any)?.details;
-  const track = pickFirstString(
-    session.track,
-    session.trackName,
-    s.trackName,
-    s.track_name,
-    meta?.track,
-    meta?.trackName,
-    meta?.track_name,
-    details?.track,
-    details?.trackName,
-    details?.track_name,
-    s.circuit,
-    s.circuitName,
-    s.circuit_name,
-    s.trackDisplay,
-    s.track_display
-  );
-  const sim = pickFirstString(
-    session.sim,
-    session.game,
-    s.game,
-    s.gameName,
-    s.simName,
-    s.sim_name,
-    s.sourceSim
-  );
-  const car = pickFirstString(
-    session.vehicleDisplay,
-    s.vehicleDisplay,
-    s.vehicle_display,
-    session.car,
-    session.carName,
-    s.carName,
-    s.car_name,
-    meta?.car,
-    meta?.carName,
-    meta?.car_name,
-    details?.car,
-    details?.carName,
-    details?.car_name,
-    details?.vehicle,
-    details?.vehicleName,
-    details?.vehicle_name,
-    s.vehicle,
-    s.vehicleName,
-    s.vehicle_name
-  );
-  // Keep a raw "car id/name" to feed into formatCarName if vehicleDisplay isn't provided.
-  const carRawForFormat = pickFirstString(
-    session.car,
-    s.carName,
-    s.car_name,
-    meta?.car,
-    meta?.carName,
-    meta?.car_name,
-    details?.car,
-    details?.carName,
-    details?.car_name,
-    s.vehicle,
-    s.vehicleName,
-    s.vehicle_name
-  );
-  return { track, sim, car, carRawForFormat };
-}
 
 function buildInsights(session: SessionDetail): Insight[] {
   const insights: Insight[] = [];
@@ -153,40 +69,6 @@ function buildInsights(session: SessionDetail): Insight[] {
 function formatDeltaMs(deltaMs: number): string {
   const s = formatLapDelta(deltaMs);
   return s === "—" ? "—" : `+${s}`;
-}
-
-function calcConsistencyScore(lapTimes: number[]): number | null {
-  if (lapTimes.length < 3) return null;
-  const mean = lapTimes.reduce((a, b) => a + b, 0) / lapTimes.length;
-  const variance =
-    lapTimes.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) /
-    lapTimes.length;
-  const stdDev = Math.sqrt(variance);
-  const cv = stdDev / mean;
-  const raw = Math.round(100 - cv * 4000);
-  return Math.max(0, Math.min(100, raw));
-}
-
-function buildShareText(session: SessionDetail): string {
-  const resolved = resolveSessionFields(session);
-  const type = formatSessionType(session?.sessionType);
-  const track = formatTrackName(resolved.track);
-  const car =
-    resolved.car ??
-    (resolved.carRawForFormat ? formatCarName(resolved.carRawForFormat) : "Unknown Car");
-  const laps = session?.lapCount ?? 0;
-  const best = formatLapMs(session?.bestLapMs);
-  const lapTimes = (session?.laps ?? []).map((l) => l.timeMs).filter(Boolean);
-  const consistency = calcConsistencyScore(lapTimes);
-  const consistencyText =
-    consistency == null ? "—" : `${consistency}/100`;
-  return [
-    `Apex — ${type} @ ${track}`,
-    `Car: ${car}`,
-    `Best: ${best}`,
-    `Laps: ${laps}`,
-    `Consistency: ${consistencyText}`,
-  ].join("\n");
 }
 
 type RawLap = {
@@ -439,6 +321,8 @@ export type SessionDetail = {
   bestLapMs?: number | null;
   bestLapLapNumber?: number | null;
   lapCount?: number | null;
+  /** Distance (km): track length × laps, or telemetry fallback. */
+  totalKm?: number | null;
   laps?: RawLap[];
   compareToPrevious?: {
     previousSessionId: string;
@@ -467,8 +351,6 @@ export default function SessionDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isPro = useIsProUser();
-  const { toast } = useToast();
-
   const [showAllLaps, setShowAllLaps] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -653,7 +535,7 @@ export default function SessionDetailPage() {
     Array.isArray(telemetry.speed) &&
     telemetry.speed.length > 1;
 
-  const sessionShareText = buildShareText(session);
+  const sessionShareText = buildSessionShareText(session);
   const sessionShareTitle =
     sessionShareText.split("\n")[0]?.trim() || "Apex session";
 
@@ -662,8 +544,7 @@ export default function SessionDetailPage() {
 
     try {
       await deleteManualActivity(id);
-      toast({
-        title: "Activity deleted",
+      toast.success("Activity deleted", {
         description: "The manual activity has been removed.",
       });
       navigate("/");

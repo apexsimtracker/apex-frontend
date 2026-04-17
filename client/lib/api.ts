@@ -1233,6 +1233,16 @@ export function normalizeFeedSession(item: unknown): unknown {
     merged.authorAvatarUrl = resolveApiUrl(rawAvatar) ?? rawAvatar;
   }
 
+  if (merged.commentCount == null && merged.commentsCount != null) {
+    const cc = feedToNumber(merged.commentsCount);
+    if (cc != null) merged.commentCount = cc;
+  }
+  const lk = feedToNumber(merged.likeCount);
+  if (lk != null) merged.likeCount = lk;
+  if (typeof merged.likedByMe !== "boolean" && merged.likedByMe != null) {
+    merged.likedByMe = Boolean(merged.likedByMe);
+  }
+
   return merged;
 }
 
@@ -1297,6 +1307,55 @@ export async function getActivityHomeFeedPage(options: {
     items: items.map(normalizeFeedSession),
     page: typeof raw?.page === "number" ? raw.page : page,
     limit: typeof raw?.limit === "number" ? raw.limit : limit,
+    hasMore: Boolean(raw?.hasMore),
+  };
+}
+
+/** Default page size for GET /api/sessions/:id/comments (must match server). */
+export const SESSION_COMMENTS_PAGE_DEFAULT_LIMIT = 5;
+
+export type SessionCommentItem = {
+  id: string;
+  userId: string;
+  body: string;
+  createdAt: string;
+};
+
+export type SessionCommentsPageResult = {
+  comments: SessionCommentItem[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+};
+
+/**
+ * Paginated session comments (GET /api/sessions/:id/comments).
+ */
+export async function getSessionCommentsPage(
+  sessionId: string,
+  options: { page?: number; limit?: number } = {}
+): Promise<SessionCommentsPageResult> {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
+  const q = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  const raw = await apiGet<{
+    comments?: SessionCommentItem[];
+    page?: number;
+    limit?: number;
+    total?: number;
+    hasMore?: boolean;
+  }>(`/api/sessions/${encodeURIComponent(sessionId)}/comments?${q.toString()}`);
+
+  const comments = Array.isArray(raw?.comments) ? raw.comments : [];
+  return {
+    comments,
+    page: typeof raw?.page === "number" ? raw.page : page,
+    limit: typeof raw?.limit === "number" ? raw.limit : limit,
+    total: typeof raw?.total === "number" ? raw.total : comments.length,
     hasMore: Boolean(raw?.hasMore),
   };
 }
@@ -1387,7 +1446,10 @@ export type ManualActivityRequest = {
   carId?: string;
   position?: number;
   totalDrivers?: number;
+  /** Legacy single lap; ignored by API when `laps` is non-empty. */
   bestLapMs?: number;
+  /** Ordered lap times (ms). */
+  laps?: { lapTimeMs: number }[];
   notes?: string;
 };
 
@@ -1396,10 +1458,59 @@ export type ManualActivityResponse = {
   message?: string;
 };
 
+/**
+ * Build JSON body so `laps` is never lost: `JSON.stringify` drops keys whose value is `undefined`,
+ * which previously omitted `laps` and led to sessions with no Lap rows.
+ * When laps are present, also sends `bestLapMs` (min) so the server always has a fallback field.
+ */
+export function buildManualActivityRequestBody(
+  data: ManualActivityRequest
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    sim: data.sim,
+    trackId: data.trackId,
+  };
+  if (data.carId != null && String(data.carId).trim() !== "") {
+    body.carId = data.carId;
+  }
+  if (data.position != null && Number.isFinite(data.position)) {
+    body.position = data.position;
+  }
+  if (data.totalDrivers != null && Number.isFinite(data.totalDrivers)) {
+    body.totalDrivers = data.totalDrivers;
+  }
+  if (data.notes != null && String(data.notes).trim() !== "") {
+    body.notes = String(data.notes).trim();
+  }
+
+  const laps = Array.isArray(data.laps)
+    ? data.laps
+        .filter(
+          (l) =>
+            l &&
+            typeof l.lapTimeMs === "number" &&
+            Number.isFinite(l.lapTimeMs)
+        )
+        .map((l) => ({ lapTimeMs: Math.round(l.lapTimeMs) }))
+    : [];
+
+  if (laps.length > 0) {
+    body.laps = laps;
+    body.bestLapMs = Math.min(...laps.map((l) => l.lapTimeMs));
+  } else if (data.bestLapMs != null && Number.isFinite(data.bestLapMs)) {
+    body.bestLapMs = Math.round(data.bestLapMs);
+  }
+
+  return body;
+}
+
 export async function createManualActivity(
   data: ManualActivityRequest
 ): Promise<ManualActivityResponse> {
-  return apiPost<ManualActivityResponse>("/api/sessions/manual-activity", data);
+  return apiPost<ManualActivityResponse>(
+    "/api/sessions/manual-activity",
+    buildManualActivityRequestBody(data)
+  );
 }
 
 export async function updateManualActivity(
@@ -1409,7 +1520,7 @@ export async function updateManualActivity(
   return fetchApi<ManualActivityResponse>(
     "PUT",
     `/api/sessions/manual-activity/${sessionId}`,
-    data
+    buildManualActivityRequestBody(data)
   );
 }
 

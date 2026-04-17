@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Cpu, Download, Lock, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsProUser } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { API_BASE } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import PageMeta from "@/components/PageMeta";
@@ -23,7 +23,6 @@ const DOWNLOAD_ENDPOINT = `${API_BASE}/api/agent/download`;
 export default function Agent() {
   const navigate = useNavigate();
   const isPro = useIsProUser();
-  const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
 
   async function handleDownload() {
@@ -40,24 +39,18 @@ export default function Agent() {
       if (response.ok || response.status === 302) {
         window.location.href = DOWNLOAD_ENDPOINT;
       } else if (response.status === 403) {
-        toast({
-          title: "Apex Pro Required",
+        toast.error("Apex Pro Required", {
           description: "Apex Pro required to download the agent.",
-          variant: "destructive",
         });
         navigate("/upgrade");
       } else {
-        toast({
-          title: "Download failed",
+        toast.error("Download failed", {
           description: "Unable to start download. Please try again.",
-          variant: "destructive",
         });
       }
     } catch {
-      toast({
-        title: "Download failed",
+      toast.error("Download failed", {
         description: "Unable to start download. Please try again.",
-        variant: "destructive",
       });
     } finally {
       setIsDownloading(false);

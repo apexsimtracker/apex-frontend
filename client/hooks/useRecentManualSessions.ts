@@ -27,6 +27,8 @@ type ActivitySession = {
 };
 
 const RECENT_LIMIT = 5;
+/** API page size for recent manual rows (deduped to RECENT_LIMIT in UI). */
+const RECENT_FEED_FETCH_LIMIT = 10;
 
 function normalizeSim(s: string | null | undefined): string {
   if (!s || !s.trim()) return "";
@@ -37,7 +39,7 @@ function buildRecentFromFeed(): Promise<RecentManualItem[]> {
   return getActivityFeedPage({
     type: "manual",
     page: 1,
-    limit: 50,
+    limit: RECENT_FEED_FETCH_LIMIT,
   }).then(({ items }) => {
     const sessions = (Array.isArray(items) ? items : []) as ActivitySession[];
 

@@ -433,7 +433,7 @@ export function ProfileView({
 
           <div className="border-white/6 rounded-lg border bg-card/20 p-6 backdrop-blur-lg">
             <h2 className="mb-6 text-sm font-semibold uppercase tracking-widest text-foreground">
-              Most-Played
+              Most Played
             </h2>
             {(profile.mostPlayed?.length ?? 0) === 0 ? (
               <div className="flex h-[220px] flex-col items-center justify-center text-center text-neutral-400">

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useForm, useFormState } from "react-hook-form";
+import { useForm, useFormState, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MANUAL_ACTIVITY_SIMS, type ManualActivitySim } from "@/lib/manualActivityData";
-import { parseLapTimeToMs, formatMsToLapTime } from "@/lib/utils";
+import { parseStrictManualLapTimeToMs, formatMsToLapTime } from "@/lib/utils";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import {
   useRecentManualSessions,
@@ -25,6 +25,8 @@ import {
   manualActivityFormSchema,
   MANUAL_ACTIVITY_POSITION_MAX,
   MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX,
+  getManualLapMaxForSim,
+  getManualLapMaxForSimOrDefault,
   type ManualActivityFormValues,
 } from "@/lib/validation/manualActivity";
 
@@ -34,7 +36,7 @@ export type ManualActivityFormData = {
   carId: string;
   position: string;
   totalDrivers: string;
-  bestLapTime: string;
+  laps: { lapTime: string }[];
   notes: string;
 };
 
@@ -44,7 +46,10 @@ export type ManualActivityInitialData = {
   carId?: string | null;
   position?: number | null;
   totalDrivers?: number | null;
+  /** @deprecated prefer lapsMs */
   bestLapMs?: number | null;
+  /** Ordered lap times in ms (e.g. from session detail). */
+  lapsMs?: number[] | null;
   notes?: string | null;
 };
 
@@ -57,6 +62,7 @@ interface ManualActivityFormProps {
     carId?: string;
     position?: number;
     totalDrivers?: number;
+    laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
   }) => Promise<void>;
@@ -72,13 +78,21 @@ function formatMsToInput(ms: number | null | undefined): string {
 }
 
 function buildDefaults(initial?: ManualActivityInitialData): ManualActivityFormValues {
+  let laps: { lapTime: string }[];
+  if (initial?.lapsMs && initial.lapsMs.length > 0) {
+    laps = initial.lapsMs.map((ms) => ({ lapTime: formatMsToInput(ms) }));
+  } else if (initial?.bestLapMs != null && Number.isFinite(initial.bestLapMs)) {
+    laps = [{ lapTime: formatMsToInput(initial.bestLapMs) }];
+  } else {
+    laps = [{ lapTime: "" }];
+  }
   return {
     sim: (initial?.sim as string) || "",
     trackId: initial?.trackId ?? "",
     carId: initial?.carId ?? "",
     position: initial?.position != null ? String(initial.position) : "",
     totalDrivers: initial?.totalDrivers != null ? String(initial.totalDrivers) : "",
-    bestLapTime: formatMsToInput(initial?.bestLapMs),
+    laps,
     notes: initial?.notes ?? "",
   };
 }
@@ -104,12 +118,21 @@ export default function ManualActivityForm({
     reValidateMode: "onChange",
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "laps",
+  });
+
   const { errors: formErrors } = useFormState({ control: form.control });
 
   const sim = form.watch("sim") as ManualActivitySim | "";
   const trackId = form.watch("trackId");
   const carId = form.watch("carId");
-  const bestLapTime = form.watch("bestLapTime");
+  const lapsWatch = form.watch("laps");
+
+  const maxLapsForSim = getManualLapMaxForSimOrDefault(sim);
+  const canAddLap = fields.length < maxLapsForSim;
+  const canRemoveLap = fields.length > 1;
 
   const { tracks, cars, loading: catalogsLoading, error: catalogsError, retry: retryCatalogs } =
     useCatalogs(sim || null);
@@ -128,6 +151,19 @@ export default function ManualActivityForm({
       form.clearErrors("root");
     }
   }, [errorMessage, form]);
+
+  useEffect(() => {
+    if (!sim) return;
+    const max = getManualLapMaxForSim(sim);
+    const current = form.getValues("laps");
+    if (current.length > max) {
+      form.setValue(
+        "laps",
+        current.slice(0, max),
+        { shouldValidate: true }
+      );
+    }
+  }, [sim, form]);
 
   useEffect(() => {
     if (tracks.length > 0 && trackId && !tracks.some((t) => t.id === trackId)) {
@@ -164,18 +200,22 @@ export default function ManualActivityForm({
     });
   }
 
-  const parsedBestLapMs = bestLapTime.trim() ? parseLapTimeToMs(bestLapTime) : null;
-  const lapTimeInvalid = bestLapTime.trim() !== "" && parsedBestLapMs === null;
-  const showSavedPreview =
-    bestLapTime.trim() && parsedBestLapMs != null && !form.formState.errors.bestLapTime;
-
   async function handleValid(values: ManualActivityFormValues) {
     form.clearErrors("root");
     const positionNum = values.position.trim() ? parseInt(values.position, 10) : undefined;
     const totalDriversNum = values.totalDrivers.trim()
       ? parseInt(values.totalDrivers, 10)
       : undefined;
-    const bestLapMs = parseLapTimeToMs(values.bestLapTime) ?? undefined;
+
+    const lapTimesMs = values.laps
+      .map((r) => r.lapTime.trim())
+      .filter(Boolean)
+      .map((t) => parseStrictManualLapTimeToMs(t))
+      .filter((ms): ms is number => ms != null);
+
+    const lapsOut = lapTimesMs.map((lapTimeMs) => ({ lapTimeMs }));
+    const bestLapMs =
+      lapTimesMs.length > 0 ? Math.min(...lapTimesMs) : undefined;
 
     await onSubmit({
       sim: values.sim,
@@ -183,7 +223,9 @@ export default function ManualActivityForm({
       carId: values.carId || undefined,
       position: positionNum,
       totalDrivers: totalDriversNum,
-      bestLapMs,
+      ...(lapsOut.length > 0
+        ? { laps: lapsOut, bestLapMs }
+        : {}),
       notes: values.notes.trim() || undefined,
     });
   }
@@ -405,37 +447,85 @@ export default function ManualActivityForm({
           </p>
         </div>
 
-        <FormField
-          control={form.control}
-          name="bestLapTime"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="bestLapTime" className="text-white/80">
-                Best Lap Time <span className="text-white/40">(optional)</span>
-              </FormLabel>
-              <FormControl>
-                <input
-                  id="bestLapTime"
-                  type="text"
-                  disabled={isSubmitting}
-                  placeholder="mm:ss.mmm (e.g. 1:32.456, 92.456, 0:59.900)"
-                  className={`w-full rounded-lg border bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50 ${
-                    lapTimeInvalid
-                      ? "border-red-500/50 focus:border-red-500/50"
-                      : "border-white/10 focus:border-white/20"
-                  }`}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-              {showSavedPreview && parsedBestLapMs != null && (
-                <p className="mt-1 text-xs text-white/50">
-                  Saved as {formatMsToLapTime(parsedBestLapMs)}
-                </p>
-              )}
-            </FormItem>
+        <div className="space-y-2">
+          <div className="flex items-end justify-between gap-2">
+            <FormLabel className="text-white/80">
+              Laps <span className="text-white/40">(optional)</span>
+            </FormLabel>
+            <span className="text-xs text-white/40">
+              {sim ? `Max ${maxLapsForSim} · ${fields.length} row${fields.length === 1 ? "" : "s"}` : "Select sim for limit"}
+            </span>
+          </div>
+          {fields.map((fieldItem, index) => {
+            const raw = lapsWatch?.[index]?.lapTime ?? "";
+            const parsed = raw.trim() ? parseStrictManualLapTimeToMs(raw) : null;
+            const lapInvalid = raw.trim() !== "" && parsed === null;
+            return (
+              <FormField
+                key={fieldItem.id}
+                control={form.control}
+                name={`laps.${index}.lapTime`}
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <FormLabel className="text-xs text-white/50">
+                          Lap {index + 1}
+                        </FormLabel>
+                        <FormControl>
+                          <input
+                            type="text"
+                            disabled={isSubmitting}
+                            placeholder="1:32.456 · 92.456 · 0:59.900"
+                            className={`mt-1 w-full rounded-lg border bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50 ${
+                              lapInvalid
+                                ? "border-red-500/50 focus:border-red-500/50"
+                                : "border-white/10 focus:border-white/20"
+                            }`}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs text-red-500" />
+                        {raw.trim() && parsed != null && !formErrors.laps?.[index]?.lapTime && (
+                          <p className="mt-1 text-xs text-white/50">
+                            Saved as {formatMsToLapTime(parsed)}
+                          </p>
+                        )}
+                      </div>
+                      {canRemoveLap && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="mt-6 shrink-0 border-white/20 text-white/80 hover:bg-white/10"
+                          disabled={isSubmitting}
+                          onClick={() => remove(index)}
+                          aria-label={`Remove lap ${index + 1}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </FormItem>
+                )}
+              />
+            );
+          })}
+          {formErrors.laps && typeof formErrors.laps.message === "string" && (
+            <p className="text-xs text-red-500">{formErrors.laps.message}</p>
           )}
-        />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white/80 hover:bg-white/10"
+            disabled={isSubmitting || !canAddLap}
+            onClick={() => append({ lapTime: "" })}
+          >
+            <Plus className="mr-1 size-4" />
+            Add lap
+          </Button>
+        </div>
 
         <FormField
           control={form.control}

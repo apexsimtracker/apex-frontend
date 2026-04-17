@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseLapTimeToMs } from "@/lib/utils";
+import { parseStrictManualLapTimeToMs } from "@/lib/utils";
 
 /** Aligned with apex/src/routes/manualActivity.ts POSITION_* / TOTAL_DRIVERS_* */
 export const MANUAL_ACTIVITY_POSITION_MIN = 1;
@@ -7,8 +7,28 @@ export const MANUAL_ACTIVITY_POSITION_MAX = 999;
 export const MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN = 1;
 export const MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX = 999;
 
+/** Aligned with apex MANUAL_LAPS_MAX */
+export const MANUAL_LAPS_MAX_IRACING = 250;
+export const MANUAL_LAPS_MAX_F1_25 = 100;
+
 const LAP_FORMAT_MSG =
-  "Invalid format. Use mm:ss.mmm (e.g. 1:32.456, 92.456, 0:59.900)";
+  "Use exactly: m:ss.mmm (e.g. 1:32.456 or 0:59.900) or ss.mmm (e.g. 92.456). Seconds must be two digits with a colon; milliseconds must be three digits.";
+
+export function getManualLapMaxForSim(sim: string): number {
+  const s = sim.trim().toUpperCase();
+  if (s === "F1_25") return MANUAL_LAPS_MAX_F1_25;
+  return MANUAL_LAPS_MAX_IRACING;
+}
+
+/** Used when sim not chosen yet (allow UI to show add until sim selected). */
+export function getManualLapMaxForSimOrDefault(sim: string | undefined | null): number {
+  if (!sim?.trim()) return MANUAL_LAPS_MAX_IRACING;
+  return getManualLapMaxForSim(sim);
+}
+
+const lapRowSchema = z.object({
+  lapTime: z.string(),
+});
 
 export const manualActivityFormSchema = z
   .object({
@@ -17,7 +37,7 @@ export const manualActivityFormSchema = z
     carId: z.string(),
     position: z.string(),
     totalDrivers: z.string(),
-    bestLapTime: z.string(),
+    laps: z.array(lapRowSchema),
     notes: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -121,16 +141,27 @@ export const manualActivityFormSchema = z
       });
     }
 
-    if (data.bestLapTime.trim()) {
-      const ms = parseLapTimeToMs(data.bestLapTime);
+    const maxLaps = getManualLapMaxForSim(data.sim);
+    if (data.laps.length > maxLaps) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `At most ${maxLaps} laps for this sim.`,
+        path: ["laps"],
+      });
+    }
+
+    data.laps.forEach((row, i) => {
+      const t = row.lapTime?.trim() ?? "";
+      if (!t) return;
+      const ms = parseStrictManualLapTimeToMs(row.lapTime);
       if (ms === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: LAP_FORMAT_MSG,
-          path: ["bestLapTime"],
+          path: ["laps", i, "lapTime"],
         });
       }
-    }
+    });
   });
 
 export type ManualActivityFormValues = z.infer<typeof manualActivityFormSchema>;

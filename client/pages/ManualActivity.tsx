@@ -41,6 +41,8 @@ export default function ManualActivity() {
     trackId: string;
     carId?: string;
     position?: number;
+    totalDrivers?: number;
+    laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
   }) {

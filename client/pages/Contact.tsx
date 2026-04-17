@@ -18,7 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   contactFormSchema,
   type ContactFormValues,
@@ -34,8 +34,6 @@ const defaultValues: ContactFormValues = {
 };
 
 export default function Contact() {
-  const { toast } = useToast();
-
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues,
@@ -47,9 +45,9 @@ export default function Contact() {
   const mutation = useMutation({
     mutationFn: submitContact,
     onSuccess: () => {
-      toast({
-        title: "Message sent",
-        description: "Thanks for getting in touch. We’ll get back to you as soon as we can.",
+      toast.success("Message sent", {
+        description:
+          "Thanks for getting in touch. We’ll get back to you as soon as we can.",
       });
       form.reset(defaultValues);
     },
@@ -59,11 +57,7 @@ export default function Contact() {
       if (err instanceof ApiError && err.status === 503) {
         description = `${description} You can also reach us at ${SUPPORT_EMAIL}.`;
       }
-      toast({
-        title: "Could not send message",
-        description,
-        variant: "destructive",
-      });
+      toast.error("Could not send message", { description });
     },
   });
 
