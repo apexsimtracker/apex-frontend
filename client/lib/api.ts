@@ -366,15 +366,21 @@ export async function getProfileRaceHistoryForUser(
   );
 }
 
+/** GET /api/users/:userId — profile preview (may mask counts/bio when private). */
+export type FollowRelationship = "self" | "following" | "pending" | "none";
+
 /** GET /api/users/:userId — public profile preview (avatar, bio, follow counts). */
 export type UserPublicProfile = {
   id: string;
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
-  followersCount: number;
-  followingCount: number;
+  followersCount: number | null;
+  followingCount: number | null;
   isFollowing: boolean;
+  privateProfile: boolean;
+  viewerHasAccess: boolean;
+  followRelationship: FollowRelationship;
 };
 
 /** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
@@ -382,6 +388,81 @@ export type FollowUser = UserPublicProfile;
 
 export async function getUserPublicProfile(userId: string): Promise<UserPublicProfile> {
   return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
+}
+
+/** PATCH /api/settings/privacy — Bearer session */
+export type PrivacySettingsPayload = {
+  privateProfile: boolean;
+  manualFollowApproval: boolean;
+  showRaceHistory: boolean;
+};
+
+export async function patchPrivacySettings(
+  body: Partial<PrivacySettingsPayload>
+): Promise<PrivacySettingsPayload> {
+  return fetchApi<PrivacySettingsPayload>("PATCH", "/api/settings/privacy", body);
+}
+
+/** GET /api/notifications */
+export type NotificationItem = {
+  id: string;
+  type: "FOLLOW" | "FOLLOW_REQUEST" | "FOLLOW_REQUEST_ACCEPTED" | "REPLY" | "COMMENT";
+  entityId: string | null;
+  read: boolean;
+  createdAt: string;
+  actor: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+};
+
+export async function getNotifications(): Promise<{ notifications: NotificationItem[] }> {
+  return apiGet<{ notifications: NotificationItem[] }>("/api/notifications");
+}
+
+export async function markNotificationsRead(ids?: string[]): Promise<{ marked: number }> {
+  return fetchApi<{ marked: number }>(
+    "POST",
+    "/api/notifications/read",
+    ids && ids.length > 0 ? { ids } : {}
+  );
+}
+
+/** DELETE /api/notifications — remove all notifications for the current user */
+export async function clearNotifications(): Promise<{ deleted: number }> {
+  return apiDelete<{ deleted: number }>("/api/notifications");
+}
+
+/** GET /api/me/follow-requests — pending inbound */
+export type FollowRequestListItem = {
+  id: string;
+  createdAt: string;
+  follower: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
+};
+
+export async function listFollowRequests(): Promise<{ requests: FollowRequestListItem[] }> {
+  return apiGet<{ requests: FollowRequestListItem[] }>("/api/me/follow-requests");
+}
+
+export async function acceptFollowRequest(requestId: string): Promise<{ ok: boolean }> {
+  return fetchApi<{ ok: boolean }>(
+    "POST",
+    `/api/me/follow-requests/${encodeURIComponent(requestId)}/accept`,
+    {}
+  );
+}
+
+export async function declineFollowRequest(requestId: string): Promise<{ ok: boolean }> {
+  return fetchApi<{ ok: boolean }>(
+    "POST",
+    `/api/me/follow-requests/${encodeURIComponent(requestId)}/decline`,
+    {}
+  );
 }
 
 export type Competition = {
@@ -942,6 +1023,11 @@ export type AuthUser = {
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;
+  emailVerified?: boolean;
+  /** Server-backed privacy flags (also in local ApexSettings for offline prefs). */
+  privateProfile?: boolean;
+  manualFollowApproval?: boolean;
+  showRaceHistory?: boolean;
 };
 
 /** Body for PATCH /api/auth/me. Backend may use "bio" or "tagline"; we send both so either works. */

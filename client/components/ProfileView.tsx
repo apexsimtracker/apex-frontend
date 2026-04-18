@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle, Loader2, User } from "lucide-react";
-import type { ProfileSummary, RaceHistoryPageResult } from "../lib/api";
+import type {
+  FollowRelationship,
+  ProfileSummary,
+  RaceHistoryPageResult,
+} from "../lib/api";
 import { RaceHistoryPagination } from "./RaceHistoryPagination";
 import {
   formatLapMs,
@@ -21,10 +25,15 @@ type ProfileViewProps = {
   avatarUrl?: string | null;
   /** Optional explicit bio for display; if absent, falls back to profile.user.bio/tagline. */
   bio?: string | null;
-  followersCount?: number;
-  followingCount?: number;
+  followersCount?: number | null;
+  followingCount?: number | null;
   isCurrentUser?: boolean;
   isFollowing?: boolean;
+  /** When true, hide stats grids and race history (private profile, viewer not allowed). */
+  profileLocked?: boolean;
+  /** From GET /api/users/:id — drives Follow vs Request labels for other users. */
+  followRelationship?: FollowRelationship;
+  targetPrivateProfile?: boolean;
   followLoading?: boolean;
   onToggleFollow?: () => void;
   onOpenFollowers?: () => void;
@@ -53,6 +62,9 @@ export function ProfileView({
   isCurrentUser,
   isFollowing,
   followLoading,
+  profileLocked = false,
+  followRelationship = "none",
+  targetPrivateProfile = false,
   onToggleFollow,
   onOpenFollowers,
   onOpenFollowing,
@@ -113,6 +125,14 @@ export function ProfileView({
   ];
   const weeklyTotal = weeklyValues.reduce((a, b) => a + b, 0);
   const maxWeekly = Math.max(...weeklyValues, 1);
+
+  const followActionLabel = (() => {
+    if (isCurrentUser || !onToggleFollow) return "Follow";
+    if (isFollowing) return "Unfollow";
+    if (followRelationship === "pending") return "Cancel request";
+    if (targetPrivateProfile) return "Request to follow";
+    return "Follow";
+  })();
 
   return (
     <div className="min-h-screen bg-background">
@@ -188,17 +208,21 @@ export function ProfileView({
                             className="size-3.5 shrink-0 animate-spin"
                             aria-hidden
                           />
-                          <span>{isFollowing ? "Unfollowing…" : "Following…"}</span>
-                          <span className="sr-only">
+                          <span>
                             {isFollowing
-                              ? "Unfollowing, please wait"
-                              : "Following, please wait"}
+                              ? "Unfollowing…"
+                              : followRelationship === "pending"
+                                ? "Canceling…"
+                                : targetPrivateProfile
+                                  ? "Sending…"
+                                  : "Following…"}
+                          </span>
+                          <span className="sr-only">
+                            Updating follow status, please wait
                           </span>
                         </>
-                      ) : isFollowing ? (
-                        "Unfollow"
                       ) : (
-                        "Follow"
+                        followActionLabel
                       )}
                     </button>
                   )}
@@ -251,59 +275,67 @@ export function ProfileView({
           </div>
 
           {/* Key Stats - Subtle Minimal Grid */}
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-5">
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                Races
-              </p>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {profile.totals?.races ?? 0}
-              </p>
+          {profileLocked ? (
+            <div className="rounded-lg border border-amber-500/15 bg-amber-500/5 px-4 py-3 text-center text-sm text-muted-foreground">
+              Stats are hidden because this profile is private. Follow this account to see sessions and
+              results when your request is approved.
             </div>
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                Wins
-              </p>
-              <p className="text-sm font-semibold text-yellow-200 sm:text-base">
-                {safeValue(profile.totals?.wins)}
-              </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-5">
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  Races
+                </p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {profile.totals?.races ?? 0}
+                </p>
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  Wins
+                </p>
+                <p className="text-sm font-semibold text-yellow-200 sm:text-base">
+                  {safeValue(profile.totals?.wins)}
+                </p>
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  Podiums
+                </p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {safeValue(profile.totals?.podiums)}
+                </p>
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  Poles
+                </p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {safeValue(profile.totals?.poles)}
+                </p>
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  FL
+                </p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {profile.totals?.fastestLaps ?? 0}
+                </p>
+              </div>
+              <div className="text-center sm:text-left">
+                <p className="mb-1 text-xs uppercase text-muted-foreground/50">
+                  Avg
+                </p>
+                <p className="text-sm font-semibold text-foreground sm:text-base">
+                  {formatAvgFinishOneDecimal(profile.totals?.avgFinish)}
+                </p>
+              </div>
             </div>
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                Podiums
-              </p>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {safeValue(profile.totals?.podiums)}
-              </p>
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                Poles
-              </p>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {safeValue(profile.totals?.poles)}
-              </p>
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                FL
-              </p>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {profile.totals?.fastestLaps ?? 0}
-              </p>
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-                Avg
-              </p>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {formatAvgFinishOneDecimal(profile.totals?.avgFinish)}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
-        {profile.insight &&
+        {!profileLocked &&
+          profile.insight &&
           profile.insight.title &&
           profile.insight.body && (
             <Link
@@ -319,6 +351,8 @@ export function ProfileView({
             </Link>
           )}
 
+        {!profileLocked && (
+          <>
         {/* Placeholder Content */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="border-white/6 rounded-lg border bg-card/20 p-6 backdrop-blur-lg md:col-span-2">
@@ -783,6 +817,8 @@ export function ProfileView({
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

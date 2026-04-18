@@ -20,10 +20,43 @@ import { profileKeys } from "@/lib/profileQueryKeys";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 
-type ProfileBundle = {
-  profile: ProfileSummary;
-  preview: Awaited<ReturnType<typeof getUserPublicProfile>>;
-};
+function emptyProfileSummary(id: string, displayName: string): ProfileSummary {
+  const emptyBuckets = {
+    Mon: 0,
+    Tue: 0,
+    Wed: 0,
+    Thu: 0,
+    Fri: 0,
+    Sat: 0,
+    Sun: 0,
+  };
+  return {
+    user: {
+      id,
+      displayName,
+      streakDays: 0,
+    },
+    totals: {
+      races: 0,
+      wins: null,
+      podiums: null,
+      poles: null,
+      fastestLaps: 0,
+      avgFinish: null,
+    },
+    weekly: {
+      buckets: emptyBuckets,
+      totalRaces: 0,
+      wins: null,
+      avgFinish: null,
+      totalKm: null,
+    },
+    mostPlayed: [],
+    raceHistory: [],
+    statsByGame: [],
+    insight: null,
+  };
+}
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
@@ -46,35 +79,25 @@ export default function UserProfile() {
     window.scrollTo(0, 0);
   }, [id]);
 
-  const profileBundleQuery = useQuery({
-    queryKey: profileKeys.userBundle(id),
-    queryFn: async (): Promise<ProfileBundle> => {
-      const [profile, preview] = await Promise.all([
-        getProfileSummaryForUser(id),
-        getUserPublicProfile(id),
-      ]);
-      return { profile, preview };
-    },
+  const previewQuery = useQuery({
+    queryKey: profileKeys.publicPreview(id),
+    queryFn: () => getUserPublicProfile(id),
     enabled: Boolean(id),
     retry: (failureCount, err) =>
       !(err instanceof ApiError && err.status === 404),
   });
 
-  const notFound =
-    profileBundleQuery.error instanceof ApiError &&
-    profileBundleQuery.error.status === 404;
+  const preview = previewQuery.data ?? null;
+  const viewerHasAccess = preview?.viewerHasAccess ?? false;
 
-  const loadError =
-    profileBundleQuery.isError &&
-    profileBundleQuery.error &&
-    !(profileBundleQuery.error instanceof ApiError && profileBundleQuery.error.status === 404)
-      ? profileBundleQuery.error instanceof Error
-        ? profileBundleQuery.error.message
-        : "Failed to load profile."
-      : null;
+  const summaryQuery = useQuery({
+    queryKey: ["userProfile", "summary", id],
+    queryFn: () => getProfileSummaryForUser(id),
+    enabled: Boolean(id) && viewerHasAccess,
+    retry: (failureCount, err) =>
+      !(err instanceof ApiError && (err.status === 404 || err.status === 403)),
+  });
 
-  // Race history + follows only need `id` from the URL; they run in parallel with the bundle.
-  // Trade-off: invalid / missing users may 404 the bundle while these requests still fire.
   const { data: raceHistoryData, isPending: raceHistoryLoading } = useQuery({
     queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
     queryFn: () =>
@@ -82,13 +105,22 @@ export default function UserProfile() {
         page: raceHistoryPage,
         limit: RACE_HISTORY_PAGE_SIZE,
       }),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && viewerHasAccess,
   });
 
-  const profile = profileBundleQuery.data?.profile ?? null;
-  const preview = profileBundleQuery.data?.preview ?? null;
+  const notFound =
+    previewQuery.error instanceof ApiError && previewQuery.error.status === 404;
 
-  const loading = Boolean(id) && profileBundleQuery.isPending;
+  const loadError =
+    previewQuery.isError &&
+    previewQuery.error &&
+    !(previewQuery.error instanceof ApiError && previewQuery.error.status === 404)
+      ? previewQuery.error instanceof Error
+        ? previewQuery.error.message
+        : "Failed to load profile."
+      : null;
+
+  const loading = Boolean(id) && previewQuery.isPending;
 
   const handleToggleFollow = useCallback(async () => {
     if (!currentUser || !id || currentUser.id === id) return;
@@ -96,22 +128,26 @@ export default function UserProfile() {
     setFollowActionError(null);
     try {
       const isFollowing = preview?.isFollowing ?? false;
-      if (isFollowing) {
+      const pending = preview?.followRelationship === "pending";
+      if (isFollowing || pending) {
         await unfollowUser(id);
       } else {
         await followUser(id);
       }
       const pub = await getUserPublicProfile(id);
-      queryClient.setQueryData<ProfileBundle>(profileKeys.userBundle(id), (old) =>
-        old ? { ...old, preview: pub } : old
-      );
+      queryClient.setQueryData(profileKeys.publicPreview(id), pub);
       void queryClient.invalidateQueries({
         queryKey: ["profile", "followList", id],
       });
       void queryClient.invalidateQueries({
         queryKey: profileKeys.publicPreview(id),
       });
-      // Home feed is scoped to self + followed users; refetch when follow graph changes.
+      void queryClient.invalidateQueries({
+        queryKey: ["userProfile", "summary", id],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
+      });
       void queryClient.invalidateQueries({
         queryKey: ["activity", "feed", "home"],
       });
@@ -122,7 +158,7 @@ export default function UserProfile() {
     } finally {
       setFollowLoading(false);
     }
-  }, [currentUser, id, preview?.isFollowing, queryClient]);
+  }, [currentUser, id, preview?.isFollowing, preview?.followRelationship, queryClient, raceHistoryPage]);
 
   if (!id) {
     return (
@@ -188,7 +224,7 @@ export default function UserProfile() {
 
   const combinedError = loadError || followActionError;
 
-  if (combinedError || !profile || !preview) {
+  if (combinedError || !preview) {
     return (
       <div className="min-h-screen bg-background">
         <PageMeta
@@ -220,25 +256,34 @@ export default function UserProfile() {
     );
   }
 
+  const profileLocked = !viewerHasAccess;
+  const profileData: ProfileSummary =
+    viewerHasAccess && summaryQuery.data
+      ? summaryQuery.data
+      : emptyProfileSummary(
+          id,
+          preview.displayName?.trim() || "Driver"
+        );
+
   const avatarUrl = resolveApiUrl(preview.avatarUrl) ?? undefined;
   const bio =
     preview.bio?.trim() ||
-    (profile.user as { tagline?: string; bio?: string }).bio?.trim() ||
-    (profile.user as { tagline?: string; bio?: string }).tagline?.trim() ||
+    (profileData.user as { tagline?: string; bio?: string }).bio?.trim() ||
+    (profileData.user as { tagline?: string; bio?: string }).tagline?.trim() ||
     undefined;
 
   const displayProfile: ProfileSummary = {
-    ...profile,
+    ...profileData,
     user: {
-      ...profile.user,
-      displayName: preview.displayName || profile.user.displayName,
+      ...profileData.user,
+      displayName: preview.displayName || profileData.user.displayName,
     },
   };
 
   const showFollowUi = Boolean(currentUser && currentUser.id !== id);
 
   const displayName =
-    preview.displayName?.trim() || profile.user.displayName?.trim() || "Driver";
+    preview.displayName?.trim() || profileData.user.displayName?.trim() || "Driver";
   const userSeoDescription = (() => {
     const t = bio?.trim() ?? "";
     if (t.length > 0) {
@@ -264,19 +309,30 @@ export default function UserProfile() {
         followingCount={preview.followingCount}
         isCurrentUser={false}
         isFollowing={preview.isFollowing}
+        profileLocked={profileLocked}
+        followRelationship={preview.followRelationship}
+        targetPrivateProfile={preview.privateProfile}
         followLoading={followLoading}
         onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
-        onOpenFollowers={() => setOpenList("followers")}
-        onOpenFollowing={() => setOpenList("following")}
-        raceHistoryPagination={{
-          page: raceHistoryData?.page ?? raceHistoryPage,
-          limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
-          totalPages: raceHistoryData?.totalPages ?? 1,
-          total: raceHistoryData?.total ?? 0,
-          items: raceHistoryData?.items ?? [],
-          loading: raceHistoryLoading,
-          onPageChange: setRaceHistoryPage,
-        }}
+        onOpenFollowers={
+          viewerHasAccess ? () => setOpenList("followers") : undefined
+        }
+        onOpenFollowing={
+          viewerHasAccess ? () => setOpenList("following") : undefined
+        }
+        raceHistoryPagination={
+          viewerHasAccess
+            ? {
+                page: raceHistoryData?.page ?? raceHistoryPage,
+                limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+                totalPages: raceHistoryData?.totalPages ?? 1,
+                total: raceHistoryData?.total ?? 0,
+                items: raceHistoryData?.items ?? [],
+                loading: raceHistoryLoading,
+                onPageChange: setRaceHistoryPage,
+              }
+            : undefined
+        }
       />
 
       <FollowListDialog

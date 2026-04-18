@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 function ApexLogo({ className }: { className?: string }) {
   return (
@@ -184,6 +185,7 @@ export default function Header() {
 
           {/* Desktop Controls */}
           <div className="hidden items-center gap-2 md:flex">
+            {user ? <NotificationsBell /> : null}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -230,6 +232,7 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
+            {user ? <NotificationsBell /> : null}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"

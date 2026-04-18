@@ -6,6 +6,8 @@ export type ApexSettings = {
   activityNotifications: boolean;
   leaderboardNotifications: boolean;
   privateProfile: boolean;
+  /** When private profile is on: require approval for new followers (synced with server). */
+  manualFollowApproval: boolean;
   showRaceHistory: boolean;
 };
 
@@ -15,6 +17,7 @@ export const DEFAULT_APEX_SETTINGS: ApexSettings = {
   activityNotifications: true,
   leaderboardNotifications: false,
   privateProfile: false,
+  manualFollowApproval: true,
   showRaceHistory: true,
 };
 
@@ -29,6 +32,8 @@ function parseStored(raw: string | null): ApexSettings | null {
       activityNotifications: data.activityNotifications ?? DEFAULT_APEX_SETTINGS.activityNotifications,
       leaderboardNotifications: data.leaderboardNotifications ?? DEFAULT_APEX_SETTINGS.leaderboardNotifications,
       privateProfile: data.privateProfile ?? DEFAULT_APEX_SETTINGS.privateProfile,
+      manualFollowApproval:
+        data.manualFollowApproval ?? DEFAULT_APEX_SETTINGS.manualFollowApproval,
       showRaceHistory: data.showRaceHistory ?? DEFAULT_APEX_SETTINGS.showRaceHistory,
     };
   } catch {

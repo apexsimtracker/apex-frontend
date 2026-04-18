@@ -1,10 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
-import { authMe, updateMe, API_BASE, changePassword, deleteAccount, ApiError } from "@/lib/api";
+import {
+  authMe,
+  updateMe,
+  API_BASE,
+  changePassword,
+  deleteAccount,
+  ApiError,
+  patchPrivacySettings,
+} from "@/lib/api";
 import {
   getApexSettings,
   setApexSettings,
@@ -121,6 +131,7 @@ function formatCreatedAt(createdAt: string | undefined): string {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, loading, setUser } = useAuth();
 
   const [settings, setSettings] = useState<ApexSettings>(() => getApexSettings());
@@ -132,6 +143,7 @@ export default function Settings() {
   const [testApiMessage, setTestApiMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [privacySaving, setPrivacySaving] = useState(false);
 
   const displayNameForm = useForm<WithRootError<SettingsDisplayNameValues>>({
     resolver: zodResolver(settingsDisplayNameSchema),
@@ -156,6 +168,28 @@ export default function Settings() {
       });
     }
   }, [user, displayNameForm]);
+
+  useEffect(() => {
+    if (!user) return;
+    const u = user as {
+      privateProfile?: boolean;
+      manualFollowApproval?: boolean;
+      showRaceHistory?: boolean;
+    };
+    setSettings((prev) => ({
+      ...prev,
+      ...(typeof u.privateProfile === "boolean" ? { privateProfile: u.privateProfile } : {}),
+      ...(typeof u.manualFollowApproval === "boolean"
+        ? { manualFollowApproval: u.manualFollowApproval }
+        : {}),
+      ...(typeof u.showRaceHistory === "boolean" ? { showRaceHistory: u.showRaceHistory } : {}),
+    }));
+  }, [
+    user?.id,
+    user?.privateProfile,
+    user?.manualFollowApproval,
+    user?.showRaceHistory,
+  ]);
 
   useEffect(() => {
     if (deleteDialogOpen) {
@@ -205,6 +239,50 @@ export default function Settings() {
   const handleToggle = useCallback((key: keyof ApexSettings, value: boolean) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  const applyPrivacyToggle = useCallback(
+    async (
+      key: "privateProfile" | "manualFollowApproval" | "showRaceHistory",
+      value: boolean
+    ) => {
+      const prev = settings[key];
+      setSettings((s) => ({ ...s, [key]: value }));
+      setPrivacySaving(true);
+      try {
+        const updated = await patchPrivacySettings({ [key]: value });
+        setSettings((s) => ({ ...s, ...updated }));
+        if (user) {
+          setUser({
+            ...user,
+            privateProfile: updated.privateProfile,
+            manualFollowApproval: updated.manualFollowApproval,
+            showRaceHistory: updated.showRaceHistory,
+          });
+        }
+        queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
+          if (!old || typeof old !== "object") return old;
+          return {
+            ...(old as Record<string, unknown>),
+            privateProfile: updated.privateProfile,
+            manualFollowApproval: updated.manualFollowApproval,
+            showRaceHistory: updated.showRaceHistory,
+          };
+        });
+      } catch (e) {
+        setSettings((s) => ({ ...s, [key]: prev }));
+        const msg =
+          e instanceof ApiError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : "Could not save privacy settings.";
+        toast.error(msg);
+      } finally {
+        setPrivacySaving(false);
+      }
+    },
+    [queryClient, setUser, settings, user]
+  );
 
   const handleResetDefaults = useCallback(() => {
     setSettings(resetApexSettings());
@@ -500,23 +578,50 @@ export default function Settings() {
             <div className="-mx-1 divide-y divide-white/5">
               <SettingsRow
                 label="Private profile"
-                description="Visible to friends only"
+                description="Only approved followers can view your stats, sessions, and race history."
               >
                 <Switch
                   checked={settings.privateProfile}
-                  onCheckedChange={(v) => handleToggle("privateProfile", v)}
+                  disabled={privacySaving}
+                  onCheckedChange={(v) => void applyPrivacyToggle("privateProfile", v)}
+                />
+              </SettingsRow>
+              <SettingsRow
+                label="Manual follow approval"
+                description={
+                  settings.privateProfile
+                    ? "When on, people send a follow request you approve in notifications or below."
+                    : "Turn on Private profile to require follow requests."
+                }
+              >
+                <Switch
+                  checked={settings.manualFollowApproval}
+                  disabled={!settings.privateProfile || privacySaving}
+                  onCheckedChange={(v) => void applyPrivacyToggle("manualFollowApproval", v)}
                 />
               </SettingsRow>
               <SettingsRow
                 label="Show race history"
-                description="Show your results publicly"
+                description="Let approved viewers see your race history (when they can view your profile)."
               >
                 <Switch
                   checked={settings.showRaceHistory}
-                  onCheckedChange={(v) => handleToggle("showRaceHistory", v)}
+                  disabled={privacySaving}
+                  onCheckedChange={(v) => void applyPrivacyToggle("showRaceHistory", v)}
                 />
               </SettingsRow>
             </div>
+            {user ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => window.dispatchEvent(new CustomEvent("apex:open-notifications"))}
+              >
+                Manage follow requests
+              </Button>
+            ) : null}
           </SettingsCard>
 
           <SettingsCard
