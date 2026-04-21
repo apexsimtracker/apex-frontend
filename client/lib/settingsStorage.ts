@@ -1,40 +1,55 @@
+import type { SessionVisibility } from "./api";
+
 const STORAGE_KEY = "apex_settings";
 
 export type ApexSettings = {
   emailNotifications: boolean;
-  pushNotifications: boolean;
-  activityNotifications: boolean;
-  leaderboardNotifications: boolean;
+  showNotificationBadge: boolean;
   privateProfile: boolean;
   /** When private profile is on: require approval for new followers (synced with server). */
   manualFollowApproval: boolean;
-  showRaceHistory: boolean;
+  sessionVisibility: SessionVisibility;
 };
 
 export const DEFAULT_APEX_SETTINGS: ApexSettings = {
   emailNotifications: true,
-  pushNotifications: true,
-  activityNotifications: true,
-  leaderboardNotifications: false,
+  showNotificationBadge: true,
   privateProfile: false,
   manualFollowApproval: true,
-  showRaceHistory: true,
+  sessionVisibility: "PUBLIC",
 };
 
 function parseStored(raw: string | null): ApexSettings | null {
   if (!raw) return null;
   try {
-    const data = JSON.parse(raw) as Partial<ApexSettings>;
+    const data = JSON.parse(raw) as Partial<ApexSettings> & {
+      pushNotifications?: boolean;
+      showRaceHistory?: boolean;
+    };
     if (typeof data !== "object" || data === null) return null;
+    const migratedVisibility: SessionVisibility | undefined =
+      data.sessionVisibility ??
+      (typeof data.showRaceHistory === "boolean"
+        ? data.showRaceHistory
+          ? "PUBLIC"
+          : "PRIVATE"
+        : undefined);
+
+    const showNotificationBadge =
+      typeof data.showNotificationBadge === "boolean"
+        ? data.showNotificationBadge
+        : typeof data.pushNotifications === "boolean"
+          ? data.pushNotifications
+          : DEFAULT_APEX_SETTINGS.showNotificationBadge;
+
     return {
-      emailNotifications: data.emailNotifications ?? DEFAULT_APEX_SETTINGS.emailNotifications,
-      pushNotifications: data.pushNotifications ?? DEFAULT_APEX_SETTINGS.pushNotifications,
-      activityNotifications: data.activityNotifications ?? DEFAULT_APEX_SETTINGS.activityNotifications,
-      leaderboardNotifications: data.leaderboardNotifications ?? DEFAULT_APEX_SETTINGS.leaderboardNotifications,
+      emailNotifications:
+        data.emailNotifications ?? DEFAULT_APEX_SETTINGS.emailNotifications,
+      showNotificationBadge,
       privateProfile: data.privateProfile ?? DEFAULT_APEX_SETTINGS.privateProfile,
       manualFollowApproval:
         data.manualFollowApproval ?? DEFAULT_APEX_SETTINGS.manualFollowApproval,
-      showRaceHistory: data.showRaceHistory ?? DEFAULT_APEX_SETTINGS.showRaceHistory,
+      sessionVisibility: migratedVisibility ?? DEFAULT_APEX_SETTINGS.sessionVisibility,
     };
   } catch {
     return null;

@@ -98,7 +98,11 @@ export default function UserProfile() {
       !(err instanceof ApiError && (err.status === 404 || err.status === 403)),
   });
 
-  const { data: raceHistoryData, isPending: raceHistoryLoading } = useQuery({
+  const {
+    data: raceHistoryData,
+    isPending: raceHistoryLoading,
+    error: raceHistoryError,
+  } = useQuery({
     queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
     queryFn: () =>
       getProfileRaceHistoryForUser(id, {
@@ -106,7 +110,16 @@ export default function UserProfile() {
         limit: RACE_HISTORY_PAGE_SIZE,
       }),
     enabled: Boolean(id) && viewerHasAccess,
+    retry: (failureCount, err) =>
+      !(err instanceof ApiError && (err.status === 404 || err.status === 403)),
   });
+
+  const raceHistoryForbiddenCode =
+    viewerHasAccess &&
+    raceHistoryError instanceof ApiError &&
+    raceHistoryError.status === 403
+      ? raceHistoryError.code
+      : undefined;
 
   const notFound =
     previewQuery.error instanceof ApiError && previewQuery.error.status === 404;
@@ -333,6 +346,7 @@ export default function UserProfile() {
               }
             : undefined
         }
+        raceHistoryForbiddenCode={raceHistoryForbiddenCode}
       />
 
       <FollowListDialog

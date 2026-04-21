@@ -21,11 +21,13 @@ import {
   type NotificationItem,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NOTIFICATIONS_KEY = ["notifications"] as const;
 const FOLLOW_REQUESTS_KEY = ["followRequests", "incoming"] as const;
 
 export function NotificationsBell() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"activity" | "requests">("activity");
@@ -57,6 +59,8 @@ export function NotificationsBell() {
 
   const notifications = notifQuery.data?.notifications ?? [];
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const showBadge =
+    user?.showNotificationBadge !== false && unreadCount > 0;
 
   const onOpenChange = useCallback((next: boolean) => {
     setOpen(next);
@@ -146,11 +150,11 @@ export function NotificationsBell() {
         title="Notifications"
       >
         <Bell className="size-5 text-foreground/70 transition-colors hover:text-foreground" />
-        {unreadCount > 0 && (
+        {showBadge ? (
           <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
-        )}
+        ) : null}
       </button>
 
       <Dialog open={open} onOpenChange={onOpenChange}>

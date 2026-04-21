@@ -1,16 +1,27 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Upload as UploadIcon, FileText, AlertCircle, Loader2, PenLine } from "lucide-react";
+import {
+  Upload as UploadIcon,
+  FileText,
+  AlertCircle,
+  Loader2,
+  PenLine,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadSessionFile, ApiError } from "@/lib/api";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
+import { MAX_MANUAL_UPLOAD_BYTES } from "@/lib/uploadLimits";
 
 const UPLOAD_PATH = "/upload";
 const uploadTitle = `Upload session | ${COMPANY_NAME}`;
 const uploadDescription = `Upload .ibt telemetry to ${COMPANY_NAME} to process laps and share sessions—${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
-type UploadState = "idle" | "uploading" | "error";
+const MAX_MB_LABEL = Math.round(MAX_MANUAL_UPLOAD_BYTES / (1024 * 1024));
+
+type UploadState = "idle" | "uploading" | "success" | "error";
+type UploadPhase = "bytes" | "processing";
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -23,13 +34,15 @@ export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>("bytes");
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const isUploading = uploadState === "uploading";
+  const isBusy = uploadState === "uploading";
 
   useEffect(() => {
-    if (!isUploading) return;
+    if (!isBusy) return;
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -39,7 +52,7 @@ export default function UploadPage() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isUploading]);
+  }, [isBusy]);
 
   const handleFileSelect = useCallback((selectedFile: File | null) => {
     if (!selectedFile) return;
@@ -47,6 +60,14 @@ export default function UploadPage() {
     const ext = selectedFile.name.toLowerCase().split(".").pop();
     if (ext !== "ibt") {
       setErrorMessage("Only .ibt files are supported.");
+      setUploadState("error");
+      return;
+    }
+
+    if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
+      setErrorMessage(
+        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`
+      );
       setUploadState("error");
       return;
     }
@@ -86,14 +107,40 @@ export default function UploadPage() {
   );
 
   const handleUpload = useCallback(async () => {
-    if (!file || isUploading) return;
+    if (!file || isBusy) return;
+
+    if (file.size > MAX_MANUAL_UPLOAD_BYTES) {
+      setErrorMessage(
+        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(file.size)}).`
+      );
+      setUploadState("error");
+      return;
+    }
 
     setUploadState("uploading");
+    setUploadPhase("bytes");
+    setUploadPercent(0);
     setErrorMessage(null);
 
     try {
-      await uploadSessionFile(file);
-      navigate("/?uploaded=1");
+      const result = await uploadSessionFile(file, {
+        onUploadProgress: (p) => {
+          setUploadPercent(p);
+          if (p >= 100) setUploadPhase("processing");
+        },
+        onUploadComplete: () => {
+          setUploadPhase("processing");
+          setUploadPercent(100);
+        },
+      });
+
+      setUploadState("success");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("apex:activity-updated"));
+      }
+      setTimeout(() => {
+        navigate(`/sessions/${result.sessionId}`);
+      }, 1000);
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -102,11 +149,13 @@ export default function UploadPage() {
       setErrorMessage(message);
       setUploadState("error");
     }
-  }, [file, isUploading, navigate]);
+  }, [file, isBusy, navigate]);
 
   const handleReset = useCallback(() => {
     setFile(null);
     setUploadState("idle");
+    setUploadPhase("bytes");
+    setUploadPercent(0);
     setErrorMessage(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -122,18 +171,54 @@ export default function UploadPage() {
           <div className="mb-6 text-center">
             <h1 className="text-xl font-semibold text-white">Upload Session</h1>
             <p className="mt-1 text-sm text-white/60">
-              Upload telemetry files manually.
+              Upload telemetry files manually (max {MAX_MB_LABEL} MB).
             </p>
           </div>
 
-          {isUploading ? (
-            <div className="py-12 text-center">
+          {uploadState === "success" ? (
+            <div className="py-8 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex size-12 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircle className="size-6 text-green-500" />
+                </div>
+              </div>
+              <p className="font-medium text-white">Session uploaded!</p>
+              <p className="mt-1 text-sm text-white/50">
+                Redirecting to session…
+              </p>
+            </div>
+          ) : uploadState === "uploading" ? (
+            <div className="py-8">
               <div className="mb-4 flex justify-center">
                 <Loader2 className="size-10 animate-spin text-white/60" />
               </div>
-              <p className="font-medium text-white">Processing session…</p>
-              <p className="mt-1 text-sm text-white/50">
-                This may take a moment.
+              <p className="text-center font-medium text-white">
+                {uploadPhase === "bytes"
+                  ? "Uploading…"
+                  : "Processing telemetry…"}
+              </p>
+              <p className="mt-1 text-center text-sm text-white/50">
+                {uploadPhase === "bytes"
+                  ? "Sending file to the server."
+                  : "Extracting laps and saving your session."}
+              </p>
+              <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={`h-full rounded-full bg-white/70 transition-[width] duration-150 ease-out ${
+                    uploadPhase === "processing" ? "animate-pulse" : ""
+                  }`}
+                  style={{
+                    width:
+                      uploadPhase === "bytes"
+                        ? `${Math.max(0, Math.min(100, uploadPercent))}%`
+                        : "100%",
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-center text-xs text-white/40">
+                {uploadPhase === "bytes"
+                  ? `${uploadPercent}%`
+                  : "Hang tight…"}
               </p>
             </div>
           ) : (
@@ -178,7 +263,7 @@ export default function UploadPage() {
                         Drag & drop your .ibt file here
                       </p>
                       <p className="mt-1 text-xs text-white/50">
-                        or click to browse
+                        or click to browse (max {MAX_MB_LABEL} MB)
                       </p>
                     </>
                   )}

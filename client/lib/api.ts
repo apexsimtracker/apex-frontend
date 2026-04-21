@@ -78,11 +78,14 @@ export function resolveDiscussionAvatarSrc(
 export class ApiError extends Error {
   status: number;
   code?: string;
-  constructor(status: number, message: string, code?: string) {
+  /** Present on some responses (e.g. 429 data export) for client messaging. */
+  retryAfterMs?: number;
+  constructor(status: number, message: string, code?: string, retryAfterMs?: number) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -130,6 +133,7 @@ function emitProRequiredEvent(): void {
 type ErrorParseResult = {
   message: string;
   code?: string;
+  retryAfterMs?: number;
 };
 
 async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
@@ -137,10 +141,14 @@ async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
     const text = await res.text();
     if (!text) return { message: "Request failed" };
     try {
-      const json = JSON.parse(text);
+      const json = JSON.parse(text) as Record<string, unknown>;
+      const retryRaw = json.retryAfterMs;
+      const retryAfterMs =
+        typeof retryRaw === "number" && Number.isFinite(retryRaw) ? retryRaw : undefined;
       return {
-        message: json.message || json.error || text,
-        code: json.code,
+        message: (json.message as string) || (json.error as string) || text,
+        code: json.code as string | undefined,
+        retryAfterMs,
       };
     } catch {
       return { message: text };
@@ -194,7 +202,7 @@ export async function fetchApi<T>(
     }
   }
 
-  const { message, code } = await extractErrorInfo(res);
+  const { message, code, retryAfterMs } = await extractErrorInfo(res);
 
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {
@@ -204,7 +212,7 @@ export async function fetchApi<T>(
 
   await notifyAuthExpired(skipAuthExpiredCheck, res.status);
 
-  throw new ApiError(res.status, message, code);
+  throw new ApiError(res.status, message, code, retryAfterMs);
 }
 
 /** Per-metric progress toward weekly goals (GET /api/profile/summary). */
@@ -369,6 +377,9 @@ export async function getProfileRaceHistoryForUser(
 /** GET /api/users/:userId — profile preview (may mask counts/bio when private). */
 export type FollowRelationship = "self" | "following" | "pending" | "none";
 
+/** Controls session detail URLs and race history visibility (synced with server User.sessionVisibility). */
+export type SessionVisibility = "PUBLIC" | "FOLLOWERS_ONLY" | "PRIVATE";
+
 /** GET /api/users/:userId — public profile preview (avatar, bio, follow counts). */
 export type UserPublicProfile = {
   id: string;
@@ -381,6 +392,8 @@ export type UserPublicProfile = {
   privateProfile: boolean;
   viewerHasAccess: boolean;
   followRelationship: FollowRelationship;
+  /** Set when viewerHasAccess is true — used for race history empty-state copy. */
+  sessionVisibility: SessionVisibility | null;
 };
 
 /** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
@@ -394,13 +407,25 @@ export async function getUserPublicProfile(userId: string): Promise<UserPublicPr
 export type PrivacySettingsPayload = {
   privateProfile: boolean;
   manualFollowApproval: boolean;
-  showRaceHistory: boolean;
+  sessionVisibility: SessionVisibility;
 };
 
 export async function patchPrivacySettings(
   body: Partial<PrivacySettingsPayload>
 ): Promise<PrivacySettingsPayload> {
   return fetchApi<PrivacySettingsPayload>("PATCH", "/api/settings/privacy", body);
+}
+
+/** PATCH /api/settings/notifications — Bearer session */
+export type NotificationSettingsPayload = {
+  emailNotifications: boolean;
+  showNotificationBadge: boolean;
+};
+
+export async function patchNotificationSettings(
+  body: Partial<NotificationSettingsPayload>
+): Promise<NotificationSettingsPayload> {
+  return fetchApi<NotificationSettingsPayload>("PATCH", "/api/settings/notifications", body);
 }
 
 /** GET /api/notifications */
@@ -1027,7 +1052,11 @@ export type AuthUser = {
   /** Server-backed privacy flags (also in local ApexSettings for offline prefs). */
   privateProfile?: boolean;
   manualFollowApproval?: boolean;
-  showRaceHistory?: boolean;
+  sessionVisibility?: SessionVisibility;
+  /** Optional/product email; auth emails always send. */
+  emailNotifications?: boolean;
+  /** Navbar unread badge; notifications panel still works when false. */
+  showNotificationBadge?: boolean;
 };
 
 /** Body for PATCH /api/auth/me. Backend may use "bio" or "tagline"; we send both so either works. */
@@ -1259,6 +1288,75 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 export async function deleteAccount(password: string): Promise<{ ok?: boolean }> {
   return fetchApi<{ ok?: boolean }>("DELETE", "/api/settings/account", { password }, true);
+}
+
+export type DataExportFormat = "xlsx" | "pdf";
+
+/**
+ * GET /api/settings/data-export — downloads Excel (.xlsx) or summary PDF.
+ * Lap telemetry is only included for Excel when `includeTelemetry` is true (large payloads).
+ */
+export async function downloadUserDataExport(options?: {
+  format?: DataExportFormat;
+  includeTelemetry?: boolean;
+}): Promise<void> {
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+  const format = options?.format ?? "xlsx";
+  const includeTelemetry = options?.includeTelemetry === true;
+  const params = new URLSearchParams();
+  params.set("format", format);
+  if (includeTelemetry) params.set("includeTelemetry", "1");
+  const qs = `?${params.toString()}`;
+  const path = `/api/settings/data-export${qs}`;
+  const url =
+    path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch {
+    throw new ApiError(0, "Connection lost. Please try again.");
+  }
+
+  if (!res.ok) {
+    const { message, code, retryAfterMs } = await extractErrorInfo(res);
+    await notifyAuthExpired(false, res.status);
+    throw new ApiError(res.status, message, code, retryAfterMs);
+  }
+
+  const blob = await res.blob();
+  const defaultExt = format === "pdf" ? "pdf" : "xlsx";
+  let filename = `apex-data-export-${new Date().toISOString().slice(0, 10)}.${defaultExt}`;
+  const cd = res.headers.get("Content-Disposition");
+  if (cd) {
+    const star = /filename\*=UTF-8''([^;\s]+)/i.exec(cd);
+    if (star?.[1]) {
+      try {
+        filename = decodeURIComponent(star[1]);
+      } catch {
+        /* keep default filename */
+      }
+    } else {
+      const quoted = /filename="([^"]+)"/i.exec(cd);
+      if (quoted?.[1]) filename = quoted[1];
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
@@ -1522,7 +1620,15 @@ export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
 // Manual session upload
 export type ManualUploadResponse = {
   sessionId: string;
+  status?: string;
+  lapCount?: number;
   message?: string;
+};
+
+export type UploadSessionFileCallbacks = {
+  onUploadProgress?: (percent: number) => void;
+  /** Fired when the request body has finished sending; server may still be processing. */
+  onUploadComplete?: () => void;
 };
 
 // Manual activity creation (no file upload)
@@ -1625,40 +1731,91 @@ export async function getCatalogs(sim: string): Promise<CatalogsResponse> {
   return apiGet<CatalogsResponse>(`/api/catalogs/${encodeURIComponent(sim)}`);
 }
 
-export async function uploadSessionFile(file: File): Promise<ManualUploadResponse> {
+function parseXhrErrorPayload(text: string): {
+  message: string;
+  code?: string;
+  retryAfterMs?: number;
+} {
+  let message = "Request failed";
+  let code: string | undefined;
+  let retryAfterMs: number | undefined;
+  if (!text.trim()) {
+    return { message };
+  }
+  try {
+    const json = JSON.parse(text) as Record<string, unknown>;
+    message =
+      (typeof json.message === "string" && json.message) ||
+      (typeof json.error === "string" && json.error) ||
+      message;
+    if (typeof json.code === "string") code = json.code;
+    const retryRaw = json.retryAfterMs;
+    if (typeof retryRaw === "number" && Number.isFinite(retryRaw)) retryAfterMs = retryRaw;
+  } catch {
+    message = text;
+  }
+  return { message, code, retryAfterMs };
+}
+
+export async function uploadSessionFile(
+  file: File,
+  callbacks?: UploadSessionFileCallbacks
+): Promise<ManualUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const headers: Record<string, string> = {};
   const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const url = `${API_BASE}/api/sessions/manual-upload`;
 
-  let res: Response;
-  try {
-    res = await fetch(`${API_BASE}/api/sessions/manual-upload`, {
-      method: "POST",
-      headers: Object.keys(headers).length > 0 ? headers : undefined,
-      body: formData,
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    // Do not set `withCredentials`: API CORS uses `credentials: false`; credentialed XHR breaks
+    // cross-origin uploads (e.g. Vite on :8080 → API on :10000). Session auth uses Bearer token.
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (ev) => {
+      if (!callbacks?.onUploadProgress) return;
+      const total = ev.lengthComputable ? ev.total : file.size;
+      if (total > 0) {
+        const pct = Math.min(100, Math.round((ev.loaded / total) * 100));
+        callbacks.onUploadProgress(pct);
+      }
+    };
+
+    xhr.upload.addEventListener("load", () => {
+      callbacks?.onUploadComplete?.();
     });
-  } catch {
-    throw new ApiError(0, "Connection lost. Please try again.");
-  }
 
-  if (res.ok) {
-    const text = await res.text();
-    if (!text) throw new ApiError(500, "No response from server");
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new ApiError(500, "Invalid response from server");
-    }
-  }
+    xhr.onload = () => {
+      void (async () => {
+        const status = xhr.status;
+        const text = xhr.responseText ?? "";
 
-  const { message, code } = await extractErrorInfo(res);
+        if (status >= 200 && status < 300) {
+          if (!text.trim()) {
+            reject(new ApiError(500, "No response from server"));
+            return;
+          }
+          try {
+            resolve(JSON.parse(text) as ManualUploadResponse);
+          } catch {
+            reject(new ApiError(500, "Invalid response from server"));
+          }
+          return;
+        }
 
-  if (code === "PRO_REQUIRED") {
-    emitProRequiredEvent();
-  }
+        await notifyAuthExpired(false, status);
+        const { message, code, retryAfterMs } = parseXhrErrorPayload(text);
+        if (code === "PRO_REQUIRED") emitProRequiredEvent();
+        reject(new ApiError(status, message, code, retryAfterMs));
+      })();
+    };
 
-  throw new ApiError(res.status, message, code);
+    xhr.onerror = () => {
+      reject(new ApiError(0, "Connection lost. Please try again."));
+    };
+
+    xhr.send(formData);
+  });
 }

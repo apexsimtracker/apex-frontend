@@ -50,6 +50,8 @@ type ProfileViewProps = {
     loading: boolean;
     onPageChange: (page: number) => void;
   };
+  /** Set when GET .../race-history returned 403 for this viewer. */
+  raceHistoryForbiddenCode?: string;
 };
 
 export function ProfileView({
@@ -70,6 +72,7 @@ export function ProfileView({
   onOpenFollowing,
   onEditProfile,
   raceHistoryPagination,
+  raceHistoryForbiddenCode,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -103,6 +106,22 @@ export function ProfileView({
           start: (raceHistoryPage - 1) * raceHistoryPageSize + 1,
           end: Math.min(raceHistoryPage * raceHistoryPageSize, raceHistoryTotal),
         };
+
+  const raceHistoryEmptyMessage = (() => {
+    if (raceHistoryForbiddenCode === "PROFILE_PRIVATE") {
+      return "This profile is private.";
+    }
+    if (raceHistoryForbiddenCode === "SESSION_VISIBILITY_PRIVATE") {
+      return "This driver’s race history and sessions are only visible to them.";
+    }
+    if (raceHistoryForbiddenCode === "SESSION_VISIBILITY_FOLLOWERS_ONLY") {
+      return "Race history is limited to followers. Follow this account (and get approved if required) to see sessions.";
+    }
+    if (isCurrentUser) {
+      return "Your race history will appear here after your first race session.";
+    }
+    return "No race sessions yet.";
+  })();
 
   const emptyBuckets = {
     Mon: 0,
@@ -568,8 +587,7 @@ export function ProfileView({
                       colSpan={7}
                       className="py-10 text-center text-neutral-400"
                     >
-                      Your race history will appear here after your first race
-                      session.
+                      {raceHistoryEmptyMessage}
                     </td>
                   </tr>
                 ) : (
@@ -637,8 +655,7 @@ export function ProfileView({
               </div>
             ) : raceHistory.length === 0 ? (
               <div className="py-10 text-center text-sm text-neutral-400">
-                Your race history will appear here after your first race
-                session.
+                {raceHistoryEmptyMessage}
               </div>
             ) : (
               raceHistory.map((race) => (

@@ -379,10 +379,22 @@ export default function SessionDetailPage() {
   const defaultTelemetryLapNumber = sessionPayload?.defaultTelemetryLapNumber ?? null;
   const telemetry = sessionPayload?.telemetry ?? null;
 
+  const sessionDetailDeniedMessage = (() => {
+    if (!isError || !(queryError instanceof ApiError)) return null;
+    if (queryError.status !== 403) return null;
+    switch (queryError.code) {
+      case "SESSION_VISIBILITY_PRIVATE":
+        return "This session is private. Only the driver can view it.";
+      case "SESSION_VISIBILITY_FOLLOWERS_ONLY":
+        return "This session is limited to the driver's followers. Sign in and follow them to view it, or ask the driver to change session visibility in settings.";
+      default:
+        return queryError.message || "You don’t have access to this session.";
+    }
+  })();
+
   const error = isError
-    ? queryError instanceof Error
-      ? queryError.message
-      : "Failed to load session"
+    ? sessionDetailDeniedMessage ??
+      (queryError instanceof Error ? queryError.message : "Failed to load session")
     : null;
 
   if (!id) {
