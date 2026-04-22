@@ -51,7 +51,6 @@ const queryClient = new QueryClient({
 
 export default function App() {
   useEffect(() => {
-    // Set dark mode on app load
     document.documentElement.classList.add("dark");
   }, []);
 
