@@ -171,7 +171,9 @@ export default function UploadPage() {
           <div className="mb-6 text-center">
             <h1 className="text-xl font-semibold text-white">Upload Session</h1>
             <p className="mt-1 text-sm text-white/60">
-              Upload telemetry files manually (max {MAX_MB_LABEL} MB).
+              iRacing <code className="text-white/80">.ibt</code> files: session type (practice,
+              qualifying, or race), positions, and distance are read automatically when possible (max{" "}
+              {MAX_MB_LABEL} MB).
             </p>
           </div>
 

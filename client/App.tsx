@@ -1,7 +1,7 @@
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import Header from "./components/Header";
@@ -26,7 +26,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Upload from "./pages/Upload";
 import ManualActivity from "./pages/ManualActivity";
-import EditManualActivity from "./pages/EditManualActivity";
+import EditActivity from "./pages/EditActivity";
 import Upgrade from "./pages/Upgrade";
 import Agent from "./pages/Agent";
 import NotFound from "./pages/NotFound";
@@ -39,6 +39,15 @@ import Contact from "./pages/Contact";
 import ProRequiredBanner from "./components/ProRequiredBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
+import SessionDataCacheSync from "./components/SessionDataCacheSync";
+
+/** Old bookmarks: `/manual/:sessionId/edit` → `/sessions/:id/edit`. */
+function LegacyManualSessionEditRedirect() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const id = sessionId?.trim();
+  if (!id) return <Navigate to="/" replace />;
+  return <Navigate to={`/sessions/${id}/edit`} replace />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +60,7 @@ const queryClient = new QueryClient({
 
 export default function App() {
   useEffect(() => {
+    // Set dark mode on app load
     document.documentElement.classList.add("dark");
   }, []);
 
@@ -58,6 +68,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <SessionDataCacheSync />
           <Toaster theme="dark" />
           <BrowserRouter>
             <ScrollToTop />
@@ -117,10 +128,18 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="/sessions/:id/edit"
+                      element={
+                        <ProtectedRoute message="Sign in to edit your session.">
+                          <EditActivity />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="/manual/:sessionId/edit"
                       element={
                         <ProtectedRoute message="Sign in to edit your session.">
-                          <EditManualActivity />
+                          <LegacyManualSessionEditRedirect />
                         </ProtectedRoute>
                       }
                     />

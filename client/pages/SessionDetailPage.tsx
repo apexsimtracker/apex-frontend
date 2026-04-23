@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Share2,
   PenLine,
@@ -30,6 +30,7 @@ import {
   calcConsistencyScore,
   resolveSessionFields,
 } from "@/lib/sessionShareText";
+import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 
 type Insight = { title: string; description: string; icon: LucideIcon };
 
@@ -349,6 +350,7 @@ function isManualActivity(session: SessionDetail): boolean {
 export default function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const isPro = useIsProUser();
   const [showAllLaps, setShowAllLaps] = useState(false);
@@ -480,7 +482,8 @@ export default function SessionDetailPage() {
   const hasNoLaps = totalLapsCount === 0;
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
-  const canEditOrDelete = isManual && isOwner;
+  const canEditSession = isOwner;
+  const canManualExtras = isManual && isOwner;
   const isRace =
     session.sessionType === "RACE" || session.sessionType === "QUALIFY";
   const showPosition = isRace && session.position != null;
@@ -556,6 +559,11 @@ export default function SessionDetailPage() {
 
     try {
       await deleteManualActivity(id);
+      invalidateSessionDerivedCaches(queryClient, {
+        sessionId: id,
+        ownerUserId: session.userId ?? user?.id ?? null,
+        removeSessionQueries: true,
+      });
       toast.success("Activity deleted", {
         description: "The manual activity has been removed.",
       });
@@ -600,7 +608,7 @@ export default function SessionDetailPage() {
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {canEditOrDelete && (
+          {canManualExtras && (
             <>
               <button
                 type="button"
@@ -622,14 +630,6 @@ export default function SessionDetailPage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/manual/${id}/edit`)}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
-              >
-                <Pencil className="size-4" />
-                Edit
-              </button>
-              <button
-                type="button"
                 onClick={() => setShowDeleteModal(true)}
                 className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10"
               >
@@ -637,6 +637,16 @@ export default function SessionDetailPage() {
                 Delete
               </button>
             </>
+          )}
+          {canEditSession && id && (
+            <button
+              type="button"
+              onClick={() => navigate(`/sessions/${id}/edit`)}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+            >
+              <Pencil className="size-4" />
+              Edit
+            </button>
           )}
           {session != null && id && (
             <button

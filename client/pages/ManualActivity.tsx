@@ -39,9 +39,11 @@ export default function ManualActivity() {
   async function handleSubmit(data: {
     sim: string;
     trackId: string;
+    manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
     carId?: string;
     position?: number;
     totalDrivers?: number;
+    qualifyingPosition?: number;
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;

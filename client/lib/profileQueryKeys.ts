@@ -40,6 +40,44 @@ export const PROFILE_SUMMARY_ALL_QUERY_FILTER = {
 };
 
 /**
+ * Refresh profile stats, race history, activity feeds, and other session-derived UI after
+ * create/update/delete/upload — without requiring a full page reload.
+ */
+export function invalidateSessionDerivedCaches(
+  queryClient: QueryClient,
+  opts: {
+    ownerUserId?: string | null;
+    /** Session affected: invalidate detail/edit, or remove after delete. */
+    sessionId?: string;
+    /** Pass `true` after DELETE so detail/edit caches are dropped. Omit or `false` after update (refetch only). */
+    removeSessionQueries?: boolean;
+  } = {}
+): void {
+  const { ownerUserId, sessionId, removeSessionQueries } = opts;
+  const sid = sessionId?.trim();
+
+  void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
+  void queryClient.invalidateQueries({ queryKey: ["profile", "raceHistory"] });
+  void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+  void queryClient.invalidateQueries({ queryKey: ["activity"] });
+
+  const uid = ownerUserId?.trim();
+  if (uid) {
+    void queryClient.invalidateQueries({ queryKey: profileKeys.publicPreview(uid) });
+  }
+
+  if (!sid) return;
+
+  if (removeSessionQueries) {
+    void queryClient.removeQueries({ queryKey: ["sessions", "detail", sid] });
+    void queryClient.removeQueries({ queryKey: ["sessions", "edit", sid] });
+  } else {
+    void queryClient.invalidateQueries({ queryKey: ["sessions", "detail", sid] });
+    void queryClient.invalidateQueries({ queryKey: ["sessions", "edit", sid] });
+  }
+}
+
+/**
  * Warm cache for /profile: summary, race history page 1, and public preview for follow counts.
  * Safe to fire from hover/idle; respects global staleTime.
  */

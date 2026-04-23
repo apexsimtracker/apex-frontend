@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, useFormState, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
@@ -22,11 +22,10 @@ import {
 } from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
-  manualActivityFormSchema,
+  createManualActivityFormSchema,
+  effectiveManualLapMaxForForm,
   MANUAL_ACTIVITY_POSITION_MAX,
   MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX,
-  getManualLapMaxForSim,
-  getManualLapMaxForSimOrDefault,
   type ManualActivityFormValues,
 } from "@/lib/validation/manualActivity";
 
@@ -34,8 +33,10 @@ export type ManualActivityFormData = {
   sim: ManualActivitySim | "";
   trackId: string;
   carId: string;
+  manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE" | "";
   position: string;
   totalDrivers: string;
+  qualifyingPosition: string;
   laps: { lapTime: string }[];
   notes: string;
 };
@@ -44,13 +45,25 @@ export type ManualActivityInitialData = {
   sim?: string | null;
   trackId?: string | null;
   carId?: string | null;
+  /** Raw stored track token from session (prefer over `trackId` when editing telemetry). */
+  catalogTrackId?: string | null;
+  /** Raw stored car token from session (never use session detail `car`, which may be display-only). */
+  catalogCarId?: string | null;
+  /** Resolve catalog track when stored token is not a catalog id (e.g. legacy ingest strings). */
+  trackNameHint?: string | null;
+  /** Resolve catalog car when stored token does not match (e.g. normalize display name to id). */
+  carNameHint?: string | null;
+  manualSessionKind?: "PRACTICE" | "QUALIFY" | "RACE" | string | null;
   position?: number | null;
   totalDrivers?: number | null;
+  qualifyingPosition?: number | null;
   /** @deprecated prefer lapsMs */
   bestLapMs?: number | null;
   /** Ordered lap times in ms (e.g. from session detail). */
   lapsMs?: number[] | null;
   notes?: string | null;
+  /** Edit: floor for max lap rows when session has more laps than the manual-create cap. */
+  telemetryMinLapRows?: number | null;
 };
 
 interface ManualActivityFormProps {
@@ -59,9 +72,11 @@ interface ManualActivityFormProps {
   onSubmit: (data: {
     sim: string;
     trackId: string;
+    manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
     carId?: string;
     position?: number;
     totalDrivers?: number;
+    qualifyingPosition?: number;
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
@@ -77,6 +92,54 @@ function formatMsToInput(ms: number | null | undefined): string {
   return formatMsToLapTime(ms);
 }
 
+function normLabel(s: string): string {
+  return s.trim().toLowerCase();
+}
+
+function resolveCatalogTrackId(
+  catalog: { id: string; name: string }[],
+  storedToken: string,
+  nameHint: string | null | undefined
+): string {
+  const token = storedToken?.trim();
+  if (token && catalog.some((t) => t.id === token)) return token;
+  if (token) {
+    const byTokenAsName = catalog.find((t) => normLabel(t.name) === normLabel(token));
+    if (byTokenAsName) return byTokenAsName.id;
+  }
+  const h = nameHint?.trim();
+  if (!h) return "";
+  const nh = normLabel(h);
+  const exact = catalog.find((t) => normLabel(t.name) === nh);
+  if (exact) return exact.id;
+  const partial = catalog.find(
+    (t) => nh.includes(normLabel(t.name)) || normLabel(t.name).includes(nh)
+  );
+  return partial?.id ?? "";
+}
+
+function resolveCatalogCarId(
+  catalog: { id: string; name: string }[],
+  storedToken: string,
+  nameHint: string | null | undefined
+): string {
+  const token = storedToken?.trim();
+  if (token && catalog.some((c) => c.id === token)) return token;
+  if (token) {
+    const byTokenAsName = catalog.find((c) => normLabel(c.name) === normLabel(token));
+    if (byTokenAsName) return byTokenAsName.id;
+  }
+  const h = nameHint?.trim();
+  if (!h) return "";
+  const nh = normLabel(h);
+  const exact = catalog.find((c) => normLabel(c.name) === nh);
+  if (exact) return exact.id;
+  const partial = catalog.find(
+    (c) => nh.includes(normLabel(c.name)) || normLabel(c.name).includes(nh)
+  );
+  return partial?.id ?? "";
+}
+
 function buildDefaults(initial?: ManualActivityInitialData): ManualActivityFormValues {
   let laps: { lapTime: string }[];
   if (initial?.lapsMs && initial.lapsMs.length > 0) {
@@ -86,12 +149,21 @@ function buildDefaults(initial?: ManualActivityInitialData): ManualActivityFormV
   } else {
     laps = [{ lapTime: "" }];
   }
+  const kindRaw = initial?.manualSessionKind?.trim().toUpperCase();
+  const manualSessionKind =
+    kindRaw === "PRACTICE" || kindRaw === "QUALIFY" || kindRaw === "RACE"
+      ? kindRaw
+      : "RACE";
+
   return {
     sim: (initial?.sim as string) || "",
-    trackId: initial?.trackId ?? "",
-    carId: initial?.carId ?? "",
+    trackId: initial?.catalogTrackId ?? initial?.trackId ?? "",
+    carId: initial?.catalogCarId ?? initial?.carId ?? "",
+    manualSessionKind,
     position: initial?.position != null ? String(initial.position) : "",
     totalDrivers: initial?.totalDrivers != null ? String(initial.totalDrivers) : "",
+    qualifyingPosition:
+      initial?.qualifyingPosition != null ? String(initial.qualifyingPosition) : "",
     laps,
     notes: initial?.notes ?? "",
   };
@@ -106,13 +178,19 @@ export default function ManualActivityForm({
   isSubmitting,
   errorMessage,
 }: ManualActivityFormProps) {
+  const telemetryMinLapRows = initialData?.telemetryMinLapRows ?? null;
+  const activitySchema = useMemo(
+    () => createManualActivityFormSchema(telemetryMinLapRows),
+    [telemetryMinLapRows]
+  );
+
   const [pendingRecent, setPendingRecent] = useState<{
     trackName: string;
     carName: string;
   } | null>(null);
 
   const form = useForm<WithRootError<ManualActivityFormValues>>({
-    resolver: zodResolver(manualActivityFormSchema),
+    resolver: zodResolver(activitySchema),
     defaultValues: buildDefaults(initialData),
     mode: "onSubmit",
     reValidateMode: "onChange",
@@ -126,11 +204,10 @@ export default function ManualActivityForm({
   const { errors: formErrors } = useFormState({ control: form.control });
 
   const sim = form.watch("sim") as ManualActivitySim | "";
-  const trackId = form.watch("trackId");
-  const carId = form.watch("carId");
+  const sessionKind = form.watch("manualSessionKind");
   const lapsWatch = form.watch("laps");
 
-  const maxLapsForSim = getManualLapMaxForSimOrDefault(sim);
+  const maxLapsForSim = effectiveManualLapMaxForForm(sim || "", telemetryMinLapRows ?? null);
   const canAddLap = fields.length < maxLapsForSim;
   const canRemoveLap = fields.length > 1;
 
@@ -154,7 +231,7 @@ export default function ManualActivityForm({
 
   useEffect(() => {
     if (!sim) return;
-    const max = getManualLapMaxForSim(sim);
+    const max = effectiveManualLapMaxForForm(sim, telemetryMinLapRows ?? null);
     const current = form.getValues("laps");
     if (current.length > max) {
       form.setValue(
@@ -163,16 +240,39 @@ export default function ManualActivityForm({
         { shouldValidate: true }
       );
     }
-  }, [sim, form]);
+  }, [sim, form, telemetryMinLapRows]);
 
   useEffect(() => {
-    if (tracks.length > 0 && trackId && !tracks.some((t) => t.id === trackId)) {
-      form.setValue("trackId", "");
+    if (!sim || tracks.length === 0) return;
+    const current = form.getValues("trackId");
+    if (current && tracks.some((t) => t.id === current)) return;
+    const resolved = resolveCatalogTrackId(
+      tracks,
+      initialData?.catalogTrackId ?? initialData?.trackId ?? "",
+      initialData?.trackNameHint
+    );
+    if (resolved) {
+      form.setValue("trackId", resolved, { shouldValidate: true });
+    } else if (current) {
+      form.setValue("trackId", "", { shouldValidate: true });
     }
-    if (cars.length > 0 && carId && !cars.some((c) => c.id === carId)) {
-      form.setValue("carId", "");
+  }, [sim, tracks, initialData?.catalogTrackId, initialData?.trackId, initialData?.trackNameHint, form]);
+
+  useEffect(() => {
+    if (!sim || cars.length === 0) return;
+    const current = form.getValues("carId");
+    if (current && cars.some((c) => c.id === current)) return;
+    const resolved = resolveCatalogCarId(
+      cars,
+      initialData?.catalogCarId ?? initialData?.carId ?? "",
+      initialData?.carNameHint
+    );
+    if (resolved) {
+      form.setValue("carId", resolved, { shouldValidate: true });
+    } else if (current) {
+      form.setValue("carId", "", { shouldValidate: true });
     }
-  }, [tracks, cars, trackId, carId, form]);
+  }, [sim, cars, initialData?.catalogCarId, initialData?.carId, initialData?.carNameHint, form]);
 
   useEffect(() => {
     if (!pendingRecent || tracks.length === 0) return;
@@ -217,12 +317,25 @@ export default function ManualActivityForm({
     const bestLapMs =
       lapTimesMs.length > 0 ? Math.min(...lapTimesMs) : undefined;
 
+    const kind = values.manualSessionKind.trim().toUpperCase() as
+      | "PRACTICE"
+      | "QUALIFY"
+      | "RACE";
+    const qualiNum = values.qualifyingPosition.trim()
+      ? parseInt(values.qualifyingPosition, 10)
+      : undefined;
+
     await onSubmit({
       sim: values.sim,
       trackId: values.trackId,
+      manualSessionKind: kind,
       carId: values.carId || undefined,
-      position: positionNum,
-      totalDrivers: totalDriversNum,
+      position: kind === "PRACTICE" ? undefined : positionNum,
+      totalDrivers: kind === "PRACTICE" ? undefined : totalDriversNum,
+      qualifyingPosition:
+        kind === "RACE" && qualiNum !== undefined && Number.isFinite(qualiNum)
+          ? qualiNum
+          : undefined,
       ...(lapsOut.length > 0
         ? { laps: lapsOut, bestLapMs }
         : {}),
@@ -388,9 +501,42 @@ export default function ManualActivityForm({
           )}
         />
 
-        <div>
+        <FormField
+          control={form.control}
+          name="manualSessionKind"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel htmlFor="manualSessionKind" className="text-white/80">
+                Session type <span className="text-red-400">*</span>
+              </FormLabel>
+              <FormControl>
+                <select
+                  id="manualSessionKind"
+                  value={field.value || "RACE"}
+                  onChange={field.onChange}
+                  disabled={isSubmitting}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
+                >
+                  <option value="PRACTICE">Practice</option>
+                  <option value="QUALIFY">Qualifying</option>
+                  <option value="RACE">Race</option>
+                </select>
+              </FormControl>
+              <FormMessage className="text-xs text-red-500" />
+            </FormItem>
+          )}
+        />
+
+        <div className={sessionKind === "PRACTICE" ? "opacity-60" : ""}>
           <label className="mb-1.5 block text-sm font-medium text-white/80">
-            Finishing position <span className="text-white/40">(optional)</span>
+            {sessionKind === "QUALIFY"
+              ? "Qualifying position"
+              : sessionKind === "RACE"
+                ? "Race finish"
+                : "Finishing position"}{" "}
+            <span className="text-white/40">
+              ({sessionKind === "PRACTICE" ? "not used" : "optional"})
+            </span>
           </label>
           <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] items-start gap-2">
             <FormField
@@ -405,7 +551,7 @@ export default function ManualActivityForm({
                       min={1}
                       max={MANUAL_ACTIVITY_POSITION_MAX}
                       inputMode="numeric"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || sessionKind === "PRACTICE"}
                       placeholder="7"
                       className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
                       {...field}
@@ -429,7 +575,7 @@ export default function ManualActivityForm({
                         min={1}
                         max={MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX}
                         inputMode="numeric"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || sessionKind === "PRACTICE"}
                         placeholder="20"
                         className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
                         {...field}
@@ -443,9 +589,45 @@ export default function ManualActivityForm({
             </div>
           </div>
           <p className="mt-1 text-xs text-white/40">
-            Optional for races. Leave both fields empty for practice activities.
+            {sessionKind === "PRACTICE"
+              ? "Practice sessions do not use finishing position."
+              : sessionKind === "QUALIFY"
+                ? "Your position after qualifying. Leave empty if unknown."
+                : "Your race result. Leave empty if unknown."}
           </p>
         </div>
+
+        {sessionKind === "RACE" && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-white/80">
+              Qualifying position <span className="text-white/40">(optional)</span>
+            </label>
+            <FormField
+              control={form.control}
+              name="qualifyingPosition"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <input
+                      type="number"
+                      min={1}
+                      max={MANUAL_ACTIVITY_POSITION_MAX}
+                      inputMode="numeric"
+                      disabled={isSubmitting}
+                      placeholder="e.g. 3"
+                      className="w-full max-w-xs rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs text-red-500" />
+                </FormItem>
+              )}
+            />
+            <p className="mt-1 text-xs text-white/40">
+              Where you started on the grid (from qualifying).
+            </p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-end justify-between gap-2">

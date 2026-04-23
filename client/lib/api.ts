@@ -1635,9 +1635,13 @@ export type UploadSessionFileCallbacks = {
 export type ManualActivityRequest = {
   sim: string;
   trackId: string;
+  /** PRACTICE | QUALIFY | RACE */
+  manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
   carId?: string;
   position?: number;
   totalDrivers?: number;
+  /** Race sessions: qualifying finishing position. */
+  qualifyingPosition?: number;
   /** Legacy single lap; ignored by API when `laps` is non-empty. */
   bestLapMs?: number;
   /** Ordered lap times (ms). */
@@ -1661,6 +1665,7 @@ export function buildManualActivityRequestBody(
   const body: Record<string, unknown> = {
     sim: data.sim,
     trackId: data.trackId,
+    manualSessionKind: data.manualSessionKind,
   };
   if (data.carId != null && String(data.carId).trim() !== "") {
     body.carId = data.carId;
@@ -1670,6 +1675,12 @@ export function buildManualActivityRequestBody(
   }
   if (data.totalDrivers != null && Number.isFinite(data.totalDrivers)) {
     body.totalDrivers = data.totalDrivers;
+  }
+  if (
+    data.qualifyingPosition != null &&
+    Number.isFinite(data.qualifyingPosition)
+  ) {
+    body.qualifyingPosition = Math.round(data.qualifyingPosition as number);
   }
   if (data.notes != null && String(data.notes).trim() !== "") {
     body.notes = String(data.notes).trim();
@@ -1705,15 +1716,23 @@ export async function createManualActivity(
   );
 }
 
-export async function updateManualActivity(
+/** Owner session update (manual + telemetry); canonical route is PUT /api/sessions/:id. */
+export async function updateActivity(
   sessionId: string,
   data: ManualActivityRequest
 ): Promise<ManualActivityResponse> {
   return fetchApi<ManualActivityResponse>(
     "PUT",
-    `/api/sessions/manual-activity/${sessionId}`,
+    `/api/sessions/${encodeURIComponent(sessionId)}`,
     buildManualActivityRequestBody(data)
   );
+}
+
+export async function updateManualActivity(
+  sessionId: string,
+  data: ManualActivityRequest
+): Promise<ManualActivityResponse> {
+  return updateActivity(sessionId, data);
 }
 
 export async function deleteManualActivity(sessionId: string): Promise<void> {

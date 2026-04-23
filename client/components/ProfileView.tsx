@@ -632,9 +632,7 @@ export function ProfileView({
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="text-sm font-bold text-foreground">
-                          {race.source === "MANUAL_ACTIVITY"
-                            ? "—"
-                            : (race.qualiPos ?? "—")}
+                          {race.qualiPos ?? "—"}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
@@ -701,9 +699,7 @@ export function ProfileView({
                     <div>
                       <p className="text-muted-foreground">Quali</p>
                       <p className="font-bold text-foreground">
-                        {race.source === "MANUAL_ACTIVITY"
-                          ? "—"
-                          : (race.qualiPos ?? "—")}
+                        {race.qualiPos ?? "—"}
                       </p>
                     </div>
                     <div>

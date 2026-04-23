@@ -114,7 +114,7 @@ export default function QAPage() {
                 <Link to="/manual" className="text-white/80 underline underline-offset-2 hover:text-white">
                   Edit manual activity
                 </Link>
-                <span className="ml-1 text-white/40">(/manual/:sessionId/edit after creating one)</span>
+                <span className="ml-1 text-white/40">(/sessions/:id/edit or /manual/:sessionId/edit)</span>
               </li>
               <li>
                 <Link to="/sessions" className="text-white/80 underline underline-offset-2 hover:text-white">

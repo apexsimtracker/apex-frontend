@@ -220,20 +220,6 @@ export default function Sessions() {
   }, [activityError]);
 
   useEffect(() => {
-    function handleActivityUpdated() {
-      void queryClient.invalidateQueries({ queryKey: ["activity", "feed"] });
-    }
-    if (typeof window !== "undefined") {
-      window.addEventListener("apex:activity-updated", handleActivityUpdated);
-    }
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("apex:activity-updated", handleActivityUpdated);
-      }
-    };
-  }, [queryClient]);
-
-  useEffect(() => {
     if (
       user &&
       !loading &&

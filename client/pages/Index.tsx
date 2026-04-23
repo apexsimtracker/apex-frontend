@@ -27,7 +27,6 @@ import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 import {
   ownedProfileUserKey,
   profileKeys,
-  PROFILE_SUMMARY_ALL_QUERY_FILTER,
   prefetchOwnProfileQueries,
 } from "@/lib/profileQueryKeys";
 
@@ -52,6 +51,20 @@ type RawActivityItem = SessionItem & {
     avatarUrl?: string | null;
   };
 };
+
+/** Matches server `isRaceKind`: telemetry RACE/SPRINT or manual activity with manualSessionKind RACE. */
+function isRaceLikeSessionForWeeklyGoals(s: {
+  sessionType?: string | null;
+  manualSessionKind?: string | null;
+}): boolean {
+  const st = (s.sessionType ?? "").toUpperCase();
+  if (st === "RACE" || st === "SPRINT") return true;
+  if (st === "MANUAL_ACTIVITY") {
+    const k = (s.manualSessionKind ?? "").toUpperCase();
+    return k === "RACE";
+  }
+  return false;
+}
 
 function getActivityHeaderFromOwner(
   session: RawActivityItem,
@@ -275,21 +288,6 @@ export default function Index() {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    function handleActivityUpdated() {
-      void queryClient.invalidateQueries({ queryKey: ["activity"] });
-      void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
-    }
-    if (typeof window !== "undefined") {
-      window.addEventListener("apex:activity-updated", handleActivityUpdated);
-    }
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("apex:activity-updated", handleActivityUpdated);
-      }
-    };
-  }, [queryClient]);
-
-  useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const run = () => {
@@ -397,11 +395,20 @@ export default function Index() {
       (i) => new Date(i.createdAt).getTime() >= startThisWeek
     );
 
-    const races = thisWeek.filter(
-      (s) => s.sessionType === "RACE" || s.sessionType === "QUALIFY"
+    const races = thisWeek.filter((s) =>
+      isRaceLikeSessionForWeeklyGoals({
+        sessionType: s.sessionType ?? null,
+        manualSessionKind: s.manualSessionKind ?? null,
+      })
     ).length;
     const podiums = thisWeek.filter(
-      (s) => s.position != null && s.position <= 3 && s.sessionType === "RACE"
+      (s) =>
+        isRaceLikeSessionForWeeklyGoals({
+          sessionType: s.sessionType ?? null,
+          manualSessionKind: s.manualSessionKind ?? null,
+        }) &&
+        s.position != null &&
+        s.position <= 3
     ).length;
     const laps = thisWeek.reduce((sum, s) => sum + (s.lapCount ?? 0), 0);
     return { races, podiums, laps };

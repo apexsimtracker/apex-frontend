@@ -26,21 +26,41 @@ export function getManualLapMaxForSimOrDefault(sim: string | undefined | null): 
   return getManualLapMaxForSim(sim);
 }
 
+/**
+ * Catalogue cap for new manual sessions, raised to at least `telemetryMinLapRows` when editing
+ * an existing telemetry session that already has more laps than the manual-entry limit.
+ */
+export function effectiveManualLapMaxForForm(
+  sim: string,
+  telemetryMinLapRows?: number | null
+): number {
+  const base = getManualLapMaxForSimOrDefault(sim);
+  if (telemetryMinLapRows != null && Number.isFinite(telemetryMinLapRows)) {
+    return Math.max(base, Math.floor(telemetryMinLapRows));
+  }
+  return base;
+}
+
 const lapRowSchema = z.object({
   lapTime: z.string(),
 });
 
-export const manualActivityFormSchema = z
-  .object({
-    sim: z.string(),
-    trackId: z.string(),
-    carId: z.string(),
-    position: z.string(),
-    totalDrivers: z.string(),
-    laps: z.array(lapRowSchema),
-    notes: z.string(),
-  })
-  .superRefine((data, ctx) => {
+export function createManualActivityFormSchema(telemetryMinLapRows?: number | null) {
+  return z
+    .object({
+      sim: z.string(),
+      trackId: z.string(),
+      carId: z.string(),
+      /** PRACTICE | QUALIFY | RACE */
+      manualSessionKind: z.string(),
+      position: z.string(),
+      totalDrivers: z.string(),
+      /** Qualifying position (race sessions only) */
+      qualifyingPosition: z.string(),
+      laps: z.array(lapRowSchema),
+      notes: z.string(),
+    })
+    .superRefine((data, ctx) => {
     if (!data.sim?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -56,6 +76,16 @@ export const manualActivityFormSchema = z
       });
     }
     if (!data.sim?.trim() || !data.trackId?.trim()) {
+      return;
+    }
+
+    const kind = data.manualSessionKind?.trim().toUpperCase();
+    if (kind !== "PRACTICE" && kind !== "QUALIFY" && kind !== "RACE") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select Practice, Qualifying, or Race.",
+        path: ["manualSessionKind"],
+      });
       return;
     }
 
@@ -119,50 +149,82 @@ export const manualActivityFormSchema = z
       (totalDriversNum as number) >= MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN &&
       (totalDriversNum as number) <= MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX;
 
-    const onlyPosFilled = posValid && !hasGridInput;
-    const onlyGridFilled = gridValid && !hasPosInput;
-    if (onlyPosFilled || onlyGridFilled) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please enter both position and grid size, or leave both empty.",
-        path: ["position"],
-      });
-    }
-
-    if (
-      posValid &&
-      gridValid &&
-      (positionNum as number) > (totalDriversNum as number)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Position cannot be greater than the total number of drivers.",
-        path: ["position"],
-      });
-    }
-
-    const maxLaps = getManualLapMaxForSim(data.sim);
-    if (data.laps.length > maxLaps) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `At most ${maxLaps} laps for this sim.`,
-        path: ["laps"],
-      });
-    }
-
-    data.laps.forEach((row, i) => {
-      const t = row.lapTime?.trim() ?? "";
-      if (!t) return;
-      const ms = parseStrictManualLapTimeToMs(row.lapTime);
-      if (ms === null) {
+    if (kind !== "PRACTICE") {
+      const onlyPosFilled = posValid && !hasGridInput;
+      const onlyGridFilled = gridValid && !hasPosInput;
+      if (onlyPosFilled || onlyGridFilled) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: LAP_FORMAT_MSG,
-          path: ["laps", i, "lapTime"],
+          message: "Please enter both position and grid size, or leave both empty.",
+          path: ["position"],
         });
       }
+
+      if (
+        posValid &&
+        gridValid &&
+        (positionNum as number) > (totalDriversNum as number)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Position cannot be greater than the total number of drivers.",
+          path: ["position"],
+        });
+      }
+    }
+
+    if (kind === "RACE" && data.qualifyingPosition?.trim()) {
+      const qp = parseInt(data.qualifyingPosition.trim(), 10);
+      if (!Number.isInteger(qp) || Number.isNaN(qp)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Qualifying position must be a whole number.",
+          path: ["qualifyingPosition"],
+        });
+      } else if (qp < MANUAL_ACTIVITY_POSITION_MIN || qp > MANUAL_ACTIVITY_POSITION_MAX) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Qualifying position must be between ${MANUAL_ACTIVITY_POSITION_MIN} and ${MANUAL_ACTIVITY_POSITION_MAX}.`,
+          path: ["qualifyingPosition"],
+        });
+      } else if (
+        gridValid &&
+        totalDriversNum != null &&
+        qp > (totalDriversNum as number)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Qualifying position cannot be greater than the total number of drivers.",
+          path: ["qualifyingPosition"],
+        });
+      }
+    }
+
+      const maxLaps = effectiveManualLapMaxForForm(data.sim, telemetryMinLapRows);
+      if (data.laps.length > maxLaps) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `At most ${maxLaps} laps for this sim.`,
+          path: ["laps"],
+        });
+      }
+
+      data.laps.forEach((row, i) => {
+        const t = row.lapTime?.trim() ?? "";
+        if (!t) return;
+        const ms = parseStrictManualLapTimeToMs(row.lapTime);
+        if (ms === null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: LAP_FORMAT_MSG,
+            path: ["laps", i, "lapTime"],
+          });
+        }
+      });
     });
-  });
+}
+
+export const manualActivityFormSchema = createManualActivityFormSchema();
 
 export type ManualActivityFormValues = z.infer<typeof manualActivityFormSchema>;
 

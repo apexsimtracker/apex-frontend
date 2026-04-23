@@ -28,6 +28,8 @@ export type SessionItem = {
   position: number | null;
   totalDrivers: number | null;
   sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "UNKNOWN";
+  /** Present for MANUAL_ACTIVITY rows from API (Practice / Qualifying / Race). */
+  manualSessionKind?: string | null;
   sim?: string | null;
   bestLapMs?: number | null;
   bestLapLapNumber?: number | null;
