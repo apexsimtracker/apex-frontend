@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
@@ -17,13 +15,26 @@ import {
   patchPrivacySettings,
   patchNotificationSettings,
   type DataExportFormat,
-  type SessionVisibility,
 } from "@/lib/api";
+import { getApexSettings, type ApexSettings } from "@/lib/settingsStorage";
+import { SettingsCard } from "@/features/settings/components/SettingsCard";
+import { SettingsRow } from "@/features/settings/components/SettingsRow";
 import {
-  getApexSettings,
-  setApexSettings,
-  type ApexSettings,
-} from "@/lib/settingsStorage";
+  SETTINGS_PATH,
+  settingsTitle,
+  settingsDescription,
+  PRIMARY_RED,
+  DELETE_CONFIRM_PHRASE,
+  SESSION_VISIBILITY_OPTIONS,
+} from "@/features/settings/constants";
+import { formatCreatedAt, formatRetryAfterMs } from "@/features/settings/utils";
+import { useSettingsForms } from "@/features/settings/hooks/useSettingsForms";
+import {
+  useApexFromServerUserEffect,
+  useDeleteAccountFormOnDialogEffect,
+  useDisplayNameFormResetEffect,
+  usePersistApexToStorageEffect,
+} from "@/features/settings/hooks/useSettingsUserEffects";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -46,128 +57,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { WithRootError } from "@/lib/formWithRootError";
 import {
-  settingsDisplayNameSchema,
-  settingsChangePasswordSchema,
-  deleteAccountSchema,
   type SettingsDisplayNameValues,
   type SettingsChangePasswordValues,
   type DeleteAccountFormValues,
+  settingsDisplayNameSchema,
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/settingsForms";
 import { cn } from "@/lib/utils";
 import { RefreshCw, LogOut, Trash2, Loader2, Download } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
-import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
-
-const SETTINGS_PATH = "/settings";
-const settingsTitle = `Settings | ${COMPANY_NAME}`;
-const settingsDescription = `Account, password, preferences, and privacy settings for your ${COMPANY_NAME} profile at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
-
-const PRIMARY_RED = "rgb(240, 28, 28)";
-const DELETE_CONFIRM_PHRASE = "DELETE";
-
-function formatRetryAfterMs(ms: number): string {
-  const sec = Math.ceil(ms / 1000);
-  const hours = Math.floor(sec / 3600);
-  const minutes = Math.floor((sec % 3600) / 60);
-  if (hours > 0) {
-    return `${hours} hour${hours === 1 ? "" : "s"}${minutes > 0 ? ` ${minutes} min` : ""}`;
-  }
-  if (minutes > 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
-  return `${sec} second${sec === 1 ? "" : "s"}`;
-}
-
-const SESSION_VISIBILITY_OPTIONS: {
-  value: SessionVisibility;
-  title: string;
-  description: string;
-}[] = [
-    {
-      value: "PUBLIC",
-      title: "Everyone",
-      description:
-        "Anyone with a session link can open session details. Race history follows your profile visibility (public profiles are open to all).",
-    },
-    {
-      value: "FOLLOWERS_ONLY",
-      title: "Followers only",
-      description:
-        "Only approved followers can open your session links and see race history when they can view your profile.",
-    },
-    {
-      value: "PRIVATE",
-      title: "Only me",
-      description:
-        "Only you can view your race history and session detail pages; others receive an access denied message.",
-    },
-  ];
-
-function SettingsCard({
-  title,
-  description,
-  children,
-  className,
-  id,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-  className?: string;
-  id?: string;
-}) {
-  return (
-    <section
-      id={id}
-      className={cn(
-        "rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6",
-        className
-      )}
-    >
-      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-foreground">
-        {title}
-      </h2>
-      {description && (
-        <p className="mb-4 text-xs text-muted-foreground">{description}</p>
-      )}
-      {children}
-    </section>
-  );
-}
-
-function SettingsRow({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-0">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        {description && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        )}
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-
-function formatCreatedAt(createdAt: string | undefined): string {
-  if (!createdAt) return "—";
-  try {
-    const d = new Date(createdAt);
-    return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-  } catch {
-    return "—";
-  }
-}
+import type { SessionVisibility } from "@/lib/api";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -188,71 +89,13 @@ export default function Settings() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
-  const displayNameForm = useForm<WithRootError<SettingsDisplayNameValues>>({
-    resolver: zodResolver(settingsDisplayNameSchema),
-    defaultValues: { displayName: "" },
-    mode: "onChange",
-  });
+  const { displayNameForm, changePasswordForm, deleteAccountForm } = useSettingsForms(
+    DELETE_CONFIRM_PHRASE
+  );
 
-  const changePasswordForm = useForm<WithRootError<SettingsChangePasswordValues>>({
-    resolver: zodResolver(settingsChangePasswordSchema),
-    defaultValues: { currentPassword: "", newPassword: "" },
-  });
-
-  const deleteAccountForm = useForm<WithRootError<DeleteAccountFormValues>>({
-    resolver: zodResolver(deleteAccountSchema(DELETE_CONFIRM_PHRASE)),
-    defaultValues: { password: "", confirmPhrase: "" },
-  });
-
-  useEffect(() => {
-    if (user) {
-      displayNameForm.reset({
-        displayName: (user as { displayName?: string }).displayName ?? user.email ?? "",
-      });
-    }
-  }, [user, displayNameForm]);
-
-  useEffect(() => {
-    if (!user) return;
-    const u = user as {
-      privateProfile?: boolean;
-      manualFollowApproval?: boolean;
-      sessionVisibility?: SessionVisibility;
-      emailNotifications?: boolean;
-      showNotificationBadge?: boolean;
-    };
-    setSettings((prev) => ({
-      ...prev,
-      ...(typeof u.privateProfile === "boolean" ? { privateProfile: u.privateProfile } : {}),
-      ...(typeof u.manualFollowApproval === "boolean"
-        ? { manualFollowApproval: u.manualFollowApproval }
-        : {}),
-      ...(u.sessionVisibility === "PUBLIC" ||
-        u.sessionVisibility === "FOLLOWERS_ONLY" ||
-        u.sessionVisibility === "PRIVATE"
-        ? { sessionVisibility: u.sessionVisibility }
-        : {}),
-      ...(typeof u.emailNotifications === "boolean"
-        ? { emailNotifications: u.emailNotifications }
-        : {}),
-      ...(typeof u.showNotificationBadge === "boolean"
-        ? { showNotificationBadge: u.showNotificationBadge }
-        : {}),
-    }));
-  }, [
-    user?.id,
-    user?.privateProfile,
-    user?.manualFollowApproval,
-    user?.sessionVisibility,
-    user?.emailNotifications,
-    user?.showNotificationBadge,
-  ]);
-
-  useEffect(() => {
-    if (deleteDialogOpen) {
-      deleteAccountForm.reset({ password: "", confirmPhrase: "" });
-    }
-  }, [deleteDialogOpen, deleteAccountForm]);
+  useDisplayNameFormResetEffect(user, displayNameForm);
+  useApexFromServerUserEffect(user, setSettings);
+  useDeleteAccountFormOnDialogEffect(deleteDialogOpen, deleteAccountForm);
 
   const currentDisplayName = (user as { displayName?: string })?.displayName ?? user?.email ?? "";
   const displayNameWatch = displayNameForm.watch("displayName");
@@ -289,9 +132,7 @@ export default function Settings() {
     [currentDisplayName, savingDisplayName, setUser, user, displayNameForm]
   );
 
-  useEffect(() => {
-    setApexSettings(settings);
-  }, [settings]);
+  usePersistApexToStorageEffect(settings);
 
   const applyNotificationToggle = useCallback(
     async (key: "emailNotifications" | "showNotificationBadge", value: boolean) => {
@@ -788,7 +629,7 @@ export default function Settings() {
                           type="radio"
                           id={`session-vis-${opt.value}`}
                           name="sessionVisibility"
-                          className="mt-1 h-4 w-4 shrink-0 accent-[rgb(240,28,28)]"
+                          className="mt-1 size-4 shrink-0 accent-[rgb(240,28,28)]"
                           checked={settings.sessionVisibility === opt.value}
                           onChange={() => void applySessionVisibility(opt.value)}
                         />

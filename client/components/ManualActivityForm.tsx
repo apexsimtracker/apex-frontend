@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useForm, useFormState, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
@@ -28,6 +28,7 @@ import {
   MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX,
   type ManualActivityFormValues,
 } from "@/lib/validation/manualActivity";
+import { useManualActivityFormSync } from "@/features/manual-activity/hooks/useManualActivityFormSync";
 
 export type ManualActivityFormData = {
   sim: ManualActivitySim | "";
@@ -215,80 +216,20 @@ export default function ManualActivityForm({
     useCatalogs(sim || null);
   const { recent: recentItems, loading: recentLoading } = useRecentManualSessions();
 
-  useEffect(() => {
-    if (initialData) {
-      form.reset(buildDefaults(initialData));
-    }
-  }, [initialData, form]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      form.setError("root", { type: "server", message: errorMessage });
-    } else {
-      form.clearErrors("root");
-    }
-  }, [errorMessage, form]);
-
-  useEffect(() => {
-    if (!sim) return;
-    const max = effectiveManualLapMaxForForm(sim, telemetryMinLapRows ?? null);
-    const current = form.getValues("laps");
-    if (current.length > max) {
-      form.setValue(
-        "laps",
-        current.slice(0, max),
-        { shouldValidate: true }
-      );
-    }
-  }, [sim, form, telemetryMinLapRows]);
-
-  useEffect(() => {
-    if (!sim || tracks.length === 0) return;
-    const current = form.getValues("trackId");
-    if (current && tracks.some((t) => t.id === current)) return;
-    const resolved = resolveCatalogTrackId(
-      tracks,
-      initialData?.catalogTrackId ?? initialData?.trackId ?? "",
-      initialData?.trackNameHint
-    );
-    if (resolved) {
-      form.setValue("trackId", resolved, { shouldValidate: true });
-    } else if (current) {
-      form.setValue("trackId", "", { shouldValidate: true });
-    }
-  }, [sim, tracks, initialData?.catalogTrackId, initialData?.trackId, initialData?.trackNameHint, form]);
-
-  useEffect(() => {
-    if (!sim || cars.length === 0) return;
-    const current = form.getValues("carId");
-    if (current && cars.some((c) => c.id === current)) return;
-    const resolved = resolveCatalogCarId(
-      cars,
-      initialData?.catalogCarId ?? initialData?.carId ?? "",
-      initialData?.carNameHint
-    );
-    if (resolved) {
-      form.setValue("carId", resolved, { shouldValidate: true });
-    } else if (current) {
-      form.setValue("carId", "", { shouldValidate: true });
-    }
-  }, [sim, cars, initialData?.catalogCarId, initialData?.carId, initialData?.carNameHint, form]);
-
-  useEffect(() => {
-    if (!pendingRecent || tracks.length === 0) return;
-    const byTrackName = tracks.find(
-      (t) => t.name.trim().toLowerCase() === pendingRecent.trackName.trim().toLowerCase()
-    );
-    const byCarName =
-      pendingRecent.carName && pendingRecent.carName !== "—"
-        ? cars.find(
-            (c) => c.name.trim().toLowerCase() === pendingRecent.carName.trim().toLowerCase()
-          )
-        : null;
-    if (byTrackName) form.setValue("trackId", byTrackName.id);
-    if (byCarName) form.setValue("carId", byCarName.id);
-    setPendingRecent(null);
-  }, [pendingRecent, tracks, cars, form]);
+  useManualActivityFormSync({
+    initialData,
+    errorMessage,
+    form,
+    sim,
+    telemetryMinLapRows,
+    tracks,
+    cars,
+    pendingRecent,
+    setPendingRecent,
+    buildDefaults,
+    resolveCatalogTrackId,
+    resolveCatalogCarId,
+  });
 
   function handleRecentChipClick(item: RecentManualItem) {
     form.setValue("sim", item.sim);

@@ -1,22 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Share2,
-  PenLine,
-  Pencil,
-  Trash2,
-  Repeat,
-  Timer,
-  CheckCircle,
-  Zap,
-  Flag,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Share2, PenLine, Pencil, Trash2, Repeat, Timer, Flag } from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
-import { formatSessionTypeUpper, formatSessionType } from "@/lib/sim";
+import { formatSessionTypeUpper } from "@/lib/sim";
 import { formatActivitySource } from "@/lib/enumFormat";
 import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
@@ -31,46 +20,10 @@ import {
   resolveSessionFields,
 } from "@/lib/sessionShareText";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
-
-type Insight = { title: string; description: string; icon: LucideIcon };
-
-function buildInsights(session: SessionDetail): Insight[] {
-  const insights: Insight[] = [];
-  if ((session.lapCount ?? 0) > 0) {
-    insights.push({
-      title: "Session Completed",
-      description: "You completed at least one full lap.",
-      icon: CheckCircle,
-    });
-  }
-  if ((session.lapCount ?? 0) >= 3) {
-    insights.push({
-      title: "Good Track Time",
-      description: "You spent meaningful time learning the circuit.",
-      icon: Timer,
-    });
-  }
-  if (session.bestLapMs && session.bestLapMs < 120000) {
-    insights.push({
-      title: "Strong Pace",
-      description: "Lap time shows competitive speed.",
-      icon: Zap,
-    });
-  }
-  if (insights.length === 0) {
-    insights.push({
-      title: "Warmup Session",
-      description: "No completed laps recorded yet.",
-      icon: Flag,
-    });
-  }
-  return insights;
-}
-
-function formatDeltaMs(deltaMs: number): string {
-  const s = formatLapDelta(deltaMs);
-  return s === "—" ? "—" : `+${s}`;
-}
+import {
+  buildSessionInsights,
+  formatLapDeltaMsForDisplay,
+} from "@/features/session-detail/sessionInsights";
 
 type RawLap = {
   lap: number;
@@ -527,7 +480,7 @@ export default function SessionDetailPage() {
     return "text-white/80";
   }
 
-  const insights = buildInsights(session);
+  const insights = buildSessionInsights(session);
   const visibleLaps = showAllLaps ? laps : laps.slice(0, 6);
   const canShowMoreLaps = !showAllLaps && laps.length > 6;
   const lapTimes = (session?.laps ?? []).map((l) => l.timeMs).filter(Boolean);
@@ -829,7 +782,7 @@ export default function SessionDetailPage() {
                               BEST
                             </span>
                           )
-                        : formatDeltaMs(row.timeMs - bestLapMsFromLaps);
+                        : formatLapDeltaMsForDisplay(row.timeMs - bestLapMsFromLaps);
                   return (
                     <tr
                       key={`lap-${row.lap}-${index}`}

@@ -258,6 +258,7 @@ export default function DiscussionDetail() {
     return () => {
       cancelled = true;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on identity keys only; `discussion`/`user` objects would over-trigger view recording
   }, [id, discussionQuery.isSuccess, discussion?.id, user?.id, queryClient]);
 
   useEffect(() => {

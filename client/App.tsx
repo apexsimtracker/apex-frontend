@@ -2,31 +2,23 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import Header from "./components/Header";
 import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index";
-import Profile from "./pages/Profile";
 import Community from "./pages/Community";
 import Challenges from "./pages/Challenges";
 import ChallengeDetail from "./pages/ChallengeDetail";
 import Leaderboards from "./pages/Leaderboards";
-import ActivityDetail from "./pages/ActivityDetail";
 import Sessions from "./pages/Sessions";
-import SessionDetailPage from "./pages/SessionDetailPage";
-import DiscussionDetail from "./pages/DiscussionDetail";
 import RaceDetail from "./pages/RaceDetail";
-import UserProfile from "./pages/UserProfile";
-import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Upload from "./pages/Upload";
-import ManualActivity from "./pages/ManualActivity";
-import EditActivity from "./pages/EditActivity";
 import Upgrade from "./pages/Upgrade";
 import Agent from "./pages/Agent";
 import NotFound from "./pages/NotFound";
@@ -40,6 +32,23 @@ import ProRequiredBanner from "./components/ProRequiredBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
+
+const Profile = lazy(() => import("./pages/Profile"));
+const ActivityDetail = lazy(() => import("./pages/ActivityDetail"));
+const SessionDetailPage = lazy(() => import("./pages/SessionDetailPage"));
+const DiscussionDetail = lazy(() => import("./pages/DiscussionDetail"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const ManualActivity = lazy(() => import("./pages/ManualActivity"));
+const EditActivity = lazy(() => import("./pages/EditActivity"));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[40vh] flex-1 items-center justify-center py-16 text-sm text-muted-foreground">
+      Loading…
+    </div>
+  );
+}
 
 /** Old bookmarks: `/manual/:sessionId/edit` → `/sessions/:id/edit`. */
 function LegacyManualSessionEditRedirect() {
@@ -77,6 +86,7 @@ export default function App() {
               <ProRequiredBanner />
               <main className="flex min-h-0 flex-1 flex-col">
                 <GlobalErrorBoundary>
+                  <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route
                       path="/"
@@ -166,6 +176,7 @@ export default function App() {
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </Suspense>
                 </GlobalErrorBoundary>
               </main>
               <AppFooter />
