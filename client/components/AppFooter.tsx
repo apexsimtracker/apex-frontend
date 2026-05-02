@@ -1,10 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { APP_VERSION, SUPPORT_EMAIL } from "@/lib/appConfig";
 
 const linkClass =
   "text-white/50 hover:text-white/70 transition-colors underline underline-offset-2";
 
 export default function AppFooter() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <footer className="mt-auto border-t border-white/5 py-4">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

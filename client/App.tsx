@@ -18,6 +18,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import AdminRoute from "./auth/AdminRoute";
 import Upload from "./pages/Upload";
 import Upgrade from "./pages/Upgrade";
 import Agent from "./pages/Agent";
@@ -32,6 +33,11 @@ import ProRequiredBanner from "./components/ProRequiredBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminComingSoonPage from "./pages/admin/AdminComingSoonPage";
+import AdminChallenges from "./pages/admin/AdminChallenges";
+import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
 
 const Profile = lazy(() => import("./pages/Profile"));
 const ActivityDetail = lazy(() => import("./pages/ActivityDetail"));
@@ -173,6 +179,77 @@ export default function App() {
                     <Route path="/faq" element={<FAQPage />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route
+                      path="/admin"
+                      element={<AdminRoute message="Sign in to access the admin dashboard." />}
+                    >
+                      <Route element={<AdminLayout />}>
+                        <Route index element={<AdminDashboard />} />
+                        <Route
+                          path="users"
+                          element={<AdminComingSoonPage title="Users" path="/admin/users" />}
+                        />
+                        <Route
+                          path="sessions"
+                          element={<AdminComingSoonPage title="Sessions & laps" path="/admin/sessions" />}
+                        />
+                        <Route
+                          path="tracks"
+                          element={<AdminComingSoonPage title="Tracks & catalogs" path="/admin/tracks" />}
+                        />
+                        <Route path="challenges" element={<AdminChallenges />} />
+                        <Route path="challenges/:challengeId" element={<AdminChallengeDetail />} />
+                        <Route
+                          path="community"
+                          element={
+                            <AdminComingSoonPage
+                              title="Community & discussions"
+                              path="/admin/community"
+                            />
+                          }
+                        />
+                        <Route
+                          path="leaderboards"
+                          element={
+                            <AdminComingSoonPage title="Leaderboards" path="/admin/leaderboards" />
+                          }
+                        />
+                        <Route
+                          path="notifications"
+                          element={
+                            <AdminComingSoonPage title="Notifications" path="/admin/notifications" />
+                          }
+                        />
+                        <Route
+                          path="follows"
+                          element={<AdminComingSoonPage title="Follow graph" path="/admin/follows" />}
+                        />
+                        <Route
+                          path="billing"
+                          element={<AdminComingSoonPage title="Billing & Pro" path="/admin/billing" />}
+                        />
+                        <Route
+                          path="waitlist"
+                          element={<AdminComingSoonPage title="Pro waitlist" path="/admin/waitlist" />}
+                        />
+                        <Route
+                          path="devices"
+                          element={
+                            <AdminComingSoonPage title="Devices & agent" path="/admin/devices" />
+                          }
+                        />
+                        <Route
+                          path="email-auth"
+                          element={
+                            <AdminComingSoonPage title="Email & auth ops" path="/admin/email-auth" />
+                          }
+                        />
+                        <Route
+                          path="system"
+                          element={<AdminComingSoonPage title="System" path="/admin/system" />}
+                        />
+                      </Route>
+                    </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -113,7 +113,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+          <nav className="hidden items-center gap-6 lg:flex lg:gap-8">
             <Link
               to="/"
               className={`relative text-sm font-medium transition-colors ${
@@ -181,6 +181,21 @@ export default function Header() {
                 <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
               )}
             </Link>
+            {user?.role === "ADMIN" ? (
+              <Link
+                to="/admin"
+                className={`relative text-sm font-medium transition-colors ${
+                  isPathActive("/admin")
+                    ? "text-white"
+                    : "text-foreground/70 hover:text-foreground"
+                }`}
+              >
+                Admin
+                {isPathActive("/admin") && (
+                  <span className="absolute inset-x-0 -bottom-1.5 h-0.5 rounded-full bg-[rgba(240,28,28,0.9)] shadow-[0_0_12px_rgba(240,28,28,0.8)] transition-all duration-200" />
+                )}
+              </Link>
+            ) : null}
           </nav>
 
           {/* Desktop Controls */}
@@ -306,6 +321,19 @@ export default function Header() {
             >
               Leaderboards
             </Link>
+            {user?.role === "ADMIN" ? (
+              <Link
+                to="/admin"
+                className={`block rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isPathActive("/admin")
+                    ? "bg-secondary/70 text-white"
+                    : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
+              </Link>
+            ) : null}
             {/* Mobile Create Section */}
             <div className="mt-2 border pt-2">
               <button

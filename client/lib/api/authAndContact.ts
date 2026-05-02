@@ -7,6 +7,8 @@ import type { SessionVisibility } from "./profile";
 export type AuthUser = {
   id: string;
   email: string;
+  /** Server-backed; omitted on older API responses. */
+  role?: "USER" | "ADMIN";
   displayName?: string;
   name?: string;
   createdAt?: string;

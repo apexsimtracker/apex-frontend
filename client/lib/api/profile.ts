@@ -180,6 +180,14 @@ export type UserPublicProfile = {
   followRelationship: FollowRelationship;
   /** Set when viewerHasAccess is true — used for race history empty-state copy. */
   sessionVisibility: SessionVisibility | null;
+  challengeBadges?: {
+    challengeId: string;
+    challengeTitle: string;
+    sim: string;
+    place: number;
+    tier: "GOLD" | "SILVER" | "BRONZE" | string;
+    awardedAt: string;
+  }[];
 };
 
 /** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
@@ -276,118 +284,97 @@ export async function declineFollowRequest(requestId: string): Promise<{ ok: boo
   );
 }
 
-export type Competition = {
-  id: string;
-  title: string;
-  sim: string;
-  track: string;
-  vehicle: string;
-  targetTimeMs: number | null;
-  /** Weekly challenge vs tournament — drives /challenges tab grouping. */
-  kind?: "challenge" | "tournament";
-  status: "LIVE" | "UPCOMING" | "FINISHED";
-  participants: number;
-  startsAt: string | null;
-  endsAt: string | null;
-};
+export type {
+  ChallengeApiStatus,
+  ChallengeSummary,
+  ChallengeDetail,
+  ChallengesMeta,
+  ChallengeListItem,
+} from "./challenges";
 
-export async function getCompetitions(): Promise<Competition[]> {
-  return apiGet<Competition[]>("/api/competitions");
-}
+export {
+  getChallengeSummary,
+  getChallenge,
+  getChallengesMeta,
+  joinChallenge,
+  getChallengeList,
+} from "./challenges";
 
-export type CompetitionSummary = Competition & {
-  yourBestLapMs: number | null;
-  fastestLapMs: number | null;
-  yourPosition: number | null;
-  timeRemainingSec: number | null;
-  joined: boolean;
-  /** Present on /summary and GET /competitions/:id responses. */
-  isSupported?: boolean;
-};
+/** @deprecated alias — use ChallengeSummary */
+export type CompetitionSummary = import("./challenges").ChallengeSummary;
 
-function toNum(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string") {
-    const n = Number(v);
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
-/** Normalize lap ms fields from camelCase or snake_case API responses. */
-function normalizeCompetitionSummaryRow(row: CompetitionSummary): CompetitionSummary {
-  const fastest =
-    toNum(row.fastestLapMs) ??
-    toNum((row as unknown as { fastest_lap_ms?: unknown }).fastest_lap_ms);
-  const your =
-    toNum(row.yourBestLapMs) ??
-    toNum((row as unknown as { your_best_lap_ms?: unknown }).your_best_lap_ms);
-  return {
-    ...row,
-    fastestLapMs: fastest ?? null,
-    yourBestLapMs: your ?? null,
-  };
-}
-
-/**
- * Maps GET /api/competitions (public, no auth) into CompetitionSummary rows so
- * /challenges can load for logged-out users. User-specific fields are null; join uses login redirect.
- */
-export function mapCompetitionsToPublicSummaries(list: Competition[]): CompetitionSummary[] {
-  const now = Date.now();
-  return list.map((c) =>
-    normalizeCompetitionSummaryRow({
-      ...c,
-      yourBestLapMs: null,
-      fastestLapMs: null,
-      yourPosition: null,
-      timeRemainingSec:
-        c.endsAt != null
-          ? Math.max(0, Math.floor((new Date(c.endsAt).getTime() - now) / 1000))
-          : null,
-      joined: false,
-    })
-  );
-}
-
-export async function getCompetitionSummary(): Promise<CompetitionSummary[]> {
-  const raw = await apiGet<CompetitionSummary[]>("/api/competitions/summary");
-  return Array.isArray(raw) ? raw.map(normalizeCompetitionSummaryRow) : [];
-}
-
-/** Single competition detail (GET /api/competitions/:id). Falls back to summary list if backend has no detail endpoint. */
-export type CompetitionDetail = CompetitionSummary & {
-  description?: string | null;
+/** @deprecated alias — use ChallengeDetail */
+export type CompetitionDetail = import("./challenges").ChallengeDetail & {
   rules?: string[] | null;
 };
 
-export async function getCompetition(id: string): Promise<CompetitionDetail | null> {
-  try {
-    const data = await apiGet<CompetitionDetail>(`/api/competitions/${encodeURIComponent(id)}`);
-    if (!data || typeof data !== "object") return null;
-    return normalizeCompetitionSummaryRow(data as CompetitionSummary) as CompetitionDetail;
-  } catch {
-    return null;
-  }
+/** @deprecated alias — use ChallengeListItem */
+export type Competition = import("./challenges").ChallengeListItem;
+
+export type CompetitionsMeta = import("./challenges").ChallengesMeta;
+
+export async function getCompetitions(): Promise<Competition[]> {
+  const res = await import("./challenges").then((m) =>
+    m.getChallengeList({
+      /** Logged-out /challenges needs ENDED rows for Past + All tabs (same as omitting status on the API). */
+      status: "UPCOMING,ACTIVE,ENDED",
+      pageSize: 100,
+    })
+  );
+  return res.items;
 }
 
-export type CompetitionsMeta = {
-  activeChallenges: number;
-  joinedThisSeason: number;
-  yourRank: number | null;
-};
+/** Maps public challenge list rows into summary-shaped rows for logged-out /challenges UI. */
+export function mapCompetitionsToPublicSummaries(
+  list: Competition[]
+): import("./challenges").ChallengeSummary[] {
+  const now = Date.now();
+  return list.map((c) => ({
+    id: c.id,
+    title: c.title,
+    sim: c.sim,
+    track: c.track,
+    vehicle: c.vehicle,
+    kind: "challenge",
+    status: c.status,
+    participants: c.participants,
+    startsAt: c.startsAt,
+    endsAt: c.endsAt,
+    targetTimeMs: c.targetTimeMs,
+    yourBestLapMs: null,
+    fastestLapMs: c.fastestLapMs,
+    yourPosition: null,
+    timeRemainingSec:
+      c.status === "ACTIVE" && c.endsAt
+        ? Math.max(0, Math.floor((new Date(c.endsAt).getTime() - now) / 1000))
+        : null,
+    joined: false,
+    isSupported: true,
+  }));
+}
+
+export async function getCompetitionSummary(): Promise<CompetitionSummary[]> {
+  const { getChallengeSummary } = await import("./challenges");
+  return getChallengeSummary();
+}
+
+export async function getCompetition(id: string): Promise<CompetitionDetail | null> {
+  const { getChallenge } = await import("./challenges");
+  const row = await getChallenge(id);
+  return row as CompetitionDetail | null;
+}
 
 export async function getCompetitionsMeta(): Promise<CompetitionsMeta> {
-  return apiGet<CompetitionsMeta>("/api/competitions/meta");
+  const { getChallengesMeta } = await import("./challenges");
+  return getChallengesMeta();
 }
 
 export async function joinCompetition(
   id: string
 ): Promise<{ ok: boolean; competitionId: string }> {
-  return apiPost<{ ok: boolean; competitionId: string }>(
-    `/api/competitions/${id}/join`,
-    {}
-  );
+  const { joinChallenge } = await import("./challenges");
+  const r = await joinChallenge(id);
+  return { ok: r.ok, competitionId: r.challengeId };
 }
 
 export function isNetworkError(err: unknown): boolean {

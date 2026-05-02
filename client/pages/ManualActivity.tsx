@@ -21,8 +21,12 @@ type LogAgainState = {
 export default function ManualActivity() {
   const navigate = useNavigate();
   const location = useLocation();
-  const logAgain = (location.state as { logAgain?: LogAgainState } | null)
-    ?.logAgain;
+  const navState = location.state as { logAgain?: LogAgainState; challengeId?: string } | null;
+  const logAgain = navState?.logAgain;
+  const challengeId =
+    typeof navState?.challengeId === "string" && navState.challengeId.trim()
+      ? navState.challengeId.trim()
+      : undefined;
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -52,7 +56,10 @@ export default function ManualActivity() {
     setErrorMessage(null);
 
     try {
-      const result = await createManualActivity(data);
+      const result = await createManualActivity({
+        ...data,
+        ...(challengeId ? { challengeId } : {}),
+      });
       setFormState("success");
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("apex:activity-updated"));

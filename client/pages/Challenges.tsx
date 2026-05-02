@@ -1,18 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Trophy, Zap } from "lucide-react";
-import FeaturedChallenge from "@/components/FeaturedChallenge";
-import ChallengeCard from "@/components/ChallengeCard";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import ChallengeBrowseCard from "@/components/ChallengeBrowseCard";
 import {
-  getCompetitionSummary,
-  getCompetitions,
-  getCompetitionsMeta,
-  joinCompetition,
-  mapCompetitionsToPublicSummaries,
-  type CompetitionSummary,
+  getChallengeList,
+  getChallengesMeta,
+  joinChallenge,
+  type ChallengeListParams,
 } from "@/lib/api";
-import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,45 +18,23 @@ const CHALLENGES_PATH = "/challenges";
 const challengesTitle = `Challenges | ${COMPANY_NAME}`;
 const challengesDescription = `Sim racing challenges and tournaments on ${COMPANY_NAME}: compete, qualify, and climb leaderboards at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
-function statusLabel(status: CompetitionSummary["status"]): "Live" | "Upcoming" | "Finished" {
-  switch (status) {
-    case "LIVE":
-      return "Live";
-    case "UPCOMING":
-      return "Upcoming";
-    case "FINISHED":
-      return "Finished";
+const PAGE_SIZE = 12;
+
+type BrowseTab = "upcoming" | "live" | "past" | "joined";
+
+function listParamsForTab(tab: BrowseTab): ChallengeListParams {
+  switch (tab) {
+    case "upcoming":
+      return { status: "UPCOMING", sort: "startsAtAsc" };
+    case "live":
+      return { status: "ACTIVE", sort: "startsAtDesc" };
+    case "past":
+      return { status: "ENDED", sort: "startsAtDesc" };
+    case "joined":
+      return { joinedOnly: true, sort: "startsAtDesc" };
     default:
-      return "Finished";
+      return {};
   }
-}
-
-const formatRemaining = (sec: number) => {
-  const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return `${h}h ${m}m remaining`;
-};
-
-function competitionToCardProps(c: CompetitionSummary) {
-  const timeRemaining =
-    c.timeRemainingSec != null && c.status === "LIVE"
-      ? formatRemaining(c.timeRemainingSec)
-      : undefined;
-  return {
-    id: c.id,
-    title: c.title,
-    track: c.track,
-    car: c.vehicle,
-    game: c.sim,
-    status: statusLabel(c.status),
-    participants: c.participants,
-    targetTime: c.targetTimeMs != null ? formatLapMs(c.targetTimeMs) : "—",
-    fastestLap: c.fastestLapMs != null ? formatLapMs(c.fastestLapMs) : "—",
-    yourLap: c.yourBestLapMs != null ? formatLapMs(c.yourBestLapMs) : "—",
-    yourPosition: c.yourPosition ?? undefined,
-    timeRemaining,
-  };
 }
 
 export default function Challenges() {
@@ -69,49 +43,65 @@ export default function Challenges() {
   const location = useLocation();
   const { user } = useAuth();
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<
-    "all" | "challenges" | "tournaments"
-  >("all");
+  const [tab, setTab] = useState<BrowseTab>("upcoming");
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+  const [simFilter, setSimFilter] = useState<string>("");
+  const [carClassFilter, setCarClassFilter] = useState("");
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [tab, debouncedQ, simFilter, carClassFilter]);
+
+  const listParams = {
+    page,
+    pageSize: PAGE_SIZE,
+    ...listParamsForTab(tab),
+    ...(debouncedQ ? { q: debouncedQ } : {}),
+    ...(simFilter ? { sim: simFilter } : {}),
+    ...(carClassFilter.trim() ? { carClass: carClassFilter.trim() } : {}),
+  };
 
   const {
-    data: items = null,
-    isPending: loading,
-    error: summaryError,
-    isError: summaryFailed,
+    data: listData,
+    isPending: listLoading,
+    error: listError,
+    isError: listFailed,
   } = useQuery({
-    queryKey: ["competitions", "summary", user?.id ?? "anonymous"],
-    queryFn: async () => {
-      if (user) {
-        const data = await getCompetitionSummary();
-        return Array.isArray(data) ? data : [];
-      }
-      const raw = await getCompetitions();
-      return mapCompetitionsToPublicSummaries(Array.isArray(raw) ? raw : []);
-    },
+    queryKey: [
+      "challenges",
+      "list",
+      user?.id ?? "anon",
+      tab,
+      page,
+      debouncedQ,
+      simFilter,
+      carClassFilter,
+    ],
+    queryFn: () => getChallengeList(listParams),
   });
 
-  /** Rank / joined counts require auth; listing is public via GET /api/competitions when logged out. */
   const { data: meta = null } = useQuery({
-    queryKey: ["competitions", "meta", user?.id],
-    queryFn: () => getCompetitionsMeta(),
+    queryKey: ["challenges", "meta", user?.id],
+    queryFn: () => getChallengesMeta(),
     retry: false,
     enabled: Boolean(user),
   });
 
-  const error = summaryFailed
-    ? summaryError instanceof Error
-      ? summaryError.message
-      : String(summaryError)
-    : null;
-
   const joinMutation = useMutation({
-    mutationFn: (competitionId: string) => joinCompetition(competitionId),
-    onSuccess: (_, competitionId) => {
-      queryClient.setQueryData<CompetitionSummary[]>(["competitions", "summary"], (prev) =>
-        prev ? prev.map((c) => (c.id === competitionId ? { ...c, joined: true } : c)) : prev
-      );
-      void queryClient.invalidateQueries({ queryKey: ["competitions", "meta"] });
+    mutationFn: (challengeId: string) => joinChallenge(challengeId),
+    onSuccess: (_, challengeId) => {
+      void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
+      void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "detail", challengeId],
+      });
     },
     onError: (e: unknown) => {
       console.error(e);
@@ -123,7 +113,7 @@ export default function Challenges() {
     },
   });
 
-  function onJoin(competitionId: string) {
+  function handleJoin(challengeId: string) {
     if (!user) {
       const state: AuthRedirectState = {
         message: "Sign in to join challenges and track your results.",
@@ -133,278 +123,208 @@ export default function Challenges() {
       return;
     }
     setJoinError(null);
-    joinMutation.mutate(competitionId);
+    joinMutation.mutate(challengeId);
   }
 
   const joiningId = joinMutation.isPending ? joinMutation.variables ?? null : null;
 
-  const q = query.trim().toLowerCase();
-  const filtered = !items
-    ? []
-    : q.length === 0
-      ? items
-      : items.filter((c) => {
-          const hay = `${c.title} ${c.sim} ${c.track} ${c.vehicle}`.toLowerCase();
-          return hay.includes(q);
-        });
+  const error = listFailed
+    ? listError instanceof Error
+      ? listError.message
+      : String(listError)
+    : null;
 
-  const isTournament = (c: CompetitionSummary) =>
-    (c as { kind?: string }).kind === "tournament";
-
-  const weeklyPool = filtered.filter((c) => !isTournament(c));
-  const tournamentPool = filtered.filter(isTournament);
-
-  const featured =
-    weeklyPool.find((c) => c.status === "LIVE") ?? weeklyPool[0] ?? null;
-  const restWeekly = featured
-    ? weeklyPool.filter((c) => c.id !== featured.id)
-    : weeklyPool;
+  const items = listData?.items ?? [];
+  const totalPages = listData?.totalPages ?? 1;
+  const total = listData?.total ?? 0;
 
   const yourRank =
-    meta?.yourRank != null && Number.isFinite(meta.yourRank)
-      ? meta.yourRank
-      : null;
-
-  if (loading) {
-    return (
-      <>
-        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <p className="text-muted-foreground">Loading competitions…</p>
-        </div>
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <p className="text-muted-foreground">{error}</p>
-        </div>
-      </>
-    );
-  }
-
-  if (items && items.length === 0) {
-    return (
-      <>
-        <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <p className="text-muted-foreground">
-            No competitions available right now.
-          </p>
-        </div>
-      </>
-    );
-  }
+    meta?.yourRank != null && Number.isFinite(meta.yourRank) ? meta.yourRank : null;
 
   return (
     <>
       <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
       <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
-            Challenges & Tournaments
-          </h1>
-          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
-            Compete in live challenges, qualify for tournaments, and climb the
-            leaderboards.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative mb-12 flex-1">
-          <Search className="absolute left-3 top-3 size-4 text-muted-foreground/40" />
-          <input
-            type="text"
-            placeholder="Search challenges, tracks, tournaments..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-10 pr-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-primary/40 focus:outline-none"
-          />
-        </div>
-
-        {joinError && (
-          <div className="mb-4 text-sm text-neutral-400">{joinError}</div>
-        )}
-
-        {/* Featured Challenge */}
-        {featured && (
-          <FeaturedChallenge
-            {...competitionToCardProps(featured)}
-            joined={featured.joined}
-            onJoin={onJoin}
-            joiningId={joiningId}
-          />
-        )}
-
-        {/* Tabs */}
-        <div className="border-white/3 mb-10 flex gap-8 border-b pb-4">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`relative text-sm font-medium transition-colors ${
-              activeTab === "all"
-                ? "text-foreground"
-                : "text-muted-foreground/60 hover:text-muted-foreground"
-            }`}
-          >
-            All Competitions
-            {activeTab === "all" && (
-              <div
-                className="absolute inset-x-0 bottom-0 h-0.5"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("challenges")}
-            className={`relative text-sm font-medium transition-colors ${
-              activeTab === "challenges"
-                ? "text-foreground"
-                : "text-muted-foreground/60 hover:text-muted-foreground"
-            }`}
-          >
-            Challenges
-            {activeTab === "challenges" && (
-              <div
-                className="absolute inset-x-0 bottom-0 h-0.5"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("tournaments")}
-            className={`relative text-sm font-medium transition-colors ${
-              activeTab === "tournaments"
-                ? "text-foreground"
-                : "text-muted-foreground/60 hover:text-muted-foreground"
-            }`}
-          >
-            Tournaments
-            {activeTab === "tournaments" && (
-              <div
-                className="absolute inset-x-0 bottom-0 h-0.5"
-                style={{ backgroundColor: "rgb(240, 28, 28)" }}
-              />
-            )}
-          </button>
-        </div>
-
-        {/* Challenges Section */}
-        {(activeTab === "all" || activeTab === "challenges") && (
-          <div className="mb-16">
-            <div className="mb-6">
-              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground">
-                <Zap className="size-4 shrink-0 text-foreground" aria-hidden />
-                Weekly Challenges
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground/50">
-                Fast, repeatable competitions with instant feedback
-              </p>
-            </div>
-            <div className="space-y-5 sm:space-y-6">
-              {items && q.length > 0 && filtered.length === 0 ? (
-                <p className="py-8 text-sm text-neutral-400">
-                  No competitions match your search.
-                </p>
-              ) : (
-                restWeekly.map((c) => (
-                  <ChallengeCard
-                    key={c.id}
-                    {...competitionToCardProps(c)}
-                    joined={c.joined}
-                    onJoin={onJoin}
-                    joiningId={joiningId}
-                  />
-                ))
-              )}
-            </div>
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mb-10">
+            <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
+              Challenges
+            </h1>
+            <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
+              Time-limited competitions: set your best lap at a specific track and car class, climb the
+              leaderboard, and earn badges. Manual entries show as unverified; .ibt uploads are verified
+              telemetry.
+            </p>
           </div>
-        )}
 
-        {/* Tournaments Section */}
-        {(activeTab === "all" || activeTab === "tournaments") && (
-          <div className="mb-16">
-            <div className="border-white/3 mb-6 border-t pt-8">
-              <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-foreground">
-                <Trophy className="size-4 shrink-0 text-foreground" aria-hidden />
-                Tournaments
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground/50">
-                Structured competitions with prizes and leaderboards
-              </p>
-            </div>
-            <div className="space-y-5 sm:space-y-6">
-              {items && q.length > 0 && filtered.length === 0 ? (
-                <p className="py-8 text-sm text-neutral-400">
-                  No competitions match your search.
-                </p>
-              ) : (
-                tournamentPool.map((c) => (
-                  <ChallengeCard
-                    key={c.id}
-                    {...competitionToCardProps(c)}
-                    joined={c.joined}
-                    onJoin={onJoin}
-                    joiningId={joiningId}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Info Section */}
-        <div className="border-white/3 mt-16 border-t pt-12">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
-                This Week
-              </p>
-              <p className="text-2xl font-bold text-white">
-                {meta?.activeChallenges ?? "—"}
-              </p>
-              <p className="mt-1 text-xs text-white/60">Active challenges</p>
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
-                Your Rank
-              </p>
-              <p
-                className={
-                  yourRank != null
-                    ? "text-2xl font-bold"
-                    : "text-2xl font-bold text-white"
-                }
-                style={
-                  yourRank != null
-                    ? { color: "rgb(240, 28, 28)" }
-                    : undefined
-                }
+          <div className="border-white/3 mb-8 flex flex-wrap gap-6 border-b pb-4">
+            {(
+              [
+                ["upcoming", "Upcoming"],
+                ["live", "Live"],
+                ["past", "Past"],
+                ["joined", "Joined"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`relative text-sm font-medium transition-colors ${
+                  tab === key
+                    ? "text-foreground"
+                    : "text-muted-foreground/60 hover:text-muted-foreground"
+                }`}
               >
-                {yourRank != null ? `#${yourRank}` : "Unranked"}
-              </p>
-              <p className="mt-1 text-xs text-white/60">Overall leaderboard</p>
+                {label}
+                {tab === key && (
+                  <div
+                    className="absolute inset-x-0 bottom-0 h-0.5"
+                    style={{ backgroundColor: "rgb(240, 28, 28)" }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute left-3 top-3 size-4 text-muted-foreground/40" />
+              <input
+                type="text"
+                placeholder="Search title or track…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-10 pr-4 text-sm text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-primary/40 focus:outline-none"
+              />
             </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
-                Joined
-              </p>
-              <p className="text-2xl font-bold text-white">
-                {meta?.joinedThisSeason ?? "—"}
-              </p>
-              <p className="mt-1 text-xs text-white/60">
-                Challenges this season
-              </p>
+            <div className="flex flex-wrap gap-3">
+              <select
+                value={simFilter}
+                onChange={(e) => setSimFilter(e.target.value)}
+                className="border-white/4 rounded-lg border bg-card/15 px-3 py-2.5 text-sm text-foreground focus:border-primary/40 focus:outline-none"
+                aria-label="Simulator"
+              >
+                <option value="">All sims</option>
+                <option value="IRACING">iRacing</option>
+                <option value="F1_25">F1 25</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Car class"
+                value={carClassFilter}
+                onChange={(e) => setCarClassFilter(e.target.value)}
+                className="border-white/4 min-w-[140px] rounded-lg border bg-card/15 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/40 focus:outline-none"
+              />
             </div>
           </div>
+
+          {joinError && (
+            <div className="mb-4 text-sm text-neutral-400">{joinError}</div>
+          )}
+
+          {listLoading && (
+            <div className="flex min-h-[240px] items-center justify-center py-16">
+              <p className="text-muted-foreground">Loading challenges…</p>
+            </div>
+          )}
+
+          {error && !listLoading && (
+            <div className="flex min-h-[240px] items-center justify-center py-16">
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          )}
+
+          {!listLoading && !error && total === 0 && (
+            <div className="flex min-h-[240px] items-center justify-center py-16">
+              <p className="text-muted-foreground">
+                {debouncedQ || simFilter || carClassFilter.trim()
+                  ? "No challenges match your filters."
+                  : tab === "joined"
+                    ? "You haven’t joined any challenges yet."
+                    : "No challenges in this tab right now."}
+              </p>
+            </div>
+          )}
+
+          {!listLoading && !error && total > 0 && (
+            <>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {items.map((c) => (
+                  <ChallengeBrowseCard
+                    key={c.id}
+                    item={c}
+                    isLoggedIn={Boolean(user)}
+                    onJoin={handleJoin}
+                    joiningId={joiningId}
+                  />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-card/20 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-card/30 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="size-4" aria-hidden />
+                    Previous
+                  </button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-card/20 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-card/30 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                    <ChevronRight className="size-4" aria-hidden />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {user && (
+            <div className="border-white/3 mt-16 border-t pt-12">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                    Open challenges
+                  </p>
+                  <p className="text-2xl font-bold text-white">{meta?.activeChallenges ?? "—"}</p>
+                  <p className="mt-1 text-xs text-white/60">Upcoming + active</p>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                    Your rank
+                  </p>
+                  <p
+                    className={
+                      yourRank != null ? "text-2xl font-bold" : "text-2xl font-bold text-white"
+                    }
+                    style={yourRank != null ? { color: "rgb(240, 28, 28)" } : undefined}
+                  >
+                    {yourRank != null ? `#${yourRank}` : "Unranked"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/60">Overall wins leaderboard</p>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
+                    Joined
+                  </p>
+                  <p className="text-2xl font-bold text-white">{meta?.joinedThisSeason ?? "—"}</p>
+                  <p className="mt-1 text-xs text-white/60">Challenge joins</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
     </>
   );
 }

@@ -445,6 +445,7 @@ export default function Profile() {
         followersCount={publicPreview?.followersCount ?? 0}
         followingCount={publicPreview?.followingCount ?? 0}
         isCurrentUser
+        challengeBadges={publicPreview?.challengeBadges}
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
         onEditProfile={openEditProfile}

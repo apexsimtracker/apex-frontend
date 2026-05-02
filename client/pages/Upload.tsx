@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Upload as UploadIcon,
   FileText,
@@ -31,12 +31,17 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const challengeId = searchParams.get("challenge")?.trim() || undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("bytes");
   const [uploadPercent, setUploadPercent] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [challengeAttachWarning, setChallengeAttachWarning] = useState<string | null>(null);
+  const [successSessionId, setSuccessSessionId] = useState<string | null>(null);
+  const postSuccessNavRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const isBusy = uploadState === "uploading";
@@ -53,6 +58,15 @@ export default function UploadPage() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isBusy]);
+
+  useEffect(() => {
+    return () => {
+      if (postSuccessNavRef.current) {
+        clearTimeout(postSuccessNavRef.current);
+        postSuccessNavRef.current = null;
+      }
+    };
+  }, []);
 
   const handleFileSelect = useCallback((selectedFile: File | null) => {
     if (!selectedFile) return;
@@ -121,26 +135,44 @@ export default function UploadPage() {
     setUploadPhase("bytes");
     setUploadPercent(0);
     setErrorMessage(null);
+    setChallengeAttachWarning(null);
+    setSuccessSessionId(null);
 
     try {
-      const result = await uploadSessionFile(file, {
-        onUploadProgress: (p) => {
-          setUploadPercent(p);
-          if (p >= 100) setUploadPhase("processing");
+      const result = await uploadSessionFile(
+        file,
+        {
+          onUploadProgress: (p) => {
+            setUploadPercent(p);
+            if (p >= 100) setUploadPhase("processing");
+          },
+          onUploadComplete: () => {
+            setUploadPhase("processing");
+            setUploadPercent(100);
+          },
         },
-        onUploadComplete: () => {
-          setUploadPhase("processing");
-          setUploadPercent(100);
-        },
-      });
+        challengeId ? { challengeId } : undefined
+      );
 
+      const attachWarn =
+        typeof result.challengeAttachWarning === "string" && result.challengeAttachWarning.trim()
+          ? result.challengeAttachWarning.trim()
+          : null;
+      setChallengeAttachWarning(attachWarn);
+      setSuccessSessionId(result.sessionId);
       setUploadState("success");
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("apex:activity-updated"));
       }
-      setTimeout(() => {
+      if (postSuccessNavRef.current) {
+        clearTimeout(postSuccessNavRef.current);
+        postSuccessNavRef.current = null;
+      }
+      const redirectMs = attachWarn ? 6000 : 1000;
+      postSuccessNavRef.current = setTimeout(() => {
+        postSuccessNavRef.current = null;
         navigate(`/sessions/${result.sessionId}`);
-      }, 1000);
+      }, redirectMs);
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -149,7 +181,7 @@ export default function UploadPage() {
       setErrorMessage(message);
       setUploadState("error");
     }
-  }, [file, isBusy, navigate]);
+  }, [file, isBusy, navigate, challengeId]);
 
   const handleReset = useCallback(() => {
     setFile(null);
@@ -157,6 +189,12 @@ export default function UploadPage() {
     setUploadPhase("bytes");
     setUploadPercent(0);
     setErrorMessage(null);
+    setChallengeAttachWarning(null);
+    setSuccessSessionId(null);
+    if (postSuccessNavRef.current) {
+      clearTimeout(postSuccessNavRef.current);
+      postSuccessNavRef.current = null;
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -185,9 +223,42 @@ export default function UploadPage() {
                 </div>
               </div>
               <p className="font-medium text-white">Session uploaded!</p>
-              <p className="mt-1 text-sm text-white/50">
-                Redirecting to session…
-              </p>
+              {challengeAttachWarning ? (
+                <>
+                  <div className="mt-4 flex items-start gap-2 rounded-lg bg-amber-500/15 p-3 text-left">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-400" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-amber-200">
+                        Not counted toward this challenge
+                      </p>
+                      <p className="mt-1 text-sm text-amber-100/90">{challengeAttachWarning}</p>
+                      <p className="mt-2 text-xs text-amber-200/70">
+                        Your laps are saved on the session, but this run did not qualify for the
+                        challenge leaderboard.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-white/50">
+                    Opening session in a few seconds…
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4 w-full border-white/20 text-white hover:bg-white/10"
+                    onClick={() => {
+                      if (postSuccessNavRef.current) {
+                        clearTimeout(postSuccessNavRef.current);
+                        postSuccessNavRef.current = null;
+                      }
+                      if (successSessionId) navigate(`/sessions/${successSessionId}`);
+                    }}
+                  >
+                    Continue to session
+                  </Button>
+                </>
+              ) : (
+                <p className="mt-1 text-sm text-white/50">Redirecting to session…</p>
+              )}
             </div>
           ) : uploadState === "uploading" ? (
             <div className="py-8">

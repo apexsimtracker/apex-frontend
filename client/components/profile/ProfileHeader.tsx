@@ -1,4 +1,20 @@
 import { Loader2, User } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { formatSimEnum } from "@/lib/enumFormat";
+
+export type ProfileHeaderBadge = {
+  challengeId: string;
+  challengeTitle: string;
+  sim: string;
+  place: number;
+  tier: string;
+  awardedAt: string;
+};
 
 type ProfileHeaderProps = {
   displayName: string;
@@ -15,9 +31,15 @@ type ProfileHeaderProps = {
   onOpenFollowing?: () => void;
   onEditProfile?: () => void;
   streakDays: number;
-  level?: number | null;
-  levelProgressPct?: number | null;
+  challengeBadges?: ProfileHeaderBadge[];
 };
+
+const PODIUM_EMOJI = ["🥇", "🥈", "🥉"] as const;
+
+function awardedAtSortMs(iso: string): number {
+  const ms = new Date(iso).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
 
 export function ProfileHeader({
   displayName,
@@ -34,10 +56,18 @@ export function ProfileHeader({
   onOpenFollowing,
   onEditProfile,
   streakDays,
-  level,
-  levelProgressPct,
+  challengeBadges,
 }: ProfileHeaderProps) {
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
+
+  const sortedBadges = (challengeBadges ?? [])
+    .slice()
+    .sort((a, b) => {
+      const tb = awardedAtSortMs(b.awardedAt);
+      const ta = awardedAtSortMs(a.awardedAt);
+      if (tb !== ta) return tb - ta;
+      return a.challengeId.localeCompare(b.challengeId);
+    });
 
   return (
     <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:mb-7 sm:flex-row sm:items-start sm:gap-6">
@@ -127,23 +157,52 @@ export function ProfileHeader({
           </div>
         </div>
 
-        <div className="space-y-3 text-center sm:min-w-max sm:text-right">
-          <p className="mb-1 text-xs font-semibold text-foreground">
-            {level != null ? `Level ${level}` : "—"}
-          </p>
-          <p className="mb-1.5 text-xs text-muted-foreground/60">
-            {levelProgressPct != null ? `${levelProgressPct}% to next` : "—"}
-          </p>
-          <div className="mx-auto h-0.5 w-24 overflow-hidden rounded-full bg-secondary/30 sm:mx-0 sm:w-32">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${levelProgressPct ?? 0}%`,
-                backgroundColor: "rgb(240, 28, 28)",
-              }}
-            ></div>
+        {sortedBadges.length > 0 && (
+          <div className="text-center sm:min-w-max sm:text-right">
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Podium badges
+            </p>
+            <TooltipProvider delayDuration={150}>
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">
+                {sortedBadges.map((badge) => {
+                  const emoji =
+                    badge.place >= 1 && badge.place <= 3
+                      ? PODIUM_EMOJI[badge.place - 1]
+                      : "🏅";
+                  const ariaLabel = `P${badge.place} — ${badge.tier} — ${badge.challengeTitle}`;
+                  const awarded = new Date(badge.awardedAt);
+                  const awardedLabel = Number.isNaN(awarded.getTime())
+                    ? badge.awardedAt
+                    : awarded.toLocaleDateString();
+                  return (
+                    <Tooltip key={`${badge.challengeId}-${badge.awardedAt}`}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={ariaLabel}
+                          className="cursor-default rounded-full px-1 text-xl leading-none transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 sm:text-2xl"
+                        >
+                          <span aria-hidden>{emoji}</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs">
+                        <p className="text-sm font-semibold text-foreground">
+                          P{badge.place} · {badge.tier}
+                        </p>
+                        <p className="text-sm text-foreground/90">
+                          {badge.challengeTitle}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {formatSimEnum(badge.sim)} · {awardedLabel}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </div>
-        </div>
+        )}
       </div>
   );
 }

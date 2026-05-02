@@ -12,6 +12,8 @@ export * from "./profile";
 export * from "./community";
 export * from "./followAndLeaderboards";
 export * from "./authAndContact";
+export * from "./adminMetrics";
 export * from "./dataExport";
 export * from "./activityBilling";
 export * from "./manualAndUpload";
+export * from "./challenges";

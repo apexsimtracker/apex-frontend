@@ -10,6 +10,8 @@ export type ManualUploadResponse = {
   status?: string;
   lapCount?: number;
   message?: string;
+  /** Present when a challenge was requested but could not be attached. */
+  challengeAttachWarning?: string;
 };
 
 export type UploadSessionFileCallbacks = {
@@ -34,6 +36,8 @@ export type ManualActivityRequest = {
   /** Ordered lap times (ms). */
   laps?: { lapTimeMs: number }[];
   notes?: string;
+  /** Link session to a challenge (must be active; you must have joined; track/car must match). */
+  challengeId?: string;
 };
 
 export type ManualActivityResponse = {
@@ -89,6 +93,10 @@ export function buildManualActivityRequestBody(
     body.bestLapMs = Math.min(...laps.map((l) => l.lapTimeMs));
   } else if (data.bestLapMs != null && Number.isFinite(data.bestLapMs)) {
     body.bestLapMs = Math.round(data.bestLapMs);
+  }
+
+  if (data.challengeId != null && String(data.challengeId).trim() !== "") {
+    body.challengeId = String(data.challengeId).trim();
   }
 
   return body;
@@ -165,10 +173,14 @@ function parseXhrErrorPayload(text: string): {
 
 export async function uploadSessionFile(
   file: File,
-  callbacks?: UploadSessionFileCallbacks
+  callbacks?: UploadSessionFileCallbacks,
+  options?: { challengeId?: string }
 ): Promise<ManualUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  if (options?.challengeId?.trim()) {
+    formData.append("challengeId", options.challengeId.trim());
+  }
 
   const token = getToken();
   const url = `${API_BASE}/api/sessions/manual-upload`;

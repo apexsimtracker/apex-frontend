@@ -347,6 +347,7 @@ export default function UserProfile() {
             : undefined
         }
         raceHistoryForbiddenCode={raceHistoryForbiddenCode}
+        challengeBadges={preview.challengeBadges}
       />
 
       <FollowListDialog
