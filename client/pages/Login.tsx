@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { authLogin, ApiError } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { authLogin, authMe, ApiError } from "@/lib/api";
+import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -22,6 +24,7 @@ import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailVerifiedMessage, setEmailVerifiedMessage] = useState(false);
@@ -60,6 +63,18 @@ export default function Login() {
         return;
       }
       localStorage.setItem("apex_token", token);
+      try {
+        await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+      } catch (meErr) {
+        localStorage.removeItem("apex_token");
+        window.dispatchEvent(new Event("apex:auth"));
+        form.setError("root", {
+          type: "server",
+          message:
+            meErr instanceof Error ? meErr.message : "Could not load your session. Please try again.",
+        });
+        return;
+      }
       window.dispatchEvent(new Event("apex:auth"));
       const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
       navigate(returnTo, { replace: true });

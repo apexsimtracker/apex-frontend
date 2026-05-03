@@ -301,6 +301,7 @@ export default function AdminChallengeDetail() {
       setFormError(null);
       await refetch();
       await qc.invalidateQueries({ queryKey: ["admin", "challenges"] });
+      await qc.invalidateQueries({ queryKey: ["challenges"] });
     },
     onError: (e) => {
       setFormError(e instanceof ApiError ? e.message : "Save failed");
@@ -349,6 +350,7 @@ export default function AdminChallengeDetail() {
       await qc.invalidateQueries({
         queryKey: ["admin", "challenge", id, "leaderboard"],
       });
+      await qc.invalidateQueries({ queryKey: ["challenges"] });
     },
     onError: (e) => {
       setEndEarlyError(e instanceof ApiError ? e.message : "Could not end challenge");
@@ -373,6 +375,7 @@ export default function AdminChallengeDetail() {
         queryKey: ["admin", "challenge", id, "participants"],
       }),
       qc.invalidateQueries({ queryKey: ["admin", "challenges"] }),
+      qc.invalidateQueries({ queryKey: ["challenges"] }),
     ]);
   }
 

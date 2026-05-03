@@ -13,4 +13,9 @@ export function setToken(token: string): void {
 export function clearToken(): void {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(TOKEN_KEY);
+  // Same-tab storage changes do not fire `storage` events; AuthContext listens for this to sync
+  // hasTokenState and clear cached session data (see contexts/AuthContext.tsx).
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("apex:auth"));
+  }
 }

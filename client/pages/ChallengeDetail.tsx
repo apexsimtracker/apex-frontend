@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { formatLapDelta, formatCarName, formatLapMs } from "@/lib/utils";
-import { formatChallengeDateTime } from "@/lib/datetime";
+import { formatLapDelta, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
+import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import {
   getChallengeLeaderboard,
   getChallengeEntrantSessions,
@@ -22,13 +22,6 @@ import { Button } from "@/components/ui/button";
 
 const LEADERBOARD_PAGE_SIZE = 20;
 const SESSIONS_PAGE_SIZE = 20;
-
-const formatRemaining = (sec: number) => {
-  const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return `${h}h ${m}m`;
-};
 
 function statusLabel(status: ChallengeApiStatus): "Live" | "Upcoming" | "Finished" {
   switch (status) {
@@ -279,7 +272,7 @@ export default function ChallengeDetail() {
 
   const challengeDesc =
     challenge.description?.trim() ||
-    `${formatSimEnum(challenge.sim)} · ${challenge.track} — ${COMPANY_NAME} challenge.`;
+    `${formatSimEnum(challenge.sim)} · ${formatTrackName(challenge.track)} — ${COMPANY_NAME} challenge.`;
 
   const canJoin =
     user &&
@@ -406,7 +399,7 @@ export default function ChallengeDetail() {
           countdownMs > 0 && (
             <p className="mb-6 font-mono text-sm text-muted-foreground">
               {challenge.status === "UPCOMING" ? "Starts in " : "Ends in "}
-              {formatRemaining(Math.floor(countdownMs / 1000))}
+              {formatChallengeTimeRemaining(Math.floor(countdownMs / 1000))}
             </p>
           )}
 
@@ -450,7 +443,9 @@ export default function ChallengeDetail() {
                     </div>
                     <div>
                       <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Track</p>
-                      <p className="text-base font-medium text-white">{challenge.track}</p>
+                      <p className="text-base font-medium text-white">
+                        {formatTrackName(challenge.track)}
+                      </p>
                     </div>
                     <div>
                       <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Car class</p>
@@ -512,7 +507,7 @@ export default function ChallengeDetail() {
                         <p className="text-sm font-medium text-white">{status}</p>
                         {activeTimeRemainingSec != null && (
                           <p className="mt-2 text-xs text-white/60">
-                            {formatRemaining(activeTimeRemainingSec)} remaining
+                            {formatChallengeTimeRemaining(activeTimeRemainingSec)} remaining
                           </p>
                         )}
                         {activeTimeRemainingSec == null && upcomingScheduleText && (

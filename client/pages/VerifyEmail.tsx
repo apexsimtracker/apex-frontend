@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { verifyEmail, resendVerificationCode } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { verifyEmail, resendVerificationCode, authMe } from "@/lib/api";
+import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -27,6 +29,7 @@ const RESEND_COOLDOWN_SEC = 60;
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [email, setEmailState] = useState<string>(() => {
     if (typeof sessionStorage === "undefined") return "";
     return (sessionStorage.getItem(PENDING_VERIFY_KEY) ?? "").trim();
@@ -73,6 +76,19 @@ export default function VerifyEmail() {
       if (token && typeof token === "string") {
         localStorage.setItem("apex_token", token);
         sessionStorage.removeItem(PENDING_VERIFY_KEY);
+        try {
+          await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+        } catch (meErr) {
+          localStorage.removeItem("apex_token");
+          sessionStorage.setItem(PENDING_VERIFY_KEY, email);
+          window.dispatchEvent(new Event("apex:auth"));
+          form.setError("root", {
+            type: "server",
+            message:
+              meErr instanceof Error ? meErr.message : "Could not load your session. Please try signing in.",
+          });
+          return;
+        }
         window.dispatchEvent(new Event("apex:auth"));
         navigate("/profile", { replace: true });
         return;

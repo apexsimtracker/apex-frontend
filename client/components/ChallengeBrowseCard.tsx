@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { Clock, Users, UserRound } from "lucide-react";
 import SimBadge from "@/components/SimBadge";
-import { formatLapMs } from "@/lib/utils";
-import { formatChallengeDateTime } from "@/lib/datetime";
+import { formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
+import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import type { ChallengeApiStatus, ChallengeListItem } from "@/lib/api";
 
 function statusLabel(status: ChallengeApiStatus): "Live" | "Upcoming" | "Finished" {
@@ -44,12 +44,7 @@ export default function ChallengeBrowseCard({
     item.yourBestLapMs != null ? formatLapMs(item.yourBestLapMs) : null;
   const timeRemaining =
     item.timeRemainingSec != null && item.status === "ACTIVE"
-      ? (() => {
-          const s = Math.max(0, Math.floor(item.timeRemainingSec));
-          const h = Math.floor(s / 3600);
-          const m = Math.floor((s % 3600) / 60);
-          return `${h}h ${m}m left`;
-        })()
+      ? `${formatChallengeTimeRemaining(Math.max(0, Math.floor(item.timeRemainingSec)))} left`
       : null;
 
   const social =
@@ -83,8 +78,8 @@ export default function ChallengeBrowseCard({
           <div className="flex flex-wrap items-center gap-2">
             <SimBadge sim={item.sim} size="md" />
           </div>
-          <p className="line-clamp-1 text-xs text-white/60">{item.track}</p>
-          <p className="line-clamp-1 text-xs text-white/50">{item.carClass}</p>
+          <p className="line-clamp-1 text-xs text-white/60">{formatTrackName(item.track)}</p>
+          <p className="line-clamp-1 text-xs text-white/50">{formatCarName(item.carClass)}</p>
         </div>
 
         <div className="mb-3 space-y-1 border-t border-white/5 pt-3 text-[11px] text-white/45 sm:text-xs">

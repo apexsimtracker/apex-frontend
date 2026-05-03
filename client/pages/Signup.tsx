@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { authRegister } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { authRegister, authMe } from "@/lib/api";
+import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -24,6 +26,7 @@ const inputClass = "w-full px-3 py-2 border rounded-md bg-transparent";
 export default function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const authRedirect = parseAuthRedirectState(location.state);
   const [loading, setLoading] = useState(false);
 
@@ -43,6 +46,18 @@ export default function Signup() {
 
       if (hasToken && !data.requiresVerification) {
         localStorage.setItem("apex_token", token as string);
+        try {
+          await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+        } catch (meErr) {
+          localStorage.removeItem("apex_token");
+          window.dispatchEvent(new Event("apex:auth"));
+          form.setError("root", {
+            type: "server",
+            message:
+              meErr instanceof Error ? meErr.message : "Could not load your session. Please try signing in.",
+          });
+          return;
+        }
         window.dispatchEvent(new Event("apex:auth"));
         const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
         navigate(returnTo, { replace: true });

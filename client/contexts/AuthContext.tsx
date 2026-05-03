@@ -40,15 +40,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHasTokenState(readHasToken());
   }, []);
 
+  /** Keep token state, auth/me cache, and private query caches aligned with localStorage. */
+  const applyTokenStorageToQueryClient = useCallback(() => {
+    syncTokenFromStorage();
+    if (!readHasToken()) {
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, null);
+      queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      // Drop cached API results so logged-out views cannot read prior session data from memory.
+      queryClient.clear();
+    } else {
+      // Login / signup / verify-email call fetchQuery before apex:auth; the cache already has a
+      // fresh user. invalidateQueries would mark it stale and force a redundant GET /api/auth/me
+      // when useQuery activates. Only invalidate when we still need to load the session.
+      const cached = queryClient.getQueryData<AuthUser | null>(AUTH_ME_QUERY_KEY);
+      if (cached == null) {
+        void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      }
+    }
+  }, [queryClient, syncTokenFromStorage]);
+
   useEffect(() => {
     syncTokenFromStorage();
     const onAuth = () => {
-      syncTokenFromStorage();
-      void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      applyTokenStorageToQueryClient();
     };
     window.addEventListener("apex:auth", onAuth);
     return () => window.removeEventListener("apex:auth", onAuth);
-  }, [queryClient, syncTokenFromStorage]);
+  }, [applyTokenStorageToQueryClient, syncTokenFromStorage]);
 
   const meQuery = useQuery({
     queryKey: AUTH_ME_QUERY_KEY,
@@ -105,15 +123,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return meQuery.data ?? null;
   }, [hasTokenState, meQuery.data, meQuery.isError, meQuery.error]);
 
-  // Avoid tying "loading" to isPending alone: v5 can leave status pending while fetchStatus is idle
-  // (e.g. paused), which previously blocked the app forever. Treat loading as "has token but no user
-  // snapshot yet and no terminal error", plus explicit refreshMe refetch.
+  const isUnauthorizedError =
+    meQuery.isError &&
+    meQuery.error instanceof ApiError &&
+    (meQuery.error.status === 401 || meQuery.error.status === 403);
+
+  // Has token but /api/auth/me not resolved yet (success or confirmed 401/403). Use isFetching so
+  // retries and background refetches keep ProtectedRoute from bouncing to /login while user is null.
   const loading =
     hasTokenState &&
+    !isUnauthorizedError &&
     (meRefetching ||
-      (meQuery.data === undefined &&
-        !meQuery.isError &&
-        (meQuery.isPending || meQuery.fetchStatus === "fetching")));
+      (meQuery.data === undefined && (meQuery.isPending || meQuery.isFetching)));
 
   const refreshUser = useCallback(async () => {
     if (!readHasToken()) {
@@ -166,17 +187,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, [queryClient]);
 
-  // Re-run auth when apex_token changes in another tab (same-tab updates use apex:auth → refreshMe).
+  // Re-run auth when apex_token changes in another tab (same-tab updates use apex:auth).
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "apex_token") {
-        syncTokenFromStorage();
-        void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+        applyTokenStorageToQueryClient();
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [queryClient, syncTokenFromStorage]);
+  }, [applyTokenStorageToQueryClient]);
 
   return (
     <AuthContext.Provider value={{ user, loading, error, refreshUser, refreshMe, setUser }}>

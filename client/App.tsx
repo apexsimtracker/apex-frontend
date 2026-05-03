@@ -18,6 +18,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import GuestOnlyRoute from "./auth/GuestOnlyRoute";
 import AdminRoute from "./auth/AdminRoute";
 import Upload from "./pages/Upload";
 import Upgrade from "./pages/Upgrade";
@@ -123,10 +124,38 @@ export default function App() {
                         </ProtectedRoute>
                       }
                     />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route
+                      path="/login"
+                      element={
+                        <GuestOnlyRoute>
+                          <Login />
+                        </GuestOnlyRoute>
+                      }
+                    />
+                    <Route
+                      path="/signup"
+                      element={
+                        <GuestOnlyRoute>
+                          <Signup />
+                        </GuestOnlyRoute>
+                      }
+                    />
+                    <Route
+                      path="/forgot-password"
+                      element={
+                        <GuestOnlyRoute>
+                          <ForgotPassword />
+                        </GuestOnlyRoute>
+                      }
+                    />
+                    <Route
+                      path="/verify-email"
+                      element={
+                        <GuestOnlyRoute>
+                          <VerifyEmail />
+                        </GuestOnlyRoute>
+                      }
+                    />
                     <Route
                       path="/upload"
                       element={

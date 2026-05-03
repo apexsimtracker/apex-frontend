@@ -95,6 +95,7 @@ export default function AdminChallenges() {
       setDeleteTarget(null);
       setDeleteConfirm("");
       await qc.invalidateQueries({ queryKey: ["admin", "challenges"] });
+      await qc.invalidateQueries({ queryKey: ["challenges"] });
     },
     onError: (e) => {
       setFormError(e instanceof ApiError ? e.message : "Delete failed");
@@ -317,6 +318,7 @@ export default function AdminChallenges() {
             onCreated={async () => {
               setCreateOpen(false);
               await qc.invalidateQueries({ queryKey: ["admin", "challenges"] });
+              await qc.invalidateQueries({ queryKey: ["challenges"] });
             }}
           />
         )}

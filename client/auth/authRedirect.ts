@@ -7,9 +7,30 @@ export type AuthRedirectState = {
   from?: string;
 };
 
+/** Paths that should never be used as post-login return targets (avoids stale router state). */
+const AUTH_FLOW_PATH_PREFIXES = [
+  "/login",
+  "/signup",
+  "/verify-email",
+  "/forgot-password",
+] as const;
+
+function pathnameOnly(pathWithOptionalQuery: string): string {
+  const q = pathWithOptionalQuery.indexOf("?");
+  return q === -1 ? pathWithOptionalQuery : pathWithOptionalQuery.slice(0, q);
+}
+
+function isAuthFlowPath(path: string): boolean {
+  const base = pathnameOnly(path);
+  for (const prefix of AUTH_FLOW_PATH_PREFIXES) {
+    if (base === prefix || base.startsWith(`${prefix}/`)) return true;
+  }
+  return false;
+}
+
 /**
  * Returns a safe in-app path for post-login navigation.
- * Rejects protocol-relative URLs, absolute URLs, and non-path values.
+ * Rejects protocol-relative URLs, absolute URLs, non-path values, and auth-flow routes.
  */
 export function getSafeReturnPath(from: unknown, fallback: string): string {
   if (typeof from !== "string" || from.length === 0) {
@@ -26,6 +47,9 @@ export function getSafeReturnPath(from: unknown, fallback: string): string {
     lower.startsWith("/javascript:") ||
     lower.startsWith("/data:")
   ) {
+    return fallback;
+  }
+  if (isAuthFlowPath(t)) {
     return fallback;
   }
   return t;
