@@ -37,8 +37,11 @@ import SessionDataCacheSync from "./components/SessionDataCacheSync";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminComingSoonPage from "./pages/admin/AdminComingSoonPage";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
 import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
+import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
 const ActivityDetail = lazy(() => import("./pages/ActivityDetail"));
@@ -88,6 +91,7 @@ export default function App() {
           <Toaster theme="dark" />
           <BrowserRouter>
             <ScrollToTop />
+            <ImpersonationExitFab />
             <div className="flex min-h-screen flex-col bg-background">
               <Header />
               <ProRequiredBanner />
@@ -214,10 +218,8 @@ export default function App() {
                     >
                       <Route element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
-                        <Route
-                          path="users"
-                          element={<AdminComingSoonPage title="Users" path="/admin/users" />}
-                        />
+                        <Route path="users" element={<AdminUsers />} />
+                        <Route path="users/:userId" element={<AdminUserDetail />} />
                         <Route
                           path="sessions"
                           element={<AdminComingSoonPage title="Sessions & laps" path="/admin/sessions" />}

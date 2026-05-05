@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiDelete } from "./httpVerbs";
+import { apiGet, apiDelete } from "./httpVerbs";
 import { fetchApi } from "./fetchClient";
 
 /** Per-metric progress toward weekly goals (GET /api/profile/summary). */

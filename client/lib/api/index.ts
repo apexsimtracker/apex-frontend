@@ -17,3 +17,4 @@ export * from "./dataExport";
 export * from "./activityBilling";
 export * from "./manualAndUpload";
 export * from "./challenges";
+export * from "./adminUsers";

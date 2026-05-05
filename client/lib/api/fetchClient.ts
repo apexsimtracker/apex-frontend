@@ -32,6 +32,7 @@ type ErrorParseResult = {
   message: string;
   code?: string;
   retryAfterMs?: number;
+  suspensionReason?: string | null;
 };
 
 export async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
@@ -43,10 +44,14 @@ export async function extractErrorInfo(res: Response): Promise<ErrorParseResult>
       const retryRaw = json.retryAfterMs;
       const retryAfterMs =
         typeof retryRaw === "number" && Number.isFinite(retryRaw) ? retryRaw : undefined;
+      const sr = json.suspensionReason;
+      const suspensionReason =
+        sr === null ? null : typeof sr === "string" ? sr : undefined;
       return {
         message: (json.message as string) || (json.error as string) || text,
         code: json.code as string | undefined,
         retryAfterMs,
+        ...(suspensionReason !== undefined ? { suspensionReason } : {}),
       };
     } catch {
       return { message: text };
@@ -100,7 +105,7 @@ export async function fetchApi<T>(
     }
   }
 
-  const { message, code, retryAfterMs } = await extractErrorInfo(res);
+  const { message, code, retryAfterMs, suspensionReason } = await extractErrorInfo(res);
 
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {
@@ -110,5 +115,9 @@ export async function fetchApi<T>(
 
   await notifyAuthExpired(skipAuthExpiredCheck, res.status);
 
-  throw new ApiError(res.status, message, code, retryAfterMs);
+  const err = new ApiError(res.status, message, code, retryAfterMs);
+  if (suspensionReason !== undefined) {
+    err.suspensionReason = suspensionReason;
+  }
+  throw err;
 }

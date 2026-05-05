@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authMe, registerAuthExpiredHandler, ApiError, type AuthUser } from "@/lib/api";
+import { storedAccessTokenSubject } from "@/lib/impersonation";
 
 /** TanStack Query key for GET /api/auth/me — invalidate or setQueryData from profile/settings. */
 export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
@@ -50,10 +51,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
     } else {
       // Login / signup / verify-email call fetchQuery before apex:auth; the cache already has a
-      // fresh user. invalidateQueries would mark it stale and force a redundant GET /api/auth/me
-      // when useQuery activates. Only invalidate when we still need to load the session.
+      // fresh user matching the JWT `sub`. Skip refetch in that case.
+      //
+      // If the token's subject no longer matches the cached user (e.g. exit impersonation:
+      // cache holds the target user but `apex_token` was swapped back to the admin JWT),
+      // invalidateQueries alone leaves stale data visible until refetch completes, so AdminRoute
+      // can redirect using the wrong role. Remove cached session first so loading stays true until
+      // /api/auth/me returns for the new token.
       const cached = queryClient.getQueryData<AuthUser | null>(AUTH_ME_QUERY_KEY);
+      const tokenSub = storedAccessTokenSubject();
+      const identityChanged =
+        cached != null &&
+        tokenSub != null &&
+        String(cached.id) !== String(tokenSub);
+
       if (cached == null) {
+        void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+      } else if (identityChanged) {
+        queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
         void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
       }
     }
@@ -61,12 +76,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     syncTokenFromStorage();
-    const onAuth = () => {
+    const onAuth = (event: Event) => {
+      const detail = (event as CustomEvent<{ exitImpersonation?: boolean }>).detail;
+      // Exit impersonation: JWT swap does not need payload decoding; always drop cached /auth/me
+      // so we never render AdminRoute with the impersonated user while the admin token is live.
+      if (detail?.exitImpersonation) {
+        syncTokenFromStorage();
+        if (!readHasToken()) {
+          queryClient.setQueryData(AUTH_ME_QUERY_KEY, null);
+          queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+          queryClient.clear();
+          return;
+        }
+        queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+        void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+        return;
+      }
       applyTokenStorageToQueryClient();
     };
     window.addEventListener("apex:auth", onAuth);
     return () => window.removeEventListener("apex:auth", onAuth);
-  }, [applyTokenStorageToQueryClient, syncTokenFromStorage]);
+  }, [applyTokenStorageToQueryClient, queryClient, syncTokenFromStorage]);
 
   const meQuery = useQuery({
     queryKey: AUTH_ME_QUERY_KEY,

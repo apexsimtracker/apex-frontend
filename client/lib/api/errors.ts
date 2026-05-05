@@ -4,6 +4,8 @@ export class ApiError extends Error {
   code?: string;
   /** Present on some responses (e.g. 429 data export) for client messaging. */
   retryAfterMs?: number;
+  /** Set when login is rejected for a suspended account (optional admin note). */
+  suspensionReason?: string | null;
   constructor(status: number, message: string, code?: string, retryAfterMs?: number) {
     super(message);
     this.name = "ApiError";

@@ -28,6 +28,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailVerifiedMessage, setEmailVerifiedMessage] = useState(false);
+  const [suspendedReason, setSuspendedReason] = useState<string | null | undefined>(undefined);
 
   const form = useForm<WithRootError<LoginFormValues>>({
     resolver: zodResolver(loginFormSchema),
@@ -47,6 +48,7 @@ export default function Login() {
   async function onSubmit(values: LoginFormValues) {
     form.clearErrors("root");
     setEmailNotVerified(false);
+    setSuspendedReason(undefined);
     setLoading(true);
     const trimmedEmail = values.email.trim();
     try {
@@ -85,6 +87,12 @@ export default function Login() {
           type: "server",
           message: "Please verify your email before signing in.",
         });
+      } else if (err instanceof ApiError && err.code === "ACCOUNT_SUSPENDED") {
+        setSuspendedReason(
+          err.suspensionReason != null && err.suspensionReason.trim() !== ""
+            ? err.suspensionReason.trim()
+            : null
+        );
       } else {
         form.setError("root", {
           type: "server",
@@ -157,6 +165,29 @@ export default function Login() {
           />
 
           <FormRootMessage />
+          {suspendedReason !== undefined && (
+            <div
+              className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-3 text-sm text-red-100"
+              role="alert"
+            >
+              <p className="font-medium text-red-50">
+                Your account has been suspended from this platform.
+              </p>
+              {suspendedReason ? (
+                <p className="mt-2 text-red-100/90">
+                  <span className="text-white/70">Reason: </span>
+                  {suspendedReason}
+                </p>
+              ) : null}
+              <p className="mt-3 text-red-100/90">
+                If you believe this is a mistake, please visit our{" "}
+                <Link to="/contact" className="font-medium text-red-50 underline hover:no-underline">
+                  contact page
+                </Link>{" "}
+                and reach out to the team.
+              </p>
+            </div>
+          )}
           {emailNotVerified && (
             <div className="flex flex-col gap-2">
               <button
