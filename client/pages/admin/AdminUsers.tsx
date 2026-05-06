@@ -130,6 +130,7 @@ export default function AdminUsers() {
         ? statusFilter
         : undefined;
     const suspiciousOnly = riskFilter === "suspicious";
+    const waitlistOnly = riskFilter === "waitlist";
     return {
       page,
       pageSize: 20,
@@ -137,6 +138,7 @@ export default function AdminUsers() {
       ...(role ? { role } : {}),
       ...(status ? { status } : {}),
       ...(suspiciousOnly ? { suspiciousOnly: true } : {}),
+      ...(waitlistOnly ? { waitlistOnly: true } : {}),
     };
   }, [page, debouncedSearch, roleFilter, statusFilter, riskFilter]);
 
@@ -207,8 +209,8 @@ export default function AdminUsers() {
         <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col gap-0 overflow-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Disposable email scan</DialogTitle>
-            <DialogDescription>
-              Scan for accounts using disposable email domains.
+            <DialogDescription asChild>
+              <p>Scan for accounts using disposable email domains.</p>
             </DialogDescription>
           </DialogHeader>
           {previewData ? (
@@ -362,10 +364,11 @@ export default function AdminUsers() {
                     setPage(1);
                     setRiskFilter(e.target.value);
                   }}
-                  aria-label="Risk"
+                  aria-label="Audience"
                 >
                   <option value="">All accounts</option>
                   <option value="suspicious">Suspicious only</option>
+                  <option value="waitlist">Waitlist only</option>
                 </select>
                 <Button
                   type="button"

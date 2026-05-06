@@ -41,6 +41,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
 import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
+import AdminProWaitlist from "./pages/admin/AdminProWaitlist";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -259,10 +260,7 @@ export default function App() {
                           path="billing"
                           element={<AdminComingSoonPage title="Billing & Pro" path="/admin/billing" />}
                         />
-                        <Route
-                          path="waitlist"
-                          element={<AdminComingSoonPage title="Pro waitlist" path="/admin/waitlist" />}
-                        />
+                        <Route path="waitlist" element={<AdminProWaitlist />} />
                         <Route
                           path="devices"
                           element={

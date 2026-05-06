@@ -10,12 +10,14 @@ import {
   patchAdminUserRole,
   patchAdminUserStatus,
   postAdminUserImpersonate,
+  postAdminUserReverify,
 } from "@/lib/api";
 import {
   APEX_TOKEN_ADMIN_KEY,
   LEGACY_SESSION_ADMIN_BACKUP_KEY,
 } from "@/lib/impersonation";
 import { ApiError } from "@/lib/api/errors";
+import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
@@ -118,6 +120,22 @@ function formatSuspicionReason(code: string | null | undefined): string {
   return code;
 }
 
+/** Toast body after POST /reverify — explains outcome even when status stays VALID. */
+function formatReverifyToastDescription(validation: {
+  status: "VALID" | "DISPOSABLE" | "RISKY";
+  reason: string;
+  score: number;
+  isDisposable: boolean;
+}): string {
+  const { status, reason, score } = validation;
+  const reasonBit =
+    reason && reason !== "OK" ? ` Reason code: ${reason}.` : "";
+  if (status === "VALID") {
+    return `Result: VALID · score ${score}.${reasonBit} No disposable list match and no elevated-risk heuristics fired for this domain right now.`;
+  }
+  return `Result: ${status} · score ${score}.${reasonBit}`;
+}
+
 function ModerationSupportCard({
   icon: Icon,
   iconRingClass,
@@ -199,6 +217,7 @@ export default function AdminUserDetail() {
   const [deleteEmailConfirm, setDeleteEmailConfirm] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [impersonateBusy, setImpersonateBusy] = useState(false);
+  const [reverifyBusy, setReverifyBusy] = useState(false);
   const [startedPage, setStartedPage] = useState(1);
   const [commentedPage, setCommentedPage] = useState(1);
 
@@ -360,6 +379,28 @@ export default function AdminUserDetail() {
     } catch (e) {
       setModError(e instanceof ApiError ? e.message : "Could not start impersonation");
       setImpersonateBusy(false);
+    }
+  };
+
+  const reverifyEmail = async () => {
+    if (!detail?.user || detail.user.id !== id) return;
+    setReverifyBusy(true);
+    setModError(null);
+    try {
+      const res = await postAdminUserReverify(id);
+      hydratedForUserIdRef.current = null;
+      await qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      await detailQuery.refetch();
+      toast.success("Email reverified", {
+        description: formatReverifyToastDescription(res.validation),
+        duration: 12_000,
+      });
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "Could not reverify email";
+      setModError(msg);
+      toast.error(msg);
+    } finally {
+      setReverifyBusy(false);
     }
   };
 
@@ -525,9 +566,25 @@ export default function AdminUserDetail() {
                   <p className="mt-1 text-sm text-foreground">{u.emailVerified ? "Yes" : "No"}</p>
                 </div>
                 <div>
+                  <p className={LABEL}>Email status</p>
+                  <p className="mt-1 text-sm text-foreground">{u.emailStatus ?? "—"}</p>
+                </div>
+                <div>
+                  <p className={LABEL}>Risk score</p>
+                  <p className="mt-1 text-sm tabular-nums text-foreground">
+                    {typeof u.emailRiskScore === "number" ? u.emailRiskScore : "—"}
+                  </p>
+                </div>
+                <div>
                   <p className={LABEL}>Joined</p>
                   <p className="mt-1 text-sm text-foreground">
                     {new Date(u.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className={LABEL}>Last validated</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {u.lastValidatedAt ? new Date(u.lastValidatedAt).toLocaleString() : "—"}
                   </p>
                 </div>
                 <div>
@@ -577,6 +634,58 @@ export default function AdminUserDetail() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="mb-8 rounded-xl border border-white/10 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Pro waitlist</h2>
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to="/admin/waitlist">Waitlist admin</Link>
+              </Button>
+            </div>
+            {detail?.proWaitlistEntry ? (
+              <div className="space-y-3 text-sm">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className={LABEL}>Submitted name</p>
+                    <p className="mt-1 text-foreground">{detail.proWaitlistEntry.fullName}</p>
+                  </div>
+                  <div>
+                    <p className={LABEL}>Contact email</p>
+                    <p className="mt-1 font-mono text-xs text-foreground">
+                      {detail.proWaitlistEntry.contactEmail}
+                    </p>
+                  </div>
+                </div>
+                {detail.proWaitlistEntry.company?.trim() ? (
+                  <div>
+                    <p className={LABEL}>Company</p>
+                    <p className="mt-1 text-foreground">{detail.proWaitlistEntry.company}</p>
+                  </div>
+                ) : null}
+                <div>
+                  <p className={LABEL}>Message</p>
+                  <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                    {detail.proWaitlistEntry.message?.trim()
+                      ? detail.proWaitlistEntry.message
+                      : "—"}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Joined waitlist{" "}
+                  <span className="text-foreground">
+                    {new Date(detail.proWaitlistEntry.createdAt).toLocaleString()}
+                  </span>
+                  {" · "}
+                  Updated{" "}
+                  <span className="text-foreground">
+                    {new Date(detail.proWaitlistEntry.updatedAt).toLocaleString()}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No Pro waitlist submission.</p>
+            )}
           </div>
 
           {!u.isDeleted && (
@@ -744,6 +853,25 @@ export default function AdminUserDetail() {
                     ) : (
                       "Open session"
                     )}
+                  </Button>
+                </ModerationSupportCard>
+
+                <ModerationSupportCard
+                  icon={RotateCcw}
+                  iconRingClass="text-amber-200/85"
+                  title="Reverify email"
+                  description="Re-runs disposable/risk validation (Tier 1 + MX + WHOIS heuristics) and updates the stored email status."
+                  tooltipLabel="About email reverify"
+                  tooltipBody="Runs the full admin-grade validator, which may take a few seconds due to DNS/WHOIS lookups. Signup uses a faster path. Rotating temp-mail domains are not always in public lists—use suspend or add domains to data/extra-disposable-domains.txt on the server if needed."
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-amber-500/35 bg-amber-500/[0.08] text-amber-100 hover:border-amber-400/45 hover:bg-amber-500/15 hover:text-white sm:min-w-[11rem]"
+                    disabled={reverifyBusy}
+                    onClick={() => void reverifyEmail()}
+                  >
+                    {reverifyBusy ? "Reverifying…" : "Reverify email"}
                   </Button>
                 </ModerationSupportCard>
               </div>

@@ -13,6 +13,9 @@ export type AdminUserListRow = {
   isDeleted: boolean;
   isSuspicious: boolean;
   suspicionReason: string | null;
+  emailStatus?: "VALID" | "DISPOSABLE" | "RISKY";
+  emailRiskScore?: number;
+  lastValidatedAt?: string | null;
   createdAt: string;
   plan: "FREE" | "PRO";
   entitlementStatus: "ACTIVE" | "PAST_DUE" | "CANCELED" | null;
@@ -26,6 +29,8 @@ export type AdminUserListParams = {
   status?: "active" | "suspended" | "deleted";
   /** When true, only users flagged as suspicious (e.g. disposable email). */
   suspiciousOnly?: boolean;
+  /** When true, only users with an Apex Pro waitlist submission. */
+  waitlistOnly?: boolean;
 };
 
 /** POST /api/admin/users/scan-disposable-emails — preview or backfill disposable-domain flags */
@@ -74,6 +79,7 @@ export async function fetchAdminUserList(params?: AdminUserListParams): Promise<
   if (params?.role) sp.set("role", params.role);
   if (params?.status) sp.set("status", params.status);
   if (params?.suspiciousOnly === true) sp.set("suspiciousOnly", "true");
+  if (params?.waitlistOnly === true) sp.set("waitlistOnly", "true");
   const qs = sp.toString();
   return fetchApi("GET", `/api/admin/users${qs ? `?${qs}` : ""}`, undefined, false);
 }
@@ -95,6 +101,9 @@ export type AdminUserDetailResponse = {
     avatarUrl: string | null;
     bio: string | null;
     emailVerified: boolean;
+    emailStatus?: "VALID" | "DISPOSABLE" | "RISKY";
+    emailRiskScore?: number;
+    lastValidatedAt?: string | null;
     role: "USER" | "ADMIN";
     suspendedAt: string | null;
     suspensionReason: string | null;
@@ -112,6 +121,15 @@ export type AdminUserDetailResponse = {
       currentPeriodEnd: string | null;
     };
   };
+  /** Present when the user submitted the Pro waitlist form (may persist after upgrading). */
+  proWaitlistEntry: {
+    fullName: string;
+    contactEmail: string;
+    company: string | null;
+    message: string | null;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
   counts: {
     discussions: number;
     discussionComments: number;
@@ -202,6 +220,31 @@ export async function postAdminUserImpersonate(userId: string): Promise<{
   return fetchApi(
     "POST",
     `/api/admin/users/${encodeURIComponent(userId)}/impersonate`,
+    {},
+    false
+  );
+}
+
+export async function postAdminUserReverify(userId: string): Promise<{
+  user: {
+    id: string;
+    email: string;
+    emailStatus: "VALID" | "DISPOSABLE" | "RISKY";
+    emailRiskScore: number;
+    lastValidatedAt: string | null;
+    isSuspicious: boolean;
+    suspicionReason: string | null;
+  };
+  validation: {
+    isDisposable: boolean;
+    score: number;
+    reason: string;
+    status: "VALID" | "DISPOSABLE" | "RISKY";
+  };
+}> {
+  return fetchApi(
+    "POST",
+    `/api/admin/users/reverify/${encodeURIComponent(userId)}`,
     {},
     false
   );
