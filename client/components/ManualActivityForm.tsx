@@ -573,12 +573,23 @@ export default function ManualActivityForm({
         <div className="space-y-2">
           <div className="flex items-end justify-between gap-2">
             <FormLabel className="text-white/80">
-              Laps <span className="text-white/40">(optional)</span>
+              Laps{" "}
+              <span className="text-white/40">
+                {sessionKind === "RACE"
+                  ? "(add at least one for fastest-lap leaderboards)"
+                  : "(optional)"}
+              </span>
             </FormLabel>
             <span className="text-xs text-white/40">
               {sim ? `Max ${maxLapsForSim} · ${fields.length} row${fields.length === 1 ? "" : "s"}` : "Select sim for limit"}
             </span>
           </div>
+          {sessionKind === "RACE" && (
+            <p className="text-xs text-white/45">
+              Without lap times, the session still counts as a race for wins or podiums, but it will not contribute to
+              fastest lap (there are no laps stored to rank).
+            </p>
+          )}
           {fields.map((fieldItem, index) => {
             const raw = lapsWatch?.[index]?.lapTime ?? "";
             const parsed = raw.trim() ? parseStrictManualLapTimeToMs(raw) : null;

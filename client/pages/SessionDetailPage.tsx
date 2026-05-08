@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Share2, PenLine, Pencil, Trash2, Repeat, Timer, Flag } from "lucide-react";
@@ -288,9 +288,37 @@ export type SessionDetail = {
   source?: SessionSource | null;
   notes?: string | null;
   userId?: string | null;
+  /** Manual rows only: PRACTICE | QUALIFY | RACE */
+  manualSessionKind?: string | null;
 };
 
+/** Same rule as GET /api/leaderboards?metric=fastestLap (see server sessionKind). */
+function sessionEligibleForGlobalFastestLapLeaderboard(s: SessionDetail): boolean {
+  const st = (s.sessionType ?? "").toUpperCase().trim();
+  if (st === "MANUAL_ACTIVITY") {
+    return (s.manualSessionKind ?? "").toUpperCase().trim() === "RACE";
+  }
+  return st === "RACE" || st === "SPRINT";
+}
+
+function primaryActivityLabel(session: SessionDetail): string {
+  const st = (session.sessionType ?? "").toUpperCase().trim();
+  if (st === "MANUAL_ACTIVITY") {
+    const mk = (session.manualSessionKind ?? "").toUpperCase().trim();
+    if (mk === "RACE") return "Manual · Race";
+    if (mk === "QUALIFY") return "Manual · Qualifying";
+    if (mk === "PRACTICE") return "Manual · Practice";
+    return "Manual";
+  }
+  if (st === "TELEMETRY" || st === "AGENT") {
+    return formatActivitySource(session.sessionType);
+  }
+  return formatSessionTypeUpper(session.sessionType);
+}
+
 function isManualActivity(session: SessionDetail): boolean {
+  const st = (session.sessionType ?? "").toUpperCase();
+  if (st === "MANUAL_ACTIVITY") return true;
   if (session.source === "MANUAL_ACTIVITY") return true;
   const hasNoLaps = !session.laps || session.laps.length === 0;
   const hasNoTelemetryFields =
@@ -407,13 +435,7 @@ export default function SessionDetailPage() {
     );
   }
 
-  const sessionTypeKey = (session.sessionType ?? "").toString().trim();
-  const sessionTypeLabel =
-    sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
-    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
-    sessionTypeKey.toUpperCase() === "AGENT"
-      ? formatActivitySource(sessionTypeKey)
-      : formatSessionTypeUpper(session.sessionType);
+  const sessionTypeLabel = primaryActivityLabel(session);
   const resolved = resolveSessionFields(session);
   const laps = normalizeLaps(
     (lapsData
@@ -437,9 +459,14 @@ export default function SessionDetailPage() {
   const isOwner = user?.id != null && session.userId === user.id;
   const canEditSession = isOwner;
   const canManualExtras = isManual && isOwner;
-  const isRace =
-    session.sessionType === "RACE" || session.sessionType === "QUALIFY";
-  const showPosition = isRace && session.position != null;
+  const stUp = (session.sessionType ?? "").toUpperCase();
+  const mkUp = (session.manualSessionKind ?? "").toUpperCase();
+  const hasRaceLikeFinish =
+    stUp === "RACE" ||
+    stUp === "QUALIFY" ||
+    stUp === "SPRINT" ||
+    (stUp === "MANUAL_ACTIVITY" && (mkUp === "RACE" || mkUp === "QUALIFY"));
+  const showPosition = hasRaceLikeFinish && session.position != null;
   const fastestLapMs =
     laps.length > 0 ? Math.min(...laps.map((l) => l.timeMs)) : null;
   const personalBestMs = fastestLapMs;
@@ -642,6 +669,30 @@ export default function SessionDetailPage() {
           <p className="text-lg font-semibold text-white">
             {formatLapMs(session.bestLapMs)}
           </p>
+          {!hasNoLaps && (
+            <p className="mt-2 text-xs leading-relaxed text-white/45">
+              {sessionEligibleForGlobalFastestLapLeaderboard(session) ? (
+                <>
+                  The{" "}
+                  <Link to="/leaderboards" className="text-white/55 underline underline-offset-2 hover:text-white/80">
+                    fastest lap
+                  </Link>{" "}
+                  board lists the top ten drivers across the platform. Your session can still have the best lap shown
+                  here without appearing on that list.
+                </>
+              ) : (
+                <>
+                  The{" "}
+                  <Link to="/leaderboards" className="text-white/55 underline underline-offset-2 hover:text-white/80">
+                    fastest lap
+                  </Link>{" "}
+                  leaderboard uses race laps only (telemetry race/sprint, or manual activity with session kind Race).
+                  Practice and qualifying laps are ignored there—this session&apos;s badge above shows how it was
+                  logged.
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
           <p className="mb-1 text-xs uppercase tracking-wider text-white/50">

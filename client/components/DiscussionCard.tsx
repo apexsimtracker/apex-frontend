@@ -25,6 +25,7 @@ interface DiscussionCardProps {
   replies: number;
   views: number;
   isPinned?: boolean;
+  wasEdited?: boolean;
 }
 
 export default function DiscussionCard({
@@ -37,6 +38,7 @@ export default function DiscussionCard({
   replies,
   views,
   isPinned,
+  wasEdited,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -114,6 +116,11 @@ export default function DiscussionCard({
                 className="inline-block rounded-md bg-[rgba(240,28,28,0.06)] px-2 py-1 text-xs font-medium text-[rgb(240,28,28)]"
               >
                 Pinned
+              </span>
+            )}
+            {wasEdited && (
+              <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-white/50">
+                Edited
               </span>
             )}
           </div>

@@ -149,8 +149,9 @@ type AdminDetail = {
   endedEarlyAt: string | null;
   participantCount: number;
   fastestLapMs: number | null;
-  createdBy: { id: string; displayName: string } | null;
-  badges: { userId: string; displayName: string; place: number; tier: string; awardedAt: string }[];
+  /** Matches admin list API; derived from creator user name/email. */
+  createdByDisplayName: string | null;
+  badges?: { userId: string; displayName: string; place: number; tier: string; awardedAt: string }[];
 };
 
 type ActionTarget = { userId: string; displayName: string; ban?: BanInfo | null };
@@ -515,10 +516,10 @@ export default function AdminChallengeDetail() {
                     <span>Fastest {formatLapMs(data.fastestLapMs)}</span>
                   </>
                 )}
-                {data.createdBy && (
+                {data.createdByDisplayName && (
                   <>
                     <span aria-hidden>·</span>
-                    <span>Created by {data.createdBy.displayName}</span>
+                    <span>Created by {data.createdByDisplayName}</span>
                   </>
                 )}
               </p>
@@ -927,11 +928,11 @@ export default function AdminChallengeDetail() {
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
                 Badges
               </h2>
-              {data.badges.length === 0 ? (
+              {(data.badges ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">No podium badges yet.</p>
               ) : (
                 <ul className="space-y-2 text-sm">
-                  {data.badges.map((b) => (
+                  {(data.badges ?? []).map((b) => (
                     <li
                       key={b.userId}
                       className={`flex items-center justify-between gap-2 rounded px-2 py-1 ${tierAccent(

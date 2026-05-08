@@ -32,9 +32,10 @@ function formatValue(
   }
   if (metric === "avgFinish") {
     const v = row.value;
-    return v != null && Number.isFinite(Number(v))
-      ? Number(v).toFixed(1)
-      : "—";
+    if (v == null) return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "—";
+    return `${Math.round(n)} (${n.toFixed(1)})`;
   }
   const v = row.value;
   return v != null && Number.isFinite(Number(v)) ? String(Math.floor(Number(v))) : "—";

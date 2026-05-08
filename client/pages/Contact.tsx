@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Loader2, Mail } from "lucide-react";
+import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 import { BRAND_RED, SUPPORT_EMAIL } from "@/lib/appConfig";
@@ -34,6 +35,7 @@ const defaultValues: ContactFormValues = {
 };
 
 export default function Contact() {
+  const [sentBanner, setSentBanner] = useState(false);
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues,
@@ -44,11 +46,15 @@ export default function Contact() {
 
   const mutation = useMutation({
     mutationFn: submitContact,
+    onMutate: () => {
+      setSentBanner(false);
+    },
     onSuccess: () => {
       toast.success("Message sent", {
         description:
-          "Thanks for getting in touch. We’ll get back to you as soon as we can.",
+          "Your message is on its way. Our team will email you soon — usually within a few business days.",
       });
+      setSentBanner(true);
       form.reset(defaultValues);
     },
     onError: (err: unknown) => {
@@ -90,6 +96,32 @@ export default function Contact() {
             </header>
 
             <div className="rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6">
+              {sentBanner && (
+                <div
+                  className="mb-6 flex flex-col gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 sm:flex-row sm:items-start sm:justify-between"
+                  role="status"
+                >
+                  <div className="flex gap-3">
+                    <CheckCircle2
+                      className="mt-0.5 size-5 shrink-0 text-emerald-400"
+                      aria-hidden
+                    />
+                    <div className="text-sm text-foreground">
+                      <p className="font-medium">We received your message</p>
+                      <p className="mt-1 text-muted-foreground">
+                        Support has been notified. Someone will follow up by email shortly.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="shrink-0 self-end text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline sm:self-start"
+                    onClick={() => setSentBanner(false)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
               <div className="mb-6 flex items-start gap-3 rounded-lg border border-white/10 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
                 <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                 <p>

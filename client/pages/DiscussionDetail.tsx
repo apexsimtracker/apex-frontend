@@ -6,7 +6,19 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ArrowLeft, Heart, Reply, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Heart,
+  MessageCircle,
+  Reply,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  Pin,
+  Trash2,
+} from "lucide-react";
 import {
   getDiscussion,
   getDiscussionComments,
@@ -19,6 +31,8 @@ import {
   likeDiscussion,
   unlikeDiscussion,
   recordDiscussionView,
+  updateDiscussion,
+  deleteDiscussion,
   type Discussion,
   type DiscussionComment,
   type DiscussionCommentsPageResult,
@@ -36,6 +50,32 @@ import {
 import PageMeta from "@/components/PageMeta";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { SkeletonBlock } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /** Persists one UUID per browser for anonymous view dedupe; signing in uses a separate server-side key (may double-count once — MVP). */
 const ANON_VIEWER_STORAGE_KEY = "apex_discussion_anon_viewer";
@@ -56,6 +96,8 @@ function getOrCreateAnonymousViewerId(): string {
 function categoryLabel(value: string) {
   return DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 }
+
+const ACCENT_RED = "rgb(240, 28, 28)";
 
 /** Avatar for a comment row: same resolution as /profile when the reply is yours. */
 function CommentAuthorAvatar({ author }: { author: unknown }) {
@@ -139,6 +181,12 @@ export default function DiscussionDetail() {
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
   const [postAvatarFailed, setPostAvatarFailed] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editError, setEditError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [originalOpen, setOriginalOpen] = useState(false);
 
   const postMutation = useMutation({
     mutationFn: (body: string) => createDiscussionComment(id!, body),
@@ -203,6 +251,36 @@ export default function DiscussionDetail() {
 
   const posting = postMutation.isPending;
 
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteDiscussion(id!),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+      setDeleteOpen(false);
+      navigate("/community");
+    },
+    onError: (e: unknown) => {
+      console.error(e);
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: () =>
+      updateDiscussion(id!, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+      }),
+    onSuccess: (data) => {
+      if (!id) return;
+      queryClient.setQueryData<Discussion>(["discussion", "detail", id], data);
+      setEditOpen(false);
+      setEditError(null);
+      void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+    },
+    onError: (e: unknown) => {
+      setEditError(e instanceof ApiError ? e.message : "Could not save changes.");
+    },
+  });
+
   const handlePostReply = () => {
     const body = replyBody.trim();
     if (!body || !id) return;
@@ -265,6 +343,15 @@ export default function DiscussionDetail() {
     setPostAvatarFailed(false);
   }, [discussion?.id, user?.id, user?.avatarUrl]);
 
+  useEffect(() => {
+    if (!editOpen || !discussion) return;
+    setEditTitle(discussion.title);
+    setEditDescription(
+      (discussion.content ?? discussion.description ?? "").trim() || ""
+    );
+    setEditError(null);
+  }, [editOpen, discussion]);
+
   if (!id) {
     return (
       <div className="min-h-screen bg-background">
@@ -275,13 +362,24 @@ export default function DiscussionDetail() {
           noindex
         />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
+            >
+              Community
+              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
+              <span className="text-foreground/90">Discussion</span>
+            </Link>
+          </div>
           <p className="text-muted-foreground">Invalid post ID.</p>
         </div>
       </div>
@@ -297,14 +395,50 @@ export default function DiscussionDetail() {
           path={`/discussion/${id ?? ""}`}
         />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
-          <p className="text-muted-foreground">Loading discussion...</p>
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
+            >
+              Community
+              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
+              <span className="text-foreground/90">Discussion</span>
+            </Link>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
+            <div className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent" />
+            <div className="flex gap-3 border-b border-white/6 px-5 py-4 sm:px-6">
+              <SkeletonBlock className="size-10 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-2 pt-1">
+                <SkeletonBlock className="h-4 w-32 rounded" />
+                <SkeletonBlock className="h-3 w-24 rounded" />
+              </div>
+            </div>
+            <div className="space-y-3 px-5 py-6 sm:px-6">
+              <SkeletonBlock className="h-8 max-w-md w-full rounded-lg" />
+              <SkeletonBlock className="h-4 w-full rounded" />
+              <SkeletonBlock className="h-4 w-full rounded" />
+              <SkeletonBlock className="h-4 w-3/4 rounded" />
+            </div>
+            <div className="flex gap-4 border-t border-white/6 bg-white/[0.02] px-5 py-4 sm:px-6">
+              <SkeletonBlock className="h-9 w-20 rounded-lg" />
+              <SkeletonBlock className="h-9 w-20 rounded-lg" />
+              <SkeletonBlock className="h-9 w-20 rounded-lg" />
+            </div>
+          </div>
+          <div className="mt-10 space-y-4">
+            <SkeletonBlock className="h-7 w-48 rounded" />
+            <SkeletonBlock className="h-28 w-full rounded-xl" />
+            <SkeletonBlock className="h-28 w-full rounded-xl" />
+          </div>
         </div>
       </div>
     );
@@ -320,20 +454,37 @@ export default function DiscussionDetail() {
           noindex
         />
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
-          <p className="text-muted-foreground">{discussionError ?? "Post not found."}</p>
-          <button
-            onClick={() => navigate("/community")}
-            className="mt-4 font-medium text-primary hover:underline"
-          >
-            Back to Community
-          </button>
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
+            >
+              Community
+              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
+              <span className="text-foreground/90">Discussion</span>
+            </Link>
+          </div>
+          <div className="rounded-xl border border-dashed border-white/12 bg-card/15 px-6 py-10 text-center backdrop-blur-sm">
+            <p className="text-sm text-muted-foreground">
+              {discussionError ?? "Post not found."}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5 border-white/10 bg-card/30"
+              onClick={() => navigate("/community")}
+            >
+              Back to Community
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -354,6 +505,13 @@ export default function DiscussionDetail() {
     typeof description === "string"
       ? `${description.trim().slice(0, 160)}${description.trim().length > 160 ? "…" : ""}`
       : `${discussion.title} — ${COMPANY_NAME} community`;
+
+  const isOwner =
+    Boolean(user) && getDiscussionAuthorId(discussion.author) === user.id;
+  const alreadyEdited = Boolean(discussion.editedAt ?? discussion.wasEdited);
+  const showEditedBadge = Boolean(
+    discussion.wasEdited || discussion.editedAt || discussion.originalBody
+  );
 
   const repliesTotal =
     commentsQuery.data?.total ??
@@ -382,73 +540,142 @@ export default function DiscussionDetail() {
         ogType="article"
       />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-5" />
-          <span className="font-medium">Back</span>
-        </button>
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back
+          </button>
+          <Link
+            to="/community"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
+          >
+            Community
+            <ChevronRight className="size-3.5 opacity-60" aria-hidden />
+            <span className="text-foreground/90">Discussion</span>
+          </Link>
+        </div>
 
-        <div className="overflow-hidden rounded-2xl border bg-card">
-          <div className="border px-6 py-4">
+        <article className="relative overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
+          <div
+            className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent"
+            aria-hidden
+          />
+          {isOwner && (
+            <div className="absolute right-2 top-5 z-10 sm:right-3 sm:top-6">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    aria-label="Post options"
+                  >
+                    <MoreHorizontal className="size-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[10rem]">
+                  {!alreadyEdited && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditOpen(true);
+                      }}
+                    >
+                      <Pencil className="mr-2 size-4" />
+                      Edit post
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <Trash2 className="mr-2 size-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          <div className="border-b border-white/6 px-5 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-7">
             <button
+              type="button"
               onClick={() => {
                 if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
               }}
-              className="group mb-4 flex w-full items-center gap-3 text-left transition-opacity hover:opacity-80"
+              className="group mb-5 flex w-full items-center gap-3 text-left transition-opacity hover:opacity-90 sm:mb-6 sm:gap-4"
             >
               {showPostAvatar ? (
                 <img
                   src={avatarSrc!}
                   alt={authorDisplay}
-                  className="size-10 rounded-full object-cover transition-all group-hover:ring-2 group-hover:ring-primary"
+                  className="size-11 rounded-full object-cover ring-2 ring-white/5 transition-all group-hover:ring-[rgba(240,28,28,0.45)] sm:size-12"
                   onError={() => setPostAvatarFailed(true)}
                 />
               ) : (
                 <div
-                  className="flex size-10 items-center justify-center rounded-full bg-white/10 text-sm font-medium text-white/70 transition-all group-hover:ring-2 group-hover:ring-primary"
+                  className="flex size-11 items-center justify-center rounded-full bg-white/10 text-sm font-medium text-white/80 ring-2 ring-white/5 transition-all group-hover:ring-[rgba(240,28,28,0.45)] sm:size-12 sm:text-base"
                   aria-label={`Avatar for ${authorDisplay}`}
                 >
                   {initials}
                 </div>
               )}
-              <div className="flex-1">
-                <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-foreground transition-colors group-hover:text-[rgb(240,28,28)]">
                   {authorDisplay}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
                   {timeAgo(discussion.createdAt)}
                 </p>
               </div>
             </button>
 
-            <div className="mb-4 flex gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-white/8 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-foreground/90">
                 <DiscussionCategoryIcon
                   categoryKey={discussion.category ?? "general"}
-                  className="size-3.5 opacity-90"
+                  className="size-3.5 text-white/70"
                 />
                 {categoryLabel(discussion.category)}
               </span>
               {discussion.isPinned && (
-                <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                <span
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium"
+                  style={{
+                    color: ACCENT_RED,
+                    backgroundColor: "rgba(240, 28, 28, 0.06)",
+                  }}
+                >
+                  <Pin className="size-3.5 shrink-0" aria-hidden />
                   Pinned
                 </span>
+              )}
+              {showEditedBadge && (
+                <button
+                  type="button"
+                  onClick={() => setOriginalOpen(true)}
+                  className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-muted-foreground underline-offset-2 transition-colors hover:border-white/15 hover:bg-white/[0.07] hover:text-foreground hover:underline"
+                >
+                  Edited
+                </button>
               )}
             </div>
           </div>
 
-          <div className="p-6">
-            <h1 className="mb-4 text-3xl font-bold text-foreground">
+          <div className="px-5 py-6 sm:px-6 sm:py-8">
+            <h1 className="mb-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:mb-5 sm:text-3xl sm:leading-tight">
               {discussion.title}
             </h1>
-            <p className="whitespace-pre-wrap text-muted-foreground">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-base">
               {description}
             </p>
           </div>
 
-          <div className="flex items-center gap-6 border px-6 py-4">
+          <div className="flex flex-wrap items-center gap-2 border-t border-white/6 bg-white/[0.02] px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
             <button
               type="button"
               onClick={handleLikeClick}
@@ -456,24 +683,24 @@ export default function DiscussionDetail() {
               aria-pressed={Boolean(discussion.likedByMe)}
               aria-label={discussion.likedByMe ? "Unlike post" : "Like post"}
               className={cn(
-                "flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60",
-                discussion.likedByMe && "text-rose-500 hover:text-rose-500"
+                "inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:border-white/12 hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
+                discussion.likedByMe &&
+                  "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500"
               )}
             >
               <Heart
-                className={cn("size-4 shrink-0", discussion.likedByMe && "fill-current")}
+                className={cn(
+                  "size-4 shrink-0",
+                  discussion.likedByMe && "fill-current text-rose-500"
+                )}
               />
-              <span
-                className="text-xs font-medium tabular-nums"
-                title={String(discussion.likeCount ?? 0)}
-              >
+              <span title={String(discussion.likeCount ?? 0)}>
                 {formatCompactCount(discussion.likeCount ?? 0)}
               </span>
             </button>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Reply className="size-4 shrink-0" />
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
+              <MessageCircle className="size-4 shrink-0 opacity-80" aria-hidden />
               <span
-                className="text-xs font-medium tabular-nums"
                 title={String(
                   discussion.commentCount ??
                     discussion.commentsCount ??
@@ -489,30 +716,47 @@ export default function DiscussionDetail() {
                 )}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Eye className="size-4 shrink-0" />
-              <span
-                className="text-xs font-medium tabular-nums"
-                title={String(discussion.views ?? 0)}
-              >
+            <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
+              <Eye className="size-4 shrink-0 opacity-80" aria-hidden />
+              <span title={String(discussion.views ?? 0)}>
                 {formatCompactCount(discussion.views ?? 0)}
               </span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className="mt-8">
-          <h2 className="mb-6 text-xl font-bold text-foreground">
-            Replies ({repliesTotal})
-          </h2>
+        <section className="mt-10 sm:mt-12" aria-labelledby="replies-heading">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-8">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex size-9 items-center justify-center rounded-lg border border-white/8 bg-white/[0.04]"
+                aria-hidden
+              >
+                <Reply className="size-4 text-muted-foreground" />
+              </div>
+              <div>
+                <h2
+                  id="replies-heading"
+                  className="text-lg font-semibold tracking-tight text-foreground sm:text-xl"
+                >
+                  Replies
+                </h2>
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  {repliesTotal === 0
+                    ? "Start the conversation below."
+                    : `${repliesTotal} ${repliesTotal === 1 ? "reply" : "replies"}`}
+                </p>
+              </div>
+            </div>
+          </div>
 
           {commentsError && (
-            <div className="mb-4 text-sm text-neutral-400">
+            <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground">
               {commentsError}
               <button
                 type="button"
                 onClick={loadComments}
-                className="ml-2 text-primary hover:underline"
+                className="ml-2 font-medium text-[rgb(240,28,28)] hover:underline"
               >
                 Retry
               </button>
@@ -520,41 +764,51 @@ export default function DiscussionDetail() {
           )}
 
           {!commentsError && repliesTotal === 0 && (
-            <p className="text-sm text-muted-foreground">No comments yet.</p>
-          )}
-
-          {!commentsError && repliesTotal > 0 && (
-            <div className="space-y-4">
-              {(comments ?? []).map((c) => (
-                <div
-                  key={c.id}
-                  className="rounded-2xl border bg-card p-6"
-                >
-                  <div className="mb-3 flex items-start gap-3">
-                    <CommentAuthorAvatar author={c.author} />
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">
-                        {getDiscussionAuthorDisplay(c.author)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {timeAgo(c.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="whitespace-pre-wrap text-muted-foreground">
-                    {c.body}
-                  </p>
-                </div>
-              ))}
+            <div className="mb-8 rounded-xl border border-dashed border-white/12 bg-white/[0.02] px-6 py-12 text-center">
+              <MessageCircle
+                className="mx-auto mb-3 size-10 text-muted-foreground/35"
+                strokeWidth={1.25}
+                aria-hidden
+              />
+              <p className="text-sm font-medium text-foreground">No replies yet</p>
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                Be the first to share your thoughts.
+              </p>
             </div>
           )}
 
           {!commentsError && repliesTotal > 0 && (
-            <div className="mt-6 space-y-3">
+            <ul className="space-y-3 sm:space-y-4">
+              {(comments ?? []).map((c) => (
+                <li key={c.id}>
+                  <div className="overflow-hidden rounded-xl border border-white/6 bg-card/15 backdrop-blur-sm">
+                    <div className="border-l-2 border-l-[rgba(240,28,28,0.35)] bg-card/25 px-4 py-4 sm:px-5 sm:py-5">
+                      <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
+                        <CommentAuthorAvatar author={c.author} />
+                        <div className="min-w-0 flex-1 pt-0.5">
+                          <p className="font-semibold leading-none text-foreground">
+                            {getDiscussionAuthorDisplay(c.author)}
+                          </p>
+                          <p className="mt-1.5 text-xs text-muted-foreground">
+                            {timeAgo(c.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+                        {c.body}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!commentsError && repliesTotal > 0 && (
+            <div className="mt-8 space-y-3">
               {commentsRange && (
                 <p className="text-center text-xs text-muted-foreground">
-                  Showing {commentsRange.start}–{commentsRange.end} of{" "}
-                  {repliesTotal}
+                  Showing {commentsRange.start}–{commentsRange.end} of {repliesTotal}
                 </p>
               )}
               <RaceHistoryPagination
@@ -566,12 +820,16 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          <div className="mt-8 rounded-2xl border bg-card p-6">
+          <div className="mt-10 overflow-hidden rounded-xl border border-white/6 bg-card/20 p-5 shadow-none backdrop-blur-lg sm:p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <MessageCircle className="size-4 text-muted-foreground" aria-hidden />
+              <span className="text-sm font-semibold text-foreground">Add a reply</span>
+            </div>
             {replyError && (
-              <p className="mb-3 text-sm text-neutral-400">{replyError}</p>
+              <p className="mb-3 text-sm text-destructive/90">{replyError}</p>
             )}
-            <textarea
-              className="w-full resize-none rounded-lg border bg-secondary px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+            <Textarea
+              className="min-h-[120px] resize-y border-white/10 bg-secondary/40 text-foreground placeholder:text-muted-foreground/70 focus-visible:border-[rgba(240,28,28,0.45)] focus-visible:ring-[rgba(240,28,28,0.25)]"
               rows={4}
               placeholder="Write a reply…"
               value={replyBody}
@@ -579,18 +837,113 @@ export default function DiscussionDetail() {
               disabled={posting}
             />
             <div className="mt-4 flex justify-end">
-              <button
+              <Button
                 type="button"
                 onClick={handlePostReply}
                 disabled={!replyBody.trim() || posting}
-                className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+                className="min-w-[8.5rem] font-medium text-white"
+                style={{ backgroundColor: ACCENT_RED }}
               >
-                {posting ? "Posting…" : "Post Reply"}
-              </button>
+                {posting ? "Posting…" : "Post reply"}
+              </Button>
             </div>
           </div>
-        </div>
+        </section>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg border-white/10 bg-card">
+          <DialogHeader>
+            <DialogTitle>Edit discussion</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {editError && (
+              <p className="text-sm text-destructive">{editError}</p>
+            )}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                disabled={editMutation.isPending}
+                className="border-white/10 bg-secondary"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Body</label>
+              <textarea
+                className="min-h-[160px] w-full resize-y rounded-md border border-white/10 bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                disabled={editMutation.isPending}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => editMutation.mutate()}
+              disabled={
+                editMutation.isPending ||
+                editTitle.trim().length < 3 ||
+                editDescription.trim().length < 10
+              }
+            >
+              {editMutation.isPending ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={originalOpen} onOpenChange={setOriginalOpen}>
+        <DialogContent className="max-w-lg border-white/10 bg-card">
+          <DialogHeader>
+            <DialogTitle>Original post</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
+            <p className="font-semibold text-foreground">
+              {discussion.originalTitle ?? discussion.title}
+            </p>
+            <p className="whitespace-pre-wrap text-muted-foreground">
+              {discussion.originalBody ??
+                discussion.content ??
+                discussion.description ??
+                ""}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOriginalOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent className="border-white/10 bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this discussion?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the post from the community. You can’t undo this from the site; contact
+              support if you deleted by mistake.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate()}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

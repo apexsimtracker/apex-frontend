@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiDelete } from "./httpVerbs";
+import { apiGet, apiPost, apiDelete, apiPatch } from "./httpVerbs";
 
 // Community discussions — category query params match backend: all | setup | guides | general
 export const DISCUSSION_CATEGORIES = [
@@ -47,6 +47,10 @@ export type Discussion = {
   replies?: number;
   views?: number;
   isPinned?: boolean;
+  editedAt?: string | null;
+  wasEdited?: boolean;
+  originalTitle?: string | null;
+  originalBody?: string | null;
 };
 
 /** Default page size for GET /api/community/discussions (must match server default). */
@@ -76,10 +80,17 @@ export type DiscussionsPageResult = {
 function normalizeDiscussionListItem(item: Record<string, unknown>): Discussion {
   const d = { ...item } as Discussion;
   const content = d.content ?? d.description;
-  if (typeof content === "string" && d.description == null) {
-    return { ...d, description: content };
-  }
-  return d;
+  const withContent =
+    typeof content === "string" && d.description == null ? { ...d, description: content } : d;
+  const editedAt =
+    typeof withContent.editedAt === "string" || withContent.editedAt === null
+      ? withContent.editedAt
+      : undefined;
+  const wasEdited =
+    typeof withContent.wasEdited === "boolean"
+      ? withContent.wasEdited
+      : Boolean(editedAt ?? withContent.originalTitle ?? withContent.originalBody);
+  return { ...withContent, wasEdited };
 }
 
 /**
@@ -144,7 +155,28 @@ export async function createDiscussion(
 }
 
 export async function getDiscussion(id: string): Promise<Discussion> {
-  return apiGet<Discussion>(`/api/community/discussions/${id}`);
+  const raw = await apiGet<Record<string, unknown>>(`/api/community/discussions/${id}`);
+  return normalizeDiscussionListItem(raw);
+}
+
+export type UpdateDiscussionBody = {
+  title: string;
+  description: string;
+};
+
+export async function updateDiscussion(
+  id: string,
+  body: UpdateDiscussionBody
+): Promise<Discussion> {
+  const raw = await apiPatch<Record<string, unknown>>(
+    `/api/community/discussions/${encodeURIComponent(id)}`,
+    body
+  );
+  return normalizeDiscussionListItem(raw);
+}
+
+export async function deleteDiscussion(id: string): Promise<void> {
+  await apiDelete(`/api/community/discussions/${encodeURIComponent(id)}`);
 }
 
 export type DiscussionComment = {

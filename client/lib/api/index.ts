@@ -19,3 +19,6 @@ export * from "./manualAndUpload";
 export * from "./challenges";
 export * from "./adminUsers";
 export * from "./adminWaitlist";
+export * from "./adminContact";
+export * from "./adminCommunity";
+export * from "./adminLeaderboards";

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
+import { SkeletonBlock } from "@/components/ui/skeleton";
 import DiscussionCard from "@/components/DiscussionCard";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import {
@@ -282,8 +283,25 @@ export default function Community() {
         {/* Discussions */}
         <div className="space-y-5 sm:space-y-6">
           {loading ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground/60">Loading discussions…</p>
+            <div className="space-y-5 sm:space-y-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-lg border border-white/10 bg-card/20 p-4 sm:p-5"
+                >
+                  <div className="mb-4 flex gap-3">
+                    <SkeletonBlock className="size-9 shrink-0 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <SkeletonBlock className="h-4 w-28 rounded" />
+                      <SkeletonBlock className="h-3 w-20 rounded" />
+                    </div>
+                  </div>
+                  <SkeletonBlock className="mb-3 h-3 w-24 rounded" />
+                  <SkeletonBlock className="mb-2 h-5 w-full max-w-md rounded" />
+                  <SkeletonBlock className="mb-2 h-4 w-full rounded" />
+                  <SkeletonBlock className="h-4 max-w-sm w-full rounded" />
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="py-12 text-center">
@@ -310,6 +328,7 @@ export default function Community() {
                   replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
                   views={d.views ?? 0}
                   isPinned={d.isPinned}
+                  wasEdited={Boolean(d.wasEdited || d.editedAt)}
                 />
               ))}
               {hasNextPage && (

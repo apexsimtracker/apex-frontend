@@ -6,7 +6,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import Header from "./components/Header";
 import ScrollToTop from "./components/ScrollToTop";
-import Index from "./pages/Index";
+import HomeRoute from "./pages/HomeRoute";
 import Community from "./pages/Community";
 import Challenges from "./pages/Challenges";
 import ChallengeDetail from "./pages/ChallengeDetail";
@@ -42,6 +42,11 @@ import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
 import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
 import AdminProWaitlist from "./pages/admin/AdminProWaitlist";
+import AdminContact from "./pages/admin/AdminContact";
+import AdminContactDetail from "./pages/admin/AdminContactDetail";
+import AdminCommunity from "./pages/admin/AdminCommunity";
+import AdminCommunityDiscussionDetail from "./pages/admin/AdminCommunityDiscussionDetail";
+import AdminLeaderboards from "./pages/admin/AdminLeaderboards";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -100,14 +105,7 @@ export default function App() {
                 <GlobalErrorBoundary>
                   <Suspense fallback={<RouteFallback />}>
                   <Routes>
-                    <Route
-                      path="/"
-                      element={
-                        <ProtectedRoute message="Sign in to view your activity feed.">
-                          <Index />
-                        </ProtectedRoute>
-                      }
-                    />
+                    <Route path="/" element={<HomeRoute />} />
                     <Route
                       path="/profile"
                       element={
@@ -231,21 +229,14 @@ export default function App() {
                         />
                         <Route path="challenges" element={<AdminChallenges />} />
                         <Route path="challenges/:challengeId" element={<AdminChallengeDetail />} />
+                        <Route path="contact" element={<AdminContact />} />
+                        <Route path="contact/:contactId" element={<AdminContactDetail />} />
+                        <Route path="community" element={<AdminCommunity />} />
                         <Route
-                          path="community"
-                          element={
-                            <AdminComingSoonPage
-                              title="Community & discussions"
-                              path="/admin/community"
-                            />
-                          }
+                          path="community/:discussionId"
+                          element={<AdminCommunityDiscussionDetail />}
                         />
-                        <Route
-                          path="leaderboards"
-                          element={
-                            <AdminComingSoonPage title="Leaderboards" path="/admin/leaderboards" />
-                          }
-                        />
+                        <Route path="leaderboards" element={<AdminLeaderboards />} />
                         <Route
                           path="notifications"
                           element={

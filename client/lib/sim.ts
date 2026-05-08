@@ -45,6 +45,18 @@ const SIM_CONFIGS: Record<string, SimConfig> = {
       hasLicenseClass: false,
     },
   },
+  LMU: {
+    displayName: "Le Mans Ultimate",
+    shortName: "LMU",
+    badgeClass: "bg-amber-500/10 text-amber-200 border-amber-500/20",
+    capabilities: {
+      hasRating: false,
+      hasIncidents: false,
+      hasSOF: false,
+      hasOfficialStatus: false,
+      hasLicenseClass: false,
+    },
+  },
   F1_24: {
     displayName: "F1 24",
     shortName: "F1",
