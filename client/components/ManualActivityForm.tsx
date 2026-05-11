@@ -389,6 +389,12 @@ export default function ManualActivityForm({
                         ? "Loading…"
                         : "Select track…"}
                   </option>
+                  {field.value.trim() &&
+                  !tracks.some((t) => t.id === field.value) && (
+                    <option value={field.value}>
+                      {field.value} (stored token — not in catalog)
+                    </option>
+                  )}
                   {tracks.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
@@ -430,6 +436,12 @@ export default function ManualActivityForm({
                         ? "Loading…"
                         : "Select car…"}
                   </option>
+                  {field.value.trim() &&
+                  !cars.some((c) => c.id === field.value) && (
+                    <option value={field.value}>
+                      {field.value} (stored token — not in catalog)
+                    </option>
+                  )}
                   {cars.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}

@@ -10,6 +10,8 @@ export const MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX = 999;
 /** Aligned with apex MANUAL_LAPS_MAX */
 export const MANUAL_LAPS_MAX_IRACING = 250;
 export const MANUAL_LAPS_MAX_F1_25 = 100;
+/** Aligned with apex MANUAL_LAPS_MAX.lmu */
+export const MANUAL_LAPS_MAX_LMU = 100;
 
 const LAP_FORMAT_MSG =
   "Use exactly: m:ss.mmm (e.g. 1:32.456 or 0:59.900) or ss.mmm (e.g. 92.456). Seconds must be two digits with a colon; milliseconds must be three digits.";
@@ -17,6 +19,7 @@ const LAP_FORMAT_MSG =
 export function getManualLapMaxForSim(sim: string): number {
   const s = sim.trim().toUpperCase();
   if (s === "F1_25") return MANUAL_LAPS_MAX_F1_25;
+  if (s === "LMU") return MANUAL_LAPS_MAX_LMU;
   return MANUAL_LAPS_MAX_IRACING;
 }
 

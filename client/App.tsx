@@ -40,6 +40,7 @@ import AdminComingSoonPage from "./pages/admin/AdminComingSoonPage";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
+import AdminTracks from "./pages/admin/AdminTracks";
 import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
 import AdminProWaitlist from "./pages/admin/AdminProWaitlist";
 import AdminContact from "./pages/admin/AdminContact";
@@ -47,6 +48,8 @@ import AdminContactDetail from "./pages/admin/AdminContactDetail";
 import AdminCommunity from "./pages/admin/AdminCommunity";
 import AdminCommunityDiscussionDetail from "./pages/admin/AdminCommunityDiscussionDetail";
 import AdminLeaderboards from "./pages/admin/AdminLeaderboards";
+import AdminSessions from "./pages/admin/AdminSessions";
+import AdminSessionDetail from "./pages/admin/AdminSessionDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -219,14 +222,9 @@ export default function App() {
                         <Route index element={<AdminDashboard />} />
                         <Route path="users" element={<AdminUsers />} />
                         <Route path="users/:userId" element={<AdminUserDetail />} />
-                        <Route
-                          path="sessions"
-                          element={<AdminComingSoonPage title="Sessions & laps" path="/admin/sessions" />}
-                        />
-                        <Route
-                          path="tracks"
-                          element={<AdminComingSoonPage title="Tracks & catalogs" path="/admin/tracks" />}
-                        />
+                        <Route path="sessions" element={<AdminSessions />} />
+                        <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />
+                        <Route path="tracks" element={<AdminTracks />} />
                         <Route path="challenges" element={<AdminChallenges />} />
                         <Route path="challenges/:challengeId" element={<AdminChallengeDetail />} />
                         <Route path="contact" element={<AdminContact />} />

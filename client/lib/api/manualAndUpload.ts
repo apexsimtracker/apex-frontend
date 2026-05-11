@@ -134,7 +134,7 @@ export async function deleteManualActivity(sessionId: string): Promise<void> {
   return fetchApi<void>("DELETE", `/api/sessions/manual-activity/${sessionId}`);
 }
 
-export type CatalogTrack = { id: string; name: string };
+export type CatalogTrack = { id: string; name: string; lengthKm?: number | null };
 export type CatalogCar = { id: string; name: string };
 export type CatalogsResponse = {
   tracks: CatalogTrack[];

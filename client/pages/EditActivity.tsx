@@ -3,44 +3,17 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 import { apiGet, updateActivity, ApiError } from "@/lib/api";
-import ManualActivityForm, {
-  type ManualActivityInitialData,
-} from "@/components/ManualActivityForm";
-import { telemetrySessionTypeToFormKind } from "@/lib/sessionEditMapping";
+import ManualActivityForm from "@/components/ManualActivityForm";
+import {
+  manualActivityInitialFromPublicDetail,
+  type PublicSessionDetailForEdit,
+} from "@/lib/sessionEditInitialData";
 import { useAuth } from "@/contexts/AuthContext";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
-type SessionDetailForEdit = {
-  id: string;
-  sim?: string | null;
-  simKey?: string | null;
-  track?: string | null;
-  trackId?: string | null;
-  catalogTrackId?: string | null;
-  car?: string | null;
-  carId?: string | null;
-  catalogCarId?: string | null;
-  trackName?: string | null;
-  carName?: string | null;
-  vehicleDisplay?: string | null;
-  position?: number | null;
-  totalDrivers?: number | null;
-  qualifyingPosition?: number | null;
-  manualSessionKind?: string | null;
-  bestLapMs?: number | null;
-  sessionType?: string | null;
-  notes?: string | null;
-  laps?: Array<{ lap?: number; timeMs?: number; lapTimeMs?: number }>;
-  lapCount?: number | null;
-};
-
-function simKeyToFormSim(k: string | undefined | null): string {
-  const u = (k ?? "").toLowerCase();
-  if (u === "f1_25") return "F1_25";
-  return "IRACING";
-}
+type SessionDetailForEdit = PublicSessionDetailForEdit & { id: string };
 
 export default function EditActivity() {
   const { id: sessionId } = useParams<{ id: string }>();
@@ -57,49 +30,9 @@ export default function EditActivity() {
     isError: loadFailed,
   } = useQuery({
     queryKey: ["sessions", "edit", sid],
-    queryFn: async (): Promise<ManualActivityInitialData> => {
+    queryFn: async () => {
       const data = await apiGet<SessionDetailForEdit>(`/api/sessions/${sid}`);
-      const st = String(data.sessionType ?? "").toUpperCase();
-
-      const lapsRaw = Array.isArray(data.laps) ? data.laps : [];
-      const lapsMs = [...lapsRaw]
-        .filter((l) => l && typeof (l.timeMs ?? l.lapTimeMs) === "number")
-        .sort((a, b) => (a.lap ?? 0) - (b.lap ?? 0))
-        .map((l) => Number(l.timeMs ?? l.lapTimeMs));
-
-      const lapCountFromApi =
-        typeof data.lapCount === "number" && Number.isFinite(data.lapCount)
-          ? data.lapCount
-          : 0;
-      const telemetryMinLapRows =
-        Math.max(lapsMs.length, lapCountFromApi) > 0
-          ? Math.max(lapsMs.length, lapCountFromApi)
-          : undefined;
-
-      let manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
-      if (st === "MANUAL_ACTIVITY") {
-        const k = String(data.manualSessionKind ?? "RACE").toUpperCase();
-        manualSessionKind =
-          k === "PRACTICE" || k === "QUALIFY" || k === "RACE" ? k : "RACE";
-      } else {
-        manualSessionKind = telemetrySessionTypeToFormKind(data.sessionType);
-      }
-
-      return {
-        sim: simKeyToFormSim(data.simKey),
-        catalogTrackId: data.catalogTrackId ?? data.track ?? "",
-        catalogCarId: data.catalogCarId ?? "",
-        trackNameHint: data.trackName ?? null,
-        carNameHint: data.carName ?? data.vehicleDisplay ?? null,
-        manualSessionKind,
-        position: data.position,
-        totalDrivers: data.totalDrivers,
-        qualifyingPosition: data.qualifyingPosition,
-        lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
-        bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
-        notes: data.notes,
-        telemetryMinLapRows,
-      };
+      return manualActivityInitialFromPublicDetail(data);
     },
     enabled: Boolean(sid),
   });

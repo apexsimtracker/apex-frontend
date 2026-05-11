@@ -90,7 +90,12 @@ export function useManualActivityFormSync(options: {
     );
     if (resolved) {
       form.setValue("trackId", resolved, { shouldValidate: true });
-    } else if (current) {
+      return;
+    }
+    const stored = trackToken?.trim() ?? "";
+    // Stored token not in catalog (e.g. .ibt ingest): keep it so edits don't wipe the session.
+    if (stored && current === stored) return;
+    if (current) {
       form.setValue("trackId", "", { shouldValidate: true });
     }
   }, [
@@ -113,7 +118,11 @@ export function useManualActivityFormSync(options: {
     );
     if (resolved) {
       form.setValue("carId", resolved, { shouldValidate: true });
-    } else if (current) {
+      return;
+    }
+    const stored = carToken?.trim() ?? "";
+    if (stored && current === stored) return;
+    if (current) {
       form.setValue("carId", "", { shouldValidate: true });
     }
   }, [

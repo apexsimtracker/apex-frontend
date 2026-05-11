@@ -254,7 +254,11 @@ export default function AdminChallengeDetail() {
     setDescription(data.description);
     setTrackId(data.track);
     setCarId(data.carClass);
-    setSim((data.sim === "IRACING" || data.sim === "F1_25" ? data.sim : "") as ManualActivitySim | "");
+    setSim(
+      (data.sim === "IRACING" || data.sim === "F1_25" || data.sim === "LMU"
+        ? data.sim
+        : "") as ManualActivitySim | ""
+    );
     setStartsAt(localFromIso(data.startsAt));
     setEndsAt(localFromIso(data.endsAt));
     hydratedForChallengeIdRef.current = data.id;

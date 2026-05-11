@@ -22,3 +22,5 @@ export * from "./adminWaitlist";
 export * from "./adminContact";
 export * from "./adminCommunity";
 export * from "./adminLeaderboards";
+export * from "./adminCatalog";
+export * from "./adminSessions";
