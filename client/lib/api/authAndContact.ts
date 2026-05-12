@@ -1,3 +1,4 @@
+import { getOrCreateDeviceId } from "@/auth/deviceId";
 import { fetchApi, notifyAuthExpired } from "./fetchClient";
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
@@ -110,6 +111,8 @@ export type VerifyEmailResponse = {
   success?: boolean;
   accessToken?: string;
   token?: string;
+  /** Server AuthSession id — pair with JWT for admin session list / revoke */
+  sessionToken?: string;
   user?: AuthUser;
 };
 
@@ -189,10 +192,17 @@ export async function resetPasswordWithCode(
 
 /** POST /api/auth/verify-email — submit verification code. Body: { email, code }. Returns token if backend auto-completes auth. */
 export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResponse> {
-  return fetchApi<VerifyEmailResponse>("POST", "/api/auth/verify-email", {
-    email: email.trim(),
-    code: String(code).trim(),
-  }, true);
+  const clientDeviceId = getOrCreateDeviceId();
+  return fetchApi<VerifyEmailResponse>(
+    "POST",
+    "/api/auth/verify-email",
+    {
+      email: email.trim(),
+      code: String(code).trim(),
+      ...(clientDeviceId ? { clientDeviceId } : {}),
+    },
+    true
+  );
 }
 
 /** POST /api/auth/resend-verification-code — request new code. Body: { email }. */
@@ -230,13 +240,27 @@ export async function submitContact(body: ContactPayload): Promise<ContactRespon
   );
 }
 
-export type LoginResponse = AuthUser & { accessToken?: string };
+export type LoginResponse = {
+  token: string;
+  sessionToken?: string;
+  accessToken?: string;
+};
 
 export async function authLogin(
   email: string,
   password: string
 ): Promise<LoginResponse> {
-  return fetchApi<LoginResponse>("POST", "/api/auth/login", { email, password }, true);
+  const clientDeviceId = getOrCreateDeviceId();
+  return fetchApi<LoginResponse>(
+    "POST",
+    "/api/auth/login",
+    {
+      email,
+      password,
+      ...(clientDeviceId ? { clientDeviceId } : {}),
+    },
+    true
+  );
 }
 
 export async function authLogout(): Promise<void> {

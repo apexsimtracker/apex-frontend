@@ -28,11 +28,11 @@ import {
   type ForgotResetFormValues,
 } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 
 type Step = "email" | "code" | "reset" | "done";
-
-const inputClass = "w-full px-3 py-2 border rounded-md bg-transparent";
 
 function EmailStepForm({
   form,
@@ -53,9 +53,9 @@ function EmailStepForm({
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values.email.trim());
         })}
-        className="w-full max-w-sm space-y-4"
+        className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold text-foreground">Forgot password</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Forgot password</h1>
         <p className="text-sm text-muted-foreground">
           Enter your email and we&apos;ll send you a verification code to reset your password.
         </p>
@@ -71,7 +71,6 @@ function EmailStepForm({
                   type="email"
                   autoComplete="email"
                   disabled={loading}
-                  className={inputClass}
                   {...field}
                 />
               </FormControl>
@@ -87,14 +86,9 @@ function EmailStepForm({
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "rgb(240, 28, 28)" }}
-        >
+        <AuthPrimaryButton type="submit" disabled={loading}>
           {loading ? "Sending code…" : "Send code"}
-        </button>
+        </AuthPrimaryButton>
 
         <p className="pt-2 text-center text-sm text-muted-foreground">
           <button
@@ -133,9 +127,9 @@ function CodeStepForm({
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values.code.trim());
         })}
-        className="w-full max-w-sm space-y-4"
+        className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email</h1>
         <p className="text-sm text-muted-foreground">We sent a 6‑digit verification code to:</p>
         <p className="break-all text-sm font-medium text-foreground">{emailDisplay}</p>
 
@@ -153,7 +147,6 @@ function CodeStepForm({
                   autoComplete="one-time-code"
                   disabled={loading}
                   placeholder="Enter 6‑digit code"
-                  className={inputClass}
                   {...field}
                 />
               </FormControl>
@@ -169,14 +162,9 @@ function CodeStepForm({
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "rgb(240, 28, 28)" }}
-        >
+        <AuthPrimaryButton type="submit" disabled={loading}>
           {loading ? "Verifying…" : "Verify code"}
-        </button>
+        </AuthPrimaryButton>
 
         <div className="flex items-center justify-between pt-2 text-sm">
           <button
@@ -216,9 +204,9 @@ function ResetStepForm({
         onSubmit={form.handleSubmit(async (values) => {
           await onSubmit(values.password);
         })}
-        className="w-full max-w-sm space-y-4"
+        className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold text-foreground">Reset password</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Reset password</h1>
         <p className="text-sm text-muted-foreground">Choose a new password for your Apex account.</p>
 
         <FormField
@@ -232,7 +220,6 @@ function ResetStepForm({
                   type="password"
                   autoComplete="new-password"
                   disabled={loading}
-                  className={inputClass}
                   {...field}
                 />
               </FormControl>
@@ -252,7 +239,6 @@ function ResetStepForm({
                   type="password"
                   autoComplete="new-password"
                   disabled={loading}
-                  className={inputClass}
                   {...field}
                 />
               </FormControl>
@@ -268,14 +254,9 @@ function ResetStepForm({
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "rgb(240, 28, 28)" }}
-        >
+        <AuthPrimaryButton type="submit" disabled={loading}>
           {loading ? "Saving…" : "Reset password"}
-        </button>
+        </AuthPrimaryButton>
       </form>
     </Form>
   );
@@ -473,25 +454,20 @@ export default function ForgotPassword() {
     );
   } else {
     content = (
-      <div className="w-full max-w-sm space-y-4 text-center">
-        <h1 className="text-xl font-semibold text-foreground">Password reset</h1>
+      <div className="w-full space-y-4 text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Password reset</h1>
         <p className="text-sm text-muted-foreground">
           Your password has been updated. You can now sign in with your new password.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate("/login")}
-          className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "rgb(240, 28, 28)" }}
-        >
+        <AuthPrimaryButton type="button" onClick={() => navigate("/login")}>
           Back to sign in
-        </button>
+        </AuthPrimaryButton>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <AuthPageShell>
       <PageMeta
         title={`Reset password | ${COMPANY_NAME}`}
         description={`Reset your ${COMPANY_NAME} account password.`}
@@ -499,6 +475,6 @@ export default function ForgotPassword() {
         noindex
       />
       {content}
-    </div>
+    </AuthPageShell>
   );
 }

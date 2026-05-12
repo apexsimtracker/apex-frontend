@@ -16,6 +16,11 @@ import {
   APEX_TOKEN_ADMIN_KEY,
   LEGACY_SESSION_ADMIN_BACKUP_KEY,
 } from "@/lib/impersonation";
+import {
+  APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
+  APEX_SESSION_TOKEN_KEY,
+  persistSessionTokenFromAuthPayload,
+} from "@/auth/token";
 import { ApiError } from "@/lib/api/errors";
 import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
@@ -42,6 +47,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import SimBadge from "@/components/SimBadge";
 import { cn, formatCarName, formatTrackName } from "@/lib/utils";
+import { AdminUserWebSessionsSection } from "./AdminUserWebSessionsSection";
 
 function RoleBadge({ role }: { role: "USER" | "ADMIN" }) {
   const isAdmin = role === "ADMIN";
@@ -375,6 +381,16 @@ export default function AdminUserDetail() {
         /* ignore */
       }
       localStorage.setItem("apex_token", res.token);
+      const curSession =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem(APEX_SESSION_TOKEN_KEY)
+          : null;
+      if (curSession?.trim()) {
+        localStorage.setItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY, curSession.trim());
+      } else {
+        localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
+      }
+      persistSessionTokenFromAuthPayload({});
       window.location.assign("/");
     } catch (e) {
       setModError(e instanceof ApiError ? e.message : "Could not start impersonation");
@@ -1025,6 +1041,8 @@ export default function AdminUserDetail() {
                 )}
             </div>
           </div>
+
+          <AdminUserWebSessionsSection variant="page" userId={id} />
 
           {detail.devices.length > 0 && (
             <div className="mb-8 rounded-xl border border-white/10 p-4">

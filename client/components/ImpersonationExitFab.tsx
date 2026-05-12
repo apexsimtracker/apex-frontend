@@ -2,12 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
+  APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
+  APEX_SESSION_TOKEN_KEY,
+} from "@/auth/token";
+import {
   APEX_TOKEN_ADMIN_KEY,
   isImpersonating,
 } from "@/lib/impersonation";
 
 /**
- * Fixed control to leave impersonation. Restores the admin JWT from localStorage;
+ * Fixed control to leave impersonation. Restores the admin JWT (and browser session token)
+ * from localStorage;
  * the impersonation JWT is simply abandoned (short TTL). Server-side revocation
  * would need a denylist — out of scope.
  *
@@ -38,6 +43,13 @@ export default function ImpersonationExitFab() {
     }
     localStorage.setItem("apex_token", admin);
     localStorage.removeItem(APEX_TOKEN_ADMIN_KEY);
+    const adminSession = localStorage.getItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
+    if (adminSession?.trim()) {
+      localStorage.setItem(APEX_SESSION_TOKEN_KEY, adminSession.trim());
+    } else {
+      localStorage.removeItem(APEX_SESSION_TOKEN_KEY);
+    }
+    localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
     window.dispatchEvent(
       new CustomEvent("apex:auth", { detail: { exitImpersonation: true } })
     );

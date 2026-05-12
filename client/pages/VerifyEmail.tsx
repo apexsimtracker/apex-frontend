@@ -21,7 +21,12 @@ import {
   type VerifyEmailCodeValues,
 } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
+import { authPrimarySolidButtonClassName } from "@/lib/authUi";
+import { cn } from "@/lib/utils";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { persistSessionTokenFromAuthPayload } from "@/auth/token";
 
 const PENDING_VERIFY_KEY = "apex_verify_email";
 const RESEND_COOLDOWN_SEC = 60;
@@ -75,11 +80,13 @@ export default function VerifyEmail() {
       const token = data.accessToken ?? data.token;
       if (token && typeof token === "string") {
         localStorage.setItem("apex_token", token);
+        persistSessionTokenFromAuthPayload(data);
         sessionStorage.removeItem(PENDING_VERIFY_KEY);
         try {
           await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
         } catch (meErr) {
           localStorage.removeItem("apex_token");
+          persistSessionTokenFromAuthPayload({});
           sessionStorage.setItem(PENDING_VERIFY_KEY, email);
           window.dispatchEvent(new Event("apex:auth"));
           form.setError("root", {
@@ -143,25 +150,27 @@ export default function VerifyEmail() {
     (sessionStorage.getItem(PENDING_VERIFY_KEY) ?? "").trim().length > 0;
   if (!email.trim() && !hasStoredEmail) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <AuthPageShell>
         <PageMeta
           title={`Verify email | ${COMPANY_NAME}`}
           description={`Verify your ${COMPANY_NAME} account email.`}
           path="/verify-email"
           noindex
         />
-        <div className="w-full max-w-sm space-y-4 text-center">
-          <h1 className="text-xl font-semibold text-foreground">Verification</h1>
+        <div className="w-full space-y-4 text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Verification</h1>
           <p className="text-sm text-muted-foreground">Missing email. Please sign up again.</p>
           <Link
             to="/signup"
-            className="inline-block rounded-md px-4 py-2 font-medium text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
+            className={cn(
+              "inline-block w-full rounded-md px-4 py-2 text-center font-medium transition-opacity hover:opacity-90",
+              authPrimarySolidButtonClassName
+            )}
           >
             Go to Sign up
           </Link>
         </div>
-      </div>
+      </AuthPageShell>
     );
   }
 
@@ -171,7 +180,7 @@ export default function VerifyEmail() {
   const canResend = hasEmail && resendCooldown === 0 && !resendLoading;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <AuthPageShell>
       <PageMeta
         title={`Verify email | ${COMPANY_NAME}`}
         description={`Verify your ${COMPANY_NAME} account email.`}
@@ -179,8 +188,8 @@ export default function VerifyEmail() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
-          <h1 className="text-xl font-semibold text-foreground">Verify your email</h1>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Verify your email</h1>
           <p className="text-sm text-muted-foreground">
             We sent a verification code to your email.
           </p>
@@ -200,7 +209,6 @@ export default function VerifyEmail() {
                     autoComplete="one-time-code"
                     disabled={loading}
                     placeholder="Enter code"
-                    className="w-full rounded-md border border-white/10 bg-transparent px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/50"
                     {...field}
                   />
                 </FormControl>
@@ -216,14 +224,9 @@ export default function VerifyEmail() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
+          <AuthPrimaryButton type="submit" disabled={!canSubmit}>
             {loading ? "Verifying…" : "Verify"}
-          </button>
+          </AuthPrimaryButton>
 
           <div className="flex flex-col items-center gap-3 pt-2">
             <button
@@ -247,6 +250,6 @@ export default function VerifyEmail() {
           </div>
         </form>
       </Form>
-    </div>
+    </AuthPageShell>
   );
 }

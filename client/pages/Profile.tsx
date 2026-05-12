@@ -9,6 +9,7 @@ import { clearToken } from "@/auth/token";
 import {
   resolveApiUrl,
   authMe,
+  authLogout,
   getProfileSummary,
   getProfileRaceHistory,
   getUserPublicProfile,
@@ -247,7 +248,12 @@ export default function Profile() {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   }, [avatarPreview]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await authLogout();
+    } catch {
+      // Server revoke is best-effort; always clear local credentials.
+    }
     clearToken();
     window.location.href = "/login";
   };

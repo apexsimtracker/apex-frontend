@@ -18,8 +18,11 @@ import {
 import type { WithRootError } from "@/lib/formWithRootError";
 import { loginFormSchema, type LoginFormValues } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
+import { persistSessionTokenFromAuthPayload } from "@/auth/token";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -52,10 +55,7 @@ export default function Login() {
     setLoading(true);
     const trimmedEmail = values.email.trim();
     try {
-      const data = (await authLogin(trimmedEmail, values.password)) as {
-        accessToken?: string;
-        token?: string;
-      };
+      const data = await authLogin(trimmedEmail, values.password);
       const token = data.accessToken ?? data.token;
       if (!token || typeof token !== "string") {
         form.setError("root", {
@@ -65,10 +65,12 @@ export default function Login() {
         return;
       }
       localStorage.setItem("apex_token", token);
+      persistSessionTokenFromAuthPayload(data);
       try {
         await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
       } catch (meErr) {
         localStorage.removeItem("apex_token");
+        persistSessionTokenFromAuthPayload({});
         window.dispatchEvent(new Event("apex:auth"));
         form.setError("root", {
           type: "server",
@@ -105,7 +107,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <AuthPageShell>
       <PageMeta
         title={`Sign in | ${COMPANY_NAME}`}
         description={`Sign in to ${COMPANY_NAME} — your sim racing hub.`}
@@ -113,8 +115,8 @@ export default function Login() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
-          <h1 className="text-xl font-semibold">Sign in</h1>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
           {emailVerifiedMessage && (
             <p className="text-sm text-green-500" role="status">
               Email verified. You can sign in now.
@@ -214,14 +216,9 @@ export default function Login() {
             </button>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
+          <AuthPrimaryButton type="submit" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
-          </button>
+          </AuthPrimaryButton>
 
           <p className="pt-2 text-center">
             <Link
@@ -234,6 +231,6 @@ export default function Login() {
           </p>
         </form>
       </Form>
-    </div>
+    </AuthPageShell>
   );
 }

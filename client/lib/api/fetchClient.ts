@@ -1,4 +1,6 @@
 import { API_BASE } from "./config";
+import { getOrCreateDeviceId } from "@/auth/deviceId";
+import { APEX_SESSION_TOKEN_KEY } from "@/auth/token";
 import { ApiError, ProRequiredError } from "./errors";
 
 // Auth expiry handler registration (e.g. AuthProvider: re-fetch /api/auth/me or clear user).
@@ -72,11 +74,17 @@ export async function fetchApi<T>(
   skipAuthExpiredCheck = false
 ): Promise<T> {
   const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+  const serverSession =
+    typeof localStorage !== "undefined" ? localStorage.getItem(APEX_SESSION_TOKEN_KEY) : null;
+  const deviceId =
+    typeof localStorage !== "undefined" ? getOrCreateDeviceId() : "";
   const hasJsonBody = body !== undefined;
   const headers: Record<string, string> = {
     // Only when we send a body: Fastify rejects Content-Type: application/json with an empty body.
     ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(serverSession?.trim() ? { "X-Apex-Session": serverSession.trim() } : {}),
+    ...(deviceId ? { "X-Apex-Device-Id": deviceId } : {}),
   };
 
   const url =

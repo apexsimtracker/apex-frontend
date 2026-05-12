@@ -24,3 +24,4 @@ export * from "./adminCommunity";
 export * from "./adminLeaderboards";
 export * from "./adminCatalog";
 export * from "./adminSessions";
+export * from "./adminDevices";

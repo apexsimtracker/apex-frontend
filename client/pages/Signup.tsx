@@ -18,10 +18,11 @@ import {
 import type { WithRootError } from "@/lib/formWithRootError";
 import { signupFormSchema, type SignupFormValues } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
+import { AuthPageShell } from "@/components/auth/AuthPageShell";
+import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
-
-const inputClass = "w-full px-3 py-2 border rounded-md bg-transparent";
+import { persistSessionTokenFromAuthPayload } from "@/auth/token";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -46,10 +47,12 @@ export default function Signup() {
 
       if (hasToken && !data.requiresVerification) {
         localStorage.setItem("apex_token", token as string);
+        persistSessionTokenFromAuthPayload(data as { sessionToken?: string });
         try {
           await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
         } catch (meErr) {
           localStorage.removeItem("apex_token");
+          persistSessionTokenFromAuthPayload({});
           window.dispatchEvent(new Event("apex:auth"));
           form.setError("root", {
             type: "server",
@@ -78,7 +81,7 @@ export default function Signup() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <AuthPageShell>
       <PageMeta
         title={`Create account | ${COMPANY_NAME}`}
         description={`Join ${COMPANY_NAME} — sim racing sessions, leaderboards, and community.`}
@@ -86,8 +89,8 @@ export default function Signup() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full max-w-sm space-y-4">
-          <h1 className="text-xl font-semibold">Create account</h1>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Create account</h1>
           {authRedirect.message && (
             <p className="text-sm text-muted-foreground" role="status">
               {authRedirect.message}
@@ -105,7 +108,6 @@ export default function Signup() {
                     type="text"
                     autoComplete="name"
                     disabled={loading}
-                    className={inputClass}
                     {...field}
                   />
                 </FormControl>
@@ -125,7 +127,6 @@ export default function Signup() {
                     type="email"
                     autoComplete="email"
                     disabled={loading}
-                    className={inputClass}
                     {...field}
                   />
                 </FormControl>
@@ -145,7 +146,6 @@ export default function Signup() {
                     type="password"
                     autoComplete="new-password"
                     disabled={loading}
-                    className={inputClass}
                     {...field}
                   />
                 </FormControl>
@@ -156,14 +156,9 @@ export default function Signup() {
 
           <FormRootMessage />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md px-3 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
+          <AuthPrimaryButton type="submit" disabled={loading}>
             {loading ? "Creating account…" : "Sign up"}
-          </button>
+          </AuthPrimaryButton>
 
           <p className="pt-2 text-center text-sm text-muted-foreground">
             By signing up, you agree to our{" "}
@@ -194,6 +189,6 @@ export default function Signup() {
           </p>
         </form>
       </Form>
-    </div>
+    </AuthPageShell>
   );
 }

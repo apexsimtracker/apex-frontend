@@ -5,7 +5,7 @@ export const SETTINGS_PATH = "/settings";
 export const settingsTitle = `Settings | ${COMPANY_NAME}`;
 export const settingsDescription = `Account, password, preferences, and privacy settings for your ${COMPANY_NAME} profile at ${SITE_ORIGIN.replace(/^https:\/\//, "")}.`;
 
-export const PRIMARY_RED = "rgb(240, 28, 28)";
+export { PRIMARY_RED } from "@/lib/authUi";
 export const DELETE_CONFIRM_PHRASE = "DELETE";
 
 export const SESSION_VISIBILITY_OPTIONS: {

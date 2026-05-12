@@ -50,6 +50,7 @@ import AdminCommunityDiscussionDetail from "./pages/admin/AdminCommunityDiscussi
 import AdminLeaderboards from "./pages/admin/AdminLeaderboards";
 import AdminSessions from "./pages/admin/AdminSessions";
 import AdminSessionDetail from "./pages/admin/AdminSessionDetail";
+import AdminDevices from "./pages/admin/AdminDevices";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -250,12 +251,7 @@ export default function App() {
                           element={<AdminComingSoonPage title="Billing & Pro" path="/admin/billing" />}
                         />
                         <Route path="waitlist" element={<AdminProWaitlist />} />
-                        <Route
-                          path="devices"
-                          element={
-                            <AdminComingSoonPage title="Devices & agent" path="/admin/devices" />
-                          }
-                        />
+                        <Route path="devices" element={<AdminDevices />} />
                         <Route
                           path="email-auth"
                           element={

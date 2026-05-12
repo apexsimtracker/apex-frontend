@@ -6,6 +6,7 @@ import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
 import {
   authMe,
+  authLogout,
   updateMe,
   API_BASE,
   changePassword,
@@ -65,6 +66,7 @@ import {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/settingsForms";
+import { authPrimarySolidButtonClassName } from "@/lib/authUi";
 import { cn } from "@/lib/utils";
 import { RefreshCw, LogOut, Trash2, Loader2, Download } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
@@ -299,7 +301,12 @@ export default function Settings() {
     [queryClient, setUser, settings.sessionVisibility, user]
   );
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    try {
+      await authLogout();
+    } catch {
+      // Server revoke is best-effort; always clear local credentials.
+    }
     clearToken();
     navigate("/login", { replace: true });
   }, [navigate]);
@@ -662,7 +669,7 @@ export default function Settings() {
 
             <SettingsCard
               id="change-password"
-              title="Security"
+              title="Password & security"
               description="Enter your current password and a new password (8–200 characters)."
             >
               <Form {...changePasswordForm}>
@@ -745,10 +752,13 @@ export default function Settings() {
                   )}
                   <Button
                     type="submit"
-                    variant="destructive"
+                    variant="default"
                     disabled={updatePasswordDisabled}
                     aria-busy={changePwSubmitting}
-                    className={updatePasswordDisabled ? "cursor-not-allowed opacity-60" : undefined}
+                    className={cn(
+                      authPrimarySolidButtonClassName,
+                      updatePasswordDisabled && "cursor-not-allowed opacity-60"
+                    )}
                   >
                     {changePwSubmitting ? (
                       <>
