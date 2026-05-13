@@ -199,6 +199,18 @@ export async function patchAdminUserProfile(
   );
 }
 
+export async function postAdminUserSetPassword(
+  userId: string,
+  body: { password: string }
+): Promise<{ ok: boolean }> {
+  return fetchApi(
+    "POST",
+    `/api/admin/users/${encodeURIComponent(userId)}/password`,
+    body,
+    false
+  );
+}
+
 export async function deleteAdminUser(
   userId: string,
   body: { confirmationEmail: string }

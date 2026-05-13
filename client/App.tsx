@@ -31,12 +31,12 @@ import FAQPage from "./pages/FAQ";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ProRequiredBanner from "./components/ProRequiredBanner";
+import BroadcastBanner from "./components/BroadcastBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminComingSoonPage from "./pages/admin/AdminComingSoonPage";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
@@ -51,6 +51,12 @@ import AdminLeaderboards from "./pages/admin/AdminLeaderboards";
 import AdminSessions from "./pages/admin/AdminSessions";
 import AdminSessionDetail from "./pages/admin/AdminSessionDetail";
 import AdminDevices from "./pages/admin/AdminDevices";
+import AdminEmailAuth from "./pages/admin/AdminEmailAuth";
+import AdminFollows from "./pages/admin/AdminFollows";
+import AdminFollowUserDetail from "./pages/admin/AdminFollowUserDetail";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminBroadcastDetail from "./pages/admin/AdminBroadcastDetail";
+import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -105,6 +111,7 @@ export default function App() {
             <div className="flex min-h-screen flex-col bg-background">
               <Header />
               <ProRequiredBanner />
+              <BroadcastBanner />
               <main className="flex min-h-0 flex-1 flex-col">
                 <GlobalErrorBoundary>
                   <Suspense fallback={<RouteFallback />}>
@@ -236,32 +243,23 @@ export default function App() {
                           element={<AdminCommunityDiscussionDetail />}
                         />
                         <Route path="leaderboards" element={<AdminLeaderboards />} />
+                        <Route path="notifications" element={<AdminNotifications />} />
                         <Route
-                          path="notifications"
-                          element={
-                            <AdminComingSoonPage title="Notifications" path="/admin/notifications" />
-                          }
+                          path="notifications/broadcasts/:broadcastId"
+                          element={<AdminBroadcastDetail />}
                         />
                         <Route
-                          path="follows"
-                          element={<AdminComingSoonPage title="Follow graph" path="/admin/follows" />}
+                          path="notifications/campaigns/:campaignId"
+                          element={<AdminCampaignDetail />}
                         />
+                        <Route path="follows" element={<AdminFollows />} />
                         <Route
-                          path="billing"
-                          element={<AdminComingSoonPage title="Billing & Pro" path="/admin/billing" />}
+                          path="follows/users/:userId"
+                          element={<AdminFollowUserDetail />}
                         />
                         <Route path="waitlist" element={<AdminProWaitlist />} />
                         <Route path="devices" element={<AdminDevices />} />
-                        <Route
-                          path="email-auth"
-                          element={
-                            <AdminComingSoonPage title="Email & auth ops" path="/admin/email-auth" />
-                          }
-                        />
-                        <Route
-                          path="system"
-                          element={<AdminComingSoonPage title="System" path="/admin/system" />}
-                        />
+                        <Route path="email-auth" element={<AdminEmailAuth />} />
                       </Route>
                     </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

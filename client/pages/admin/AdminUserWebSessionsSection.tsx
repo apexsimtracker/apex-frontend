@@ -311,8 +311,6 @@ export function AdminUserWebSessionsSection({
             <th className="w-10 p-2" />
             <th className="p-2">Status</th>
             <th className="p-2">Last active</th>
-            <th className="p-2">Expires</th>
-            <th className="p-2">Created</th>
             <th className="p-2 text-right">Risk</th>
             <th className="min-w-[8rem] p-2">Location</th>
             <th className="min-w-[6rem] p-2">Flags</th>
@@ -347,8 +345,6 @@ export function AdminUserWebSessionsSection({
                 )}
               </td>
               <td className="p-2 tabular-nums text-muted-foreground">{formatTs(s.lastSeenAt)}</td>
-              <td className="p-2 tabular-nums text-muted-foreground">{formatTs(s.expiresAt)}</td>
-              <td className="p-2 tabular-nums text-muted-foreground">{formatTs(s.createdAt)}</td>
               <td className="p-2 text-right tabular-nums">
                 <span
                   className={
@@ -466,14 +462,6 @@ export function AdminUserWebSessionsSection({
               <dd className="mt-0.5 tabular-nums text-muted-foreground">{formatTs(s.lastSeenAt)}</dd>
             </div>
             <div>
-              <dt className="text-white/45">Expires</dt>
-              <dd className="mt-0.5 tabular-nums text-muted-foreground">{formatTs(s.expiresAt)}</dd>
-            </div>
-            <div>
-              <dt className="text-white/45">Created</dt>
-              <dd className="mt-0.5 tabular-nums text-muted-foreground">{formatTs(s.createdAt)}</dd>
-            </div>
-            <div>
               <dt className="text-white/45">Risk</dt>
               <dd
                 className={
@@ -571,7 +559,7 @@ export function AdminUserWebSessionsSection({
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" asChild>
-          <Link to="/admin/devices">Devices &amp; sign-ins admin</Link>
+          <Link to="/admin/email-auth?tab=email">Email &amp; auth ops</Link>
         </Button>
       </div>
     ) : null;

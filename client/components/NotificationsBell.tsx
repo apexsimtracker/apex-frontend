@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, Loader2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  CheckCircle2,
+  ExternalLink,
+  Info,
+  Loader2,
+  Megaphone,
+  Wrench,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -274,59 +285,151 @@ function NotificationList({
   }
   return (
     <ul className="space-y-3">
-      {notifications.map((n) => (
-        <li
-          key={n.id}
-          className={cn(
-            "flex gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3",
-            !n.read && "border-primary/20"
-          )}
-        >
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-foreground">
-              <span className="font-medium">{n.actor.displayName}</span>{" "}
-              {n.type === "FOLLOW" && "started following you."}
-              {n.type === "FOLLOW_REQUEST" && "requested to follow you."}
-              {n.type === "FOLLOW_REQUEST_ACCEPTED" && "approved your follow request."}
-              {n.type === "REPLY" && "replied."}
-              {n.type === "COMMENT" && "commented."}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {new Date(n.createdAt).toLocaleString()}
-            </p>
-            {n.type === "FOLLOW_REQUEST" && n.entityId ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="gap-1"
-                  disabled={actionId === n.entityId}
-                  onClick={() => onAcceptRequest(n.entityId!)}
-                >
-                  {actionId === n.entityId ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Check className="size-3.5" />
-                  )}
-                  Approve
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="gap-1"
-                  disabled={actionId === n.entityId}
-                  onClick={() => onDeclineRequest(n.entityId!)}
-                >
-                  <X className="size-3.5" />
-                  Decline
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </li>
-      ))}
+      {notifications.map((n) => {
+        if (n.type === "SYSTEM_ANNOUNCEMENT") {
+          return <SystemAnnouncementRow key={n.id} notification={n} />;
+        }
+        if (!n.actor) {
+          return null;
+        }
+        return (
+          <li
+            key={n.id}
+            className={cn(
+              "flex gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3",
+              !n.read && "border-primary/20"
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-foreground">
+                <span className="font-medium">{n.actor.displayName}</span>{" "}
+                {n.type === "FOLLOW" && "started following you."}
+                {n.type === "FOLLOW_REQUEST" && "requested to follow you."}
+                {n.type === "FOLLOW_REQUEST_ACCEPTED" && "approved your follow request."}
+                {n.type === "REPLY" && "replied."}
+                {n.type === "COMMENT" && "commented."}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {new Date(n.createdAt).toLocaleString()}
+              </p>
+              {n.type === "FOLLOW_REQUEST" && n.entityId ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1"
+                    disabled={actionId === n.entityId}
+                    onClick={() => onAcceptRequest(n.entityId!)}
+                  >
+                    {actionId === n.entityId ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Check className="size-3.5" />
+                    )}
+                    Approve
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    disabled={actionId === n.entityId}
+                    onClick={() => onDeclineRequest(n.entityId!)}
+                  >
+                    <X className="size-3.5" />
+                    Decline
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
     </ul>
+  );
+}
+
+function SystemAnnouncementRow({ notification }: { notification: NotificationItem }) {
+  const severity = notification.severity ?? "INFO";
+  const theme = {
+    INFO: { border: "border-sky-500/30", chip: "bg-sky-500/15 text-sky-300", iconBg: "bg-sky-500/20 text-sky-200" },
+    SUCCESS: {
+      border: "border-emerald-500/30",
+      chip: "bg-emerald-500/15 text-emerald-300",
+      iconBg: "bg-emerald-500/20 text-emerald-200",
+    },
+    WARNING: {
+      border: "border-amber-500/30",
+      chip: "bg-amber-500/15 text-amber-300",
+      iconBg: "bg-amber-500/20 text-amber-200",
+    },
+    CRITICAL: {
+      border: "border-red-500/30",
+      chip: "bg-red-500/15 text-red-300",
+      iconBg: "bg-red-500/25 text-red-200",
+    },
+    MAINTENANCE: {
+      border: "border-violet-500/30",
+      chip: "bg-violet-500/15 text-violet-300",
+      iconBg: "bg-violet-500/20 text-violet-200",
+    },
+  }[severity];
+  const Icon =
+    severity === "CRITICAL"
+      ? AlertTriangle
+      : severity === "WARNING"
+        ? AlertTriangle
+        : severity === "SUCCESS"
+          ? CheckCircle2
+          : severity === "MAINTENANCE"
+            ? Wrench
+            : severity === "INFO"
+              ? Info
+              : Megaphone;
+  return (
+    <li
+      className={cn(
+        "flex gap-3 rounded-lg border bg-white/[0.02] p-3",
+        theme.border,
+        !notification.read && "ring-1 ring-primary/20"
+      )}
+    >
+      <span
+        className={cn(
+          "mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full",
+          theme.iconBg
+        )}
+        aria-hidden
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {notification.title ? (
+            <span className="text-sm font-semibold text-foreground">{notification.title}</span>
+          ) : null}
+          <span className={cn("inline-flex rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide", theme.chip)}>
+            {severity}
+          </span>
+        </div>
+        {notification.body ? (
+          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">{notification.body}</p>
+        ) : null}
+        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{new Date(notification.createdAt).toLocaleString()}</span>
+          {notification.linkUrl ? (
+            <a
+              href={notification.linkUrl}
+              target={notification.linkUrl.startsWith("http") ? "_blank" : undefined}
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              Open <ExternalLink className="size-3" aria-hidden />
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </li>
   );
 }
 

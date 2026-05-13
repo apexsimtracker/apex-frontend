@@ -15,11 +15,9 @@ function useIsLargeScreen(): boolean {
 }
 import {
   Activity,
-  BarChart3,
   Bell,
   BookOpen,
   Car,
-  CreditCard,
   Inbox,
   LayoutDashboard,
   ListOrdered,
@@ -79,12 +77,10 @@ const navGroups: { title: string; items: NavItem[] }[] = [
       { key: "leaderboards", label: "Leaderboards", icon: ListOrdered, to: "/admin/leaderboards" },
       { key: "notifications", label: "Notifications", icon: Bell, to: "/admin/notifications" },
       { key: "follows", label: "Follow graph", icon: UserCog, to: "/admin/follows" },
-      { key: "billing", label: "Billing & Pro", icon: CreditCard, to: "/admin/billing" },
       { key: "waitlist", label: "Pro waitlist", icon: BookOpen, to: "/admin/waitlist" },
       { key: "contact", label: "Contact inbox", icon: Inbox, to: "/admin/contact" },
       { key: "devices", label: "Devices & agent", icon: Server, to: "/admin/devices" },
       { key: "email-auth", label: "Email & auth ops", icon: Mail, to: "/admin/email-auth" },
-      { key: "system", label: "System", icon: BarChart3, to: "/admin/system" },
     ],
   },
 ];

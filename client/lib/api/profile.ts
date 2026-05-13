@@ -223,17 +223,36 @@ export async function patchNotificationSettings(
 }
 
 /** GET /api/notifications */
+export type NotificationSeverity =
+  | "INFO"
+  | "SUCCESS"
+  | "WARNING"
+  | "CRITICAL"
+  | "MAINTENANCE";
+
 export type NotificationItem = {
   id: string;
-  type: "FOLLOW" | "FOLLOW_REQUEST" | "FOLLOW_REQUEST_ACCEPTED" | "REPLY" | "COMMENT";
+  type:
+    | "FOLLOW"
+    | "FOLLOW_REQUEST"
+    | "FOLLOW_REQUEST_ACCEPTED"
+    | "REPLY"
+    | "COMMENT"
+    | "SYSTEM_ANNOUNCEMENT";
   entityId: string | null;
   read: boolean;
   createdAt: string;
+  /** Populated only for SYSTEM_ANNOUNCEMENT */
+  title?: string | null;
+  body?: string | null;
+  linkUrl?: string | null;
+  severity?: NotificationSeverity | null;
+  /** Null for SYSTEM_ANNOUNCEMENT (no actor user). */
   actor: {
     id: string;
     displayName: string;
     avatarUrl: string | null;
-  };
+  } | null;
 };
 
 export async function getNotifications(): Promise<{ notifications: NotificationItem[] }> {

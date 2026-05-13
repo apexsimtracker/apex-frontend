@@ -6,11 +6,13 @@ import {
   fetchAdminUserDetail,
   fetchAdminUserDiscussionsCommented,
   fetchAdminUserDiscussionsStarted,
+  fetchAdminUserSocialGraph,
   patchAdminUserProfile,
   patchAdminUserRole,
   patchAdminUserStatus,
   postAdminUserImpersonate,
   postAdminUserReverify,
+  postAdminUserSetPassword,
 } from "@/lib/api";
 import {
   APEX_TOKEN_ADMIN_KEY,
@@ -215,6 +217,9 @@ export default function AdminUserDetail() {
 
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [modError, setModError] = useState<string | null>(null);
   const [suspendOpen, setSuspendOpen] = useState(false);
@@ -251,6 +256,12 @@ export default function AdminUserDetail() {
     enabled: Boolean(id),
   });
 
+  const socialGraphQuery = useQuery({
+    queryKey: ["admin", "follows", "user", id, "summary"],
+    queryFn: () => fetchAdminUserSocialGraph(id),
+    enabled: Boolean(id),
+  });
+
   useEffect(() => {
     hydratedForUserIdRef.current = null;
   }, [id]);
@@ -265,12 +276,20 @@ export default function AdminUserDetail() {
     if (editing && hydratedForUserIdRef.current === detail.user.id) return;
     setEditName(detail.user.name ?? "");
     setEditEmail(detail.user.email);
+    setEditPassword("");
+    setEditPasswordConfirm("");
+    setPasswordError(null);
     setProfileError(null);
     hydratedForUserIdRef.current = detail.user.id;
   }, [detail?.user, editing]);
 
   function setEditMode(on: boolean): void {
     setEditing(on);
+    if (!on) {
+      setEditPassword("");
+      setEditPasswordConfirm("");
+      setPasswordError(null);
+    }
     if (on) {
       hydratedForUserIdRef.current = null;
       setSearchParams({ edit: "1" }, { replace: true });
@@ -291,6 +310,40 @@ export default function AdminUserDetail() {
     },
     onError: (e) => {
       setProfileError(e instanceof ApiError ? e.message : "Could not save profile");
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async (vars: { userId: string; password: string }) => {
+      await postAdminUserSetPassword(vars.userId, { password: vars.password });
+    },
+    onSuccess: async () => {
+      setEditPassword("");
+      setEditPasswordConfirm("");
+      setPasswordError(null);
+      hydratedForUserIdRef.current = null;
+      await qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
+      await detailQuery.refetch();
+      toast.success("Password updated", {
+        description: "The user was sent an email with the new password.",
+      });
+    },
+    onError: (e: unknown) => {
+      if (e instanceof ApiError && e.status === 503 && e.code === "EMAIL_SEND_FAILED") {
+        setPasswordError(null);
+        toast.warning("Password updated; email not sent", {
+          description: e.message,
+          duration: 12_000,
+        });
+        setEditPassword("");
+        setEditPasswordConfirm("");
+        void qc.invalidateQueries({ queryKey: ["admin", "users"] });
+        void qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
+        void detailQuery.refetch();
+        return;
+      }
+      setPasswordError(e instanceof ApiError ? e.message : "Could not set password");
     },
   });
 
@@ -366,6 +419,25 @@ export default function AdminUserDetail() {
       body.email = editEmail.trim().toLowerCase();
     }
     profileMutation.mutate({ userId: id, body });
+  };
+
+  const handleSetPassword = () => {
+    setPasswordError(null);
+    if (!detail?.user || detail.user.id !== id) return;
+    if (isSelf(id)) return;
+    if (!editPassword.trim()) {
+      setPasswordError("Enter a new password.");
+      return;
+    }
+    if (editPassword !== editPasswordConfirm) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    if (editPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+    passwordMutation.mutate({ userId: id, password: editPassword });
   };
 
   const startImpersonation = async (targetId: string) => {
@@ -541,6 +613,45 @@ export default function AdminUserDetail() {
                   onChange={(e) => setEditEmail(e.target.value)}
                 />
               </label>
+              {!isSelf(u.id) ? (
+                <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                  <p className="text-xs font-medium text-foreground">Set password (emailed to user)</p>
+                  <label className="block text-xs text-muted-foreground">
+                    New password
+                    <Input
+                      className="mt-1"
+                      type="password"
+                      autoComplete="new-password"
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                    />
+                  </label>
+                  <label className="block text-xs text-muted-foreground">
+                    Confirm password
+                    <Input
+                      className="mt-1"
+                      type="password"
+                      autoComplete="new-password"
+                      value={editPasswordConfirm}
+                      onChange={(e) => setEditPasswordConfirm(e.target.value)}
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={passwordMutation.isPending}
+                    onClick={handleSetPassword}
+                  >
+                    {passwordMutation.isPending ? "Saving…" : "Set password & notify"}
+                  </Button>
+                  {passwordError ? <p className="text-sm text-destructive">{passwordError}</p> : null}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Use Settings to change your own password.
+                </p>
+              )}
               <div>
                 <span className={LABEL}>Role</span>
                 <select
@@ -701,6 +812,51 @@ export default function AdminUserDetail() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No Pro waitlist submission.</p>
+            )}
+          </div>
+
+          <div className="mb-8 rounded-xl border border-white/10 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-foreground">Follow graph</h2>
+              <Button type="button" variant="outline" size="sm" asChild>
+                <Link to={`/admin/follows/users/${encodeURIComponent(u.id)}`}>
+                  Open social graph →
+                </Link>
+              </Button>
+            </div>
+            {socialGraphQuery.data ? (
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div>
+                  <p className={LABEL}>Followers</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                    {socialGraphQuery.data.stats.followersCount}
+                  </p>
+                </div>
+                <div>
+                  <p className={LABEL}>Following</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                    {socialGraphQuery.data.stats.followingCount}
+                  </p>
+                </div>
+                <div>
+                  <p className={LABEL}>Pending in</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                    {socialGraphQuery.data.stats.pendingIn}
+                  </p>
+                </div>
+                <div>
+                  <p className={LABEL}>Pending out</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+                    {socialGraphQuery.data.stats.pendingOut}
+                  </p>
+                </div>
+              </div>
+            ) : socialGraphQuery.isError ? (
+              <p className="text-sm text-muted-foreground">
+                Could not load follow graph summary.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading follow graph…</p>
             )}
           </div>
 
