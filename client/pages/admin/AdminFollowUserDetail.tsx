@@ -14,8 +14,10 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -658,14 +660,20 @@ export default function AdminFollowUserDetail() {
       )}
 
       {removeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">
-              {removeTarget.kind === "follow"
-                ? "Remove this follow edge?"
-                : "Force decline this follow request?"}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+        <BaseAlertDialog
+          isOpen={!!removeTarget}
+          onClose={() => {
+            setRemoveTarget(null);
+            setRemoveError(null);
+            setReason("");
+          }}
+          title={
+            removeTarget.kind === "follow"
+              ? "Remove this follow edge?"
+              : "Force decline this follow request?"
+          }
+          description={
+            <>
               Between{" "}
               <span className="font-medium text-foreground">
                 {removeTarget.user.displayName}
@@ -675,24 +683,11 @@ export default function AdminFollowUserDetail() {
                 {removeTarget.counterpart.displayName}
               </span>
               . This is a silent admin action — no notification is sent.
-            </p>
-            <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
-              Reason (optional)
-              <textarea
-                className="mt-1 min-h-[88px] w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-foreground"
-                value={reason}
-                onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
-                maxLength={REASON_MAX}
-                placeholder="e.g. Resolved support ticket #1234"
-              />
-              <span className="mt-1 block text-right text-[11px] text-muted-foreground">
-                {reason.length}/{REASON_MAX}
-              </span>
-            </label>
-            {removeError && (
-              <p className="mt-3 text-sm text-destructive">{removeError}</p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
+            </>
+          }
+          size="sm"
+          footer={
+            <>
               <Button
                 type="button"
                 variant="outline"
@@ -719,9 +714,26 @@ export default function AdminFollowUserDetail() {
                     ? "Remove"
                     : "Force decline"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
+              Reason (optional)
+              <Textarea
+                className="mt-1 min-h-[88px]"
+                value={reason}
+                onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
+                maxLength={REASON_MAX}
+                placeholder="e.g. Resolved support ticket #1234"
+              />
+              <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+                {reason.length}/{REASON_MAX}
+              </span>
+            </label>
+            {removeError && (
+              <p className="mt-3 text-sm text-destructive">{removeError}</p>
+            )}
+        </BaseAlertDialog>
       )}
     </div>
   );

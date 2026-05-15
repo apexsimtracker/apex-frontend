@@ -9,6 +9,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -578,35 +579,25 @@ export default function AdminSessions() {
       </div>
 
       {bulkOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl"
-          >
-            <h2 className="text-lg font-semibold text-foreground">Delete sessions</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Permanently delete {selected.size} session(s) and cascade laps. Leaderboards and personal
-              bests will be recomputed server-side.
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Type <span className="font-mono text-destructive">delete</span> to confirm.
-            </p>
-            <Input
-              className="mt-2"
-              value={bulkConfirm}
-              onChange={(e) => setBulkConfirm(e.target.value)}
-              placeholder="delete"
-              autoComplete="off"
-            />
-            {bulkDeleteMutation.isError && (
-              <p className="mt-2 text-sm text-destructive">
-                {bulkDeleteMutation.error instanceof ApiError
-                  ? bulkDeleteMutation.error.message
-                  : "Delete failed."}
-              </p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
+        <BaseAlertDialog
+          isOpen={bulkOpen}
+          onClose={() => {
+            setBulkOpen(false);
+            setBulkConfirm("");
+          }}
+          title="Delete sessions"
+          description={
+            <>
+              Permanently delete {selected.size} session(s) and cascade laps. Leaderboards and
+              personal bests will be recomputed server-side.
+              <span className="mt-3 block text-xs">
+                Type <span className="font-mono text-destructive">delete</span> to confirm.
+              </span>
+            </>
+          }
+          size="sm"
+          footer={
+            <>
               <Button
                 type="button"
                 variant="outline"
@@ -634,9 +625,23 @@ export default function AdminSessions() {
                   "Delete"
                 )}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Input
+              value={bulkConfirm}
+              onChange={(e) => setBulkConfirm(e.target.value)}
+              placeholder="delete"
+              autoComplete="off"
+            />
+            {bulkDeleteMutation.isError && (
+              <p className="mt-2 text-sm text-destructive">
+                {bulkDeleteMutation.error instanceof ApiError
+                  ? bulkDeleteMutation.error.message
+                  : "Delete failed."}
+              </p>
+            )}
+        </BaseAlertDialog>
       )}
     </>
   );

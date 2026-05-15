@@ -20,12 +20,9 @@ import {
   type AuthUser,
 } from "@/lib/api";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  BaseModal,
+} from "@/components/ui/base-modal";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -489,26 +486,45 @@ export default function Profile() {
       />
 
       {/* Edit Profile modal */}
-      <Dialog
-        open={editOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            clearAvatarSelection();
-            setEditOpen(false);
-          }
+      <BaseModal
+        isOpen={editOpen}
+        onClose={() => {
+          clearAvatarSelection();
+          setEditOpen(false);
         }}
+        title="Edit Profile"
+        description="Update your display name, bio, and profile picture."
+        size="sm"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                clearAvatarSelection();
+                setEditOpen(false);
+              }}
+              disabled={editLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="edit-profile-form"
+              disabled={
+                editLoading || profileEditForm.watch("displayName").trim().length < 2
+              }
+            >
+              {editLoading ? "Saving…" : "Save"}
+            </Button>
+          </>
+        }
       >
-        <DialogContent className="border-white/10 bg-card sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Edit Profile</DialogTitle>
-            <DialogDescription>
-              Update your display name, bio, and profile picture.
-            </DialogDescription>
-          </DialogHeader>
           <Form {...profileEditForm}>
             <form
+              id="edit-profile-form"
               onSubmit={profileEditForm.handleSubmit(onSaveProfileSubmit)}
-              className="space-y-4 pt-2"
+              className="space-y-4"
             >
               <FormRootMessage className="rounded-md bg-red-500/10 px-3 py-2" />
               {editSuccess && (
@@ -602,33 +618,9 @@ export default function Profile() {
               )}
             </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={
-                    editLoading || profileEditForm.watch("displayName").trim().length < 2
-                  }
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={{ backgroundColor: "rgb(240, 28, 28)" }}
-                >
-                  {editLoading ? "Saving…" : "Save"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearAvatarSelection();
-                    setEditOpen(false);
-                  }}
-                  disabled={editLoading}
-                  className="rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-white/5 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
     </div>
     </>
   );

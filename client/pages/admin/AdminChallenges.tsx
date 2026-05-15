@@ -10,8 +10,13 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -324,22 +329,22 @@ export default function AdminChallenges() {
         )}
 
         {deleteOpen && deleteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-foreground">Delete challenge</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+          <BaseAlertDialog
+            isOpen={deleteOpen}
+            onClose={() => {
+              setDeleteOpen(false);
+              setFormError(null);
+            }}
+            title="Delete challenge"
+            description={
+              <>
                 This removes participants and leaderboard data. Type{" "}
                 <span className="font-mono text-foreground">delete</span> to confirm.
-              </p>
-              <Input
-                className="mt-4"
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-                placeholder="delete"
-                autoComplete="off"
-              />
-              {formError && <p className="mt-2 text-sm text-destructive">{formError}</p>}
-              <div className="mt-6 flex justify-end gap-2">
+              </>
+            }
+            size="sm"
+            footer={
+              <>
                 <Button
                   type="button"
                   variant="outline"
@@ -360,9 +365,17 @@ export default function AdminChallenges() {
                 >
                   {deleteMutation.isPending ? "Deleting…" : "Delete"}
                 </Button>
-              </div>
-            </div>
-          </div>
+              </>
+            }
+          >
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="delete"
+                autoComplete="off"
+              />
+              {formError && <p className="mt-2 text-sm text-destructive">{formError}</p>}
+          </BaseAlertDialog>
         )}
       </div>
     </>
@@ -442,18 +455,32 @@ function CreateChallengeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground">New challenge</h2>
-        <div className="mt-4 space-y-3">
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title="New challenge"
+      size="md"
+      mobileVariant="fullscreen"
+      bodyClassName="min-h-0 space-y-3"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={pending} onClick={() => void submit()}>
+            {pending ? "Saving…" : "Create"}
+          </Button>
+        </>
+      }
+    >
           <label className="block text-xs text-muted-foreground">
             Title <span className="text-red-400">*</span>
             <Input className="mt-1" value={title} onChange={(e) => setTitle(e.target.value)} />
           </label>
           <label className="block text-xs text-muted-foreground">
             Description <span className="text-red-400">*</span>
-            <textarea
-              className="mt-1 min-h-[80px] w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-foreground"
+            <Textarea
+              className="mt-1 min-h-[80px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -570,17 +597,7 @@ function CreateChallengeModal({
               onChange={(e) => setEndsAt(e.target.value)}
             />
           </label>
-        </div>
         {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={pending} onClick={() => void submit()}>
-            {pending ? "Saving…" : "Create"}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

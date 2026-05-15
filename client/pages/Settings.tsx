@@ -37,15 +37,7 @@ import {
   usePersistApexToStorageEffect,
 } from "@/features/settings/hooks/useSettingsUserEffects";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Switch } from "@/components/ui/switch";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import {
@@ -837,33 +829,65 @@ export default function Settings() {
                     public posts may remain with the label &quot;Deleted User.&quot; This cannot be
                     undone.
                   </p>
-                  <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => setDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="mr-2 size-4" />
-                      Delete account
-                    </Button>
-                    <AlertDialogContent className="border-white/10 bg-card sm:max-w-md">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-foreground">Delete account</AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-3 text-left">
-                          <span className="block">
-                            This will sign you out everywhere, revoke sessions, and anonymize your
-                            email, password, name, avatar, and bio. You will not be able to sign in
-                            again with this account.
-                          </span>
-                          <span className="block font-medium text-foreground">
-                            Type {DELETE_CONFIRM_PHRASE} below to confirm.
-                          </span>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <Form {...deleteAccountForm}>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="mr-2 size-4" />
+                    Delete account
+                  </Button>
+                  <BaseAlertDialog
+                    isOpen={deleteDialogOpen}
+                    onClose={() => handleDeleteDialogOpenChange(false)}
+                    title="Delete account"
+                    description={
+                      <>
+                        <span className="block">
+                          This will sign you out everywhere, revoke sessions, and anonymize your
+                          email, password, name, avatar, and bio. You will not be able to sign in
+                          again with this account.
+                        </span>
+                        <span className="block font-medium text-foreground">
+                          Type {DELETE_CONFIRM_PHRASE} below to confirm.
+                        </span>
+                      </>
+                    }
+                    size="sm"
+                    footer={
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={deleteSubmitting}
+                          onClick={() => handleDeleteDialogOpenChange(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          form="delete-account-form"
+                          variant="destructive"
+                          disabled={deleteSubmitting}
+                          className={deleteSubmitting ? "cursor-not-allowed opacity-60" : undefined}
+                        >
+                          {deleteSubmitting ? (
+                            <>
+                              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                              Deleting…
+                            </>
+                          ) : (
+                            "Delete permanently"
+                          )}
+                        </Button>
+                      </>
+                    }
+                  >
+                    <Form {...deleteAccountForm}>
                         <form
+                          id="delete-account-form"
                           onSubmit={deleteAccountForm.handleSubmit(onConfirmDeleteAccount)}
-                          className="space-y-3 py-2"
+                          className="space-y-3"
                         >
                           <FormField
                             control={deleteAccountForm.control}
@@ -912,34 +936,9 @@ export default function Settings() {
                             )}
                           />
                           <FormRootMessage className="text-xs" />
-                          <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel
-                              type="button"
-                              disabled={deleteSubmitting}
-                              className="border-white/20"
-                            >
-                              Cancel
-                            </AlertDialogCancel>
-                            <Button
-                              type="submit"
-                              variant="destructive"
-                              disabled={deleteSubmitting}
-                              className={deleteSubmitting ? "cursor-not-allowed opacity-60" : undefined}
-                            >
-                              {deleteSubmitting ? (
-                                <>
-                                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                                  Deleting…
-                                </>
-                              ) : (
-                                "Delete permanently"
-                              )}
-                            </Button>
-                          </AlertDialogFooter>
                         </form>
-                      </Form>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    </Form>
+                  </BaseAlertDialog>
                 </div>
               </div>
             </SettingsCard>

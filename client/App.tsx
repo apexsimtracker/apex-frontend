@@ -55,6 +55,7 @@ import AdminEmailAuth from "./pages/admin/AdminEmailAuth";
 import AdminFollows from "./pages/admin/AdminFollows";
 import AdminFollowUserDetail from "./pages/admin/AdminFollowUserDetail";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminSystem from "./pages/admin/AdminSystem";
 import AdminBroadcastDetail from "./pages/admin/AdminBroadcastDetail";
 import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
@@ -67,6 +68,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const ManualActivity = lazy(() => import("./pages/ManualActivity"));
 const EditActivity = lazy(() => import("./pages/EditActivity"));
+const MaintenanceNotice = lazy(() => import("./pages/MaintenanceNotice"));
 
 function RouteFallback() {
   return (
@@ -216,6 +218,10 @@ export default function App() {
                     <Route path="/sessions/:id" element={<SessionDetailPage />} />
                     <Route path="/discussion/:id" element={<DiscussionDetail />} />
                     <Route path="/race/:id" element={<RaceDetail />} />
+                    <Route
+                      path="/status/maintenance/:maintenanceId"
+                      element={<MaintenanceNotice />}
+                    />
                     <Route path="/qa" element={<QAPage />} />
                     <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -260,6 +266,7 @@ export default function App() {
                         <Route path="waitlist" element={<AdminProWaitlist />} />
                         <Route path="devices" element={<AdminDevices />} />
                         <Route path="email-auth" element={<AdminEmailAuth />} />
+                        <Route path="system" element={<AdminSystem />} />
                       </Route>
                     </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

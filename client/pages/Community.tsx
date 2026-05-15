@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
+import { BaseModal } from "@/components/ui/base-modal";
+import { Button } from "@/components/ui/button";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import DiscussionCard from "@/components/DiscussionCard";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
@@ -17,7 +19,7 @@ import {
   type DiscussionCategory,
 } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { timeAgo } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +33,8 @@ import {
   FormMessage,
   FormRootMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   newDiscussionFormSchema,
@@ -224,13 +228,13 @@ export default function Community() {
               placeholder="Search..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="border-white/4 w-full rounded-lg border bg-card/15 py-1.5 pl-8 pr-3 text-xs text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-[rgba(240,28,28,0.4)] focus:outline-none sm:py-2 sm:text-sm"
+              className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-8 pr-3 text-xs text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-[rgba(240,28,28,0.4)] focus:outline-none sm:py-2 sm:text-sm"
             />
           </div>
           <button
             type="button"
             onClick={openNewDiscussion}
-            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors sm:px-4 sm:py-2 sm:text-sm"
+            className="whitespace-nowrap mt-2.5 sm:mt-0 rounded-lg px-3 py-2.5 text-xs font-medium text-white transition-colors sm:px-4 sm:py-2 sm:text-sm"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             New Discussion
@@ -351,14 +355,33 @@ export default function Community() {
 
       {/* New Discussion Modal */}
       {showNewDiscussionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-background p-8 shadow-xl">
-            <h2 className="mb-6 text-2xl font-bold text-foreground">
-              Create New Discussion
-            </h2>
-
+        <BaseModal
+          isOpen={showNewDiscussionModal}
+          onClose={closeModal}
+          title="Create New Discussion"
+          size="xl"
+          mobileVariant="fullscreen"
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeModal}
+                disabled={creating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" form="create-discussion-form" disabled={creating}>
+                {creating ? "Creating…" : "Create"}
+              </Button>
+            </>
+          }
+        >
             <Form {...newDiscussionForm}>
-              <form onSubmit={newDiscussionForm.handleSubmit(onCreateDiscussion)}>
+              <form
+                id="create-discussion-form"
+                onSubmit={newDiscussionForm.handleSubmit(onCreateDiscussion)}
+              >
                 <FormRootMessage className="mb-4 text-xs" />
 
                 <FormField
@@ -377,16 +400,12 @@ export default function Community() {
                             onClick={() => {
                               field.onChange(cat.value);
                             }}
-                            className={`rounded-lg border p-3 text-sm font-medium transition-all ${
+                            className={cn(
+                              "rounded-lg border p-3 text-sm font-medium transition-all",
                               field.value === cat.value
-                                ? "border-2 text-foreground"
-                                : "border text-foreground hover:border-white/10"
-                            }`}
-                            style={
-                              field.value === cat.value
-                                ? { borderColor: "rgb(240, 28, 28)" }
-                                : {}
-                            }
+                                ? "border-primary/60 bg-primary/10 text-foreground"
+                                : "text-foreground hover:border-border"
+                            )}
                           >
                             {cat.label}
                           </button>
@@ -406,11 +425,9 @@ export default function Community() {
                         Discussion Title
                       </FormLabel>
                       <FormControl>
-                        <input
-                          type="text"
+                        <Input
                           placeholder="What's your question or topic?"
                           disabled={creating}
-                          className="w-full rounded-lg border bg-secondary px-4 py-3 text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                           {...field}
                         />
                       </FormControl>
@@ -428,10 +445,10 @@ export default function Community() {
                         Description
                       </FormLabel>
                       <FormControl>
-                        <textarea
+                        <Textarea
                           placeholder="Describe your discussion in detail..."
                           disabled={creating}
-                          className="h-32 w-full resize-none rounded-lg border bg-secondary px-4 py-3 text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                          className="h-32 resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -440,28 +457,9 @@ export default function Community() {
                   )}
                 />
 
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    disabled={creating}
-                    className="rounded-lg bg-secondary px-6 py-2 font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    className="rounded-lg px-6 py-2 font-medium text-white transition-all disabled:opacity-50"
-                    style={{ backgroundColor: "rgb(240, 28, 28)" }}
-                  >
-                    {creating ? "Creating…" : "Create"}
-                  </button>
-                </div>
               </form>
             </Form>
-          </div>
-        </div>
+        </BaseModal>
       )}
     </div>
     </>

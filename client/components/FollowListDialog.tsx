@@ -2,12 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import {
   resolveApiUrl,
@@ -130,19 +125,21 @@ export function FollowListDialog({
         : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {listKind === "followers"
-              ? "Followers"
-              : listKind === "following"
-                ? "Following"
-                : ""}
-          </DialogTitle>
-        </DialogHeader>
+    <BaseModal
+      isOpen={open}
+      onClose={() => onOpenChange(false)}
+      title={
+        listKind === "followers"
+          ? "Followers"
+          : listKind === "following"
+            ? "Following"
+            : ""
+      }
+      size="sm"
+      bodyClassName="flex min-h-0 flex-1 flex-col gap-4"
+    >
         {enabled && (
-          <div className="relative mb-3 mt-4">
+          <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -182,7 +179,7 @@ export function FollowListDialog({
           )}
         </div>
         {enabled && !isPending && !errMsg && total > 0 && (
-          <div className="mt-4 shrink-0 space-y-3 border-t border-white/10 pt-2">
+          <div className="shrink-0 space-y-3 border-t border-border pt-4">
             <p className="text-center text-xs text-muted-foreground">
               Showing {rangeStart}–{rangeEnd} of {total}
             </p>
@@ -196,7 +193,6 @@ export function FollowListDialog({
             )}
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 }

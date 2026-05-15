@@ -6,6 +6,7 @@ import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   ApiError,
@@ -29,6 +30,7 @@ export default function AdminCampaignDetail() {
   const id = params.campaignId ?? "";
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const detailQuery = useQuery({
     queryKey: ["admin", "notifications", "campaigns", "detail", id],
@@ -84,15 +86,7 @@ export default function AdminCampaignDetail() {
 
   function handleDelete() {
     if (deleteMut.isPending) return;
-    if (
-      !window.confirm(
-        "Delete this campaign? Delivery records will be removed. " +
-          "Already-sent in-app notifications remain in user inboxes."
-      )
-    ) {
-      return;
-    }
-    deleteMut.mutate();
+    setDeleteOpen(true);
   }
 
   const rows = deliveriesQuery.data?.items ?? [];
@@ -335,6 +329,53 @@ export default function AdminCampaignDetail() {
           </>
         )}
       </div>
+      <BaseAlertDialog
+        isOpen={deleteOpen}
+        onClose={() => {
+          if (deleteMut.isPending) return;
+          deleteMut.reset();
+          setDeleteOpen(false);
+        }}
+        title="Delete campaign"
+        description="Delete this campaign? Delivery records will be removed, but already-sent in-app notifications remain in user inboxes."
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMut.isPending}
+              onClick={() => {
+                deleteMut.reset();
+                setDeleteOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMut.isPending}
+              onClick={() => deleteMut.mutate()}
+            >
+              {deleteMut.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete campaign"
+              )}
+            </Button>
+          </>
+        }
+      >
+        {deleteMut.isError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {deleteMut.error instanceof ApiError
+              ? deleteMut.error.message
+              : "Could not delete campaign."}
+          </div>
+        ) : null}
+      </BaseAlertDialog>
     </>
   );
 }

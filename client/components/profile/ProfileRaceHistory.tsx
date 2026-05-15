@@ -44,7 +44,7 @@ export function ProfileRaceHistory({
     <>
       <h2 className="mb-8 text-2xl font-bold text-foreground">Race History</h2>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full">
           <thead>
             <tr className="border">
@@ -136,7 +136,7 @@ export function ProfileRaceHistory({
         </table>
       </div>
 
-      <div className="space-y-4 md:hidden">
+      <div className="space-y-4 lg:hidden">
         {raceHistoryLoading && raceHistory.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground">Loading race history…</div>
         ) : raceHistory.length === 0 ? (
@@ -158,7 +158,7 @@ export function ProfileRaceHistory({
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{new Date(race.date).toLocaleDateString()}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{new Date(race.date).toLocaleDateString()}</p>
                 </div>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
@@ -178,7 +178,7 @@ export function ProfileRaceHistory({
                 <p className="text-sm font-semibold text-foreground">{formatTrackName(race.track)}</p>
                 <p className="text-xs text-muted-foreground">{formatCarName(race.car)}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-2 text-xs">
                 <div>
                   <p className="text-muted-foreground">Quali</p>
                   <p className="font-bold text-foreground">{race.qualiPos ?? "—"}</p>

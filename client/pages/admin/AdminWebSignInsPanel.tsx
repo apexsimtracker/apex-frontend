@@ -7,6 +7,10 @@ import {
   fetchAdminDevicesMetrics,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -316,35 +320,40 @@ export function AdminWebSignInsPanel() {
       )}
 
       {sessionModalUserId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[90vh] w-full max-w-[min(100vw-2rem,42rem)] overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl xl:max-w-6xl">
-            <AdminUserWebSessionsSection
-              variant="modal"
-              userId={sessionModalUserId}
-              onCloseModal={() => setSessionModalUserId(null)}
-            />
-          </div>
-        </div>
+        <BaseModal
+          isOpen={!!sessionModalUserId}
+          onClose={() => setSessionModalUserId(null)}
+          title="Web sessions"
+          size="full"
+          mobileVariant="fullscreen"
+          hideCloseButton
+          headerClassName="sr-only border-0 p-0"
+          bodyClassName="p-0"
+        >
+          <AdminUserWebSessionsSection
+            variant="modal"
+            userId={sessionModalUserId}
+            onCloseModal={() => setSessionModalUserId(null)}
+          />
+        </BaseModal>
       )}
 
       {revokeAllContext && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Revoke all web sessions</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+        <BaseAlertDialog
+          isOpen={!!revokeAllContext}
+          onClose={() => setRevokeAllContext(null)}
+          title="Revoke all web sessions"
+          description={
+            <>
               Invalidates every usable browser session for{" "}
-              <span className="font-medium text-foreground">{revokeAllContext.displayName}</span>. API access
-              stops immediately; session rows are kept for analysis unless deleted. Type{" "}
+              <span className="font-medium text-foreground">{revokeAllContext.displayName}</span>.
+              API access stops immediately; session rows are kept for analysis unless deleted. Type{" "}
               <span className="font-mono text-foreground">revoke all</span> to confirm.
-            </p>
-            <Input
-              className="mt-4"
-              value={revokeAllConfirm}
-              onChange={(e) => setRevokeAllConfirm(e.target.value)}
-              placeholder="revoke all"
-              autoComplete="off"
-            />
-            <div className="mt-6 flex justify-end gap-2">
+            </>
+          }
+          size="sm"
+          footer={
+            <>
               <Button type="button" variant="outline" onClick={() => setRevokeAllContext(null)}>
                 Cancel
               </Button>
@@ -356,9 +365,16 @@ export function AdminWebSignInsPanel() {
               >
                 {revokeAllUserSessionsMutation.isPending ? "Revoking…" : "Revoke all"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Input
+              value={revokeAllConfirm}
+              onChange={(e) => setRevokeAllConfirm(e.target.value)}
+              placeholder="revoke all"
+              autoComplete="off"
+            />
+        </BaseAlertDialog>
       )}
     </>
   );

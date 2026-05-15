@@ -28,4 +28,5 @@ export * from "./adminDevices";
 export * from "./adminFollows";
 export * from "./adminNotifications";
 export * from "./adminEmailOps";
+export * from "./adminSystem";
 export * from "./broadcasts";

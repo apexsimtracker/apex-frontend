@@ -33,6 +33,7 @@ import {
 } from "@/lib/api";
 import { BroadcastComposeModal } from "@/components/admin/BroadcastComposeModal";
 import { CampaignComposeModal } from "@/components/admin/CampaignComposeModal";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 
 const TITLE = `Admin · Notifications | ${COMPANY_NAME}`;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -250,6 +251,7 @@ function BroadcastsTab() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<AdminBroadcastRow | null>(null);
   const debounced = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => setPage(1), [debounced, statusFilter, severityFilter]);
 
@@ -295,19 +297,15 @@ function BroadcastsTab() {
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteBroadcast(id),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      setDeleteTarget(null);
+      await invalidate();
+    },
   });
 
   function handleDelete(b: AdminBroadcastRow) {
     if (deleteMut.isPending) return;
-    if (
-      !window.confirm(
-        `Delete the broadcast "${b.title}"? This cannot be undone and removes view/dismissal records.`
-      )
-    ) {
-      return;
-    }
-    deleteMut.mutate(b.id);
+    setDeleteTarget(b);
   }
 
   const rows = data?.items ?? [];
@@ -495,6 +493,61 @@ function BroadcastsTab() {
           </Button>
         </div>
       )}
+      <BaseAlertDialog
+        isOpen={deleteTarget != null}
+        onClose={() => {
+          if (deleteMut.isPending) return;
+          deleteMut.reset();
+          setDeleteTarget(null);
+        }}
+        title="Delete broadcast"
+        description={
+          deleteTarget
+            ? `Delete the broadcast "${deleteTarget.title}"? This cannot be undone and removes view and dismissal records.`
+            : undefined
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMut.isPending}
+              onClick={() => {
+                deleteMut.reset();
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMut.isPending || !deleteTarget}
+              onClick={() => {
+                if (!deleteTarget) return;
+                deleteMut.mutate(deleteTarget.id);
+              }}
+            >
+              {deleteMut.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete broadcast"
+              )}
+            </Button>
+          </>
+        }
+      >
+        {deleteMut.isError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {deleteMut.error instanceof ApiError
+              ? deleteMut.error.message
+              : "Could not delete broadcast."}
+          </div>
+        ) : null}
+      </BaseAlertDialog>
     </>
   );
 }
@@ -508,6 +561,7 @@ function CampaignsTab() {
   const [page, setPage] = useState(1);
   const [channelFilter, setChannelFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<AdminCampaignRow | null>(null);
   const debounced = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => setPage(1), [debounced, channelFilter]);
 
@@ -541,20 +595,15 @@ function CampaignsTab() {
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteCampaign(id),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      setDeleteTarget(null);
+      await invalidate();
+    },
   });
 
   function handleDelete(c: AdminCampaignRow) {
     if (deleteMut.isPending) return;
-    if (
-      !window.confirm(
-        `Delete the campaign "${c.title}"? Delivery records will be removed. ` +
-          "Already-sent in-app notifications stay in user inboxes."
-      )
-    ) {
-      return;
-    }
-    deleteMut.mutate(c.id);
+    setDeleteTarget(c);
   }
 
   const rows = data?.items ?? [];
@@ -715,6 +764,61 @@ function CampaignsTab() {
           </Button>
         </div>
       )}
+      <BaseAlertDialog
+        isOpen={deleteTarget != null}
+        onClose={() => {
+          if (deleteMut.isPending) return;
+          deleteMut.reset();
+          setDeleteTarget(null);
+        }}
+        title="Delete campaign"
+        description={
+          deleteTarget
+            ? `Delete the campaign "${deleteTarget.title}"? Delivery records will be removed, but already-sent in-app notifications stay in user inboxes.`
+            : undefined
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMut.isPending}
+              onClick={() => {
+                deleteMut.reset();
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMut.isPending || !deleteTarget}
+              onClick={() => {
+                if (!deleteTarget) return;
+                deleteMut.mutate(deleteTarget.id);
+              }}
+            >
+              {deleteMut.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete campaign"
+              )}
+            </Button>
+          </>
+        }
+      >
+        {deleteMut.isError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {deleteMut.error instanceof ApiError
+              ? deleteMut.error.message
+              : "Could not delete campaign."}
+          </div>
+        ) : null}
+      </BaseAlertDialog>
     </>
   );
 }

@@ -9,6 +9,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,14 +21,6 @@ import {
 import { Loader2, MoreHorizontal } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const TITLE = `Admin · Users | ${COMPANY_NAME}`;
@@ -197,24 +190,46 @@ export default function AdminUsers() {
 
   return (
     <>
-      <Dialog
-        open={scanDialogOpen}
-        onOpenChange={(open) => {
-          setScanDialogOpen(open);
-          if (!open) {
-            previewDisposableScan.reset();
-          }
+      <BaseModal
+        isOpen={scanDialogOpen}
+        onClose={() => {
+          setScanDialogOpen(false);
+          previewDisposableScan.reset();
         }}
+        title="Disposable email scan"
+        description="Scan for accounts using disposable email domains."
+        size="xl"
+        bodyClassName="flex min-h-0 flex-1 flex-col gap-3"
+        footer={
+          previewData ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setScanDialogOpen(false)}
+                disabled={applyDisposableScan.isPending}
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                disabled={
+                  previewData.pendingFlagCount === 0 || applyDisposableScan.isPending
+                }
+                onClick={() => applyDisposableScan.mutate()}
+              >
+                {applyDisposableScan.isPending ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                ) : null}
+                Flag {previewData.pendingFlagCount} account
+                {previewData.pendingFlagCount === 1 ? "" : "s"}
+              </Button>
+            </>
+          ) : undefined
+        }
       >
-        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col gap-0 overflow-hidden sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Disposable email scan</DialogTitle>
-            <DialogDescription asChild>
-              <p>Scan for accounts using disposable email domains.</p>
-            </DialogDescription>
-          </DialogHeader>
           {previewData ? (
-            <div className="flex min-h-0 flex-1 flex-col gap-3 py-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
               <p className="text-sm text-foreground">
                 Scanned{" "}
                 <span className="tabular-nums font-medium">{previewData.scanned}</span>{" "}
@@ -277,33 +292,9 @@ export default function AdminUsers() {
                   </table>
                 </div>
               )}
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setScanDialogOpen(false)}
-                  disabled={applyDisposableScan.isPending}
-                >
-                  Close
-                </Button>
-                <Button
-                  type="button"
-                  disabled={
-                    previewData.pendingFlagCount === 0 || applyDisposableScan.isPending
-                  }
-                  onClick={() => applyDisposableScan.mutate()}
-                >
-                  {applyDisposableScan.isPending ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                  ) : null}
-                  Flag {previewData.pendingFlagCount} account
-                  {previewData.pendingFlagCount === 1 ? "" : "s"}
-                </Button>
-              </DialogFooter>
             </div>
           ) : null}
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
 
       <PageMeta path="/admin/users" title={TITLE} description="Manage users and moderation." noindex />
       <div className="mx-auto max-w-6xl">

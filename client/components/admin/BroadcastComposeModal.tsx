@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { AudiencePicker } from "./AudiencePicker";
 import {
   ApiError,
@@ -122,22 +124,32 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            {isEdit ? "Edit broadcast" : "New broadcast"}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="mt-4 space-y-4">
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title={isEdit ? "Edit broadcast" : "New broadcast"}
+      size="xl"
+      mobileVariant="fullscreen"
+      bodyClassName="min-h-0 space-y-4"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={submit} disabled={pending}>
+            {pending ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" /> Saving…
+              </>
+            ) : isEdit ? (
+              "Save changes"
+            ) : (
+              "Create broadcast"
+            )}
+          </Button>
+        </>
+      }
+    >
           <div>
             <Label className="text-xs text-muted-foreground">
               Title <span className="text-red-400">*</span>
@@ -153,8 +165,8 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
             <Label className="text-xs text-muted-foreground">
               Body <span className="text-red-400">*</span>
             </Label>
-            <textarea
-              className="mt-1 min-h-[100px] w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-foreground"
+            <Textarea
+              className="mt-1 min-h-[100px]"
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
@@ -291,25 +303,6 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
               {err}
             </div>
           )}
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
-            Cancel
-          </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={pending}>
-            {pending ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" /> Saving…
-              </>
-            ) : isEdit ? (
-              "Save changes"
-            ) : (
-              "Create broadcast"
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import {
   ApiError,
   archiveBroadcast,
@@ -68,6 +69,7 @@ export default function AdminBroadcastDetail() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const detailKey = ["admin", "notifications", "broadcasts", "detail", id];
   const listKey = ["admin", "notifications", "broadcasts"];
@@ -121,14 +123,7 @@ export default function AdminBroadcastDetail() {
 
   function handleDelete() {
     if (deleteMut.isPending) return;
-    if (
-      !window.confirm(
-        "Delete this broadcast? This cannot be undone. View and dismissal records will be removed."
-      )
-    ) {
-      return;
-    }
-    deleteMut.mutate();
+    setDeleteOpen(true);
   }
 
   return (
@@ -332,6 +327,53 @@ export default function AdminBroadcastDetail() {
           }}
         />
       )}
+      <BaseAlertDialog
+        isOpen={deleteOpen}
+        onClose={() => {
+          if (deleteMut.isPending) return;
+          deleteMut.reset();
+          setDeleteOpen(false);
+        }}
+        title="Delete broadcast"
+        description="Delete this broadcast? This cannot be undone. View and dismissal records will be removed."
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMut.isPending}
+              onClick={() => {
+                deleteMut.reset();
+                setDeleteOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMut.isPending}
+              onClick={() => deleteMut.mutate()}
+            >
+              {deleteMut.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete broadcast"
+              )}
+            </Button>
+          </>
+        }
+      >
+        {deleteMut.isError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {deleteMut.error instanceof ApiError
+              ? deleteMut.error.message
+              : "Could not delete broadcast."}
+          </div>
+        ) : null}
+      </BaseAlertDialog>
     </>
   );
 }

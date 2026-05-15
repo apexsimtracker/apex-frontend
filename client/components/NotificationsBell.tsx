@@ -13,13 +13,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
+import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import {
   acceptFollowRequest,
   ApiError,
@@ -36,6 +32,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const NOTIFICATIONS_KEY = ["notifications"] as const;
 const FOLLOW_REQUESTS_KEY = ["followRequests", "incoming"] as const;
+const ACTIVITY_PAGE_SIZE = 8;
+const REQUESTS_PAGE_SIZE = 8;
 
 export function NotificationsBell() {
   const { user } = useAuth();
@@ -45,6 +43,8 @@ export function NotificationsBell() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [markingViewed, setMarkingViewed] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+  const [requestsPage, setRequestsPage] = useState(1);
 
   useEffect(() => {
     const openHandler = () => {
@@ -69,9 +69,34 @@ export function NotificationsBell() {
   });
 
   const notifications = notifQuery.data?.notifications ?? [];
+  const requests = requestsQuery.data?.requests ?? [];
   const unreadCount = notifications.filter((n) => !n.read).length;
   const showBadge =
     user?.showNotificationBadge !== false && unreadCount > 0;
+  const activityTotalPages = Math.max(1, Math.ceil(notifications.length / ACTIVITY_PAGE_SIZE));
+  const requestsTotalPages = Math.max(1, Math.ceil(requests.length / REQUESTS_PAGE_SIZE));
+  const visibleNotifications = notifications.slice(
+    (activityPage - 1) * ACTIVITY_PAGE_SIZE,
+    activityPage * ACTIVITY_PAGE_SIZE
+  );
+  const visibleRequests = requests.slice(
+    (requestsPage - 1) * REQUESTS_PAGE_SIZE,
+    requestsPage * REQUESTS_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setActivityPage((page) => Math.min(page, activityTotalPages));
+  }, [activityTotalPages]);
+
+  useEffect(() => {
+    setRequestsPage((page) => Math.min(page, requestsTotalPages));
+  }, [requestsTotalPages]);
+
+  useEffect(() => {
+    if (!open) return;
+    setActivityPage(1);
+    setRequestsPage(1);
+  }, [open]);
 
   const onOpenChange = useCallback((next: boolean) => {
     setOpen(next);
@@ -168,64 +193,14 @@ export function NotificationsBell() {
         ) : null}
       </button>
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex max-h-[85vh] max-w-lg flex-col gap-0 overflow-hidden border-white/10 bg-card p-0">
-          <DialogHeader className="shrink-0 border-b border-white/10 px-6 py-4">
-            <DialogTitle>Notifications</DialogTitle>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTab("activity")}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  tab === "activity"
-                    ? "bg-white/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Activity
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("requests")}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  tab === "requests"
-                    ? "bg-white/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Follow requests
-                {(requestsQuery.data?.requests.length ?? 0) > 0 && (
-                  <span className="ml-1.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
-                    {requestsQuery.data?.requests.length}
-                  </span>
-                )}
-              </button>
-            </div>
-          </DialogHeader>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-            {tab === "activity" ? (
-              <NotificationList
-                notifications={notifications}
-                loading={notifQuery.isPending}
-                actionId={actionId}
-                onAcceptRequest={handleAccept}
-                onDeclineRequest={handleDecline}
-              />
-            ) : (
-              <FollowRequestsPanel
-                loading={requestsQuery.isPending}
-                requests={requestsQuery.data?.requests ?? []}
-                actionId={actionId}
-                onAccept={handleAccept}
-                onDecline={handleDecline}
-              />
-            )}
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-white/10 bg-card/95 px-6 py-3">
+      <BaseModal
+        isOpen={open}
+        onClose={() => onOpenChange(false)}
+        title="Notifications"
+        size="md"
+        bodyClassName="flex min-h-0 flex-1 flex-col gap-0 px-0 py-0"
+        footer={
+          <>
             <Button
               type="button"
               variant="outline"
@@ -251,9 +226,95 @@ export function NotificationsBell() {
               ) : null}
               Clear notifications
             </Button>
+          </>
+        }
+      >
+          <div className="shrink-0 border-b border-border px-0.5 py-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTab("activity")}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  tab === "activity"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Activity
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("requests")}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  tab === "requests"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Follow requests
+                {requests.length > 0 && (
+                  <span className="ml-1.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
+                    {requests.length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          <div className="flex min-h-0 flex-1 flex-col px-0.5 py-4">
+            {tab === "activity" ? (
+              <>
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pr-1 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+                  <NotificationList
+                    notifications={visibleNotifications}
+                    loading={notifQuery.isPending}
+                    actionId={actionId}
+                    onAcceptRequest={handleAccept}
+                    onDeclineRequest={handleDecline}
+                  />
+                </div>
+                {!notifQuery.isPending && activityTotalPages > 1 ? (
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="mb-3 text-center text-xs text-muted-foreground">
+                      {getPageSummary(activityPage, ACTIVITY_PAGE_SIZE, notifications.length, "notifications")}
+                    </p>
+                    <RaceHistoryPagination
+                      page={activityPage}
+                      totalPages={activityTotalPages}
+                      onPageChange={setActivityPage}
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pr-1 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+                  <FollowRequestsPanel
+                    loading={requestsQuery.isPending}
+                    requests={visibleRequests}
+                    actionId={actionId}
+                    onAccept={handleAccept}
+                    onDecline={handleDecline}
+                  />
+                </div>
+                {!requestsQuery.isPending && requestsTotalPages > 1 ? (
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="mb-3 text-center text-xs text-muted-foreground">
+                      {getPageSummary(requestsPage, REQUESTS_PAGE_SIZE, requests.length, "requests")}
+                    </p>
+                    <RaceHistoryPagination
+                      page={requestsPage}
+                      totalPages={requestsTotalPages}
+                      onPageChange={setRequestsPage}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+      </BaseModal>
     </>
   );
 }
@@ -520,4 +581,11 @@ function FollowRequestsPanel({
       })}
     </ul>
   );
+}
+
+function getPageSummary(page: number, pageSize: number, total: number, label: string) {
+  if (total === 0) return `Showing 0 of 0 ${label}`;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+  return `Showing ${start}-${end} of ${total} ${label}`;
 }

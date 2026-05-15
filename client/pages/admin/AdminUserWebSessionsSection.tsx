@@ -10,6 +10,7 @@ import {
   type AdminAuthSessionDetailRow,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -586,24 +587,22 @@ export function AdminUserWebSessionsSection({
       )}
 
       {revokeAllOpen && detailUser && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Revoke all web sessions</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+        <BaseAlertDialog
+          isOpen={revokeAllOpen}
+          onClose={() => setRevokeAllOpen(false)}
+          title="Revoke all web sessions"
+          description={
+            <>
               Invalidates every usable browser session for{" "}
-              <span className="font-medium text-foreground">{detailUser.displayName}</span>. API access
-              stops immediately because sessions are revoked server-side. Session rows are kept for
-              analysis unless you delete them. Type{" "}
+              <span className="font-medium text-foreground">{detailUser.displayName}</span>. API
+              access stops immediately because sessions are revoked server-side. Session rows are
+              kept for analysis unless you delete them. Type{" "}
               <span className="font-mono text-foreground">revoke all</span> to confirm.
-            </p>
-            <Input
-              className="mt-4"
-              value={revokeAllConfirm}
-              onChange={(e) => setRevokeAllConfirm(e.target.value)}
-              placeholder="revoke all"
-              autoComplete="off"
-            />
-            <div className="mt-6 flex justify-end gap-2">
+            </>
+          }
+          size="sm"
+          footer={
+            <>
               <Button type="button" variant="outline" onClick={() => setRevokeAllOpen(false)}>
                 Cancel
               </Button>
@@ -615,28 +614,33 @@ export function AdminUserWebSessionsSection({
               >
                 {revokeAllUserSessionsMutation.isPending ? "Revoking…" : "Revoke all"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Input
+              value={revokeAllConfirm}
+              onChange={(e) => setRevokeAllConfirm(e.target.value)}
+              placeholder="revoke all"
+              autoComplete="off"
+            />
+        </BaseAlertDialog>
       )}
 
       {deleteBulkOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Delete selected sessions</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
+        <BaseAlertDialog
+          isOpen={deleteBulkOpen}
+          onClose={() => setDeleteBulkOpen(false)}
+          title="Delete selected sessions"
+          description={
+            <>
               Permanently remove {selectedIds.length} session record
-              {selectedIds.length === 1 ? "" : "s"} from the database (including expired history). Type{" "}
-              <span className="font-mono text-foreground">delete</span> to confirm.
-            </p>
-            <Input
-              className="mt-4"
-              value={deleteBulkConfirm}
-              onChange={(e) => setDeleteBulkConfirm(e.target.value)}
-              placeholder="delete"
-              autoComplete="off"
-            />
-            <div className="mt-6 flex justify-end gap-2">
+              {selectedIds.length === 1 ? "" : "s"} from the database (including expired history).
+              Type <span className="font-mono text-foreground">delete</span> to confirm.
+            </>
+          }
+          size="sm"
+          footer={
+            <>
               <Button type="button" variant="outline" onClick={() => setDeleteBulkOpen(false)}>
                 Cancel
               </Button>
@@ -652,38 +656,39 @@ export function AdminUserWebSessionsSection({
               >
                 {bulkDeleteSessionsMutation.isPending ? "Deleting…" : "Delete permanently"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Input
+              value={deleteBulkConfirm}
+              onChange={(e) => setDeleteBulkConfirm(e.target.value)}
+              placeholder="delete"
+              autoComplete="off"
+            />
+        </BaseAlertDialog>
       )}
 
       {revokeSessionOpen && revokeSessionTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">
-              {revokeSessionTarget.expired ? "Delete session record" : "Revoke web session"}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {revokeSessionTarget.expired ? (
-                <>
-                  Remove this expired session row from the database. Type{" "}
-                  <span className="font-mono text-foreground">delete</span> to confirm.
-                </>
-              ) : (
-                <>
-                  Sign-in on that browser stops immediately; the session row is retained for analysis.
-                  Type <span className="font-mono text-foreground">revoke</span> to confirm.
-                </>
-              )}
-            </p>
-            <Input
-              className="mt-4"
-              value={revokeSessionConfirm}
-              onChange={(e) => setRevokeSessionConfirm(e.target.value)}
-              placeholder={revokeSessionTarget.expired ? "delete" : "revoke"}
-              autoComplete="off"
-            />
-            <div className="mt-6 flex justify-end gap-2">
+        <BaseAlertDialog
+          isOpen={revokeSessionOpen}
+          onClose={() => setRevokeSessionOpen(false)}
+          title={revokeSessionTarget.expired ? "Delete session record" : "Revoke web session"}
+          description={
+            revokeSessionTarget.expired ? (
+              <>
+                Remove this expired session row from the database. Type{" "}
+                <span className="font-mono text-foreground">delete</span> to confirm.
+              </>
+            ) : (
+              <>
+                Sign-in on that browser stops immediately; the session row is retained for analysis.
+                Type <span className="font-mono text-foreground">revoke</span> to confirm.
+              </>
+            )
+          }
+          size="sm"
+          footer={
+            <>
               <Button type="button" variant="outline" onClick={() => setRevokeSessionOpen(false)}>
                 Cancel
               </Button>
@@ -707,9 +712,16 @@ export function AdminUserWebSessionsSection({
                     ? "Delete"
                     : "Revoke"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Input
+              value={revokeSessionConfirm}
+              onChange={(e) => setRevokeSessionConfirm(e.target.value)}
+              placeholder={revokeSessionTarget.expired ? "delete" : "revoke"}
+              autoComplete="off"
+            />
+        </BaseAlertDialog>
       )}
     </>
   );

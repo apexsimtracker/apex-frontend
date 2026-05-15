@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { AlertTriangle, X, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 
 interface DeleteConfirmModalProps {
@@ -20,7 +21,12 @@ export default function DeleteConfirmModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDeleting(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
   async function handleConfirm() {
     setIsDeleting(true);
@@ -42,60 +48,22 @@ export default function DeleteConfirmModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-sm rounded-lg border border-white/10 bg-zinc-900 p-6 shadow-xl">
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={handleClose}
-          disabled={isDeleting}
-          className="absolute right-4 top-4 p-1 text-white/40 transition-colors hover:text-white disabled:opacity-50"
-          aria-label="Close"
-        >
-          <X className="size-4" />
-        </button>
-
-        {/* Icon */}
-        <div className="mb-4 flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-red-500/10">
-            <AlertTriangle className="size-6 text-red-400" />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          <p className="mt-2 text-sm text-white/60">{message}</p>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mt-4 rounded-lg bg-red-500/10 px-3 py-2">
-            <p className="text-center text-sm text-red-400">{error}</p>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="mt-6 flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isDeleting}
-            className="flex-1 border-white/10 bg-white/5 text-white hover:bg-white/10"
-          >
+    <BaseAlertDialog
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={title}
+      description={message}
+      size="sm"
+      footer={
+        <>
+          <Button variant="outline" onClick={handleClose} disabled={isDeleting}>
             Cancel
           </Button>
           <Button
+            type="button"
+            variant="destructive"
             onClick={handleConfirm}
             disabled={isDeleting}
-            className="flex-1 bg-red-500 text-white hover:bg-red-600"
           >
             {isDeleting ? (
               <>
@@ -106,8 +74,20 @@ export default function DeleteConfirmModal({
               "Delete"
             )}
           </Button>
+        </>
+      }
+      bodyClassName="space-y-4 text-center"
+    >
+        <div className="flex justify-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="size-6 text-destructive" />
+          </div>
         </div>
-      </div>
-    </div>
+        {error && (
+          <div className="rounded-lg bg-destructive/10 px-3 py-2">
+            <p className="text-center text-sm text-destructive">{error}</p>
+          </div>
+        )}
+    </BaseAlertDialog>
   );
 }

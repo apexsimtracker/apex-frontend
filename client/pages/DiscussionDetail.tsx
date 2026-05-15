@@ -51,6 +51,10 @@ import PageMeta from "@/components/PageMeta";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -60,23 +64,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
 /** Persists one UUID per browser for anonymous view dedupe; signing in uses a separate server-side key (may double-count once — MVP). */
 const ANON_VIEWER_STORAGE_KEY = "apex_discussion_anon_viewer";
 
@@ -336,7 +323,7 @@ export default function DiscussionDetail() {
     return () => {
       cancelled = true;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on identity keys only; `discussion`/`user` objects would over-trigger view recording
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on identity keys only; `discussion`/`user` objects would over-trigger view recording
   }, [id, discussionQuery.isSuccess, discussion?.id, user?.id, queryClient]);
 
   useEffect(() => {
@@ -371,14 +358,6 @@ export default function DiscussionDetail() {
               <ArrowLeft className="size-4" />
               Back
             </button>
-            <Link
-              to="/community"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
-            >
-              Community
-              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
-              <span className="text-foreground/90">Discussion</span>
-            </Link>
           </div>
           <p className="text-muted-foreground">Invalid post ID.</p>
         </div>
@@ -404,14 +383,6 @@ export default function DiscussionDetail() {
               <ArrowLeft className="size-4" />
               Back
             </button>
-            <Link
-              to="/community"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
-            >
-              Community
-              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
-              <span className="text-foreground/90">Discussion</span>
-            </Link>
           </div>
           <div className="overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
             <div className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent" />
@@ -463,14 +434,6 @@ export default function DiscussionDetail() {
               <ArrowLeft className="size-4" />
               Back
             </button>
-            <Link
-              to="/community"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
-            >
-              Community
-              <ChevronRight className="size-3.5 opacity-60" aria-hidden />
-              <span className="text-foreground/90">Discussion</span>
-            </Link>
           </div>
           <div className="rounded-xl border border-dashed border-white/12 bg-card/15 px-6 py-10 text-center backdrop-blur-sm">
             <p className="text-sm text-muted-foreground">
@@ -526,9 +489,9 @@ export default function DiscussionDetail() {
     repliesTotal === 0
       ? null
       : {
-          start: (commentsPage - 1) * commentsPageSize + 1,
-          end: Math.min(commentsPage * commentsPageSize, repliesTotal),
-        };
+        start: (commentsPage - 1) * commentsPageSize + 1,
+        end: Math.min(commentsPage * commentsPageSize, repliesTotal),
+      };
 
   return (
     <div className="min-h-screen bg-background">
@@ -549,14 +512,6 @@ export default function DiscussionDetail() {
             <ArrowLeft className="size-4" />
             Back
           </button>
-          <Link
-            to="/community"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground sm:text-sm"
-          >
-            Community
-            <ChevronRight className="size-3.5 opacity-60" aria-hidden />
-            <span className="text-foreground/90">Discussion</span>
-          </Link>
         </div>
 
         <article className="relative overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
@@ -685,7 +640,7 @@ export default function DiscussionDetail() {
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:border-white/12 hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
                 discussion.likedByMe &&
-                  "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500"
+                "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500"
               )}
             >
               <Heart
@@ -703,16 +658,16 @@ export default function DiscussionDetail() {
               <span
                 title={String(
                   discussion.commentCount ??
-                    discussion.commentsCount ??
-                    discussion.replies ??
-                    0
+                  discussion.commentsCount ??
+                  discussion.replies ??
+                  0
                 )}
               >
                 {formatCompactCount(
                   discussion.commentCount ??
-                    discussion.commentsCount ??
-                    discussion.replies ??
-                    0
+                  discussion.commentsCount ??
+                  discussion.replies ??
+                  0
                 )}
               </span>
             </div>
@@ -851,35 +806,13 @@ export default function DiscussionDetail() {
         </section>
       </div>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-lg border-white/10 bg-card">
-          <DialogHeader>
-            <DialogTitle>Edit discussion</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            {editError && (
-              <p className="text-sm text-destructive">{editError}</p>
-            )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                disabled={editMutation.isPending}
-                className="border-white/10 bg-secondary"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Body</label>
-              <textarea
-                className="min-h-[160px] w-full resize-y rounded-md border border-white/10 bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                disabled={editMutation.isPending}
-              />
-            </div>
-          </div>
-          <DialogFooter>
+      <BaseModal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit discussion"
+        size="md"
+        footer={
+          <>
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
@@ -894,16 +827,46 @@ export default function DiscussionDetail() {
             >
               {editMutation.isPending ? "Saving…" : "Save"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </>
+        }
+      >
+          <div className="space-y-4">
+            {editError && (
+              <p className="text-sm text-destructive">{editError}</p>
+            )}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                disabled={editMutation.isPending}
+                className="border-white/10 bg-secondary"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Body</label>
+              <Textarea
+                className="min-h-[160px] resize-y border-white/10 bg-secondary"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                disabled={editMutation.isPending}
+              />
+            </div>
+          </div>
+      </BaseModal>
 
-      <Dialog open={originalOpen} onOpenChange={setOriginalOpen}>
-        <DialogContent className="max-w-lg border-white/10 bg-card">
-          <DialogHeader>
-            <DialogTitle>Original post</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-[60vh] space-y-3 overflow-y-auto text-sm">
+      <BaseModal
+        isOpen={originalOpen}
+        onClose={() => setOriginalOpen(false)}
+        title="Original post"
+        size="md"
+        footer={
+          <Button type="button" variant="outline" onClick={() => setOriginalOpen(false)}>
+            Close
+          </Button>
+        }
+        bodyClassName="min-h-0 space-y-3 text-sm"
+      >
             <p className="font-semibold text-foreground">
               {discussion.originalTitle ?? discussion.title}
             </p>
@@ -913,26 +876,23 @@ export default function DiscussionDetail() {
                 discussion.description ??
                 ""}
             </p>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOriginalOpen(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent className="border-white/10 bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this discussion?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the post from the community. You can’t undo this from the site; contact
-              support if you deleted by mistake.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+      <BaseAlertDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete this discussion?"
+        description="This removes the post from the community. You can’t undo this from the site; contact support if you deleted by mistake."
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteMutation.isPending}
+              onClick={() => setDeleteOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button
               type="button"
               variant="destructive"
@@ -941,9 +901,9 @@ export default function DiscussionDetail() {
             >
               {deleteMutation.isPending ? "Deleting…" : "Delete"}
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </>
+        }
+      />
     </div>
   );
 }

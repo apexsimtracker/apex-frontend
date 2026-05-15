@@ -14,8 +14,10 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import { formatChallengeDateTime, getBrowserTimeZone } from "@/lib/datetime";
 import { ArrowLeft, Loader2, MoreHorizontal } from "lucide-react";
@@ -1146,23 +1148,25 @@ export default function AdminChallengeDetail() {
           )}
 
           {removeTarget && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-              <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Remove this participant?
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
+            <BaseAlertDialog
+              isOpen={!!removeTarget}
+              onClose={() => {
+                setRemoveTarget(null);
+                setRemoveError(null);
+              }}
+              title="Remove this participant?"
+              description={
+                <>
                   <span className="font-medium text-foreground">
                     {removeTarget.displayName}
                   </span>
-                  &apos;s sessions for this challenge will be detached and their
-                  leaderboard entry deleted. They may rejoin the challenge afterwards.
-                  This cannot be undone.
-                </p>
-                {removeError && (
-                  <p className="mt-3 text-sm text-destructive">{removeError}</p>
-                )}
-                <div className="mt-6 flex justify-end gap-2">
+                  &apos;s sessions for this challenge will be detached and their leaderboard entry
+                  deleted. They may rejoin the challenge afterwards. This cannot be undone.
+                </>
+              }
+              size="sm"
+              footer={
+                <>
                   <Button
                     type="button"
                     variant="outline"
@@ -1182,66 +1186,53 @@ export default function AdminChallengeDetail() {
                   >
                     {removeMutation.isPending ? "Removing…" : "Remove"}
                   </Button>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+            >
+                {removeError && (
+                  <p className="mt-3 text-sm text-destructive">{removeError}</p>
+                )}
+            </BaseAlertDialog>
           )}
 
           {banTarget && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-              <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-                <h2 className="text-lg font-semibold text-foreground">
-                  {banMode === "edit" ? "Edit ban reason" : "Ban this participant?"}
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {banMode === "edit" ? (
-                    <>
-                      Update the reason shown to{" "}
-                      <span className="font-medium text-foreground">
-                        {banTarget.displayName}
-                      </span>{" "}
-                      when they try to view this challenge.
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-medium text-foreground">
-                        {banTarget.displayName}
-                      </span>{" "}
-                      will not be able to post, join, or view this challenge.
-                      Existing rows stay in the database (admin still sees them)
-                      but are hidden from public views, including any podium badge.
-                    </>
-                  )}
-                </p>
-                <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Reason (optional)
-                  <textarea
-                    className="mt-1 min-h-[88px] w-full rounded-md border border-white/10 bg-background px-3 py-2 text-sm text-foreground"
-                    value={banReasonInput}
-                    onChange={(e) =>
-                      setBanReasonInput(e.target.value.slice(0, BAN_REASON_MAX))
-                    }
-                    maxLength={BAN_REASON_MAX}
-                    placeholder="e.g. Posted a fake telemetry record"
-                  />
-                  <span className="mt-1 block text-right text-[11px] text-muted-foreground">
-                    {banReasonInput.length}/{BAN_REASON_MAX}
-                  </span>
-                </label>
-                {banError && (
-                  <p className="mt-3 text-sm text-destructive">{banError}</p>
-                )}
-                <div className="mt-6 flex flex-wrap justify-end gap-2">
+            <BaseAlertDialog
+              isOpen={!!banTarget}
+              onClose={() => {
+                setBanTarget(null);
+                setBanReasonInput("");
+                setBanError(null);
+              }}
+              title={banMode === "edit" ? "Edit ban reason" : "Ban this participant?"}
+              description={
+                banMode === "edit" ? (
+                  <>
+                    Update the reason shown to{" "}
+                    <span className="font-medium text-foreground">
+                      {banTarget.displayName}
+                    </span>{" "}
+                    when they try to view this challenge.
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-foreground">
+                      {banTarget.displayName}
+                    </span>{" "}
+                    will not be able to post, join, or view this challenge. Existing rows stay in
+                    the database (admin still sees them) but are hidden from public views,
+                    including any podium badge.
+                  </>
+                )
+              }
+              size="sm"
+              footer={
+                <>
                   {banMode === "edit" && (
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() =>
-                        unbanMutation.mutate(banTarget.userId)
-                      }
-                      disabled={
-                        unbanMutation.isPending || updateBanMutation.isPending
-                      }
+                      onClick={() => unbanMutation.mutate(banTarget.userId)}
+                      disabled={unbanMutation.isPending || updateBanMutation.isPending}
                     >
                       {unbanMutation.isPending ? "Unbanning…" : "Unban"}
                     </Button>
@@ -1265,9 +1256,7 @@ export default function AdminChallengeDetail() {
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={
-                      banMutation.isPending || updateBanMutation.isPending
-                    }
+                    disabled={banMutation.isPending || updateBanMutation.isPending}
                     onClick={() => {
                       const reason = banReasonInput.trim();
                       const reasonValue = reason.length > 0 ? reason : null;
@@ -1292,25 +1281,42 @@ export default function AdminChallengeDetail() {
                         ? "Banning…"
                         : "Ban"}
                   </Button>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+            >
+                <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
+                  Reason (optional)
+                  <Textarea
+                    className="mt-1 min-h-[88px]"
+                    value={banReasonInput}
+                    onChange={(e) =>
+                      setBanReasonInput(e.target.value.slice(0, BAN_REASON_MAX))
+                    }
+                    maxLength={BAN_REASON_MAX}
+                    placeholder="e.g. Posted a fake telemetry record"
+                  />
+                  <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+                    {banReasonInput.length}/{BAN_REASON_MAX}
+                  </span>
+                </label>
+                {banError && (
+                  <p className="mt-3 text-sm text-destructive">{banError}</p>
+                )}
+            </BaseAlertDialog>
           )}
 
           {endEarlyOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-              <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-                <h2 className="text-lg font-semibold text-foreground">
-                  End challenge now?
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  The leaderboard will be frozen and Gold/Silver/Bronze badges will
-                  be awarded to the current top 3 finishers. This cannot be undone.
-                </p>
-                {endEarlyError && (
-                  <p className="mt-3 text-sm text-destructive">{endEarlyError}</p>
-                )}
-                <div className="mt-6 flex justify-end gap-2">
+            <BaseAlertDialog
+              isOpen={endEarlyOpen}
+              onClose={() => {
+                setEndEarlyOpen(false);
+                setEndEarlyError(null);
+              }}
+              title="End challenge now?"
+              description="The leaderboard will be frozen and Gold/Silver/Bronze badges will be awarded to the current top 3 finishers. This cannot be undone."
+              size="sm"
+              footer={
+                <>
                   <Button
                     type="button"
                     variant="outline"
@@ -1330,9 +1336,13 @@ export default function AdminChallengeDetail() {
                   >
                     {endEarlyMutation.isPending ? "Ending…" : "End early"}
                   </Button>
-                </div>
-              </div>
-            </div>
+                </>
+              }
+            >
+                {endEarlyError && (
+                  <p className="mt-3 text-sm text-destructive">{endEarlyError}</p>
+                )}
+            </BaseAlertDialog>
           )}
         </>
       )}

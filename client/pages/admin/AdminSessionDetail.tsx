@@ -19,16 +19,12 @@ import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Loader2, ArrowLeft, Trash2, MoreHorizontal, Timer, Flag } from "lucide-react";
 import {
   DropdownMenu,
@@ -134,6 +130,7 @@ export default function AdminSessionDetail() {
     | { mode: "create" }
     | null
   >(null);
+  const [lapDeleteTarget, setLapDeleteTarget] = useState<AdminSessionLapRow | null>(null);
 
   const { data, isPending, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["admin", "sessions", id, includeTelemetry],
@@ -234,6 +231,7 @@ export default function AdminSessionDetail() {
   const lapDeleteMutation = useMutation({
     mutationFn: (lapId: string) => deleteAdminSessionLap(id, lapId),
     onSuccess: () => {
+      setLapDeleteTarget(null);
       toast.success("Lap deleted");
       qc.invalidateQueries({ queryKey: ["admin", "sessions"] });
       refetch();
@@ -697,13 +695,8 @@ export default function AdminSessionDetail() {
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => {
-                                      if (
-                                        confirm(
-                                          "Delete this lap? Best flags and leaderboards will be recomputed."
-                                        )
-                                      ) {
-                                        lapDeleteMutation.mutate(lap.id);
-                                      }
+                                      if (lapDeleteMutation.isPending) return;
+                                      setLapDeleteTarget(lap);
                                     }}
                                   >
                                     Delete
@@ -750,17 +743,17 @@ export default function AdminSessionDetail() {
         )}
       </div>
 
-      <Dialog
-        open={editOpen}
-        onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) setEditFormError(null);
+      <BaseModal
+        isOpen={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setEditFormError(null);
         }}
+        title="Edit activity"
+        size="sm"
+        mobileVariant="fullscreen"
+        bodyClassName="min-h-0"
       >
-        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit activity</DialogTitle>
-          </DialogHeader>
           {data ? (
             <>
               <AdminSessionCatalogBanner sim={data.sim} trackToken={data.track} carToken={data.car} />
@@ -775,31 +768,20 @@ export default function AdminSessionDetail() {
               />
             </>
           ) : null}
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete session?</DialogTitle>
-            <DialogDescription>
-              This removes all laps and cannot be undone. Type{" "}
-              <span className="font-mono text-destructive">delete</span> to confirm.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            placeholder="delete"
-          />
-          {deleteMutation.isError && (
-            <p className="text-sm text-destructive">
-              {deleteMutation.error instanceof ApiError
-                ? deleteMutation.error.message
-                : "Delete failed"}
-            </p>
-          )}
-          <DialogFooter>
+      <BaseAlertDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete session?"
+        description={
+          <>
+            This removes all laps and cannot be undone. Type{" "}
+            <span className="font-mono text-destructive">delete</span> to confirm.
+          </>
+        }
+        footer={
+          <>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
               Cancel
             </Button>
@@ -820,27 +802,121 @@ export default function AdminSessionDetail() {
                 "Delete"
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={lapDialog != null}
-        onOpenChange={(o) => {
-          lapSaveMutation.reset();
-          if (!o) setLapDialog(null);
-        }}
+          </>
+        }
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{lapDialog?.mode === "create" ? "Add lap" : "Edit lap"}</DialogTitle>
-            <DialogDescription className="text-left text-xs text-muted-foreground">
-              Lap time uses the same strict format as manual activity (
-              <span className="font-mono">m:ss.mmm</span> or <span className="font-mono">ss.mmm</span>, seconds
-              two digits with a colon). Sectors accept those formats, or shorter splits like{" "}
-              <span className="font-mono">28.500</span>, or raw milliseconds. Saving runs best-lap normalization.
-            </DialogDescription>
-          </DialogHeader>
+          <Input
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="delete"
+          />
+          {deleteMutation.isError && (
+            <p className="text-sm text-destructive">
+              {deleteMutation.error instanceof ApiError
+                ? deleteMutation.error.message
+                : "Delete failed"}
+            </p>
+          )}
+      </BaseAlertDialog>
+
+      <BaseAlertDialog
+        isOpen={lapDeleteTarget != null}
+        onClose={() => {
+          if (lapDeleteMutation.isPending) return;
+          lapDeleteMutation.reset();
+          setLapDeleteTarget(null);
+        }}
+        title="Delete lap?"
+        description="Delete this lap? Best-lap flags and leaderboard summaries will be recomputed."
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={lapDeleteMutation.isPending}
+              onClick={() => {
+                lapDeleteMutation.reset();
+                setLapDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={lapDeleteMutation.isPending || !lapDeleteTarget}
+              onClick={() => {
+                if (!lapDeleteTarget) return;
+                lapDeleteMutation.mutate(lapDeleteTarget.id);
+              }}
+            >
+              {lapDeleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                  Deleting...
+                </>
+              ) : (
+                "Delete lap"
+              )}
+            </Button>
+          </>
+        }
+      >
+        {lapDeleteMutation.isError ? (
+          <p className="text-sm text-destructive">
+            {lapDeleteMutation.error instanceof Error
+              ? lapDeleteMutation.error.message
+              : "Delete failed"}
+          </p>
+        ) : null}
+      </BaseAlertDialog>
+
+      <BaseModal
+        isOpen={lapDialog != null}
+        onClose={() => {
+          lapSaveMutation.reset();
+          setLapDialog(null);
+        }}
+        title={lapDialog?.mode === "create" ? "Add lap" : "Edit lap"}
+        description={
+          <>
+            Lap time uses the same strict format as manual activity (
+            <span className="font-mono">m:ss.mmm</span> or <span className="font-mono">ss.mmm</span>,
+            seconds two digits with a colon). Sectors accept those formats, or shorter splits like{" "}
+            <span className="font-mono">28.500</span>, or raw milliseconds. Saving runs
+            best-lap normalization.
+          </>
+        }
+        size="md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                lapSaveMutation.reset();
+                setLapDialog(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={lapSaveMutation.isPending}
+              onClick={() => lapSaveMutation.mutate()}
+            >
+              {lapSaveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                  Saving…
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </>
+        }
+      >
           {lapDialog?.mode === "edit" && (
             <div className="grid gap-3">
               <label className="text-xs text-muted-foreground">
@@ -964,34 +1040,7 @@ export default function AdminSessionDetail() {
                 : "Save failed"}
             </p>
           )}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                lapSaveMutation.reset();
-                setLapDialog(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={lapSaveMutation.isPending}
-              onClick={() => lapSaveMutation.mutate()}
-            >
-              {lapSaveMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                  Saving…
-                </>
-              ) : (
-                "Save"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
     </>
   );
 }

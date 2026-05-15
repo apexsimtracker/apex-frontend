@@ -13,18 +13,14 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +45,7 @@ export default function AdminCommunityDiscussionDetail() {
   const [hardDeleteOpen, setHardDeleteOpen] = useState(false);
   /** Shown inside the permanent-delete confirmation dialog only. */
   const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<{ id: string } | null>(null);
 
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ["admin", "community", "discussion", discussionId, commentsPage],
@@ -111,6 +108,7 @@ export default function AdminCommunityDiscussionDetail() {
     mutationFn: (commentId: string) =>
       deleteAdminCommunityComment(discussionId, commentId, { hard: true }),
     onSuccess: async () => {
+      setCommentDeleteTarget(null);
       await refetch();
     },
   });
@@ -279,13 +277,8 @@ export default function AdminCommunityDiscussionDetail() {
                               className="text-destructive focus:text-destructive"
                               disabled={deleteCommentMutation.isPending}
                               onClick={() => {
-                                if (
-                                  window.confirm(
-                                    "Permanently delete this reply? This cannot be undone."
-                                  )
-                                ) {
-                                  deleteCommentMutation.mutate(c.id);
-                                }
+                                if (deleteCommentMutation.isPending) return;
+                                setCommentDeleteTarget({ id: c.id });
                               }}
                             >
                               <Trash2 className="mr-2 size-4" />
@@ -333,11 +326,28 @@ export default function AdminCommunityDiscussionDetail() {
         )}
 
         {editOpen && d && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-lg rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-              <h2 className="mb-4 text-lg font-semibold text-foreground">Edit discussion</h2>
+          <BaseModal
+            isOpen={editOpen}
+            onClose={() => setEditOpen(false)}
+            title="Edit discussion"
+            size="md"
+            footer={
+              <>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={patchMutation.isPending}
+                  onClick={() => patchMutation.mutate()}
+                >
+                  {patchMutation.isPending ? "Saving…" : "Save"}
+                </Button>
+              </>
+            }
+          >
               {formError && (
-                <p className="mb-3 text-sm text-destructive">{formError}</p>
+                <p className="text-sm text-destructive">{formError}</p>
               )}
               <div className="space-y-4">
                 <div>
@@ -350,54 +360,85 @@ export default function AdminCommunityDiscussionDetail() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm text-muted-foreground">Body</label>
-                  <textarea
-                    className="min-h-[160px] w-full rounded-md border border-white/10 bg-secondary px-3 py-2 text-sm text-foreground"
+                  <Textarea
+                    className="min-h-[160px] border-white/10 bg-secondary"
                     value={editBody}
                     onChange={(e) => setEditBody(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="mt-6 flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  disabled={patchMutation.isPending}
-                  onClick={() => patchMutation.mutate()}
-                >
-                  {patchMutation.isPending ? "Saving…" : "Save"}
-                </Button>
-              </div>
-            </div>
-          </div>
+          </BaseModal>
         )}
 
-        <AlertDialog
-          open={hardDeleteOpen}
-          onOpenChange={(open) => {
-            setHardDeleteOpen(open);
-            if (!open) setHardDeleteError(null);
+        <BaseAlertDialog
+          isOpen={commentDeleteTarget != null}
+          onClose={() => {
+            if (deleteCommentMutation.isPending) return;
+            deleteCommentMutation.reset();
+            setCommentDeleteTarget(null);
           }}
-        >
-          <AlertDialogContent className="border-white/10 bg-card">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Permanently delete this thread?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This removes the discussion and all replies, likes, and views from the database.
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {hardDeleteError && (
-              <div
-                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                role="alert"
+          title="Delete reply?"
+          description="Permanently delete this reply? This action cannot be undone."
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={deleteCommentMutation.isPending}
+                onClick={() => {
+                  deleteCommentMutation.reset();
+                  setCommentDeleteTarget(null);
+                }}
               >
-                {hardDeleteError}
-              </div>
-            )}
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={hardDeleteMutation.isPending}>Cancel</AlertDialogCancel>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleteCommentMutation.isPending || !commentDeleteTarget}
+                onClick={() => {
+                  if (!commentDeleteTarget) return;
+                  deleteCommentMutation.mutate(commentDeleteTarget.id);
+                }}
+              >
+                {deleteCommentMutation.isPending ? "Deleting..." : "Delete reply"}
+              </Button>
+            </>
+          }
+        >
+          {deleteCommentMutation.isError ? (
+            <div
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {deleteCommentMutation.error instanceof ApiError
+                ? deleteCommentMutation.error.message
+                : "Delete failed"}
+            </div>
+          ) : null}
+        </BaseAlertDialog>
+
+        <BaseAlertDialog
+          isOpen={hardDeleteOpen}
+          onClose={() => {
+            setHardDeleteOpen(false);
+            setHardDeleteError(null);
+          }}
+          title="Permanently delete this thread?"
+          description="This removes the discussion and all replies, likes, and views from the database. This action cannot be undone."
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={hardDeleteMutation.isPending}
+                onClick={() => {
+                  setHardDeleteOpen(false);
+                  setHardDeleteError(null);
+                }}
+              >
+                Cancel
+              </Button>
               <Button
                 type="button"
                 variant="destructive"
@@ -409,9 +450,18 @@ export default function AdminCommunityDiscussionDetail() {
               >
                 {hardDeleteMutation.isPending ? "Deleting…" : "Delete forever"}
               </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            </>
+          }
+        >
+            {hardDeleteError && (
+              <div
+                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {hardDeleteError}
+              </div>
+            )}
+        </BaseAlertDialog>
       </div>
     </>
   );

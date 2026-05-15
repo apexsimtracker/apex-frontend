@@ -30,6 +30,7 @@ import {
   Trophy,
   UserCog,
   Users,
+  Wrench,
   X,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -81,6 +82,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
       { key: "contact", label: "Contact inbox", icon: Inbox, to: "/admin/contact" },
       { key: "devices", label: "Devices & agent", icon: Server, to: "/admin/devices" },
       { key: "email-auth", label: "Email & auth ops", icon: Mail, to: "/admin/email-auth" },
+      { key: "system", label: "System", icon: Wrench, to: "/admin/system" },
     ],
   },
 ];

@@ -17,17 +17,11 @@ import {
   XIcon,
   XShareButton,
 } from "react-share";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { BaseModal } from "@/components/ui/base-modal";
 
 const ICON_SIZE = 32;
 const ROW_CLASS =
-  "flex w-full items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left text-sm text-white/90 transition-colors hover:bg-white/[0.06]";
+  "flex w-full items-center gap-3 rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/60";
 
 function splitShareHeadline(shareText: string): {
   headline: string;
@@ -118,20 +112,18 @@ export default function SessionShareModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-white/10 bg-zinc-900 text-white sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-white">Share session</DialogTitle>
-          <DialogDescription className="text-white/60">
-            Share this session link and summary on social media or by email.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex max-h-[min(70vh,520px)] flex-col gap-5 overflow-y-auto pt-1">
+    <BaseModal
+      isOpen={open}
+      onClose={() => onOpenChange(false)}
+      title="Share session"
+      description="Share this session link and summary on social media or by email."
+      size="sm"
+      bodyClassName="flex min-h-0 flex-col gap-5 pt-1"
+    >
           <section aria-labelledby="share-prefill-heading">
             <h3
               id="share-prefill-heading"
-              className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50"
+              className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             >
               Prefills in the app
             </h3>
@@ -211,11 +203,11 @@ export default function SessionShareModal({
           <section aria-labelledby="share-no-prefill-heading">
             <h3
               id="share-no-prefill-heading"
-              className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/50"
+              className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             >
               Does not prefill post text
             </h3>
-            <p className="mb-3 text-xs leading-relaxed text-white/45">
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
               Facebook and LinkedIn open in a new tab with only your link. Your
               session details and link are copied to the clipboard first—paste
               into the post after the window opens.
@@ -251,12 +243,12 @@ export default function SessionShareModal({
             <button
               type="button"
               onClick={() => void copyToClipboard()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2.5 text-sm font-medium text-white/90 transition-colors hover:bg-white/[0.1]"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
               aria-label="Copy session details and link to clipboard"
             >
               {copied ? (
                 <>
-                  <Check className="size-4 text-emerald-400" aria-hidden />
+                  <Check className="size-4 text-primary" aria-hidden />
                   Copied
                 </>
               ) : (
@@ -267,8 +259,6 @@ export default function SessionShareModal({
               )}
             </button>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    </BaseModal>
   );
 }

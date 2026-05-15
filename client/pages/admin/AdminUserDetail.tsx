@@ -27,6 +27,7 @@ import { ApiError } from "@/lib/api/errors";
 import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1289,23 +1290,17 @@ export default function AdminUserDetail() {
       )}
 
       {suspendOpen && u && !u.isDeleted && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Suspend account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              User will be unable to sign in until restored. Reason is stored in the audit log.
-            </p>
-            <Label htmlFor="suspend-modal-reason" className="mt-4 block text-xs">
-              Reason (required)
-            </Label>
-            <Textarea
-              id="suspend-modal-reason"
-              className="mt-1"
-              value={suspendReasonInput}
-              onChange={(e) => setSuspendReasonInput(e.target.value)}
-              placeholder="Reason…"
-            />
-            <div className="mt-6 flex justify-end gap-2">
+        <BaseAlertDialog
+          isOpen={suspendOpen}
+          onClose={() => {
+            setSuspendOpen(false);
+            setSuspendReasonInput("");
+          }}
+          title="Suspend account"
+          description="User will be unable to sign in until restored. Reason is stored in the audit log."
+          size="sm"
+          footer={
+            <>
               <Button
                 type="button"
                 variant="outline"
@@ -1331,29 +1326,34 @@ export default function AdminUserDetail() {
               >
                 {statusMutation.isPending ? "Suspending…" : "Suspend"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <Label htmlFor="suspend-modal-reason" className="mt-4 block text-xs">
+              Reason (required)
+            </Label>
+            <Textarea
+              id="suspend-modal-reason"
+              className="mt-1"
+              value={suspendReasonInput}
+              onChange={(e) => setSuspendReasonInput(e.target.value)}
+              placeholder="Reason…"
+            />
+        </BaseAlertDialog>
       )}
 
       {deleteOpen && u && !u.isDeleted && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-foreground">Close account</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Irreversible GDPR soft-delete (anonymized email, sessions revoked). Type the user&apos;s
-              email exactly to confirm.
-            </p>
-            <p className="mt-2 font-mono text-sm text-foreground">{u.email}</p>
-            <Input
-              className="mt-4"
-              value={deleteEmailConfirm}
-              onChange={(e) => setDeleteEmailConfirm(e.target.value)}
-              placeholder={u.email}
-              autoComplete="off"
-            />
-            {deleteError && <p className="mt-2 text-sm text-destructive">{deleteError}</p>}
-            <div className="mt-6 flex justify-end gap-2">
+        <BaseAlertDialog
+          isOpen={deleteOpen}
+          onClose={() => {
+            setDeleteOpen(false);
+            setDeleteError(null);
+          }}
+          title="Close account"
+          description="Irreversible GDPR soft-delete (anonymized email, sessions revoked). Type the user's email exactly to confirm."
+          size="sm"
+          footer={
+            <>
               <Button
                 type="button"
                 variant="outline"
@@ -1367,9 +1367,7 @@ export default function AdminUserDetail() {
               <Button
                 type="button"
                 variant="destructive"
-                disabled={
-                  deleteEmailConfirm.trim() !== u.email || deleteMutation.isPending
-                }
+                disabled={deleteEmailConfirm.trim() !== u.email || deleteMutation.isPending}
                 onClick={() =>
                   deleteMutation.mutate({
                     userId: id,
@@ -1379,9 +1377,19 @@ export default function AdminUserDetail() {
               >
                 {deleteMutation.isPending ? "Closing…" : "Close account"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+            <p className="mt-2 font-mono text-sm text-foreground">{u.email}</p>
+            <Input
+              className="mt-4"
+              value={deleteEmailConfirm}
+              onChange={(e) => setDeleteEmailConfirm(e.target.value)}
+              placeholder={u.email}
+              autoComplete="off"
+            />
+            {deleteError && <p className="mt-2 text-sm text-destructive">{deleteError}</p>}
+        </BaseAlertDialog>
       )}
     </div>
   );

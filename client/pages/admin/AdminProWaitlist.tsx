@@ -9,6 +9,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,13 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Loader2, MoreHorizontal, Download } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
@@ -141,14 +135,13 @@ export default function AdminProWaitlist() {
 
   return (
     <>
-      <Dialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Waitlist entry</DialogTitle>
-            <DialogDescription asChild>
-              <p>Details submitted for Apex Pro. Contact email may differ from the account email.</p>
-            </DialogDescription>
-          </DialogHeader>
+      <BaseModal
+        isOpen={!!detailRow}
+        onClose={() => setDetailRow(null)}
+        title="Waitlist entry"
+        description="Details submitted for Apex Pro. Contact email may differ from the account email."
+        size="md"
+      >
           {detailRow && (
             <div className="space-y-3 text-sm">
               <div>
@@ -223,8 +216,7 @@ export default function AdminProWaitlist() {
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+      </BaseModal>
 
       <PageMeta path="/admin/waitlist" title={TITLE} description="Pro tier waitlist." noindex />
       <div className="mx-auto max-w-6xl">

@@ -15,6 +15,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -797,16 +798,26 @@ function ResolveOrphanCatalogModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground">
-          Add orphan {kind === "track" ? "track" : "car"} to catalog
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Slug must match the stored token exactly so existing sessions resolve.
-        </p>
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title={`Add orphan ${kind === "track" ? "track" : "car"} to catalog`}
+      description="Slug must match the stored token exactly so existing sessions resolve."
+      size="md"
+      mobileVariant="fullscreen"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
+            {submitting ? "Saving…" : "Add to catalog"}
+          </Button>
+        </>
+      }
+    >
         {errorMessage && (
-          <p className="mt-2 text-sm text-red-500" role="alert">
+          <p className="text-sm text-red-500" role="alert">
             {errorMessage}
             {/already exists/i.test(errorMessage) ? (
               <span className="block pt-1 text-xs text-muted-foreground">
@@ -815,7 +826,7 @@ function ResolveOrphanCatalogModal({
             ) : null}
           </p>
         )}
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <label className="block text-xs text-muted-foreground">
             Sim <span className="text-red-400">*</span>
             <select
@@ -857,16 +868,7 @@ function ResolveOrphanCatalogModal({
             </label>
           )}
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
-            {submitting ? "Saving…" : "Add to catalog"}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 
@@ -912,15 +914,29 @@ function CreateCatalogModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground">New {kind === "track" ? "track" : "car"}</h2>
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title={`New ${kind === "track" ? "track" : "car"}`}
+      size="md"
+      mobileVariant="fullscreen"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
+            {submitting ? "Saving…" : "Create"}
+          </Button>
+        </>
+      }
+    >
         {errorMessage && (
-          <p className="mt-2 text-sm text-red-500" role="alert">
+          <p className="text-sm text-red-500" role="alert">
             {errorMessage}
           </p>
         )}
-        <div className="mt-4 space-y-3">
+        <div className="space-y-3">
           <label className="block text-xs text-muted-foreground">
             Sim <span className="text-red-400">*</span>
             <select
@@ -957,16 +973,7 @@ function CreateCatalogModal({
             </label>
           )}
         </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
-            {submitting ? "Saving…" : "Create"}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 
@@ -988,35 +995,15 @@ function EditTrackModal({
   const [sortOrder, setSortOrder] = useState(String(row.sortOrder));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground">Edit track</h2>
-        <p className="mt-1 font-mono text-xs text-muted-foreground">{row.slug}</p>
-        {errorMessage && (
-          <p className="mt-2 text-sm text-red-500" role="alert">
-            {errorMessage}
-          </p>
-        )}
-        <div className="mt-4 space-y-3">
-          <label className="block text-xs text-muted-foreground">
-            Display name
-            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Length (km) <span className="text-red-400">*</span>
-            <Input
-              className="mt-1"
-              inputMode="decimal"
-              value={lengthKm}
-              onChange={(e) => setLengthKm(e.target.value)}
-            />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Sort order
-            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
-          </label>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title="Edit track"
+      description={<span className="font-mono text-xs">{row.slug}</span>}
+      size="md"
+      mobileVariant="fullscreen"
+      footer={
+        <>
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
@@ -1038,9 +1025,34 @@ function EditTrackModal({
           >
             {submitting ? "Saving…" : "Save"}
           </Button>
+        </>
+      }
+    >
+        {errorMessage && (
+          <p className="text-sm text-red-500" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        <div className="space-y-3">
+          <label className="block text-xs text-muted-foreground">
+            Display name
+            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          </label>
+          <label className="block text-xs text-muted-foreground">
+            Length (km) <span className="text-red-400">*</span>
+            <Input
+              className="mt-1"
+              inputMode="decimal"
+              value={lengthKm}
+              onChange={(e) => setLengthKm(e.target.value)}
+            />
+          </label>
+          <label className="block text-xs text-muted-foreground">
+            Sort order
+            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          </label>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 
@@ -1061,26 +1073,15 @@ function EditCarModal({
   const [sortOrder, setSortOrder] = useState(String(row.sortOrder));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-foreground">Edit car</h2>
-        <p className="mt-1 font-mono text-xs text-muted-foreground">{row.slug}</p>
-        {errorMessage && (
-          <p className="mt-2 text-sm text-red-500" role="alert">
-            {errorMessage}
-          </p>
-        )}
-        <div className="mt-4 space-y-3">
-          <label className="block text-xs text-muted-foreground">
-            Display name
-            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Sort order
-            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
-          </label>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      title="Edit car"
+      description={<span className="font-mono text-xs">{row.slug}</span>}
+      size="md"
+      mobileVariant="fullscreen"
+      footer={
+        <>
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
@@ -1098,8 +1099,24 @@ function EditCarModal({
           >
             {submitting ? "Saving…" : "Save"}
           </Button>
+        </>
+      }
+    >
+        {errorMessage && (
+          <p className="text-sm text-red-500" role="alert">
+            {errorMessage}
+          </p>
+        )}
+        <div className="space-y-3">
+          <label className="block text-xs text-muted-foreground">
+            Display name
+            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          </label>
+          <label className="block text-xs text-muted-foreground">
+            Sort order
+            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
+          </label>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }

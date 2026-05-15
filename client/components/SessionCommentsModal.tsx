@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
 import { apiPost, getSessionCommentsPage, SESSION_COMMENTS_PAGE_DEFAULT_LIMIT } from "@/lib/api";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
+import { BaseModal } from "@/components/ui/base-modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type CommentItem = { id: string; body: string; createdAt?: string; userId?: string };
 
@@ -101,48 +102,65 @@ export function SessionCommentsModal({
     void refetch();
   }, [refetch]);
 
-  if (!isOpen) return null;
-  if (typeof document === "undefined" || !document.body) return null;
-
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center"
-      onClick={onClose}
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Comments"
+      size="sm"
+      mobileVariant="sheet"
+      bodyClassName="flex min-h-0 flex-1 flex-col gap-4"
+      footer={
+        <>
+          <div className="flex w-full flex-col gap-2">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    void submitComment();
+                  }
+                }}
+                placeholder="Add a comment..."
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={commentPending || !commentText.trim()}
+                onClick={() => void submitComment()}
+              >
+                {commentPending ? "Posting…" : "Post"}
+              </Button>
+            </div>
+            {commentError ? (
+              <div className="text-xs text-destructive">{commentError}</div>
+            ) : null}
+          </div>
+        </>
+      }
     >
-      <div
-        className="flex max-h-[80vh] w-full max-w-md flex-col rounded-t-lg border border-white/10 bg-card/20 shadow-xl backdrop-blur-lg sm:rounded-lg"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">Comments</h3>
-          <button type="button" onClick={onClose} className="p-1 text-white/50 hover:text-white">
-            <X className="size-4" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {commentsLoading ? (
-            <p className="text-xs text-zinc-500">Loading comments…</p>
+            <p className="text-xs text-muted-foreground">Loading comments…</p>
           ) : commentsError ? (
             <div className="space-y-2">
-              <p className="text-xs text-zinc-500">{commentsError}</p>
-              <button
-                type="button"
-                onClick={() => loadComments()}
-                className="text-xs text-zinc-400 underline hover:text-zinc-300"
-              >
+              <p className="text-xs text-muted-foreground">{commentsError}</p>
+              <button type="button" onClick={() => loadComments()} className="text-xs text-primary underline hover:text-primary/80">
                 Retry
               </button>
             </div>
           ) : comments.length === 0 ? (
-            <p className="text-xs text-zinc-500">No comments yet.</p>
+            <p className="text-xs text-muted-foreground">No comments yet.</p>
           ) : (
             <ul className="space-y-3">
               {comments.map((c) => (
-                <li key={c.id} className="text-sm text-white/80">
+                <li key={c.id} className="text-sm text-foreground">
                   <p>{c.body}</p>
                   {c.createdAt && (
-                    <p className="mt-0.5 text-xs text-white/50">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {new Date(c.createdAt).toLocaleString()}
                     </p>
                   )}
@@ -150,11 +168,10 @@ export function SessionCommentsModal({
               ))}
             </ul>
           )}
-        </div>
         {total > 0 && !commentsLoading && !commentsError && (
-          <div className="space-y-3 border-t border-white/5 px-4 py-3">
+          <div className="space-y-3 border-t border-border pt-4">
             {range && (
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-muted-foreground">
                 Showing {range.start}–{range.end} of {total}
               </p>
             )}
@@ -166,41 +183,6 @@ export function SessionCommentsModal({
             />
           </div>
         )}
-        <div className="flex flex-col gap-2 border-t border-white/10 p-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                  e.preventDefault();
-                  void submitComment();
-                }
-              }}
-              placeholder="Add a comment..."
-              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/20"
-            />
-            <button
-              type="button"
-              disabled={commentPending || !commentText.trim()}
-              className={`rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15 disabled:pointer-events-none ${commentPending || !commentText.trim() ? "cursor-not-allowed opacity-50" : ""}`}
-              onClick={() => void submitComment()}
-            >
-              {commentPending ? "Posting…" : "Post"}
-            </button>
-          </div>
-          {commentError && <div className="text-xs text-red-400">{commentError}</div>}
-        </div>
-      </div>
-    </div>
+    </BaseModal>
   );
-
-  try {
-    return createPortal(modalContent, document.body);
-  } catch {
-    return null;
-  }
 }

@@ -12,6 +12,10 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import {
+  BaseAlertDialog,
+  BaseModal,
+} from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -372,17 +376,13 @@ export default function AdminDevices() {
         )}
 
         {renameOpen && renameTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-foreground">Rename device</h2>
-              <Input
-                className="mt-4"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                placeholder="Device label"
-                autoComplete="off"
-              />
-              <div className="mt-6 flex justify-end gap-2">
+          <BaseModal
+            isOpen={renameOpen}
+            onClose={() => setRenameOpen(false)}
+            title="Rename device"
+            size="sm"
+            footer={
+              <>
                 <Button type="button" variant="outline" onClick={() => setRenameOpen(false)}>
                   Cancel
                 </Button>
@@ -393,34 +393,32 @@ export default function AdminDevices() {
                 >
                   {renameMutation.isPending ? "Saving…" : "Save"}
                 </Button>
-              </div>
-            </div>
-          </div>
+              </>
+            }
+          >
+            <Input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="Device label"
+              autoComplete="off"
+            />
+          </BaseModal>
         )}
 
         {revokeDeviceOpen && revokeDeviceTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="w-full max-w-md rounded-xl border border-white/10 bg-card p-6 shadow-xl">
-              <h2 className="text-lg font-semibold text-foreground">Revoke agent device</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+          <BaseAlertDialog
+            isOpen={revokeDeviceOpen}
+            onClose={() => setRevokeDeviceOpen(false)}
+            title="Revoke agent device"
+            description={
+              <>
                 The agent will no longer be able to upload using this pairing. Type{" "}
                 <span className="font-mono text-foreground">revoke</span> to confirm.
-              </p>
-              <Input
-                className="mt-4"
-                value={revokeDeviceReason}
-                onChange={(e) => setRevokeDeviceReason(e.target.value)}
-                placeholder="Reason (optional)"
-                autoComplete="off"
-              />
-              <Input
-                className="mt-3"
-                value={revokeConfirm}
-                onChange={(e) => setRevokeConfirm(e.target.value)}
-                placeholder="revoke"
-                autoComplete="off"
-              />
-              <div className="mt-6 flex justify-end gap-2">
+              </>
+            }
+            size="sm"
+            footer={
+              <>
                 <Button type="button" variant="outline" onClick={() => setRevokeDeviceOpen(false)}>
                   Cancel
                 </Button>
@@ -437,9 +435,23 @@ export default function AdminDevices() {
                 >
                   {revokeDeviceMutation.isPending ? "Revoking…" : "Revoke"}
                 </Button>
-              </div>
-            </div>
-          </div>
+              </>
+            }
+          >
+            <Input
+              value={revokeDeviceReason}
+              onChange={(e) => setRevokeDeviceReason(e.target.value)}
+              placeholder="Reason (optional)"
+              autoComplete="off"
+            />
+            <Input
+              className="mt-3"
+              value={revokeConfirm}
+              onChange={(e) => setRevokeConfirm(e.target.value)}
+              placeholder="revoke"
+              autoComplete="off"
+            />
+          </BaseAlertDialog>
         )}
       </div>
     </>
