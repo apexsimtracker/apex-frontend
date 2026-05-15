@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   bulkDeleteAdminSessions,
+  deleteAdminSession,
   fetchAdminSessionList,
   type AdminSessionListRow,
 } from "@/lib/api";
@@ -19,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Loader2, MoreHorizontal, Trash2, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { MANUAL_ACTIVITY_SIMS, type SimOption } from "@/lib/manualActivityData";
 import SimBadge from "@/components/SimBadge";
@@ -147,6 +149,22 @@ export default function AdminSessions() {
     },
   });
 
+  const rowDeleteMutation = useMutation({
+    mutationFn: (sessionId: string) => deleteAdminSession(sessionId),
+    onSuccess: (_, sessionId) => {
+      toast.success("Session deleted");
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(sessionId);
+        return next;
+      });
+      void qc.invalidateQueries({ queryKey: ["admin", "sessions"] });
+    },
+    onError: (e: unknown) => {
+      toast.error(e instanceof ApiError ? e.message : "Could not delete session.");
+    },
+  });
+
   const rows: AdminSessionListRow[] = data?.items ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
@@ -257,7 +275,8 @@ export default function AdminSessions() {
               >
                 Global leaderboards
               </Link>{" "}
-              for competitive context.
+              for competitive context. Apex Agent now sends a stable <span className="font-mono">clientDeviceId</span>{" "}
+              on sign-in so repeated logins from the same install group more cleanly in auth sessions.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -538,6 +557,21 @@ export default function AdminSessions() {
                                 <Link to={`/sessions/${r.id}`} target="_blank" rel="noreferrer">
                                   Open public session
                                 </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                disabled={rowDeleteMutation.isPending}
+                                onClick={() => {
+                                  if (
+                                    window.confirm(
+                                      "Permanently delete this session and cascade laps? Leaderboards and personal bests will be reconciled on the server."
+                                    )
+                                  ) {
+                                    rowDeleteMutation.mutate(r.id);
+                                  }
+                                }}
+                              >
+                                Delete session
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

@@ -51,7 +51,17 @@ export default function DeleteConfirmModal({
     <BaseAlertDialog
       isOpen={isOpen}
       onClose={handleClose}
-      title={title}
+      title={
+        <span className="flex items-start gap-3">
+          <span
+            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/20"
+            aria-hidden
+          >
+            <AlertTriangle className="size-5 text-destructive" />
+          </span>
+          <span className="min-w-0 flex-1 pt-0.5">{title}</span>
+        </span>
+      }
       description={message}
       size="sm"
       footer={
@@ -76,18 +86,15 @@ export default function DeleteConfirmModal({
           </Button>
         </>
       }
-      bodyClassName="space-y-4 text-center"
     >
-        <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="size-6 text-destructive" />
-          </div>
+      {error ? (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {error}
         </div>
-        {error && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-2">
-            <p className="text-center text-sm text-destructive">{error}</p>
-          </div>
-        )}
+      ) : null}
     </BaseAlertDialog>
   );
 }

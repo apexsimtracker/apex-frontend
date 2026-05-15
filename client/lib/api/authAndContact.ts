@@ -113,6 +113,8 @@ export type VerifyEmailResponse = {
   token?: string;
   /** Server AuthSession id — pair with JWT for admin session list / revoke */
   sessionToken?: string;
+  /** Opaque refresh for silent access renewal (optional until backend supports it). */
+  refreshToken?: string;
   user?: AuthUser;
 };
 
@@ -244,6 +246,7 @@ export type LoginResponse = {
   token: string;
   sessionToken?: string;
   accessToken?: string;
+  refreshToken?: string;
 };
 
 export async function authLogin(
