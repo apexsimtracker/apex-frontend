@@ -1,11 +1,23 @@
 /**
  * Sim Display Helpers
- * 
- * Central utility for rendering sim-specific UI elements consistently across the app.
- * Handles display names, badges, and capability flags for stat gating.
+ *
+ * Active Apex sims (must stay aligned with backend `schema.prisma` Sim + agent uploads):
+ * - {@link SUPPORTED_SIM_ENUMS} — DB / API responses (IRACING | F1_25 | LMU)
+ * - {@link CANONICAL_SIM_API_KEYS} — agent & API form fields (iracing | f1_25 | lmu)
  */
 
-export type SimKey = "IRACING" | "F1_25" | "F1_24" | "ACC" | "AC" | string;
+/** Prisma `Sim` enum values currently supported on Apex. */
+export const SUPPORTED_SIM_ENUMS = ["IRACING", "F1_25", "LMU"] as const;
+export type SupportedSimEnum = (typeof SUPPORTED_SIM_ENUMS)[number];
+
+/** Lowercase API/agent keys for the same sims (multipart `sim`, session filters). */
+export const CANONICAL_SIM_API_KEYS = ["iracing", "f1_25", "lmu"] as const;
+export type CanonicalSimApiKey = (typeof CANONICAL_SIM_API_KEYS)[number];
+
+/** Multipart upload tags including legacy F1 tag (server normalizes f125 → f1_25). */
+export const LAP_UPLOAD_SIM_FORM_TAGS = ["iracing", "f1_25", "f125", "lmu"] as const;
+
+export type SimKey = SupportedSimEnum | "F1_24" | "ACC" | "AC" | string;
 
 export interface SimConfig {
   displayName: string;
