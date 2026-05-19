@@ -361,7 +361,7 @@ function FollowListItem({
                     user,
                   })
                 }
-                className="text-destructive focus:text-destructive"
+                className="text-destructive"
               >
                 {isRequest ? "Force decline" : "Remove follow"}
               </DropdownMenuItem>

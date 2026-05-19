@@ -448,6 +448,7 @@ export default function Profile() {
         followersCount={publicPreview?.followersCount ?? 0}
         followingCount={publicPreview?.followingCount ?? 0}
         isCurrentUser
+        isPro={user.hasPro === true}
         challengeBadges={publicPreview?.challengeBadges}
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}

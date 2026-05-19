@@ -175,6 +175,7 @@ export type ChallengeLeaderboardRow = {
   attemptCount: number;
   verification: LeaderboardVerification;
   bestSessionId: string | null;
+  isPro?: boolean;
 };
 
 export async function getChallengeLeaderboard(

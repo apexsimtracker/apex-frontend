@@ -20,6 +20,7 @@ import {
 import { getApexSettings, type ApexSettings } from "@/lib/settingsStorage";
 import { SettingsCard } from "@/features/settings/components/SettingsCard";
 import { SettingsRow } from "@/features/settings/components/SettingsRow";
+import { SubscriptionCard } from "@/features/settings/components/SubscriptionCard";
 import {
   SETTINGS_PATH,
   settingsTitle,
@@ -500,6 +501,8 @@ export default function Settings() {
                 </div>
               </div>
             </SettingsCard>
+
+            <SubscriptionCard />
 
             {/* Display name (editable, Save → PATCH /api/auth/me) */}
             <SettingsCard

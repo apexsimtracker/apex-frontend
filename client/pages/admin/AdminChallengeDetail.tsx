@@ -864,7 +864,7 @@ export default function AdminChallengeDetail() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => openRemove(target)}
-                                  className="text-destructive focus:text-destructive"
+                                  className="text-destructive"
                                 >
                                   Remove from challenge
                                 </DropdownMenuItem>
@@ -886,7 +886,7 @@ export default function AdminChallengeDetail() {
                                 ) : (
                                   <DropdownMenuItem
                                     onClick={() => openCreateBan(target)}
-                                    className="text-destructive focus:text-destructive"
+                                    className="text-destructive"
                                   >
                                     Ban from challenge
                                   </DropdownMenuItem>
@@ -1080,7 +1080,7 @@ export default function AdminChallengeDetail() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => openRemove(target)}
-                                  className="text-destructive focus:text-destructive"
+                                  className="text-destructive"
                                 >
                                   Remove from challenge
                                 </DropdownMenuItem>
@@ -1102,7 +1102,7 @@ export default function AdminChallengeDetail() {
                                 ) : (
                                   <DropdownMenuItem
                                     onClick={() => openCreateBan(target)}
-                                    className="text-destructive focus:text-destructive"
+                                    className="text-destructive"
                                   >
                                     Ban from challenge
                                   </DropdownMenuItem>

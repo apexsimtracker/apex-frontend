@@ -156,7 +156,7 @@ function EmptyTelemetry() {
           </Button>
         ) : (
           <Button variant="outline" asChild className="border-amber-500/30 text-amber-400/90 hover:bg-amber-500/10">
-            <Link to="/upgrade">
+            <Link to="/pricing">
               <Zap className="mr-2 size-4" />
               Upgrade for Agent
             </Link>
@@ -257,6 +257,24 @@ export default function Sessions() {
     <div className="min-h-screen bg-background">
       <PageMeta title={sessionsTitle} description={sessionsDescription} path={SESSIONS_PATH} />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {user && !isPro && (
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-500/25 bg-amber-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-white/75">
+              Free plan includes the last 3 months of session history. Upgrade to Apex Pro for
+              unlimited history and analytics.
+            </p>
+            <Button
+              asChild
+              size="sm"
+              className="shrink-0 bg-amber-500 text-black hover:bg-amber-400"
+            >
+              <Link to="/pricing">
+                <Zap className="mr-1.5 size-4" />
+                View Pro plans
+              </Link>
+            </Button>
+          </div>
+        )}
         {showOnboardingBanner && (
           <div className="relative mb-6 rounded-lg border border-white/10 bg-white/[0.04] p-4 sm:p-5">
             <button
@@ -317,7 +335,7 @@ export default function Sessions() {
                   onClick={() => {
                     setOnboarded();
                     setShowOnboardingBanner(false);
-                    navigate("/upgrade");
+                    navigate("/pricing");
                   }}
                   className="border-amber-500/30 text-sm text-amber-400/90 hover:bg-amber-500/10"
                 >
@@ -403,13 +421,19 @@ export default function Sessions() {
                         userAvatar={header.avatar}
                           game="—"
                           car={session.car ?? "—"}
-                          vehicleDisplay={session.vehicleDisplay}
+                          vehicleDisplay={
+                            session.vehicleDisplay ??
+                            (typeof session.carName === "string" ? session.carName : undefined)
+                          }
+                          source={
+                            session.source ??
+                            (session.sessionType === "MANUAL_ACTIVITY" ? "manual" : "telemetry")
+                          }
                           track={session.track ?? "—"}
                           position={session.position ?? null}
                           totalRacers={session.totalDrivers ?? null}
                           sessionType={session.sessionType}
                           sim={session.sim}
-                          source={session.source}
                           bestLapMs={session.bestLapMs}
                           lapCount={session.lapCount}
                           consistencyScore={session.consistencyScore}

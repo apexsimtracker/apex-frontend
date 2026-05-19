@@ -324,7 +324,7 @@ export default function AdminDevices() {
                                   Rename
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive"
+                                  className="text-destructive"
                                   onClick={() => {
                                     setRevokeDeviceTarget(r);
                                     setRevokeDeviceReason("");

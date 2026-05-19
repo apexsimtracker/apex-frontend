@@ -180,6 +180,7 @@ export type UserPublicProfile = {
   followRelationship: FollowRelationship;
   /** Set when viewerHasAccess is true — used for race history empty-state copy. */
   sessionVisibility: SessionVisibility | null;
+  isPro: boolean;
   challengeBadges?: {
     challengeId: string;
     challengeTitle: string;

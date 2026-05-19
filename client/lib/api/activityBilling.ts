@@ -66,6 +66,21 @@ export function normalizeFeedSession(item: unknown): unknown {
     merged.likedByMe = Boolean(merged.likedByMe);
   }
 
+  const carName =
+    typeof merged.carName === "string" && merged.carName.trim()
+      ? merged.carName.trim()
+      : null;
+  const vehicleDisplay =
+    typeof merged.vehicleDisplay === "string" && merged.vehicleDisplay.trim()
+      ? merged.vehicleDisplay.trim()
+      : null;
+  if (!vehicleDisplay && carName) {
+    merged.vehicleDisplay = carName;
+  }
+
+  const consistency = feedToNumber(merged.consistencyScore);
+  if (consistency != null) merged.consistencyScore = consistency;
+
   return merged;
 }
 
@@ -194,6 +209,87 @@ export type UpgradeInfo = {
 
 export async function getUpgradeInfo(): Promise<UpgradeInfo> {
   return apiGet<UpgradeInfo>("/api/billing/upgrade-info");
+}
+
+export type BillingInterval = "MONTHLY" | "ANNUAL";
+
+export type BillingPlansResponse = {
+  free: {
+    id: string;
+    name: string;
+    priceLabel: string;
+    features: string[];
+  };
+  pro: {
+    monthly: {
+      interval: BillingInterval;
+      name: string;
+      priceGbp: number;
+      priceLabel: string;
+    };
+    annual: {
+      interval: BillingInterval;
+      name: string;
+      priceGbp: number;
+      priceLabel: string;
+    };
+    features: string[];
+  };
+};
+
+export type SubscribeResponse = {
+  success: boolean;
+  entitlement: {
+    plan: EntitlementPlan;
+    status: string;
+    billingInterval: BillingInterval | null;
+    currentPeriodEnd: string | null;
+    pastDueSince: string | null;
+    effectivePlan: EntitlementPlan;
+  };
+};
+
+export async function getBillingPlans(): Promise<BillingPlansResponse> {
+  return apiGet<BillingPlansResponse>("/api/billing/plans");
+}
+
+export async function subscribeToPro(interval: BillingInterval): Promise<SubscribeResponse> {
+  return apiPost<SubscribeResponse>("/api/billing/subscribe", { interval });
+}
+
+export async function cancelSubscription(): Promise<SubscribeResponse> {
+  return apiPost<SubscribeResponse>("/api/billing/cancel", {});
+}
+
+export type BillingEntitlementStatus = "ACTIVE" | "PAST_DUE" | "CANCELED";
+
+export type BillingEntitlement = {
+  plan: EntitlementPlan;
+  status: BillingEntitlementStatus;
+  billingInterval: BillingInterval | null;
+  currentPeriodEnd: string | null;
+  pastDueSince: string | null;
+  effectivePlan: EntitlementPlan;
+  authenticated?: boolean;
+};
+
+export async function getBillingEntitlement(): Promise<BillingEntitlement> {
+  return apiGet<BillingEntitlement>("/api/billing/entitlement");
+}
+
+export type PersonalBestRow = {
+  id: string;
+  track: string;
+  car: string;
+  bestLapMs: number;
+  sessionId: string | null;
+  lapId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getPersonalBests(): Promise<{ personalBests: PersonalBestRow[] }> {
+  return apiGet<{ personalBests: PersonalBestRow[] }>("/api/personal-bests");
 }
 
 export type ProWaitlistEntry = {

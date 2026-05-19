@@ -21,7 +21,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import GuestOnlyRoute from "./auth/GuestOnlyRoute";
 import AdminRoute from "./auth/AdminRoute";
 import Upload from "./pages/Upload";
-import Upgrade from "./pages/Upgrade";
+import Pricing from "./pages/Pricing";
 import Agent from "./pages/Agent";
 import NotFound from "./pages/NotFound";
 import QAPage from "./pages/QA";
@@ -66,6 +66,7 @@ const SessionDetailPage = lazy(() => import("./pages/SessionDetailPage"));
 const DiscussionDetail = lazy(() => import("./pages/DiscussionDetail"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Settings = lazy(() => import("./pages/Settings"));
+const PersonalBests = lazy(() => import("./pages/PersonalBests"));
 const ManualActivity = lazy(() => import("./pages/ManualActivity"));
 const EditActivity = lazy(() => import("./pages/EditActivity"));
 const MaintenanceNotice = lazy(() => import("./pages/MaintenanceNotice"));
@@ -132,6 +133,15 @@ export default function App() {
                     <Route path="/challenges" element={<Challenges />} />
                     <Route path="/challenge/:id" element={<ChallengeDetail />} />
                     <Route path="/leaderboards" element={<Leaderboards />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route
+                      path="/personal-bests"
+                      element={
+                        <ProtectedRoute message="Sign in to view your personal bests.">
+                          <PersonalBests />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/settings"
                       element={
@@ -206,15 +216,18 @@ export default function App() {
                     />
                     <Route
                       path="/upgrade"
-                      element={
-                        <ProtectedRoute message="Sign in to join Apex Pro or the waitlist.">
-                          <Upgrade />
-                        </ProtectedRoute>
-                      }
+                      element={<Navigate to="/pricing" replace />}
                     />
                     <Route path="/agent" element={<Agent />} />
                     <Route path="/activity/:id" element={<ActivityDetail />} />
-                    <Route path="/sessions" element={<Sessions />} />
+                    <Route
+                      path="/sessions"
+                      element={
+                        <ProtectedRoute message="Sign in to view your sessions.">
+                          <Sessions />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/sessions/:id" element={<SessionDetailPage />} />
                     <Route path="/discussion/:id" element={<DiscussionDetail />} />
                     <Route path="/race/:id" element={<RaceDetail />} />

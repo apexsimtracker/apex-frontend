@@ -35,7 +35,7 @@ export default function ProRequiredBanner() {
           <div className="flex shrink-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate("/upgrade")}
+              onClick={() => navigate("/pricing")}
               className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-medium text-black transition-colors hover:bg-amber-400"
             >
               Upgrade

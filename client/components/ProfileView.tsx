@@ -50,6 +50,7 @@ type ProfileViewProps = {
   /** Set when GET .../race-history returned 403 for this viewer. */
   raceHistoryForbiddenCode?: string;
   /** From GET /api/users/:id — challenge podium badges. */
+  isPro?: boolean;
   challengeBadges?: {
     challengeId: string;
     challengeTitle: string;
@@ -79,6 +80,7 @@ export function ProfileView({
   onEditProfile,
   raceHistoryPagination,
   raceHistoryForbiddenCode,
+  isPro = false,
   challengeBadges,
 }: ProfileViewProps) {
   const navigate = useNavigate();
@@ -194,6 +196,7 @@ export function ProfileView({
             onOpenFollowing={onOpenFollowing}
             onEditProfile={onEditProfile}
             streakDays={profile.user.streakDays ?? 0}
+            isPro={isPro}
             challengeBadges={challengeBadges}
           />
           <ProfileKeyStats

@@ -586,7 +586,16 @@ export default function ChallengeDetail() {
                           className="border-b border-white/5"
                         >
                           <td className="py-2 pr-4 tabular-nums">{row.rank}</td>
-                          <td className="py-2 pr-4">{row.username}</td>
+                          <td className="py-2 pr-4">
+                            <span className="inline-flex items-center gap-2">
+                              {row.username}
+                              {row.isPro && (
+                                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">
+                                  Pro
+                                </span>
+                              )}
+                            </span>
+                          </td>
                           <td className="py-2 pr-4 font-mono">{formatLapMs(row.bestLapMs)}</td>
                           <td className="py-2 pr-4 text-muted-foreground">
                             {formatChallengeDateTime(row.bestLapAt)}

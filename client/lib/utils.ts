@@ -17,6 +17,17 @@ export function getDiscussionAuthorDisplay(author: unknown): string {
   return displayName;
 }
 
+/** Word-based initials (up to 2 words) — matches ActivityCard avatar fallback. */
+export function getUserInitials(displayName: string): string {
+  const parts = (displayName || "?")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2);
+  const initials = parts.map((p) => p[0]?.toUpperCase() ?? "").join("");
+  return initials || "?";
+}
+
 /** Initials from the final display name: first 2 chars, or single char for short names (e.g. "User" → "U"). */
 export function getDiscussionAuthorInitials(displayName: string): string {
   const s = displayName.trim();

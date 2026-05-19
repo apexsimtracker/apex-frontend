@@ -135,10 +135,10 @@ export default function QAPage() {
                 <span className="ml-1 text-white/40">(Open session as FREE user → charts show teaser)</span>
               </li>
               <li>
-                <Link to="/upgrade" className="text-white/80 underline underline-offset-2 hover:text-white">
+                <Link to="/pricing" className="text-white/80 underline underline-offset-2 hover:text-white">
                   Upgrade page
                 </Link>
-                <span className="ml-1 text-white/40">(/upgrade)</span>
+                <span className="ml-1 text-white/40">(/pricing)</span>
               </li>
               <li>
                 <Link to="/agent" className="text-white/80 underline underline-offset-2 hover:text-white">

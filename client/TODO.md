@@ -31,7 +31,7 @@
 ---
 
 ## Optional / Later
-- [ ] **Upgrade / Billing** — enable "Upgrade" button and wire to payment when ready
+- [x] **Upgrade / Billing** — mock subscribe/cancel on `/pricing` (Stripe later)
 - [ ] **Java SDK** — add `changeDockCameraPosition` in core/Dock.java, JNI, and Demo [109] if using the Java client
 - [ ] **Custom logo** — put `logo.png` in `client/public/` to replace inline SVG
 - [ ] **Edit display name** — already in Settings; optional: add deep link from Profile

@@ -347,6 +347,7 @@ export default function UserProfile() {
             : undefined
         }
         raceHistoryForbiddenCode={raceHistoryForbiddenCode}
+        isPro={preview.isPro}
         challengeBadges={preview.challengeBadges}
       />
 

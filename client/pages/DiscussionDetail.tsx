@@ -545,7 +545,7 @@ export default function DiscussionDetail() {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
+                    className="text-destructive"
                     onClick={() => setDeleteOpen(true)}
                   >
                     <Trash2 className="mr-2 size-4" />

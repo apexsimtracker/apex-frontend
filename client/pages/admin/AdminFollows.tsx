@@ -559,7 +559,7 @@ function EdgeRow({
                   following: row.following,
                 })
               }
-              className="text-destructive focus:text-destructive"
+              className="text-destructive"
             >
               Remove follow
             </DropdownMenuItem>
@@ -774,7 +774,7 @@ function RequestRow({
                   following: row.following,
                 })
               }
-              className="text-destructive focus:text-destructive"
+              className="text-destructive"
             >
               Force decline
             </DropdownMenuItem>

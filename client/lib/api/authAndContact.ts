@@ -14,6 +14,8 @@ export type AuthUser = {
   name?: string;
   createdAt?: string;
   hasPro?: boolean;
+  effectivePlan?: "FREE" | "PRO";
+  billingInterval?: "MONTHLY" | "ANNUAL" | null;
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;

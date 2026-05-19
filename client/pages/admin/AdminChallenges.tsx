@@ -275,7 +275,7 @@ export default function AdminChallenges() {
                                   setDeleteConfirm("");
                                   setDeleteOpen(true);
                                 }}
-                                className="text-destructive focus:text-destructive"
+                                className="text-destructive"
                               >
                                 Delete
                               </DropdownMenuItem>

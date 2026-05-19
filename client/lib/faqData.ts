@@ -37,7 +37,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: "General",
     question: "Is Apex free to use?",
     answer:
-      "Yes. Apex has a free tier with unlimited session logging and access to core features. Apex Pro (£4.99/month) unlocks additional features including telemetry, auto-uploads, the AI engineer, and access to challenges.",
+      "Yes. The free tier includes session logging (last 3 months of history), community, leaderboards, and challenges. Apex Pro is £5.99/month or £49.99/year and adds unlimited history, sector analytics, personal bests, agent auto-upload, telemetry, and more.",
   },
   {
     id: "how-log-session",
@@ -51,7 +51,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: "Sessions & Data",
     question: "Is there a limit on how many sessions I can log?",
     answer:
-      "No — there is no limit on session history for any user. Log as many sessions as you like on any plan.",
+      "Free accounts can access sessions from the last 3 months. Apex Pro includes unlimited session history.",
   },
   {
     id: "data-privacy",
@@ -65,21 +65,21 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: "Apex Pro",
     question: "What's included in Apex Pro?",
     answer:
-      "Apex Pro includes: full telemetry access (private to you), automatic session uploads, the AI engineer for personalised performance insights, and access to challenges and competitions. All for £4.99/month.",
+      "Apex Pro includes unlimited session history, sector breakdown and ideal lap, personal bests tracking, challenge leaderboard priority, a Pro badge on your profile, agent auto-upload, and full telemetry. £5.99/month or £49.99/year.",
   },
   {
-    id: "what-is-ai-engineer",
+    id: "session-insights",
     category: "Apex Pro",
-    question: "What is the AI engineer?",
+    question: "Does Apex include AI coaching on sessions?",
     answer:
-      "The AI engineer analyses your session data and provides personalised coaching insights — highlighting where you're losing time, identifying patterns in your performance, and suggesting areas to focus on to improve your lap times.",
+      "Not yet. Session detail includes rule-based insights today. Apex Analysis AI coaching is planned as a separate release and is not part of the current Pro subscription.",
   },
   {
     id: "what-are-challenges",
     category: "Apex Pro",
     question: "What are challenges?",
     answer:
-      "Challenges are time-based competitions where you go up against other Apex Pro users. Beat target lap times, climb the leaderboard, and prove your pace against the community.",
+      "Challenges are open to all users — join and participate on any plan. Apex Pro members get priority ranking on challenge leaderboards when lap times are close.",
   },
   {
     id: "cancel-apex-pro",

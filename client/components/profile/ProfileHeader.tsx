@@ -31,6 +31,7 @@ type ProfileHeaderProps = {
   onOpenFollowing?: () => void;
   onEditProfile?: () => void;
   streakDays: number;
+  isPro?: boolean;
   challengeBadges?: ProfileHeaderBadge[];
 };
 
@@ -56,6 +57,7 @@ export function ProfileHeader({
   onOpenFollowing,
   onEditProfile,
   streakDays,
+  isPro = false,
   challengeBadges,
 }: ProfileHeaderProps) {
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
@@ -88,8 +90,13 @@ export function ProfileHeader({
           )}
 
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="mb-0.5 text-xl font-bold text-foreground sm:mb-1 sm:text-2xl">
+            <h1 className="mb-0.5 flex flex-wrap items-center justify-center gap-2 text-xl font-bold text-foreground sm:mb-1 sm:justify-start sm:text-2xl">
               {displayName}
+              {isPro && (
+                <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
+                  Pro
+                </span>
+              )}
             </h1>
 
             <div className="mb-1 flex flex-wrap items-center justify-center gap-4 text-xs sm:justify-start">

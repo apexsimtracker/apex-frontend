@@ -30,6 +30,12 @@ const SEARCH_DEBOUNCE_MS = 300;
 const PRESET_SELECT_CLASS =
   "rounded-md border border-white/10 bg-card px-3 py-2 text-sm";
 
+function formatIngestSourceLabel(ingestSource: string | null | undefined): string {
+  const raw = (ingestSource ?? "").trim();
+  if (!raw) return "—";
+  return raw.replace(/_/g, " ");
+}
+
 function downloadCsv(filename: string, rows: string[][]): void {
   const esc = (c: string) => {
     if (c.includes(",") || c.includes('"') || c.includes("\n")) {
@@ -457,6 +463,8 @@ export default function AdminSessions() {
                       <th className="p-3">When</th>
                       <th className="p-3">User</th>
                       <th className="p-3">Sim</th>
+                      <th className="p-3">Type</th>
+                      <th className="p-3">Source</th>
                       <th className="p-3">Track / car</th>
                       <th className="p-3">Laps</th>
                       <th className="p-3">Best</th>
@@ -492,6 +500,12 @@ export default function AdminSessions() {
                         </td>
                         <td className="p-3 align-top">
                           <SimBadge sim={r.sim} size="md" />
+                        </td>
+                        <td className="p-3 align-top text-xs text-muted-foreground">
+                          {r.sessionType ?? "—"}
+                        </td>
+                        <td className="p-3 align-top text-xs text-muted-foreground">
+                          {formatIngestSourceLabel(r.ingestSource)}
                         </td>
                         <td className="p-3 align-top">
                           <div className="font-medium">{formatTrackName(r.track)}</div>

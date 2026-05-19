@@ -270,7 +270,7 @@ export function AdminWebSignInsPanel() {
                               View sessions
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive"
                               onClick={() => {
                                 setRevokeAllContext({
                                   userId: row.user.id,

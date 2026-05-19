@@ -274,7 +274,7 @@ export default function AdminCommunityDiscussionDetail() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive"
                               disabled={deleteCommentMutation.isPending}
                               onClick={() => {
                                 if (deleteCommentMutation.isPending) return;

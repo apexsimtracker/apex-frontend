@@ -13,6 +13,7 @@ export type AdminSessionListRow = {
   track: string;
   car: string;
   sessionType: string | null;
+  ingestSource: string | null;
   challengeId: string | null;
   challengeTitle: string | null;
   lapCount: number;
@@ -98,6 +99,8 @@ export type AdminSessionDetail = {
   qualifyingPosition: number | null;
   totalDrivers: number | null;
   challengeId: string | null;
+  notes: string | null;
+  ingestSource: string | null;
   challengeTitle: string | null;
   challengeStatus: string | null;
   processingStartedAt: string | null;

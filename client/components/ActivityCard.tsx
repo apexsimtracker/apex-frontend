@@ -55,6 +55,14 @@ function isManualSessionItem(item: ActivityCardItem): boolean {
   return false;
 }
 
+function feedSourceLabel(item: ActivityCardItem): string {
+  const src = (item.source ?? "").toString().trim().toLowerCase();
+  if (src === "manual") return formatActivitySource("MANUAL_ACTIVITY");
+  if (src === "agent") return formatActivitySource("AGENT");
+  if (src === "telemetry") return formatActivitySource("TELEMETRY");
+  return "";
+}
+
 const getPodiumColor = (pos: number) => {
   if (pos === 1) return "text-gold bg-yellow-950/20 dark:bg-yellow-950/15";
   if (pos === 2) return "text-silver bg-gray-800/15 dark:bg-gray-800/20";
@@ -313,12 +321,14 @@ function RaceCardContent({
   const avatarSrc = resolveApiUrl(item.userAvatar);
 
   const sessionTypeKey = (item.sessionType ?? "").toString().trim();
+  const fromSource = feedSourceLabel(item);
   const sessionTypeLabel =
-    sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
-      sessionTypeKey.toUpperCase() === "TELEMETRY" ||
-      sessionTypeKey.toUpperCase() === "AGENT"
+    fromSource ||
+    (sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
+    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
+    sessionTypeKey.toUpperCase() === "AGENT"
       ? formatActivitySource(sessionTypeKey)
-      : formatSessionTypeUpper(item.sessionType);
+      : formatSessionTypeUpper(item.sessionType));
 
   return (
     <div

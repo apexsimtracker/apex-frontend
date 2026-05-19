@@ -693,7 +693,7 @@ export default function AdminSessionDetail() {
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
+                                    className="text-destructive"
                                     onClick={() => {
                                       if (lapDeleteMutation.isPending) return;
                                       setLapDeleteTarget(lap);

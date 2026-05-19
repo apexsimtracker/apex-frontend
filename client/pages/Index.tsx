@@ -547,13 +547,19 @@ export default function Index() {
                       userAvatar={header.avatar}
                       game="—"
                       car={session.car ?? "—"}
-                      vehicleDisplay={session.vehicleDisplay}
+                      vehicleDisplay={
+                        session.vehicleDisplay ??
+                        (typeof session.carName === "string" ? session.carName : undefined)
+                      }
+                      source={
+                        session.source ??
+                        (session.sessionType === "MANUAL_ACTIVITY" ? "manual" : "telemetry")
+                      }
                       track={session.track ?? "—"}
                       position={session.position ?? null}
                       totalRacers={session.totalDrivers ?? null}
                       sessionType={session.sessionType}
                       sim={session.sim}
-                      source={session.source}
                       bestLapMs={session.bestLapMs}
                       lapCount={session.lapCount}
                       consistencyScore={session.consistencyScore}

@@ -73,7 +73,7 @@ export default function OnboardingEmptyState() {
                 </span>
               </div>
               <Button
-                onClick={() => navigate("/upgrade")}
+                onClick={() => navigate("/pricing")}
                 className="mt-4 w-full bg-amber-500 text-black hover:bg-amber-400"
               >
                 Learn About Pro

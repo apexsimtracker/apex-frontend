@@ -42,7 +42,7 @@ export default function Agent() {
         toast.error("Apex Pro Required", {
           description: "Apex Pro required to download the agent.",
         });
-        navigate("/upgrade");
+        navigate("/pricing");
       } else {
         toast.error("Download failed", {
           description: "Unable to start download. Please try again.",
@@ -146,7 +146,7 @@ export default function Agent() {
                     Automatic uploads are available with Apex Pro.
                   </p>
                   <Button
-                    onClick={() => navigate("/upgrade")}
+                    onClick={() => navigate("/pricing")}
                     className="mt-4 bg-amber-500 text-black hover:bg-amber-400"
                     size="sm"
                   >

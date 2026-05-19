@@ -11,6 +11,7 @@ import SimBadge from "@/components/SimBadge";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import PageMeta from "@/components/PageMeta";
 import SessionShareModal from "@/components/SessionShareModal";
+import { Button } from "@/components/ui/button";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -86,6 +87,7 @@ type SessionDetailResponse =
       carName?: string | null;
       game?: string | null;
       sim?: string | null;
+      proFeaturesLocked?: boolean;
     };
 
 function parseSessionDetailApiResponse(data: SessionDetailResponse): {
@@ -93,6 +95,7 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
   lapsData: BackendLapLite[] | null;
   defaultTelemetryLapNumber: number | null;
   telemetry: TelemetryPayload | null;
+  proFeaturesLocked: boolean;
 } {
   if (data && typeof data === "object" && "session" in (data as object)) {
     const d = data as Exclude<SessionDetailResponse, SessionDetail>;
@@ -128,14 +131,17 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
       lapsData: lite,
       defaultTelemetryLapNumber: d.defaultTelemetryLapNumber ?? null,
       telemetry: d.telemetry ?? null,
+      proFeaturesLocked: Boolean((d as { proFeaturesLocked?: boolean }).proFeaturesLocked),
     };
   }
 
+  const flat = data as SessionDetail & { proFeaturesLocked?: boolean };
   return {
-    session: data as SessionDetail,
+    session: flat,
     lapsData: null,
     defaultTelemetryLapNumber: null,
     telemetry: null,
+    proFeaturesLocked: Boolean(flat.proFeaturesLocked),
   };
 }
 
@@ -310,8 +316,10 @@ function primaryActivityLabel(session: SessionDetail): string {
     if (mk === "PRACTICE") return "Manual · Practice";
     return "Manual";
   }
-  if (st === "TELEMETRY" || st === "AGENT") {
-    return formatActivitySource(session.sessionType);
+  const src = (session.source ?? "").toString().toUpperCase();
+  if (src === "AGENT" || st === "AGENT") return formatActivitySource("AGENT");
+  if (src === "TELEMETRY" || st === "TELEMETRY") {
+    return formatActivitySource("TELEMETRY");
   }
   return formatSessionTypeUpper(session.sessionType);
 }
@@ -319,13 +327,15 @@ function primaryActivityLabel(session: SessionDetail): string {
 function isManualActivity(session: SessionDetail): boolean {
   const st = (session.sessionType ?? "").toUpperCase();
   if (st === "MANUAL_ACTIVITY") return true;
-  if (session.source === "MANUAL_ACTIVITY") return true;
+  const src = (session.source ?? "").toString().toUpperCase();
+  if (src === "MANUAL" || src === "MANUAL_ACTIVITY") return true;
+  if (src === "TELEMETRY" || src === "AGENT") return false;
   const hasNoLaps = !session.laps || session.laps.length === 0;
   const hasNoTelemetryFields =
     session.lapCount === 0 ||
     session.lapCount == null ||
     session.bestLapLapNumber == null;
-  return hasNoLaps && hasNoTelemetryFields && session.source !== "TELEMETRY" && session.source !== "AGENT";
+  return hasNoLaps && hasNoTelemetryFields;
 }
 
 export default function SessionDetailPage() {
@@ -361,11 +371,14 @@ export default function SessionDetailPage() {
   }, [id]);
   const defaultTelemetryLapNumber = sessionPayload?.defaultTelemetryLapNumber ?? null;
   const telemetry = sessionPayload?.telemetry ?? null;
+  const proFeaturesLocked = sessionPayload?.proFeaturesLocked === true;
 
   const sessionDetailDeniedMessage = (() => {
     if (!isError || !(queryError instanceof ApiError)) return null;
     if (queryError.status !== 403) return null;
     switch (queryError.code) {
+      case "SESSION_HISTORY_LOCKED":
+        return "This session is outside the free plan history window. Upgrade to Apex Pro for unlimited session access.";
       case "SESSION_VISIBILITY_PRIVATE":
         return "This session is private. Only the driver can view it.";
       case "SESSION_VISIBILITY_FOLLOWERS_ONLY":
@@ -731,9 +744,25 @@ export default function SessionDetailPage() {
         )}
 
           {/* Ideal Lap — best S1 + S2 + S3 + lap time across like lap table */}
+          {proFeaturesLocked ? (
+            <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs uppercase tracking-wider text-white/50">Ideal Lap</span>
+                <Link
+                  to="/pricing"
+                  className="text-xs font-medium text-amber-400 hover:text-amber-300"
+                >
+                  Unlock with Pro
+                </Link>
+              </div>
+              <p className="mt-2 text-sm text-white/60">
+                Sector breakdown and ideal lap times are included with Apex Pro.
+              </p>
+            </div>
+          ) : (
           <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-            <div className="mb-1.5 text-xs uppercase tracking-wider text-white/50">
-              Ideal Lap
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <span className="text-xs uppercase tracking-wider text-white/50">Ideal Lap</span>
             </div>
             <div className="grid grid-cols-4 items-end gap-2">
               <div className="text-right">
@@ -776,6 +805,7 @@ export default function SessionDetailPage() {
               </div>
             </div>
           </div>
+          )}
 
           <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
             <table className="w-full">
@@ -854,30 +884,36 @@ export default function SessionDetailPage() {
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-mono text-sm ${
-                          row.sector1Ms === bestS1 && Number.isFinite(bestS1)
-                            ? "text-purple-400"
-                            : "text-white/80"
+                          proFeaturesLocked
+                            ? "select-none blur-sm text-white/40"
+                            : row.sector1Ms === bestS1 && Number.isFinite(bestS1)
+                              ? "text-purple-400"
+                              : "text-white/80"
                         }`}
                       >
-                        {formatLapMs(row.sector1Ms)}
+                        {proFeaturesLocked ? "—" : formatLapMs(row.sector1Ms)}
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-mono text-sm ${
-                          row.sector2Ms === bestS2 && Number.isFinite(bestS2)
-                            ? "text-purple-400"
-                            : "text-white/80"
+                          proFeaturesLocked
+                            ? "select-none blur-sm text-white/40"
+                            : row.sector2Ms === bestS2 && Number.isFinite(bestS2)
+                              ? "text-purple-400"
+                              : "text-white/80"
                         }`}
                       >
-                        {formatLapMs(row.sector2Ms)}
+                        {proFeaturesLocked ? "—" : formatLapMs(row.sector2Ms)}
                       </td>
                       <td
                         className={`px-4 py-3 text-right font-mono text-sm ${
-                          row.sector3Ms === bestS3 && Number.isFinite(bestS3)
-                            ? "text-purple-400"
-                            : "text-white/80"
+                          proFeaturesLocked
+                            ? "select-none blur-sm text-white/40"
+                            : row.sector3Ms === bestS3 && Number.isFinite(bestS3)
+                              ? "text-purple-400"
+                              : "text-white/80"
                         }`}
                       >
-                        {formatLapMs(row.sector3Ms)}
+                        {proFeaturesLocked ? "—" : formatLapMs(row.sector3Ms)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono">
                         <span className={lapColorClass(row.timeMs)}>
@@ -985,15 +1021,12 @@ export default function SessionDetailPage() {
                 <p className="mt-1 text-sm text-white/60">
                   Unlock speed, brake, throttle and gear data for your best lap
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {}}
-                  disabled
-                  className="mt-5 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-red-500/40"
-                  style={{ backgroundColor: "rgb(240, 28, 28)", cursor: "not-allowed" }}
+                <Button
+                  asChild
+                  className="mt-5 bg-amber-500 text-black hover:bg-amber-400"
                 >
-                  Coming soon
-                </button>
+                  <Link to="/pricing">Upgrade to Pro</Link>
+                </Button>
               </div>
             </div>
           )}
