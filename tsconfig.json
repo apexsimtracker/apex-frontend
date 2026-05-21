@@ -6,7 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
@@ -17,7 +16,6 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
 
-    /* Linting */
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -25,21 +23,15 @@
     "noFallthroughCasesInSwitch": false,
     "strictNullChecks": false,
 
-    /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./client/*"],
-      "@shared/*": ["./shared/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
-    "client/**/*",
-    "server/**/*",
-    "shared/**/*",
-    "netlify/**/*",
-    "tailwind.config.ts",
+    "src/**/*",
     "vite.config.ts",
-    "vite.config.server.ts"
+    "tailwind.config.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

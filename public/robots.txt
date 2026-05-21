@@ -1,27 +1,37 @@
 # https://apexsimtracker.com/
-# Policy: align with ProtectedRoute — public discovery pages are crawlable; auth-only and account flows are not.
+# Public discovery pages: Allow. Auth, account, admin, and tooling: Disallow.
 
 User-agent: *
 Allow: /
 
-# Home (/) requires sign-in for the feed — avoid treating it as a public landing URL
-Disallow: /$
+# Admin (all nested routes)
+Disallow: /admin
 
-# Account / verification (PageMeta uses noindex; disallow saves crawl budget)
+# Account & verification (PageMeta: noindex; disallow saves crawl budget)
 Disallow: /login
 Disallow: /signup
 Disallow: /forgot-password
 Disallow: /verify-email
 
-# Auth-guarded app sections
+# Auth-guarded app areas
 Disallow: /profile
 Disallow: /settings
+Disallow: /personal-bests
 Disallow: /upload
 Disallow: /manual
 Disallow: /upgrade
 
+# Sessions list only (detail pages remain public)
+Disallow: /sessions$
+Allow: /sessions/
+
+# Session edit & legacy paths
+Disallow: /sessions/*/edit
+Disallow: /activity/
+
 # Internal / low SEO value
 Disallow: /agent
 Disallow: /qa
+Disallow: /status/
 
 Sitemap: https://apexsimtracker.com/sitemap.xml

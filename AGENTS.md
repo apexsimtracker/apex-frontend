@@ -1,213 +1,183 @@
-# Fusion Starter
+# Apex Frontend — Agent Guide
 
-A production-ready full-stack React application template with integrated Express server, featuring React Router 6 SPA mode, TypeScript, Vitest, Zod and modern tooling.
+Apex is a **sim racing web app** (sessions, leaderboards, challenges, community, admin). This package is a **Vite + React SPA** that talks to the **Fastify API** in the sibling `apex` backend repo—not an embedded Express server.
 
-While the starter comes with a express server, only create endpoint when strictly neccesary, for example to encapsulate logic that must leave in the server, such as private keys handling, or certain DB operations, db...
+## Tech stack
 
-## Tech Stack
+| Layer | Choice |
+|-------|--------|
+| Runtime | React 18, TypeScript |
+| Routing | React Router 7 (SPA, `BrowserRouter`) |
+| Build | Vite 7 |
+| Styling | Tailwind CSS 3, CSS variables in `src/global.css` |
+| UI primitives | Radix UI + shadcn-style components in `src/components/ui/` |
+| Data fetching | TanStack Query v5 |
+| Forms / validation | react-hook-form + Zod 4 |
+| Icons | lucide-react |
+| Toasts | sonner |
+| Tests | Vitest (`src/**/*.test.ts`, `src/**/*.spec.ts`) |
+| Package manager | **pnpm** (see `packageManager` in `package.json`) |
 
-- **PNPM**: Prefer pnpm
-- **Frontend**: React 18 + React Router 6 (spa) + TypeScript + Vite + TailwindCSS 3
-- **Backend**: Express server integrated with Vite dev server
-- **Testing**: Vitest
-- **UI**: Radix UI + TailwindCSS 3 + Lucide React icons
-
-## Project Structure
+## Repository layout
 
 ```
-client/                   # React SPA frontend
-├── pages/                # Route components (Index.tsx = home)
-├── components/ui/        # Pre-built UI component library
-├── App.tsx                # App entry point and with SPA routing setup
-└── global.css            # TailwindCSS 3 theming and global styles
-
-server/                   # Express API backend
-├── index.ts              # Main server setup (express config + routes)
-└── routes/               # API handlers
-
-shared/                   # Types used by both client & server
-└── api.ts                # Example of how to share api interfaces
+apex-frontend/
+├── index.html              # Vite entry; script → /src/main.tsx
+├── vite.config.ts          # Dev server :8080, /api proxy, @ → src
+├── vercel.json             # SPA rewrites + no-store on index
+├── tailwind.config.ts
+├── tsconfig.json           # paths: "@/*" → "./src/*"
+├── vitest.config.ts
+├── public/                 # Static assets (logo, sitemap, sim SVGs)
+├── src/
+│   ├── main.tsx            # Mount + global.css
+│   ├── App.tsx             # Routes, providers, layout shell
+│   ├── global.css          # Theme tokens (--background, --primary, …)
+│   ├── pages/              # Route-level screens (+ pages/admin/)
+│   ├── components/         # Shared UI (Header, ActivityCard, profile/, ui/)
+│   ├── features/           # Cross-page feature modules (settings, session-detail, manual-activity)
+│   ├── lib/                # Utilities, API client, validation, grouping logic
+│   ├── auth/               # Route guards (ProtectedRoute, AdminRoute, GuestOnlyRoute)
+│   ├── contexts/           # AuthContext (GET /api/auth/me)
+│   └── config/             # navigation.ts — header/footer link source of truth
+└── .builder/rules/         # Cursor/Builder agent rules (*.mdc)
 ```
 
-## Key Features
+There is **no** `client/`, `server/`, or `shared/` folder in this repo anymore.
 
-## SPA Routing System
+## Architecture
 
-The routing system is powered by React Router 6:
-
-- `client/pages/Index.tsx` represents the home page.
-- Routes are defined in `client/App.tsx` using the `react-router-dom` import
-- Route files are located in the `client/pages/` directory
-
-For example, routes can be defined with:
-
-```typescript
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-
-<Routes>
-  <Route path="/" element={<Index />} />
-  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-  <Route path="*" element={<NotFound />} />
-</Routes>;
+```mermaid
+flowchart LR
+  subgraph browser [Browser]
+    SPA[Vite SPA :8080]
+  end
+  subgraph dev [Local dev]
+    Proxy[Vite /api proxy]
+    API[Fastify apex :10000]
+  end
+  subgraph prod [Production]
+    Vercel[Vercel static dist]
+    Render[Render / hosted API]
+  end
+  SPA -->|dev same-origin /api| Proxy --> API
+  SPA -->|prod VITE_API_URL| Render
+  Vercel --> SPA
 ```
 
-### Styling System
+- **All business logic and persistence** live in the **apex backend** (`/api/*`).
+- The frontend only renders UI, calls APIs, and stores the JWT in `localStorage` (`apex_token`).
+- **Do not** add Express routes or a local BFF in this repo unless the product explicitly requires it.
 
-- **Primary**: TailwindCSS 3 utility classes
-- **Theme and design tokens**: Configure in `client/global.css`
-- **UI components**: Pre-built library in `client/components/ui/`
-- **Utility**: `cn()` function combines `clsx` + `tailwind-merge` for conditional classes
+### API client (`src/lib/api/`)
 
-```typescript
-// cn utility usage
-className={cn(
-  "base-classes",
-  { "conditional-class": condition },
-  props.className  // User overrides
-)}
-```
+- **`config.ts`** — `API_BASE` from `VITE_API_URL` / `VITE_APEX_API_BASE_URL`, or defaults (`http://127.0.0.1:10000` dev, Render URL in prod builds).
+- **`fetchClient.ts`** — `fetchApi()`, auth headers (`apex_token`, device id, server session cookie key), 401 → `registerAuthExpiredHandler`, `PRO_REQUIRED` event.
+- **Domain modules** — `profile.ts`, `community.ts`, `challenges.ts`, `manualAndUpload.ts`, `admin*.ts`, etc.; re-exported from `index.ts`.
+- Import from pages/components: `import { authMe, fetchApi } from "@/lib/api"`.
 
-### Express Server Integration
+### Auth
 
-- **Development**: Single port (8080) for both frontend/backend
-- **Hot reload**: Both client and server code
-- **API endpoints**: Prefixed with `/api/`
+- **`AuthProvider`** (`src/contexts/AuthContext.tsx`) — `useQuery` on `GET /api/auth/me` when `apex_token` exists; listens for `apex:auth` custom events (login/logout/impersonation).
+- **Guards** — `ProtectedRoute`, `GuestOnlyRoute`, `AdminRoute` under `src/auth/`.
+- **Impersonation** — admin flows; `ImpersonationExitFab`, `lib/impersonation.ts`.
 
-#### Example API Routes
+### Routing (`src/App.tsx`)
 
-- `GET /api/ping` - Simple ping api
-- `GET /api/demo` - Demo endpoint
+- **Home** — `HomeRoute`: logged-in → `Index` (feed); logged-out → `PublicHome`.
+- **Heavy routes** — lazy-loaded: `Profile`, `SessionDetailPage`, `Settings`, `DiscussionDetail`, etc.
+- **Canonical session URL** — `/sessions/:id` (legacy `/activity/:id` redirects).
+- **Admin** — nested under `/admin/*` with `AdminLayout` + `AdminRoute`.
+- New routes must be added **above** the catch-all `path="*"`.
 
-### Shared Types
+### UI organization
 
-Import consistent types in both client and server:
+- **`pages/`** — one primary component per route; keep files focused; extract subcomponents into `components/` or `features/`.
+- **`features/`** — settings forms, session-detail insights, manual-activity hooks (co-located logic).
+- **`components/ui/`** — design-system primitives (Button, Dialog, …); extend via `components.json` (shadcn).
+- **`config/navigation.ts`** — update when adding header/footer links.
 
-```typescript
-import { DemoResponse } from "@shared/api";
-```
+### Activity feed
 
-Path aliases:
+- **`lib/groupSessions.ts`** — bundles sessions by sim/track/car/time window; types `SessionItem`, `ActivityItem`.
+- **`ActivityCard`**, **`BundledActivityCard`** — feed rendering; manual vs telemetry via `sessionType` / `source`.
 
-- `@shared/*` - Shared folder
-- `@/*` - Client folder
-
-## Development Commands
+## Commands
 
 ```bash
-pnpm dev        # Start dev server (client + server)
-pnpm build      # Production build
-pnpm start      # Start production server
-pnpm typecheck  # TypeScript validation
-pnpm test          # Run Vitest tests
+pnpm dev          # Vite on http://localhost:8080; proxies /api → VITE_DEV_API_PROXY_TARGET (default :10000)
+pnpm build        # Output: dist/
+pnpm preview      # Preview production build
+pnpm typecheck    # tsc --noEmit
+pnpm test         # vitest --run
+pnpm lint         # eslint
+pnpm format.fix   # prettier --write .
 ```
 
-## Adding Features
+## Environment variables
 
-### Add new colors to the theme
+Copy `.env.example` → `.env`. Only **`VITE_*`** variables are read by this app (Vite embeds them at build time).
 
-Open `client/global.css` and `tailwind.config.ts` and add new tailwind colors.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_URL` | Prod recommended | Fastify API base URL, no trailing slash (e.g. `https://your-api.onrender.com`) |
+| `VITE_APEX_API_BASE_URL` | No | Alias for API base (legacy name) |
+| `VITE_DEV_API_PROXY_TARGET` | No | Dev proxy target for `/api` (default `http://127.0.0.1:10000`) |
+| `VITE_SUPPORT_EMAIL` | No | Footer mailto (default `support@apexsimtracker.com`) |
+| `VITE_PUBLIC_BUILDER_KEY` | No | Builder.io CMS key if used |
 
-### New API Route
+**Local dev:** run the **apex backend** on port 10000 (or set `VITE_API_URL` / proxy target). Pointing `VITE_API_URL` at the Vercel SPA host will break API calls.
 
-1. **Optional**: Create a shared interface in `shared/api.ts`:
+## Deployment (Vercel)
 
-```typescript
-export interface MyRouteResponse {
-  message: string;
-  // Add other response properties here
-}
-```
+- **Build:** `pnpm build`
+- **Output directory:** `dist`
+- **Root directory:** `apex-frontend` (if deploying from monorepo)
+- **`vercel.json`:** SPA fallback to `/index.html`; `Cache-Control: no-store` on `/` and `/index.html`
+- Set **`VITE_API_URL`** in Vercel env for Production/Preview builds
 
-2. Create a new route handler in `server/routes/my-route.ts`:
+Netlify is not configured in this repo; prefer Vercel for this SPA.
 
-```typescript
-import { RequestHandler } from "express";
-import { MyRouteResponse } from "@shared/api"; // Optional: for type safety
+## Adding features
 
-export const handleMyRoute: RequestHandler = (req, res) => {
-  const response: MyRouteResponse = {
-    message: "Hello from my endpoint!",
-  };
-  res.json(response);
-};
-```
+### New page
 
-3. Register the route in `server/index.ts`:
+1. Add `src/pages/MyPage.tsx`.
+2. Register `<Route path="/my-page" element={<MyPage />} />` in `src/App.tsx` (before `*`).
+3. If nav-visible, add entry in `src/config/navigation.ts`.
+4. Use `ProtectedRoute` / `AdminRoute` when auth is required.
 
-```typescript
-import { handleMyRoute } from "./routes/my-route";
+### New API call
 
-// Add to the createServer function:
-app.get("/api/my-endpoint", handleMyRoute);
-```
+1. Add typed functions in `src/lib/api/<domain>.ts` using `fetchApi` or `apiGet`/`apiPost` from `httpVerbs.ts`.
+2. Export from `src/lib/api/index.ts` if part of the public API surface.
+3. Use TanStack Query in the page (`useQuery` / `useMutation`) with stable `queryKey`s; invalidate related keys on success.
 
-4. Use in React components with type safety:
+### New UI component
 
-```typescript
-import { MyRouteResponse } from "@shared/api"; // Optional: for type safety
+- Prefer small files under `src/components/` or `src/features/<name>/`.
+- Use `cn()` from `@/lib/utils` for class names.
+- Theme colors: extend `src/global.css` and `tailwind.config.ts` if needed.
 
-const response = await fetch("/api/my-endpoint");
-const data: MyRouteResponse = await response.json();
-```
+### Styling
 
-### New Page Route
+- App runs in **dark mode** by default (`document.documentElement.classList.add("dark")` in `App.tsx`).
+- Brand accent: `BRAND_RED` in `src/lib/appConfig.ts`.
 
-1. Create component in `client/pages/MyPage.tsx`
-2. Add route in `client/App.tsx`:
+## Testing
 
-```typescript
-<Route path="/my-page" element={<MyPage />} />
-```
+- Unit tests next to code (`*.test.ts`, `*.spec.ts`).
+- `vitest.config.ts` mirrors Vite `@` alias.
+- No component test harness yet; focus tests on pure lib logic (e.g. `groupSessions`, `apexAnalysisDisplay`).
 
-## Environment Configuration
+## Common pitfalls
 
-Copy `.env.example` to `.env` and configure:
+- **Wrong API host** — must be Fastify backend, not the static frontend URL.
+- **Duplicate React** — single `package.json` / one `node_modules`; do not reintroduce a nested `client/package.json`.
+- **Session types** — API may send `MANUAL_ACTIVITY`; include in unions when typing feed items (`SessionItem` in `groupSessions.ts`).
+- **Asset URLs** — use `resolveApiUrl()` for `/api/assets/...` paths from the API.
 
-```bash
-cp .env.example .env
-```
+## Related docs
 
-### Required Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | - | Database connection string |
-| `NODE_ENV` | No | `development` | `development`, `production`, or `test` |
-| `SESSION_TTL_HOURS` | No | `720` | Session lifetime (30 days) |
-| `COOKIE_SECURE` | No | auto | `true` in production |
-| `CORS_ORIGIN` | Prod only | localhost | Allowed origins |
-
-### Database URL Formats
-
-```bash
-# Development (SQLite)
-DATABASE_URL="file:./dev.db"
-
-# Production (PostgreSQL)
-DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
-
-# Production (MySQL)
-DATABASE_URL="mysql://user:password@host:3306/dbname"
-```
-
-## Production Deployment
-
-- **Standard**: `pnpm build`
-- **Binary**: Self-contained executables (Linux, macOS, Windows)
-- **Cloud Deployment**: Use either Netlify or Vercel via their MCP integrations for easy deployment. Both providers work well with this starter template.
-
-### Production Checklist
-
-1. Set `NODE_ENV=production`
-2. Set `DATABASE_URL` to production database
-3. Set `CORS_ORIGIN` to your domain(s)
-4. Ensure `COOKIE_SECURE=true` (default in production)
-
-## Architecture Notes
-
-- Single-port development with Vite + Express integration
-- TypeScript throughout (client, server, shared)
-- Full hot reload for rapid development
-- Production-ready with multiple deployment options
-- Comprehensive UI component library included
-- Type-safe API communication via shared interfaces
+- [`.builder/README.md`](.builder/README.md) — Builder/Cursor rule files
+- [`public/README.md`](public/README.md) — static assets note

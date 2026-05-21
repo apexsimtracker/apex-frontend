@@ -1,0 +1,106 @@
+import type { QueryClient } from "@tanstack/react-query";
+import {
+  getProfileSummary,
+  getProfileRaceHistory,
+  getUserPublicProfile,
+  RACE_HISTORY_PAGE_SIZE,
+} from "@/lib/api";
+
+/** Stable segment for token-scoped profile queries when /me omits `user.id` briefly. */
+export function ownedProfileUserKey(
+  user: { id?: string | null } | null | undefined
+): string {
+  return user?.id?.trim() || "me";
+}
+
+export const profileKeys = {
+  summary: (userKey: string) => ["profile", "summary", userKey] as const,
+  raceHistory: (userKey: string, page: number) =>
+    ["profile", "raceHistory", userKey, page] as const,
+  /** GET /api/users/:id — authoritative follow counts for own profile. */
+  publicPreview: (userId: string) => ["profile", "publicPreview", userId] as const,
+  /**
+   * Paginated follower/following modal (GET .../followers|following).
+   * Invalidate with prefix `['profile', 'followList', userId]` to clear all pages/searches.
+   */
+  followList: (
+    userId: string,
+    kind: "followers" | "following",
+    page: number,
+    q: string
+  ) => ["profile", "followList", userId, kind, page, q] as const,
+  userBundle: (id: string) => ["userProfile", "bundle", id] as const,
+  userRaceHistory: (id: string, page: number) =>
+    ["userProfile", "raceHistory", id, page] as const,
+} as const;
+
+/** Invalidate every cached own-profile summary (all `userKey` variants). */
+export const PROFILE_SUMMARY_ALL_QUERY_FILTER = {
+  queryKey: ["profile", "summary"] as const,
+};
+
+/**
+ * Refresh profile stats, race history, activity feeds, and other session-derived UI after
+ * create/update/delete/upload — without requiring a full page reload.
+ */
+export function invalidateSessionDerivedCaches(
+  queryClient: QueryClient,
+  opts: {
+    ownerUserId?: string | null;
+    /** Session affected: invalidate detail/edit, or remove after delete. */
+    sessionId?: string;
+    /** Pass `true` after DELETE so detail/edit caches are dropped. Omit or `false` after update (refetch only). */
+    removeSessionQueries?: boolean;
+  } = {}
+): void {
+  const { ownerUserId, sessionId, removeSessionQueries } = opts;
+  const sid = sessionId?.trim();
+
+  void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
+  void queryClient.invalidateQueries({ queryKey: ["profile", "raceHistory"] });
+  void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+  void queryClient.invalidateQueries({ queryKey: ["activity"] });
+
+  const uid = ownerUserId?.trim();
+  if (uid) {
+    void queryClient.invalidateQueries({ queryKey: profileKeys.publicPreview(uid) });
+  }
+
+  if (!sid) return;
+
+  if (removeSessionQueries) {
+    void queryClient.removeQueries({ queryKey: ["sessions", "detail", sid] });
+    void queryClient.removeQueries({ queryKey: ["sessions", "edit", sid] });
+  } else {
+    void queryClient.invalidateQueries({ queryKey: ["sessions", "detail", sid] });
+    void queryClient.invalidateQueries({ queryKey: ["sessions", "edit", sid] });
+  }
+}
+
+/**
+ * Warm cache for /profile: summary, race history page 1, and public preview for follow counts.
+ * Safe to fire from hover/idle; respects global staleTime.
+ */
+export function prefetchOwnProfileQueries(
+  queryClient: QueryClient,
+  user: { id?: string | null } | null | undefined
+): void {
+  if (!user) return;
+  const userKey = ownedProfileUserKey(user);
+  void queryClient.prefetchQuery({
+    queryKey: profileKeys.summary(userKey),
+    queryFn: getProfileSummary,
+  });
+  void queryClient.prefetchQuery({
+    queryKey: profileKeys.raceHistory(userKey, 1),
+    queryFn: () =>
+      getProfileRaceHistory({ page: 1, limit: RACE_HISTORY_PAGE_SIZE }),
+  });
+  const uid = user.id?.trim();
+  if (uid) {
+    void queryClient.prefetchQuery({
+      queryKey: profileKeys.publicPreview(uid),
+      queryFn: () => getUserPublicProfile(uid),
+    });
+  }
+}

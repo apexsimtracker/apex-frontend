@@ -18,7 +18,6 @@ export default tseslint.config(
       "**/dist/**",
       "**/coverage/**",
       "**/.pnpm-store/**",
-      "client/package.json",
     ],
   },
   {
@@ -90,8 +89,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["client/**/*.{ts,tsx}"],
-    ignores: ["client/vite.config.ts"],
+    files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -100,14 +98,7 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      "client/vite.config.ts",
-      "server/**/*.ts",
-      "netlify/**/*.ts",
-      "shared/**/*.ts",
-      "vite.config.ts",
-      "vite.config.server.ts",
-    ],
+    files: ["vite.config.ts"],
     languageOptions: {
       globals: {
         ...globals.node,
