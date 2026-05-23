@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityCard from "@/components/ActivityCard";
@@ -21,6 +21,7 @@ import type { InfiniteData } from "@tanstack/react-query";
 import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
 import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
+import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
@@ -484,27 +485,9 @@ export default function Index() {
           trackTimeDelta={weeklyStats.trackTimeDelta}
         />
 
-        {showApexTrendCard && profileSummary?.apexTrendInsight && (() => {
-          const trend = profileSummary.apexTrendInsight;
-          return (
-          <div className="mt-4 rounded-lg border border-white/10 bg-card/20 p-4 backdrop-blur-lg">
-            <h2 className="text-sm font-semibold text-white">Apex Analysis</h2>
-            {trend.locked === true ? (
-              <p className="mt-2 text-sm text-white/60">
-                {trend.message}{" "}
-                <Link to="/pricing" className="text-amber-400 hover:text-amber-300">
-                  View Pro
-                </Link>
-              </p>
-            ) : (
-              <p className="mt-2 text-sm text-white/80">
-                {("insight" in trend ? trend.insight : null) ??
-                  "Drive a session this week to see your pace trend."}
-              </p>
-            )}
-          </div>
-          );
-        })()}
+        {showApexTrendCard && profileSummary?.apexTrendInsight && (
+          <ApexAnalysisTrendCard trend={profileSummary.apexTrendInsight} />
+        )}
 
         {/* Goals */}
         <GoalsBar
