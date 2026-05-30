@@ -188,8 +188,9 @@ export default function PublicHome() {
                 </div>
                 <h3 className="font-semibold text-foreground">Agent & Apex Pro</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Download the Windows background agent for automatic F1 25 UDP telemetry and iRacing
-                  log uploads — available with Apex Pro on Pricing.
+                  Download the Apex background agent for automatic F1 25 telemetry on macOS,
+                  Windows, and Linux, with broader sim support on Windows — available with Apex Pro
+                  on Pricing.
                 </p>
               </SectionCard>
             </div>

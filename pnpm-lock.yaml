@@ -89,6 +89,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.2.8
         version: 1.2.8(@types/react-dom@18.3.7(@types/react@18.3.29))(@types/react@18.3.29)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@revenuecat/purchases-js':
+        specifier: ^1.41.1
+        version: 1.41.1
       '@tanstack/react-query':
         specifier: ^5.99.0
         version: 5.100.11(react@18.3.1)
@@ -1193,6 +1196,9 @@ packages:
 
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
+
+  '@revenuecat/purchases-js@1.41.1':
+    resolution: {integrity: sha512-v6vunZZ4YnQhR/O4W3cVhw3iE8O8fhloNA9Al3KU6ABiH6YGjflJiOhjbTp8JG78eUOlYUFYZwEU8H0VXSuiYA==}
 
   '@rolldown/pluginutils@1.0.0-rc.3':
     resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
@@ -3972,6 +3978,8 @@ snapshots:
       '@types/react-dom': 18.3.7(@types/react@18.3.29)
 
   '@radix-ui/rect@1.1.1': {}
+
+  '@revenuecat/purchases-js@1.41.1': {}
 
   '@rolldown/pluginutils@1.0.0-rc.3': {}
 

@@ -237,15 +237,25 @@ export type BillingPlansResponse = {
   };
 };
 
-export type SubscribeResponse = {
+export type BillingConfigResponse = {
+  enabled: boolean;
+  mode: "sandbox" | "live";
+  entitlementIdentifier: string;
+  revenueCatPublicApiKey: string | null;
+};
+
+export type BillingRefreshResponse = {
   success: boolean;
   entitlement: {
     plan: EntitlementPlan;
     status: string;
     billingInterval: BillingInterval | null;
+    currentPeriodStart: string | null;
     currentPeriodEnd: string | null;
     pastDueSince: string | null;
     effectivePlan: EntitlementPlan;
+    cancelAtPeriodEnd: boolean;
+    lastSyncedAt: string | null;
   };
 };
 
@@ -253,23 +263,31 @@ export async function getBillingPlans(): Promise<BillingPlansResponse> {
   return apiGet<BillingPlansResponse>("/api/billing/plans");
 }
 
-export async function subscribeToPro(interval: BillingInterval): Promise<SubscribeResponse> {
-  return apiPost<SubscribeResponse>("/api/billing/subscribe", { interval });
+export async function getBillingConfig(): Promise<BillingConfigResponse> {
+  return apiGet<BillingConfigResponse>("/api/billing/config");
 }
 
-export async function cancelSubscription(): Promise<SubscribeResponse> {
-  return apiPost<SubscribeResponse>("/api/billing/cancel", {});
+export async function refreshBillingSubscription(): Promise<BillingRefreshResponse> {
+  return apiPost<BillingRefreshResponse>("/api/billing/refresh", {});
 }
 
-export type BillingEntitlementStatus = "ACTIVE" | "PAST_DUE" | "CANCELED";
+export async function createBillingPortalSession(): Promise<{ url: string }> {
+  return apiPost<{ url: string }>("/api/billing/portal", {});
+}
+
+export type BillingEntitlementStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
 
 export type BillingEntitlement = {
   plan: EntitlementPlan;
   status: BillingEntitlementStatus;
   billingInterval: BillingInterval | null;
+  currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
   pastDueSince: string | null;
   effectivePlan: EntitlementPlan;
+  cancelAtPeriodEnd: boolean;
+  planDisplayName: string | null;
+  lastSyncedAt: string | null;
   authenticated?: boolean;
 };
 

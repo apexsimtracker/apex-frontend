@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   useQueries,
   useQueryClient,
@@ -357,21 +358,37 @@ export default function AdminDashboard() {
           </MetricsSection>
 
           <MetricsSection<"competition">
-            title="Competition & billing"
-            cardCount={4}
+            title="Subscriptions & challenges"
+            cardCount={12}
             query={competitionQ}
           >
             {(m) => (
               <>
+                <MetricCard label="Pro access (active)" value={formatInt(m.proAccessActive)} />
+                <MetricCard
+                  label="Cancel at period end"
+                  value={formatInt(m.proCanceledAtPeriodEnd)}
+                />
+                <MetricCard label="Past due" value={formatInt(m.proPastDue)} />
+                <MetricCard label="Expired subscriptions" value={formatInt(m.proExpired)} />
+                <MetricCard label="Pro new (7d)" value={formatInt(m.proNewLast7d)} />
+                <MetricCard label="Churned (7d)" value={formatInt(m.proChurnedLast7d)} />
+                <MetricCard label="Monthly (active)" value={formatInt(m.byIntervalMonthly)} />
+                <MetricCard label="Annual (active)" value={formatInt(m.byIntervalAnnual)} />
+                <MetricCard label="Stale sync (&gt;24h)" value={formatInt(m.staleSyncCount)} />
                 <MetricCard label="Challenge joins" value={formatInt(m.challengeJoinsTotal)} />
                 <MetricCard
                   label="Challenges with joins"
                   value={formatInt(m.challengesWithJoins)}
                 />
-                <MetricCard
-                  label="Active Pro entitlements"
-                  value={formatInt(m.proEntitlementsActive)}
-                />
+                <div className="flex items-end sm:col-span-2 lg:col-span-4">
+                  <Link
+                    to="/admin/subscriptions"
+                    className="text-sm text-primary underline-offset-4 hover:underline"
+                  >
+                    View all subscriptions →
+                  </Link>
+                </div>
               </>
             )}
           </MetricsSection>

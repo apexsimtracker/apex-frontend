@@ -29,21 +29,57 @@ import {
 
 const AGENT_PATH = "/agent";
 const agentTitle = `Apex Agent | ${COMPANY_NAME}`;
-const agentDescription = `Download the ${COMPANY_NAME} Agent for Mac and Windows — a background service that captures sim telemetry and uploads sessions automatically (Pro).`;
+const agentDescription = `Download the ${COMPANY_NAME} Agent for macOS, Windows, and Linux — a background service that captures sim telemetry and uploads sessions automatically with Apex Pro.`;
 
-const SUPPORTED_SIMS = [
+const ALL_AGENT_OSES: AgentOs[] = ["macos", "windows", "linux"];
+
+const SUPPORTED_SIMS: Array<{
+  name: string;
+  icon: typeof Radio;
+  support: Record<AgentOs, boolean>;
+  detail: Record<AgentOs, string>;
+}> = [
   {
     name: "F1 25",
-    status: "Supported",
-    detail: "Captures live UDP telemetry streams in the background.",
     icon: Radio,
+    support: {
+      macos: true,
+      windows: true,
+      linux: true,
+    },
+    detail: {
+      macos: "Captures live UDP telemetry streams in the background.",
+      windows: "Captures live UDP telemetry streams in the background.",
+      linux: "Captures live UDP telemetry streams in the background.",
+    },
   },
   {
     name: "iRacing",
-    status: "Supported",
-    detail: "Watches and uploads .ibt session log files when disk telemetry is enabled.",
     icon: FileText,
-    windowsOnly: true,
+    support: {
+      macos: false,
+      windows: true,
+      linux: false,
+    },
+    detail: {
+      macos: "Automatic iRacing session log capture is currently Windows-only.",
+      windows: "Watches and uploads .ibt session log files when disk telemetry is enabled.",
+      linux: "Automatic iRacing session log capture is not currently available on Linux.",
+    },
+  },
+  {
+    name: "Le Mans Ultimate",
+    icon: Cpu,
+    support: {
+      macos: false,
+      windows: true,
+      linux: false,
+    },
+    detail: {
+      macos: "LMU telemetry recording support is currently Windows-only.",
+      windows: "Watches telemetry recordings and uploads completed LMU sessions automatically.",
+      linux: "LMU telemetry auto-discovery is not currently available on Linux.",
+    },
   },
 ];
 
@@ -53,6 +89,14 @@ function platformBadge(os: AgentOs) {
       <>
         <Apple className="size-3.5" />
         macOS 12+
+      </>
+    );
+  }
+  if (os === "linux") {
+    return (
+      <>
+        <Monitor className="size-3.5" />
+        Linux x64
       </>
     );
   }
@@ -68,6 +112,9 @@ function platformSubtitle(os: AgentOs): string {
   if (os === "macos") {
     return "Runs in the menu bar and uploads sim telemetry in the background.";
   }
+  if (os === "linux") {
+    return "Runs in the system tray and currently focuses on F1 25 UDP telemetry.";
+  }
   return "Runs in the system tray and uploads sim telemetry in the background.";
 }
 
@@ -75,7 +122,24 @@ function platformRequirements(os: AgentOs): string {
   if (os === "macos") {
     return "macOS 12 or later, Apex Pro subscription, and an internet connection.";
   }
+  if (os === "linux") {
+    return "Linux x64 with AppImage support, Apex Pro subscription, and an internet connection.";
+  }
   return "Windows 10 or 11, Apex Pro subscription, and an internet connection.";
+}
+
+function platformSupportNote(os: AgentOs): string | null {
+  if (os === "windows") {
+    return null;
+  }
+  if (os === "macos") {
+    return "macOS currently supports F1 25 telemetry. iRacing and LMU automation are Windows-only.";
+  }
+  return "Linux support is currently limited to F1 25 telemetry. iRacing and LMU automation are Windows-only.";
+}
+
+function simStatusLabel(supported: boolean): string {
+  return supported ? "Supported" : "Windows only";
 }
 
 export default function Agent() {
@@ -88,6 +152,8 @@ export default function Agent() {
 
   const downloadFilename = AGENT_DOWNLOAD_FILENAMES[selectedOs];
   const platformLabel = AGENT_PLATFORM_LABELS[selectedOs];
+  const alternateOses = ALL_AGENT_OSES.filter((os) => os !== selectedOs);
+  const supportNote = platformSupportNote(selectedOs);
 
   async function handleDownloadClick() {
     if (authLoading) return;
@@ -173,33 +239,42 @@ export default function Agent() {
               <div>
                 <h2 className="mb-3 text-sm font-medium text-white/80">Supported simulators</h2>
                 <div className="space-y-2">
-                  {SUPPORTED_SIMS.filter((sim) => !sim.windowsOnly || selectedOs === "windows").map(
-                    (sim) => (
+                  {SUPPORTED_SIMS.map((sim) => {
+                    const isSupported = sim.support[selectedOs];
+                    return (
                       <div
                         key={sim.name}
                         className="rounded-lg bg-white/[0.03] px-4 py-3"
                       >
                         <div className="flex items-center gap-3">
-                          <sim.icon className="size-4 shrink-0 text-green-500" />
+                          <sim.icon
+                            className={`size-4 shrink-0 ${
+                              isSupported ? "text-green-500" : "text-white/30"
+                            }`}
+                          />
                           <span className="text-sm font-medium text-white/80">{sim.name}</span>
-                          <span className="ml-auto text-xs text-white/40">{sim.status}</span>
+                          <span className="ml-auto text-xs text-white/40">
+                            {simStatusLabel(isSupported)}
+                          </span>
                         </div>
-                        <p className="mt-1.5 pl-7 text-xs text-white/45">{sim.detail}</p>
+                        <p className="mt-1.5 pl-7 text-xs text-white/45">
+                          {sim.detail[selectedOs]}
+                        </p>
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
-                {selectedOs === "macos" && (
-                  <p className="mt-2 text-xs text-white/40">
-                    iRacing session log capture is available on Windows.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2 rounded-lg bg-white/[0.03] px-4 py-3">
                 <p className="text-xs text-white/50">
                   <span className="text-white/70">Requirements:</span> {platformRequirements(selectedOs)}
                 </p>
+                {supportNote ? (
+                  <p className="text-xs text-white/45">
+                    <span className="text-white/70">Current scope:</span> {supportNote}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -243,31 +318,21 @@ export default function Agent() {
                 </p>
               )}
 
-              <p className="mt-4 text-center text-xs text-white/45">
-                {selectedOs === "macos" ? (
-                  <>
-                    Not on Mac?{" "}
+              <div className="mt-4 text-center text-xs text-white/45">
+                <p>Need another build?</p>
+                <div className="mt-2 flex flex-wrap justify-center gap-3">
+                  {alternateOses.map((os) => (
                     <button
+                      key={os}
                       type="button"
-                      onClick={() => setSelectedOs("windows")}
+                      onClick={() => setSelectedOs(os)}
                       className="text-white/70 underline-offset-2 hover:text-white hover:underline"
                     >
-                      Download for Windows
+                      Download for {AGENT_PLATFORM_LABELS[os]}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    On a Mac?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedOs("macos")}
-                      className="text-white/70 underline-offset-2 hover:text-white hover:underline"
-                    >
-                      Download for macOS
-                    </button>
-                  </>
-                )}
-              </p>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 text-center">
@@ -314,6 +379,12 @@ export default function Agent() {
             <li className="flex items-start gap-2">
               <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
               Automatic iRacing session log uploads
+            </li>
+          )}
+          {selectedOs === "windows" && (
+            <li className="flex items-start gap-2">
+              <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" />
+              Automatic Le Mans Ultimate telemetry uploads
             </li>
           )}
           <li className="flex items-start gap-2">

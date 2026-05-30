@@ -19,6 +19,7 @@ export * from "./activityBilling";
 export * from "./manualAndUpload";
 export * from "./challenges";
 export * from "./adminUsers";
+export * from "./adminSubscriptions";
 export * from "./adminContact";
 export * from "./adminCommunity";
 export * from "./adminLeaderboards";

@@ -20,6 +20,16 @@ export type AdminMetrics = {
   challengeJoinsTotal: number;
   challengesWithJoins: number;
   proEntitlementsActive: number;
+  proAccessActive: number;
+  proCanceledAtPeriodEnd: number;
+  proPastDue: number;
+  proExpired: number;
+  freeNoSubscriptionRow: number;
+  proNewLast7d: number;
+  proChurnedLast7d: number;
+  byIntervalMonthly: number;
+  byIntervalAnnual: number;
+  staleSyncCount: number;
   sessionLikesTotal: number;
   sessionCommentsTotal: number;
   personalBestsTotal: number;
@@ -61,7 +71,19 @@ export type SocialMetrics = Pick<
 
 export type CompetitionMetrics = Pick<
   AdminMetrics,
-  "challengeJoinsTotal" | "challengesWithJoins" | "proEntitlementsActive"
+  | "challengeJoinsTotal"
+  | "challengesWithJoins"
+  | "proEntitlementsActive"
+  | "proAccessActive"
+  | "proCanceledAtPeriodEnd"
+  | "proPastDue"
+  | "proExpired"
+  | "freeNoSubscriptionRow"
+  | "proNewLast7d"
+  | "proChurnedLast7d"
+  | "byIntervalMonthly"
+  | "byIntervalAnnual"
+  | "staleSyncCount"
 >;
 
 export type AuthSignalsMetrics = Pick<

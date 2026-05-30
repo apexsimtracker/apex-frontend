@@ -7,13 +7,16 @@ import {
   fetchAdminUserDiscussionsCommented,
   fetchAdminUserDiscussionsStarted,
   fetchAdminUserSocialGraph,
+  getBillingConfig,
   patchAdminUserProfile,
   patchAdminUserRole,
   patchAdminUserStatus,
   postAdminUserImpersonate,
   postAdminUserReverify,
   postAdminUserSetPassword,
+  type AdminUserDetailResponse,
 } from "@/lib/api";
+import { postAdminSubscriptionSync } from "@/lib/api/adminSubscriptions";
 import {
   APEX_TOKEN_ADMIN_KEY,
   LEGACY_SESSION_ADMIN_BACKUP_KEY,
@@ -37,11 +40,20 @@ import {
   Ban,
   Eye,
   Info,
+  ExternalLink,
   Loader2,
+  RefreshCw,
   RotateCcw,
   Trash2,
   type LucideIcon,
 } from "lucide-react";
+import {
+  BillingIntervalChip,
+  CancelAtPeriodEndBadge,
+  PlanBadge,
+  StaleSyncBadge,
+  SubscriptionStatusBadge,
+} from "@/pages/admin/adminSubscriptionBadges";
 import {
   Tooltip,
   TooltipContent,
@@ -96,30 +108,162 @@ function AccountBadge({
   );
 }
 
-function PlanBadge({
-  plan,
-  entitlementStatus,
-}: {
-  plan: "FREE" | "PRO";
-  entitlementStatus: string | null;
-}) {
-  if (plan === "PRO") {
-    const warn =
-      entitlementStatus === "PAST_DUE"
-        ? " · Past due"
-        : entitlementStatus === "CANCELED"
-          ? " · Canceled"
-          : "";
+const LABEL = "text-[11px] uppercase tracking-widest text-white/50";
+
+function CopyableId({ label, value }: { label: string; value: string | null }) {
+  if (!value?.trim()) {
     return (
-      <span className="inline-flex rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-100">
-        Pro{warn}
-      </span>
+      <div>
+        <p className={LABEL}>{label}</p>
+        <p className="mt-1 text-sm text-muted-foreground">—</p>
+      </div>
     );
   }
-  return <span className="text-xs text-muted-foreground">Free</span>;
+  return (
+    <div>
+      <p className={LABEL}>{label}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <code className="break-all text-xs text-foreground/90">{value}</code>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => {
+            void navigator.clipboard.writeText(value);
+            toast.success("Copied");
+          }}
+        >
+          Copy
+        </Button>
+      </div>
+    </div>
+  );
 }
 
-const LABEL = "text-[11px] uppercase tracking-widest text-white/50";
+function AdminUserSubscriptionSection({
+  userId,
+  subscription,
+}: {
+  userId: string;
+  subscription: AdminUserDetailResponse["user"]["subscription"];
+}) {
+  const queryClient = useQueryClient();
+  const billingConfigQ = useQuery({
+    queryKey: ["billing", "config"],
+    queryFn: getBillingConfig,
+    staleTime: 300_000,
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: () => postAdminSubscriptionSync(userId),
+    onSuccess: async () => {
+      toast.success("Subscription synced from RevenueCat");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "user", userId] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "metrics"] });
+    },
+    onError: (e) => {
+      toast.error(e instanceof ApiError ? e.message : "Sync failed");
+    },
+  });
+
+  const stripeUrl = subscription.stripeCustomerId
+    ? `https://dashboard.stripe.com/customers/${subscription.stripeCustomerId}`
+    : null;
+
+  return (
+    <div className="mb-8 rounded-xl border border-white/10 p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-foreground">Subscription</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          {billingConfigQ.data?.mode ? (
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-muted-foreground">
+              {billingConfigQ.data.mode === "sandbox" ? "Sandbox billing" : "Live billing"}
+            </span>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={syncMutation.isPending}
+            onClick={() => syncMutation.mutate()}
+          >
+            {syncMutation.isPending ? (
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw className="mr-2 size-4" aria-hidden />
+            )}
+            Sync from RevenueCat
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <PlanBadge
+          effectivePlan={subscription.effectivePlan}
+          subscriptionStatus={subscription.status}
+          planDisplayName={subscription.planDisplayName}
+          cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
+        />
+        <SubscriptionStatusBadge status={subscription.status} />
+        <BillingIntervalChip interval={subscription.billingInterval} />
+        <CancelAtPeriodEndBadge active={subscription.cancelAtPeriodEnd} />
+        <StaleSyncBadge stale={subscription.isSyncStale} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <p className={LABEL}>Access until</p>
+          <p className="mt-1 text-sm text-foreground">
+            {subscription.currentPeriodEnd
+              ? new Date(subscription.currentPeriodEnd).toLocaleString()
+              : "—"}
+          </p>
+        </div>
+        <div>
+          <p className={LABEL}>Period started</p>
+          <p className="mt-1 text-sm text-foreground">
+            {subscription.currentPeriodStart
+              ? new Date(subscription.currentPeriodStart).toLocaleString()
+              : "—"}
+          </p>
+        </div>
+        <div>
+          <p className={LABEL}>Last synced</p>
+          <p className="mt-1 text-sm text-foreground">
+            {subscription.lastSyncedAt
+              ? new Date(subscription.lastSyncedAt).toLocaleString()
+              : "Never"}
+          </p>
+        </div>
+        <CopyableId label="Entitlement id" value={subscription.entitlementIdentifier} />
+        <CopyableId label="RevenueCat app user id" value={subscription.revenuecatAppUserId} />
+        <CopyableId label="Stripe customer id" value={subscription.stripeCustomerId} />
+      </div>
+
+      {stripeUrl ? (
+        <p className="mt-4 text-xs text-muted-foreground">
+          <a
+            href={stripeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            Open in Stripe
+            <ExternalLink className="size-3" aria-hidden />
+          </a>
+          {" · "}
+          Manage subscription via the user billing portal or RevenueCat dashboard (app user id above).
+        </p>
+      ) : (
+        <p className="mt-4 text-xs text-muted-foreground">
+          No Stripe customer id on file. Use RevenueCat dashboard with the app user id above.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function formatSuspicionReason(code: string | null | undefined): string {
   if (!code) return "This account was flagged for review.";
@@ -541,7 +685,12 @@ export default function AdminUserDetail() {
               <div className="mb-3 flex flex-wrap gap-2">
                 <AccountBadge isDeleted={u.isDeleted} suspendedAt={u.suspendedAt} />
                 <RoleBadge role={u.role} />
-                <PlanBadge plan={u.entitlement.plan} entitlementStatus={u.entitlement.status} />
+                <PlanBadge
+                  effectivePlan={u.subscription.effectivePlan}
+                  subscriptionStatus={u.subscription.status}
+                  planDisplayName={u.subscription.planDisplayName}
+                  cancelAtPeriodEnd={u.subscription.cancelAtPeriodEnd}
+                />
                 {u.isSuspicious ? (
                   <span className="inline-flex rounded-full border border-amber-500/45 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-100">
                     Suspicious
@@ -744,25 +893,7 @@ export default function AdminUserDetail() {
             </div>
           )}
 
-          <div className="mb-8 rounded-xl border border-white/10 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Entitlement</h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <div>
-                <p className={LABEL}>Plan</p>
-                <div className="mt-1">
-                  <PlanBadge plan={u.entitlement.plan} entitlementStatus={u.entitlement.status} />
-                </div>
-              </div>
-              {u.entitlement.currentPeriodEnd && (
-                <div>
-                  <p className={LABEL}>Current period ends</p>
-                  <p className="mt-1 text-sm text-foreground">
-                    {new Date(u.entitlement.currentPeriodEnd).toLocaleString()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <AdminUserSubscriptionSection userId={u.id} subscription={u.subscription} />
 
           <div className="mb-8 rounded-xl border border-white/10 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

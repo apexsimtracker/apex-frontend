@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Server,
+  CreditCard,
   Trophy,
   UserCog,
   Users,
@@ -70,6 +71,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
     title: "Management",
     items: [
       { key: "users", label: "Users", icon: Users, to: "/admin/users" },
+      { key: "subscriptions", label: "Subscriptions", icon: CreditCard, to: "/admin/subscriptions" },
       { key: "sessions", label: "Sessions & laps", icon: Activity, to: "/admin/sessions" },
       { key: "tracks", label: "Tracks & catalogs", icon: Car, to: "/admin/tracks" },
       { key: "challenges", label: "Challenges", icon: Trophy, to: "/admin/challenges" },

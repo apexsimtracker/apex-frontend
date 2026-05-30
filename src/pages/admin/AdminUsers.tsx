@@ -31,6 +31,11 @@ import {
   adminTable,
 } from "@/pages/admin/adminTableLayout";
 import { toast } from "sonner";
+import {
+  BillingIntervalChip,
+  PlanBadge,
+  SubscriptionStatusBadge,
+} from "@/pages/admin/adminSubscriptionBadges";
 
 const TITLE = `Admin · Users | ${COMPANY_NAME}`;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -87,42 +92,21 @@ function SuspiciousBadge() {
   );
 }
 
-function PlanBadge({
-  plan,
-  entitlementStatus,
-}: {
-  plan: "FREE" | "PRO";
-  entitlementStatus: string | null;
-}) {
-  if (plan === "PRO") {
-    const warn =
-      entitlementStatus === "PAST_DUE" ? " · Past due" : entitlementStatus === "CANCELED" ? " · Canceled" : "";
-    return (
-      <span className="inline-flex rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-100">
-        Pro{warn}
-      </span>
-    );
-  }
-  return (
-    <span className="text-xs text-muted-foreground">
-      Free
-    </span>
-  );
-}
-
 export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [riskFilter, setRiskFilter] = useState<string>("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [scanDialogOpen, setScanDialogOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, roleFilter, statusFilter, riskFilter]);
+  }, [debouncedSearch, roleFilter, statusFilter, riskFilter, planFilter, subscriptionStatusFilter]);
 
   const listParams = useMemo((): AdminUserListParams => {
     const role: "USER" | "ADMIN" | undefined =
@@ -139,8 +123,28 @@ export default function AdminUsers() {
       ...(role ? { role } : {}),
       ...(status ? { status } : {}),
       ...(suspiciousOnly ? { suspiciousOnly: true } : {}),
+      ...(planFilter === "free" || planFilter === "pro"
+        ? { plan: planFilter as "free" | "pro" }
+        : {}),
+      ...(subscriptionStatusFilter
+        ? {
+            subscriptionStatus: subscriptionStatusFilter as
+              | "ACTIVE"
+              | "CANCELED"
+              | "PAST_DUE"
+              | "EXPIRED",
+          }
+        : {}),
     };
-  }, [page, debouncedSearch, roleFilter, statusFilter, riskFilter]);
+  }, [
+    page,
+    debouncedSearch,
+    roleFilter,
+    statusFilter,
+    riskFilter,
+    planFilter,
+    subscriptionStatusFilter,
+  ]);
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["admin", "users", listParams],
@@ -367,6 +371,34 @@ export default function AdminUsers() {
                   <option value="">All accounts</option>
                   <option value="suspicious">Suspicious only</option>
                 </select>
+                <select
+                  className="w-full rounded-md border border-white/10 bg-card px-3 py-2 text-sm sm:w-auto"
+                  value={planFilter}
+                  onChange={(e) => {
+                    setPage(1);
+                    setPlanFilter(e.target.value);
+                  }}
+                  aria-label="Plan"
+                >
+                  <option value="">All plans</option>
+                  <option value="pro">Pro access</option>
+                  <option value="free">Free</option>
+                </select>
+                <select
+                  className="w-full rounded-md border border-white/10 bg-card px-3 py-2 text-sm sm:w-auto"
+                  value={subscriptionStatusFilter}
+                  onChange={(e) => {
+                    setPage(1);
+                    setSubscriptionStatusFilter(e.target.value);
+                  }}
+                  aria-label="Subscription status"
+                >
+                  <option value="">All subscription statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="CANCELED">Canceled</option>
+                  <option value="PAST_DUE">Past due</option>
+                  <option value="EXPIRED">Expired</option>
+                </select>
                 <Button
                   type="button"
                   variant="outline"
@@ -398,7 +430,12 @@ export default function AdminUsers() {
                 <p className="mt-2 text-sm text-muted-foreground">
                   Try another search, role, or status filter.
                 </p>
-                {(searchInput.trim() || roleFilter || statusFilter || riskFilter) && (
+                {(searchInput.trim() ||
+                  roleFilter ||
+                  statusFilter ||
+                  riskFilter ||
+                  planFilter ||
+                  subscriptionStatusFilter) && (
                   <button
                     type="button"
                     className="mt-4 text-sm text-primary underline-offset-4 hover:underline"
@@ -407,6 +444,8 @@ export default function AdminUsers() {
                       setRoleFilter("");
                       setStatusFilter("");
                       setRiskFilter("");
+                      setPlanFilter("");
+                      setSubscriptionStatusFilter("");
                       setPage(1);
                     }}
                   >
@@ -416,13 +455,16 @@ export default function AdminUsers() {
               </div>
             ) : (
               <div className={ADMIN_TABLE_SCROLL}>
-                <table className={adminTable("min-w-[44rem]")}>
+                <table className={adminTable("min-w-[52rem]")}>
                   <thead>
                     <tr className="border-b border-white/10 text-muted-foreground">
                       <th className={`min-w-[12rem] ${ADMIN_TH}`}>User</th>
                       <th className={ADMIN_TH}>Role</th>
                       <th className={ADMIN_TH}>Account</th>
                       <th className={ADMIN_TH}>Plan</th>
+                      <th className={ADMIN_TH}>Status</th>
+                      <th className={ADMIN_TH}>Interval</th>
+                      <th className={ADMIN_TH}>Access until</th>
                       <th className={ADMIN_TH}>Joined</th>
                       <th className="w-12 whitespace-nowrap p-3" />
                     </tr>
@@ -449,7 +491,23 @@ export default function AdminUsers() {
                           <AccountBadge isDeleted={r.isDeleted} suspendedAt={r.suspendedAt} />
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
-                          <PlanBadge plan={r.plan} entitlementStatus={r.entitlementStatus} />
+                          <PlanBadge
+                            effectivePlan={r.effectivePlan}
+                            subscriptionStatus={r.subscriptionStatus}
+                            planDisplayName={r.planDisplayName}
+                            cancelAtPeriodEnd={r.cancelAtPeriodEnd}
+                          />
+                        </td>
+                        <td className={`whitespace-nowrap ${ADMIN_TD}`}>
+                          <SubscriptionStatusBadge status={r.subscriptionStatus} />
+                        </td>
+                        <td className={`whitespace-nowrap ${ADMIN_TD}`}>
+                          <BillingIntervalChip interval={r.billingInterval} />
+                        </td>
+                        <td className={`whitespace-nowrap tabular-nums ${ADMIN_TD} text-xs text-muted-foreground`}>
+                          {r.currentPeriodEnd
+                            ? new Date(r.currentPeriodEnd).toLocaleDateString()
+                            : "—"}
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD} tabular-nums text-muted-foreground`}>
                           {new Date(r.createdAt).toLocaleDateString()}

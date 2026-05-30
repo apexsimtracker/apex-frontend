@@ -18,7 +18,14 @@ export type AdminUserListRow = {
   lastValidatedAt?: string | null;
   createdAt: string;
   plan: "FREE" | "PRO";
-  entitlementStatus: "ACTIVE" | "PAST_DUE" | "CANCELED" | null;
+  effectivePlan: "FREE" | "PRO";
+  entitlementStatus: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED" | null;
+  subscriptionStatus: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED" | null;
+  billingInterval: "MONTHLY" | "ANNUAL" | null;
+  planDisplayName: string | null;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: string | null;
+  lastSyncedAt: string | null;
 };
 
 export type AdminUserListParams = {
@@ -29,6 +36,9 @@ export type AdminUserListParams = {
   status?: "active" | "suspended" | "deleted";
   /** When true, only users flagged as suspicious (e.g. disposable email). */
   suspiciousOnly?: boolean;
+  plan?: "free" | "pro";
+  subscriptionStatus?: "ACTIVE" | "CANCELED" | "PAST_DUE" | "EXPIRED";
+  billingInterval?: "MONTHLY" | "ANNUAL";
 };
 
 /** POST /api/admin/users/scan-disposable-emails — preview or backfill disposable-domain flags */
@@ -77,6 +87,9 @@ export async function fetchAdminUserList(params?: AdminUserListParams): Promise<
   if (params?.role) sp.set("role", params.role);
   if (params?.status) sp.set("status", params.status);
   if (params?.suspiciousOnly === true) sp.set("suspiciousOnly", "true");
+  if (params?.plan) sp.set("plan", params.plan);
+  if (params?.subscriptionStatus) sp.set("subscriptionStatus", params.subscriptionStatus);
+  if (params?.billingInterval) sp.set("billingInterval", params.billingInterval);
   const qs = sp.toString();
   return fetchApi("GET", `/api/admin/users${qs ? `?${qs}` : ""}`, undefined, false);
 }
@@ -112,10 +125,21 @@ export type AdminUserDetailResponse = {
     createdAt: string;
     privateProfile: boolean;
     sessionVisibility: SessionVisibility;
-    entitlement: {
+    subscription: {
+      userId: string;
+      effectivePlan: "FREE" | "PRO";
       plan: "FREE" | "PRO";
-      status: "ACTIVE" | "PAST_DUE" | "CANCELED" | null;
+      status: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED" | null;
+      billingInterval: "MONTHLY" | "ANNUAL" | null;
+      planDisplayName: string | null;
+      entitlementIdentifier: string | null;
+      revenuecatAppUserId: string | null;
+      stripeCustomerId: string | null;
+      currentPeriodStart: string | null;
       currentPeriodEnd: string | null;
+      cancelAtPeriodEnd: boolean;
+      lastSyncedAt: string | null;
+      isSyncStale: boolean;
     };
   };
   counts: {

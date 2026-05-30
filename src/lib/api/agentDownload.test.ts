@@ -117,6 +117,23 @@ describe("agentDownload API", () => {
     expect(locationState.href).toBe("http://localhost/agent");
   });
 
+  it("falls back to the linux AppImage filename when content-disposition is missing", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(new Uint8Array([0x7f, 0x45, 0x4c, 0x46]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+      })
+    );
+
+    const result = await getAgentDownloadLink("linux");
+
+    expect(result.filename).toBe("ApexAgent-linux.AppImage");
+    expect(result.os).toBe("linux");
+    expect(anchorClickMock).toHaveBeenCalled();
+  });
+
   it("throws ProRequiredError on 403 PRO_REQUIRED", async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ code: "PRO_REQUIRED", message: "Pro required" }), {

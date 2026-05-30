@@ -34,9 +34,11 @@ import BroadcastBanner from "./components/BroadcastBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import AppFooter from "./components/AppFooter";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
+import { RevenueCatBootstrap } from "./features/billing/RevenueCatBootstrap";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminChallenges from "./pages/admin/AdminChallenges";
 import AdminTracks from "./pages/admin/AdminTracks";
@@ -111,6 +113,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
+          <RevenueCatBootstrap />
           <SessionDataCacheSync />
           <Toaster theme="dark" />
           <BrowserRouter>
@@ -252,6 +255,7 @@ export default function App() {
                       <Route element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
                         <Route path="users" element={<AdminUsers />} />
+                        <Route path="subscriptions" element={<AdminSubscriptions />} />
                         <Route path="users/:userId" element={<AdminUserDetail />} />
                         <Route path="sessions" element={<AdminSessions />} />
                         <Route path="sessions/:sessionId" element={<AdminSessionDetail />} />
