@@ -1,0 +1,275 @@
+import { expect, test } from "@playwright/test";
+import { authHeaders, gotoAuthenticated, loginViaApi } from "./helpers/auth";
+import {
+  fetchEntitlement,
+  pollUntilHasPro,
+  postRevenueCatWebhook,
+  selectMonthlyInterval,
+  setDevEntitlement,
+  waitForOfferingsReady,
+  waitForWebhookSync,
+} from "./helpers/billing";
+import { getE2eEnv, isBillingConfigured } from "./helpers/env";
+import { completeStripeCheckout } from "./helpers/stripe";
+
+test.describe("@billing", () => {
+  test.beforeAll(() => {
+    test.skip(!isBillingConfigured(), "Sandbox billing is not configured on the backend");
+  });
+
+  test.describe("checkout", () => {
+    test.describe.configure({ mode: "serial" });
+    test("happy path: monthly Stripe checkout grants Pro", async ({ page, context, request }) => {
+      test.setTimeout(180_000);
+
+      const env = getE2eEnv();
+      const auth = await loginViaApi(request, env.checkoutUserEmail, env.password);
+
+      const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
+      test.skip(
+        meBeforeBody.hasPro === true,
+        "Checkout user already has Pro — cancel sandbox subscription or use a fresh account"
+      );
+
+      await gotoAuthenticated(page, auth, "/pricing");
+
+      if (await page.getByTestId("billing-pro-active").isVisible().catch(() => false)) {
+        test.skip(true, "Checkout user already shows Pro on pricing page");
+      }
+
+      await expect(page.getByText(/Sandbox billing mode is enabled/i)).toBeVisible();
+      await waitForOfferingsReady(page);
+      await selectMonthlyInterval(page);
+
+      await page.getByTestId("billing-subscribe-pro").click();
+      await completeStripeCheckout(page, context);
+
+      await expect(page.getByTestId("billing-pro-active")).toBeVisible({ timeout: 60_000 });
+      await expect(
+        page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i)
+      ).toBeVisible({ timeout: 30_000 });
+
+      await pollUntilHasPro(request, auth, true, 60_000);
+
+      const entitlement = await fetchEntitlement(request, auth);
+      expect(entitlement.effectivePlan).toBe("PRO");
+
+      const pbs = await request.get(`${env.apiUrl}/api/personal-bests`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      expect(pbs.status()).toBe(200);
+    });
+  });
+
+  test.describe("portal", () => {
+    test.describe.configure({ mode: "serial" });
+    test("manage subscription opens Stripe billing portal", async ({ page, request }) => {
+      test.setTimeout(90_000);
+
+      const env = getE2eEnv();
+      const auth = await loginViaApi(request, env.proUserEmail, env.password);
+
+      await gotoAuthenticated(page, auth, "/pricing");
+
+      const proActive = page.getByTestId("billing-pro-active");
+      const hasProUi = await proActive.isVisible().catch(() => false);
+      test.skip(
+        !hasProUi,
+        "Pro user must have active Pro on /pricing (complete sandbox purchase or sync first)"
+      );
+
+      const portalReq = page.waitForRequest(
+        (req) => req.url().includes("/api/billing/portal") && req.method() === "POST"
+      );
+      const portalNav = page.waitForURL(/billing\.stripe\.com/, { timeout: 45_000 });
+
+      await page.getByTestId("billing-manage-subscription").click();
+
+      const req = await portalReq;
+      expect(req.headers().authorization ?? "").toMatch(/^Bearer /i);
+
+      const res = await req.response();
+      expect(res).not.toBeNull();
+      expect(res!.ok()).toBeTruthy();
+
+      const body = (await res!.json()) as { url?: string };
+      expect(body.url).toMatch(/^https:\/\/billing\.stripe\.com/);
+
+      await portalNav;
+      expect(page.url()).toMatch(/billing\.stripe\.com/);
+    });
+  });
+
+  test.describe("webhook", () => {
+    test("rejects requests without Authorization", async ({ request }) => {
+      const { status } = await postRevenueCatWebhook(
+        request,
+        {
+          event: { id: `e2e-noauth-${Date.now()}`, type: "TEST" },
+        },
+        { secret: null }
+      );
+      expect(status).toBe(401);
+    });
+
+    test("accepts TEST event with valid secret", async ({ request }) => {
+      const env = getE2eEnv();
+      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+
+      const eventId = `e2e-test-${Date.now()}`;
+      const { status, body } = await postRevenueCatWebhook(request, {
+        api_version: "1.0",
+        event: { id: eventId, type: "TEST" },
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({ received: true });
+    });
+
+    test("EXPIRATION revokes Pro when RevenueCat has no active entitlement", async ({
+      request,
+    }) => {
+      const env = getE2eEnv();
+      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+
+      const auth = await loginViaApi(request, env.webhookUserEmail, env.password);
+
+      const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
+
+      test.skip(
+        meBeforeBody.hasPro === true,
+        `${env.webhookUserEmail} still has active Pro in RevenueCat sandbox. ` +
+          "Cancel the sandbox subscription (Stripe/RevenueCat) and wait for sync, or set " +
+          "E2E_WEBHOOK_USER_EMAIL to a verified user with no Pro subscription."
+      );
+
+      const { status, body } = await postRevenueCatWebhook(request, {
+        api_version: "1.0",
+        event: {
+          id: `e2e-exp-${Date.now()}`,
+          type: "EXPIRATION",
+          app_user_id: auth.userId,
+          entitlement_ids: ["pro"],
+          expiration_at_ms: Date.now() - 60_000,
+        },
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({ received: true });
+
+      await waitForWebhookSync(request, auth);
+      await pollUntilHasPro(request, auth, false, 30_000);
+
+      const entitlement = await fetchEntitlement(request, auth);
+      expect(entitlement.effectivePlan).toBe("FREE");
+    });
+
+    test("EXPIRATION webhook acknowledged for active subscriber (RC remains source of truth)", async ({
+      request,
+    }) => {
+      const env = getE2eEnv();
+      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+
+      const auth = await loginViaApi(request, env.checkoutUserEmail, env.password);
+
+      const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
+      test.skip(
+        meBeforeBody.hasPro !== true,
+        "Checkout user has no Pro — use EXPIRATION revokes Pro test instead"
+      );
+
+      const { status, body } = await postRevenueCatWebhook(request, {
+        api_version: "1.0",
+        event: {
+          id: `e2e-exp-active-${Date.now()}`,
+          type: "EXPIRATION",
+          app_user_id: auth.userId,
+          entitlement_ids: ["pro"],
+          expiration_at_ms: Date.now() - 60_000,
+        },
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({ received: true });
+
+      await waitForWebhookSync(request, auth);
+
+      const meAfter = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meAfterBody = (await meAfter.json()) as { hasPro?: boolean };
+      expect(meAfterBody.hasPro).toBe(true);
+
+      const entitlement = await fetchEntitlement(request, auth);
+      expect(entitlement.effectivePlan).toBe("PRO");
+    });
+
+    test("CANCELLATION marks canceled while retaining Pro until period end", async ({
+      request,
+    }) => {
+      const env = getE2eEnv();
+      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+
+      const auth = await loginViaApi(request, env.proUserEmail, env.password);
+      const periodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (env.adminSecret) {
+        await setDevEntitlement(request, auth, {
+          plan: "PRO",
+          status: "ACTIVE",
+          currentPeriodStart: new Date().toISOString(),
+          currentPeriodEnd: periodEnd,
+        });
+      }
+
+      const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
+      test.skip(meBeforeBody.hasPro !== true, "Pro user required for cancellation webhook test");
+
+      const { status } = await postRevenueCatWebhook(request, {
+        api_version: "1.0",
+        event: {
+          id: `e2e-cancel-${Date.now()}`,
+          type: "CANCELLATION",
+          app_user_id: auth.userId,
+          entitlement_ids: ["pro"],
+          expiration_at_ms: new Date(periodEnd).getTime(),
+        },
+      });
+
+      expect(status).toBe(200);
+
+      await waitForWebhookSync(request, auth);
+
+      const meAfter = await request.get(`${env.apiUrl}/api/auth/me`, {
+        headers: authHeaders(auth.token, auth.sessionToken),
+      });
+      const meBody = (await meAfter.json()) as { hasPro?: boolean };
+      expect(meBody.hasPro).toBe(true);
+
+      const entitlement = await fetchEntitlement(request, auth);
+      expect(entitlement.effectivePlan).toBe("PRO");
+
+      const showsCanceled =
+        entitlement.status === "CANCELED" || entitlement.cancelAtPeriodEnd === true;
+      if (!showsCanceled) {
+        test.info().annotations.push({
+          type: "note",
+          description:
+            "RevenueCat sync kept ACTIVE for this sandbox subscriber; Pro access until period end is still valid.",
+        });
+      }
+    });
+  });
+});

@@ -99,6 +99,7 @@ export function SubscriptionCard() {
             <>
               <Button
                 type="button"
+                data-testid="billing-manage-subscription"
                 variant="outline"
                 className="mt-2 border-white/15"
                 disabled={portalMutation.isPending}

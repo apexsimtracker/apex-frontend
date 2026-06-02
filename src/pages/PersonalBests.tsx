@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Trophy, Zap } from "lucide-react";
+import { Loader2, Trophy } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import { Button } from "@/components/ui/button";
+import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { BRAND_RED } from "@/lib/appConfig";
 import { formatLapMs, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
 import { getPersonalBests, isProRequiredError } from "@/lib/api";
@@ -34,10 +36,16 @@ export default function PersonalBests() {
       <PageMeta title={title} description={description} path={PATH} noindex />
       <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
         <div className="flex items-start gap-3">
-          <Trophy className="mt-1 size-8 shrink-0 text-amber-500" />
+          <Trophy
+            className="mt-1 size-8 shrink-0"
+            style={{ color: BRAND_RED }}
+            aria-hidden
+          />
           <div>
-            <h1 className="text-2xl font-semibold text-white sm:text-3xl">Personal bests</h1>
-            <p className="mt-2 text-sm text-white/60">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Personal bests
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Your fastest qualifying laps by track and car, updated automatically from telemetry
               uploads.
             </p>
@@ -45,30 +53,25 @@ export default function PersonalBests() {
         </div>
 
         {locked ? (
-          <div className="mt-10 rounded-xl border border-amber-500/25 bg-amber-500/5 p-8 text-center">
-            <p className="text-white/80">
-              Personal bests tracking is an Apex Pro feature. Upgrade to save and view your best
-              laps across every track and car combination.
-            </p>
-            <Button asChild className="mt-6 bg-amber-500 text-black hover:bg-amber-400">
-              <Link to="/pricing">
-                <Zap className="mr-2 size-4" />
-                View Pro plans
-              </Link>
-            </Button>
+          <div className="mt-10">
+            <ProUpgradeCallout
+              layout="card"
+              description="Personal bests tracking is an Apex Pro feature. Upgrade to save and view your best laps across every track and car combination."
+              ctaLabel="View Pro plans"
+            />
           </div>
         ) : isPending ? (
           <div className="mt-10 flex justify-center py-16">
-            <Loader2 className="size-8 animate-spin text-white/40" />
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
           </div>
         ) : error && !isProRequiredError(error) ? (
-          <p className="mt-10 text-center text-sm text-red-400">
+          <p className="mt-10 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
             {error instanceof Error ? error.message : "Could not load personal bests."}
           </p>
         ) : !data?.personalBests?.length ? (
-          <div className="mt-10 rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center">
-            <p className="text-white/70">No personal bests recorded yet.</p>
-            <p className="mt-2 text-sm text-white/50">
+          <div className="mt-10 rounded-xl border border-white/10 bg-card/50 p-8 text-center">
+            <p className="text-muted-foreground">No personal bests recorded yet.</p>
+            <p className="mt-2 text-sm text-muted-foreground/80">
               Upload a qualifying session with sector data to start tracking PBs.
             </p>
             <Button asChild variant="outline" className="mt-6 border-white/15">
@@ -79,7 +82,7 @@ export default function PersonalBests() {
           <div className="mt-8 overflow-hidden rounded-xl border border-white/10">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 bg-white/[0.03] text-left text-xs uppercase tracking-wider text-white/50">
+                <tr className="border-b border-white/10 bg-muted/30 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="px-4 py-3">Track</th>
                   <th className="px-4 py-3">Car</th>
                   <th className="px-4 py-3 text-right">Best lap</th>
@@ -89,13 +92,15 @@ export default function PersonalBests() {
               <tbody>
                 {data.personalBests.map((pb) => (
                   <tr key={pb.id} className="border-b border-white/5 last:border-0">
-                    <td className="px-4 py-3 text-white">{formatTrackName(pb.track)}</td>
-                    <td className="px-4 py-3 text-white/80">{formatCarName(pb.car)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-purple-300">
+                    <td className="px-4 py-3 text-foreground">{formatTrackName(pb.track)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {formatCarName(pb.car)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">
                       {pb.sessionId ? (
                         <Link
                           to={`/sessions/${pb.sessionId}`}
-                          className="hover:text-purple-200 hover:underline"
+                          className="text-foreground hover:underline"
                         >
                           {formatLapMs(pb.bestLapMs)}
                         </Link>
@@ -103,7 +108,7 @@ export default function PersonalBests() {
                         formatLapMs(pb.bestLapMs)
                       )}
                     </td>
-                    <td className="hidden px-4 py-3 text-right text-white/50 sm:table-cell">
+                    <td className="hidden px-4 py-3 text-right text-muted-foreground sm:table-cell">
                       {new Date(pb.updatedAt).toLocaleDateString()}
                     </td>
                   </tr>

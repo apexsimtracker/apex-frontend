@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
-import { Upload, PenLine, Cpu, Zap, X } from "lucide-react";
+import { Upload, PenLine, Cpu, X } from "lucide-react";
+import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
+import { BRAND_RED } from "@/lib/appConfig";
 import ActivityCard from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
 import { Button } from "@/components/ui/button";
@@ -155,9 +157,13 @@ function EmptyTelemetry() {
             </Link>
           </Button>
         ) : (
-          <Button variant="outline" asChild className="border-amber-500/30 text-amber-400/90 hover:bg-amber-500/10">
+          <Button
+            asChild
+            variant="outline"
+            className="border-white/15 text-foreground hover:bg-muted/30"
+            style={{ color: BRAND_RED }}
+          >
             <Link to="/pricing">
-              <Zap className="mr-2 size-4" />
               Upgrade for Agent
             </Link>
           </Button>
@@ -263,37 +269,27 @@ export default function Sessions() {
       />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {user && !isPro && (
-          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-amber-500/25 bg-amber-500/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-white/75">
-              Free plan includes the last 3 months of session history. Upgrade to Apex Pro for
-              unlimited history and analytics.
-            </p>
-            <Button
-              asChild
-              size="sm"
-              className="shrink-0 bg-amber-500 text-black hover:bg-amber-400"
-            >
-              <Link to="/pricing">
-                <Zap className="mr-1.5 size-4" />
-                View Pro plans
-              </Link>
-            </Button>
-          </div>
+          <ProUpgradeCallout
+            className="mb-6"
+            layout="banner"
+            description="Free plan includes the last 3 months of session history. Upgrade to Apex Pro for unlimited history and analytics."
+            ctaLabel="View Pro plans"
+          />
         )}
         {showOnboardingBanner && (
-          <div className="relative mb-6 rounded-lg border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+          <div className="relative mb-6 rounded-xl border border-white/10 bg-card/50 p-4 sm:p-5">
             <button
               type="button"
               onClick={dismissOnboarding}
-              className="absolute right-3 top-3 rounded p-1 text-white/50 transition-colors hover:text-white"
+              className="absolute right-3 top-3 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Dismiss"
             >
               <X className="size-4" />
             </button>
-            <h2 className="pr-8 text-base font-semibold text-white">
+            <h2 className="pr-8 text-base font-semibold text-foreground">
               Welcome to Apex
             </h2>
-            <p className="mt-1 text-sm text-white/60">
+            <p className="mt-1 text-sm text-muted-foreground">
               Track your sim racing performance automatically or log sessions
               manually.
             </p>
@@ -342,9 +338,8 @@ export default function Sessions() {
                     setShowOnboardingBanner(false);
                     navigate("/pricing");
                   }}
-                  className="border-amber-500/30 text-sm text-amber-400/90 hover:bg-amber-500/10"
+                  className="border-white/15 text-sm text-foreground hover:bg-muted/30"
                 >
-                  <Zap className="mr-1.5 size-4" />
                   See Apex Pro
                 </Button>
               )}
@@ -352,7 +347,7 @@ export default function Sessions() {
           </div>
         )}
 
-        <h1 className="mb-6 text-xl font-semibold text-white sm:text-2xl">
+        <h1 className="mb-6 text-xl font-semibold text-foreground sm:text-2xl">
           Sessions
         </h1>
 
