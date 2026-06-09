@@ -46,7 +46,7 @@ import {
 import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
 
 const TITLE = `Admin · Notifications | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 type TabId = "overview" | "broadcasts" | "campaigns";
 

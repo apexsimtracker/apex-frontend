@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Cpu,
@@ -102,11 +102,13 @@ function cardSectionClassName() {
 
 export default function Agent() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const isPro = useIsProUser();
   const { selectedOs, setSelectedOs } = useDetectedAgentOs();
   const [isDownloading, setIsDownloading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const showWelcomeBanner = searchParams.get("welcome") === "pro";
 
   const downloadFilename = AGENT_DOWNLOAD_FILENAMES[selectedOs];
   const platformLabel = AGENT_PLATFORM_LABELS[selectedOs];
@@ -185,6 +187,26 @@ export default function Agent() {
           <AgentPlatformSelector selectedOs={selectedOs} onSelect={setSelectedOs} />
         </div>
 
+        {showWelcomeBanner && isPro && (
+          <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-foreground">
+            <p className="font-medium text-green-400">Welcome to Apex Pro!</p>
+            <p className="mt-1 text-muted-foreground">
+              Download the agent below, then sign in with the same email and password you use on
+              this website.
+            </p>
+            <button
+              type="button"
+              className="mt-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
+              onClick={() => {
+                searchParams.delete("welcome");
+                setSearchParams(searchParams, { replace: true });
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <div className="space-y-6">
           <section className={cardSectionClassName()}>
             <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
@@ -228,6 +250,41 @@ export default function Agent() {
                 );
               })}
             </div>
+          </section>
+
+          <section className={cardSectionClassName()}>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+              After you install
+            </h2>
+            <ol className="mt-4 space-y-3 text-sm text-muted-foreground">
+              <li className="flex gap-3">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
+                  1
+                </span>
+                <span>
+                  Open Apex Agent from your{" "}
+                  {selectedOs === "macos" ? "menu bar" : "system tray"} (look for the Apex icon).
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
+                  2
+                </span>
+                <span>
+                  Sign in with the <strong className="font-medium text-foreground">same email and password</strong>{" "}
+                  as your {COMPANY_NAME} account. No separate activation code is required.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
+                  3
+                </span>
+                <span>
+                  The agent minimizes to the {selectedOs === "macos" ? "menu bar" : "system tray"} and
+                  uploads sessions automatically while you race.
+                </span>
+              </li>
+            </ol>
           </section>
 
           <AgentInstallRequirements os={selectedOs} />

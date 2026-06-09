@@ -14,7 +14,7 @@ import {
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 type UserSearchModalProps = {
   open: boolean;

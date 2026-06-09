@@ -35,6 +35,8 @@ type ProfileViewProps = {
   onToggleFollow?: () => void;
   onOpenFollowers?: () => void;
   onOpenFollowing?: () => void;
+  onPrefetchFollowers?: () => void;
+  onPrefetchFollowing?: () => void;
   /** When set and isCurrentUser, shows an Edit Profile button that calls this. */
   onEditProfile?: () => void;
   /** Paginated race history (GET /api/profile/.../race-history). When set, replaces profile.raceHistory for the table. */
@@ -77,6 +79,8 @@ export function ProfileView({
   onToggleFollow,
   onOpenFollowers,
   onOpenFollowing,
+  onPrefetchFollowers,
+  onPrefetchFollowing,
   onEditProfile,
   raceHistoryPagination,
   raceHistoryForbiddenCode,
@@ -194,6 +198,8 @@ export function ProfileView({
             onToggleFollow={onToggleFollow}
             onOpenFollowers={onOpenFollowers}
             onOpenFollowing={onOpenFollowing}
+            onPrefetchFollowers={onPrefetchFollowers}
+            onPrefetchFollowing={onPrefetchFollowing}
             onEditProfile={onEditProfile}
             streakDays={profile.user.streakDays ?? 0}
             isPro={isPro}

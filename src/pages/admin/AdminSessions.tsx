@@ -34,7 +34,7 @@ import SimBadge from "@/components/SimBadge";
 import { formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 
 const TITLE = `Admin · Sessions & laps | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 const PRESET_SELECT_CLASS =
   "rounded-md border border-white/10 bg-card px-3 py-2 text-sm";

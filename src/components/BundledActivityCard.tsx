@@ -1,3 +1,7 @@
+/**
+ * @deprecated Replaced by {@link ActivityFeedList} + {@link WeekendGroupHeader} (Fix 5 weekend grouping).
+ * Kept for reference; no feed page imports this component.
+ */
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -167,8 +171,10 @@ export default function BundledActivityCard({
             vehicleDisplay={currentSession.vehicleDisplay}
             track={currentSession.track ?? "—"}
             position={currentSession.position ?? null}
+            qualifyingPosition={currentSession.qualifyingPosition ?? null}
             totalRacers={currentSession.totalDrivers ?? null}
             sessionType={currentSession.sessionType}
+            manualSessionKind={currentSession.manualSessionKind ?? null}
             sim={currentSession.sim}
             source={currentSession.source}
             bestLapMs={currentSession.bestLapMs}

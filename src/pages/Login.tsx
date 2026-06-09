@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { authLogin, authMe, ApiError } from "@/lib/api";
 import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
+import { prefetchHomeWeeklyAfterAuth } from "@/lib/profileQueryKeys";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -68,6 +69,10 @@ export default function Login() {
       persistSessionTokenFromAuthPayload(data);
       try {
         await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+        prefetchHomeWeeklyAfterAuth(
+          queryClient,
+          queryClient.getQueryData(AUTH_ME_QUERY_KEY)
+        );
       } catch (meErr) {
         localStorage.removeItem("apex_token");
         persistSessionTokenFromAuthPayload({});

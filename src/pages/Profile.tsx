@@ -46,6 +46,7 @@ import { COMPANY_NAME } from "@/lib/siteMeta";
 import {
   ownedProfileUserKey,
   profileKeys,
+  prefetchFollowList,
   PROFILE_SUMMARY_ALL_QUERY_FILTER,
 } from "@/lib/profileQueryKeys";
 
@@ -453,6 +454,8 @@ export default function Profile() {
         challengeBadges={publicPreview?.challengeBadges}
         onOpenFollowers={() => setOpenList("followers")}
         onOpenFollowing={() => setOpenList("following")}
+        onPrefetchFollowers={() => prefetchFollowList(queryClient, followsUserId, "followers")}
+        onPrefetchFollowing={() => prefetchFollowList(queryClient, followsUserId, "following")}
         onEditProfile={openEditProfile}
         raceHistoryPagination={{
           page: raceHistoryData?.page ?? raceHistoryPage,

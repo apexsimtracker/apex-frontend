@@ -16,7 +16,7 @@ import {
   ApiError,
   type ProfileSummary,
 } from "@/lib/api";
-import { profileKeys } from "@/lib/profileQueryKeys";
+import { profileKeys, prefetchFollowList } from "@/lib/profileQueryKeys";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 
@@ -332,6 +332,16 @@ export default function UserProfile() {
         }
         onOpenFollowing={
           viewerHasAccess ? () => setOpenList("following") : undefined
+        }
+        onPrefetchFollowers={
+          viewerHasAccess
+            ? () => prefetchFollowList(queryClient, id, "followers")
+            : undefined
+        }
+        onPrefetchFollowing={
+          viewerHasAccess
+            ? () => prefetchFollowList(queryClient, id, "following")
+            : undefined
         }
         raceHistoryPagination={
           viewerHasAccess

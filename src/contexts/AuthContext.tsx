@@ -11,6 +11,10 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authMe, registerAuthExpiredHandler, ApiError, type AuthUser } from "@/lib/api";
 import { storedAccessTokenSubject } from "@/lib/impersonation";
+import {
+  resolveAuthLoading,
+  resolveAuthUser,
+} from "@/auth/authSessionState";
 
 /** TanStack Query key for GET /api/auth/me — invalidate or setQueryData from profile/settings. */
 export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
@@ -98,10 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("apex:auth", onAuth);
   }, [applyTokenStorageToQueryClient, queryClient, syncTokenFromStorage]);
 
+  // Storage can lead React state by one commit after login (token written + /me cached before apex:auth).
+  const tokenPresent = hasTokenState || readHasToken();
+
   const meQuery = useQuery({
     queryKey: AUTH_ME_QUERY_KEY,
     queryFn: authMe,
-    enabled: hasTokenState,
+    enabled: tokenPresent,
     retry: (failureCount, err) => {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
         return false;
@@ -121,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Mirror previous error semantics from manual refreshUser (network vs generic).
   useEffect(() => {
-    if (!hasTokenState) {
+    if (!tokenPresent) {
       setError(null);
       return;
     }
@@ -139,32 +146,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setError("Failed to fetch user.");
     }
-  }, [hasTokenState, meQuery.isError, meQuery.error]);
+  }, [tokenPresent, meQuery.isError, meQuery.error]);
 
-  const user = useMemo(() => {
-    if (!hasTokenState) return null;
-    if (
-      meQuery.isError &&
-      meQuery.error instanceof ApiError &&
-      (meQuery.error.status === 401 || meQuery.error.status === 403)
-    ) {
-      return null;
-    }
-    return meQuery.data ?? null;
-  }, [hasTokenState, meQuery.data, meQuery.isError, meQuery.error]);
-
-  const isUnauthorizedError =
-    meQuery.isError &&
-    meQuery.error instanceof ApiError &&
-    (meQuery.error.status === 401 || meQuery.error.status === 403);
+  const user = useMemo(
+    () => resolveAuthUser(tokenPresent, meQuery),
+    [tokenPresent, meQuery.data, meQuery.isError, meQuery.error]
+  );
 
   // Has token but /api/auth/me not resolved yet (success or confirmed 401/403). Use isFetching so
   // retries and background refetches keep ProtectedRoute from bouncing to /login while user is null.
-  const loading =
-    hasTokenState &&
-    !isUnauthorizedError &&
-    (meRefetching ||
-      (meQuery.data === undefined && (meQuery.isPending || meQuery.isFetching)));
+  const loading = resolveAuthLoading(tokenPresent, meQuery, meRefetching);
 
   const refreshUser = useCallback(async () => {
     if (!readHasToken()) {

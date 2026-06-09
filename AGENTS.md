@@ -99,8 +99,9 @@ flowchart LR
 
 ### Activity feed
 
-- **`lib/groupSessions.ts`** — bundles sessions by sim/track/car/time window; types `SessionItem`, `ActivityItem`.
-- **`ActivityCard`**, **`BundledActivityCard`** — feed rendering; manual vs telemetry via `sessionType` / `source`.
+- **`lib/groupSessions.ts`** — shared `SessionItem` type; legacy 2h `groupSessions()` (deprecated).
+- **`lib/groupSessionsByWeekend.ts`** — 48h author+track weekend grouping for feeds (Fix 5).
+- **`ActivityFeedList`**, **`WeekendGroupHeader`**, **`ActivityCard`** — feed rendering with weekend headers; manual vs telemetry via `sessionType` / `source`.
 
 ## Commands
 
@@ -168,7 +169,7 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 
 - Unit tests next to code (`*.test.ts`, `*.spec.ts`).
 - `vitest.config.ts` mirrors Vite `@` alias.
-- No component test harness yet; focus tests on pure lib logic (e.g. `groupSessions`, `apexAnalysisDisplay`).
+- No component test harness yet; focus tests on pure lib logic (e.g. `groupSessionsByWeekend`, `apexAnalysisDisplay`).
 
 ## Common pitfalls
 

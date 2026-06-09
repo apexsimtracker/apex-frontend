@@ -2,15 +2,21 @@ import { useNavigate } from "react-router-dom";
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
 import SimBadge from "./SimBadge";
+import SessionTypeTag from "./SessionTypeTag";
 import SessionShareModal from "@/components/SessionShareModal";
 import { formatLapMs, formatCarName, formatCompactCount, cn } from "@/lib/utils";
 import { apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
 import { SessionCommentsModal } from "@/components/SessionCommentsModal";
 import { buildSessionShareText } from "@/lib/sessionShareText";
 import { getToken } from "@/auth/token";
-import { formatSessionTypeUpper, getSimDisplayName } from "@/lib/sim";
-import { formatActivitySource } from "@/lib/enumFormat";
+import { getSimDisplayName } from "@/lib/sim";
 import { formatTrackName } from "@/lib/tracks";
+import {
+  displayPositionRank,
+  getDisplayPosition,
+  shouldShowSessionPosition,
+} from "@/lib/displayPosition";
+import { isPracticeKind } from "@/lib/sessionKind";
 
 /** Never show .ibt filename; use formatted track name or "Practice Session" */
 function cleanTitle(item: ActivityCardItem): string {
@@ -30,8 +36,10 @@ interface ActivityCardItem {
   vehicleDisplay?: string;
   track: string;
   position: number | null;
+  qualifyingPosition?: number | null;
   totalRacers: number | null;
   sessionType?: string | null;
+  manualSessionKind?: string | null;
   sim?: string | null;
   source?: string | null;
   bestLapMs?: number | null;
@@ -55,14 +63,6 @@ function isManualSessionItem(item: ActivityCardItem): boolean {
   return false;
 }
 
-function feedSourceLabel(item: ActivityCardItem): string {
-  const src = (item.source ?? "").toString().trim().toLowerCase();
-  if (src === "manual") return formatActivitySource("MANUAL_ACTIVITY");
-  if (src === "agent") return formatActivitySource("AGENT");
-  if (src === "telemetry") return formatActivitySource("TELEMETRY");
-  return "";
-}
-
 const getPodiumColor = (pos: number) => {
   if (pos === 1) return "text-gold bg-yellow-950/20 dark:bg-yellow-950/15";
   if (pos === 2) return "text-silver bg-gray-800/15 dark:bg-gray-800/20";
@@ -79,18 +79,18 @@ function activityPositionValue(raw: unknown): number {
   return Math.trunc(n);
 }
 
-/** True when position/total represent a valid race result (not 0/0 or missing). */
-function hasValidRacePosition(position: unknown, totalRacers: unknown): boolean {
-  const pos = activityPositionValue(position);
-  const total = activityPositionValue(totalRacers);
-  return pos > 0 || total > 0;
-}
-
 /** Original race stats: POSITION row (only when valid) + BEST/FASTEST row + CAR row */
 function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
-  const pos = activityPositionValue(item.position);
-  const total = activityPositionValue(item.totalRacers);
-  const showPosition = hasValidRacePosition(item.position, item.totalRacers);
+  const displaySession = {
+    sessionType: item.sessionType,
+    manualSessionKind: item.manualSessionKind,
+    position: item.position,
+    qualifyingPosition: item.qualifyingPosition,
+    totalDrivers: item.totalRacers,
+  };
+  const displayLabel = getDisplayPosition(displaySession);
+  const showPosition = shouldShowSessionPosition(displaySession);
+  const pos = displayPositionRank(displaySession);
   const showBest = item.bestLapMs != null;
   const lapTimeDisplay = showBest ? formatLapMs(item.bestLapMs) : "";
 
@@ -104,12 +104,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               Position
             </p>
             <p
-              className={`leading-tight ${pos <= 3 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
+              className={`leading-tight ${pos <= 3 && pos > 0 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
             >
-              {pos}
-              {total > 0 && (
-                <span className="ml-0.5 text-xs font-medium">/ {total}</span>
-              )}
+              {displayLabel}
             </p>
           </div>
           {pos >= 1 && pos <= 3 && (
@@ -142,12 +139,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
               Position
             </p>
             <p
-              className={`leading-tight ${pos <= 3 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
+              className={`leading-tight ${pos <= 3 && pos > 0 ? "text-lg font-semibold sm:text-xl" : "text-base font-semibold sm:text-lg"}`}
             >
-              {pos}
-              {total > 0 && (
-                <span className="ml-0.5 text-xs font-medium">/ {total}</span>
-              )}
+              {displayLabel}
             </p>
           </div>
           {pos >= 1 && pos <= 3 && (
@@ -241,8 +235,22 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
           </div>
         )}
-        {hasValidRacePosition(item.position, item.totalRacers) && (() => {
-          const pos = activityPositionValue(item.position);
+        {shouldShowSessionPosition({
+          sessionType: item.sessionType,
+          manualSessionKind: item.manualSessionKind,
+          position: item.position,
+          qualifyingPosition: item.qualifyingPosition,
+          totalDrivers: item.totalRacers,
+        }) && (() => {
+          const displaySession = {
+            sessionType: item.sessionType,
+            manualSessionKind: item.manualSessionKind,
+            position: item.position,
+            qualifyingPosition: item.qualifyingPosition,
+            totalDrivers: item.totalRacers,
+          };
+          const displayLabel = getDisplayPosition(displaySession);
+          const pos = displayPositionRank(displaySession);
           const total = activityPositionValue(item.totalRacers);
           return (
             <div>
@@ -250,16 +258,14 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
                 Position
               </p>
               <div
-                // className={`rounded-lg py-2 flex items-center justify-between gap-2 ${getPodiumColor(pos)}`}
-                className={cn("flex items-center justify-between gap-2 rounded-lg py-2", getPodiumColor(pos),
-                  pos <= 3 && "px-4"
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded-lg py-2",
+                  getPodiumColor(pos),
+                  pos <= 3 && pos > 0 && "px-4"
                 )}
               >
                 <p className="text-xs font-semibold text-white sm:text-sm">
-                  P{pos}
-                  {total > 0 && (
-                    <span className="text-white/60"> / {total}</span>
-                  )}
+                  {displayLabel}
                 </p>
                 {pos >= 1 && pos <= 3 && (
                   <span className="shrink-0 text-lg" aria-hidden>
@@ -271,7 +277,14 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           );
         })()}
       </div>
-      {item.bestLapMs == null && !hasValidRacePosition(item.position, item.totalRacers) && (
+      {item.bestLapMs == null &&
+        !shouldShowSessionPosition({
+          sessionType: item.sessionType,
+          manualSessionKind: item.manualSessionKind,
+          position: item.position,
+          qualifyingPosition: item.qualifyingPosition,
+          totalDrivers: item.totalRacers,
+        }) && (
         <div className="h-10" aria-hidden />
       )}
     </div>
@@ -319,16 +332,6 @@ function RaceCardContent({
     (item.consistencyScore ?? 0) >= 80;
 
   const avatarSrc = resolveApiUrl(item.userAvatar);
-
-  const sessionTypeKey = (item.sessionType ?? "").toString().trim();
-  const fromSource = feedSourceLabel(item);
-  const sessionTypeLabel =
-    fromSource ||
-    (sessionTypeKey.toUpperCase() === "MANUAL_ACTIVITY" ||
-    sessionTypeKey.toUpperCase() === "TELEMETRY" ||
-    sessionTypeKey.toUpperCase() === "AGENT"
-      ? formatActivitySource(sessionTypeKey)
-      : formatSessionTypeUpper(item.sessionType));
 
   return (
     <div
@@ -412,9 +415,10 @@ function RaceCardContent({
           <div className="mb-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="text-xs font-medium uppercase tracking-wider text-[rgb(240,28,28)]">
-                  {sessionTypeLabel}
-                </div>
+                <SessionTypeTag
+                  sessionType={item.sessionType}
+                  manualSessionKind={item.manualSessionKind}
+                />
                 <SimBadge sim={item.sim} />
                 {isManual && (
                   <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
@@ -519,8 +523,10 @@ interface ActivityCardProps {
   vehicleDisplay?: string;
   track: string;
   position: number | null;
+  qualifyingPosition?: number | null;
   totalRacers: number | null;
   sessionType?: string | null;
+  manualSessionKind?: string | null;
   sim?: string | null;
   source?: string | null;
   bestLapMs?: number | null;
@@ -538,14 +544,38 @@ interface ActivityCardProps {
   profileUserId?: string | null;
 }
 
+/** True when position/total represent a valid race result (legacy feed rows). */
+function hasValidRacePosition(position: unknown, totalRacers: unknown): boolean {
+  const pos = activityPositionValue(position);
+  const total = activityPositionValue(totalRacers);
+  return pos > 0 || total > 0;
+}
+
+/** Feed may map UNKNOWN → PRACTICE while still carrying finish data — keep race stats + medals. */
+function hasFinishDataForLayout(props: ActivityCardProps): boolean {
+  if (
+    shouldShowSessionPosition({
+      sessionType: props.sessionType,
+      manualSessionKind: props.manualSessionKind,
+      position: props.position,
+      qualifyingPosition: props.qualifyingPosition,
+      totalDrivers: props.totalRacers,
+    })
+  ) {
+    return true;
+  }
+  if (hasValidRacePosition(props.position, props.totalRacers)) return true;
+  const qp = props.qualifyingPosition;
+  return qp != null && qp > 0;
+}
+
 export default function ActivityCard(props: ActivityCardProps) {
-  /** Feed maps UNKNOWN → PRACTICE in activityModel; still show race stats + medals when we have a real finish. */
-  const hasRaceFinish = hasValidRacePosition(props.position, props.totalRacers);
   const isPractice =
-    !hasRaceFinish &&
-    (props.sessionType === "PRACTICE" ||
-      props.sessionType === "UNKNOWN" ||
-      props.sessionType == null);
+    !hasFinishDataForLayout(props) &&
+    isPracticeKind({
+      sessionType: props.sessionType,
+      manualSessionKind: props.manualSessionKind,
+    });
 
   const [likedByMe, setLikedByMe] = useState(props.likedByMe ?? false);
   const [likeCount, setLikeCount] = useState(props.likeCount ?? props.likes ?? 0);
@@ -693,8 +723,10 @@ export default function ActivityCard(props: ActivityCardProps) {
     vehicleDisplay: props.vehicleDisplay,
     track: props.track,
     position: props.position,
+    qualifyingPosition: props.qualifyingPosition,
     totalRacers: props.totalRacers,
     sessionType: props.sessionType,
+    manualSessionKind: props.manualSessionKind,
     sim: props.sim,
     source: props.source,
     bestLapMs: props.bestLapMs,

@@ -35,7 +35,7 @@ import {
 import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
 
 const TITLE = `Admin · Community | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function statusLabel(row: AdminCommunityDiscussionListItem): string {
   if (!row.deletedAt) return "Active";

@@ -22,7 +22,7 @@ import {
   adminTable,
 } from "@/pages/admin/adminTableLayout";
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function formatTs(iso: string | null): string {
   if (!iso) return "—";

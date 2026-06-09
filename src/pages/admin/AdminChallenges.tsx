@@ -44,7 +44,7 @@ import { formatCarName, formatTrackName } from "@/lib/utils";
 import { getBrowserTimeZone } from "@/lib/datetime";
 
 const TITLE = `Admin · Challenges | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 const CAR_CLASS_DEBOUNCE_MS = 300;
 
 const SELECT_MANUAL_LIKE =

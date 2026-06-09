@@ -1,8 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
 import {
   getProfileSummary,
+  getProfileHomeWeekly,
   getProfileRaceHistory,
   getUserPublicProfile,
+  getFollowersPage,
+  getFollowingPage,
+  FOLLOW_LIST_PAGE_SIZE,
   RACE_HISTORY_PAGE_SIZE,
 } from "@/lib/api";
 
@@ -15,6 +19,8 @@ export function ownedProfileUserKey(
 
 export const profileKeys = {
   summary: (userKey: string) => ["profile", "summary", userKey] as const,
+  homeWeekly: (userKey: string) => ["profile", "homeWeekly", userKey] as const,
+  trendInsight: (userKey: string) => ["profile", "trendInsight", userKey] as const,
   raceHistory: (userKey: string, page: number) =>
     ["profile", "raceHistory", userKey, page] as const,
   /** GET /api/users/:id — authoritative follow counts for own profile. */
@@ -57,6 +63,8 @@ export function invalidateSessionDerivedCaches(
   const sid = sessionId?.trim();
 
   void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
+  void queryClient.invalidateQueries({ queryKey: ["profile", "homeWeekly"] });
+  void queryClient.invalidateQueries({ queryKey: ["profile", "trendInsight"] });
   void queryClient.invalidateQueries({ queryKey: ["profile", "raceHistory"] });
   void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
   void queryClient.invalidateQueries({ queryKey: ["activity"] });
@@ -75,6 +83,21 @@ export function invalidateSessionDerivedCaches(
     void queryClient.invalidateQueries({ queryKey: ["sessions", "detail", sid] });
     void queryClient.invalidateQueries({ queryKey: ["sessions", "edit", sid] });
   }
+}
+
+/**
+ * Warm home weekly stats after sign-in so the authenticated home screen populates faster.
+ */
+export function prefetchHomeWeeklyAfterAuth(
+  queryClient: QueryClient,
+  user: { id?: string | null } | null | undefined
+): void {
+  if (!user) return;
+  const userKey = ownedProfileUserKey(user);
+  void queryClient.prefetchQuery({
+    queryKey: profileKeys.homeWeekly(userKey),
+    queryFn: getProfileHomeWeekly,
+  });
 }
 
 /**
@@ -103,4 +126,24 @@ export function prefetchOwnProfileQueries(
       queryFn: () => getUserPublicProfile(uid),
     });
   }
+}
+
+/**
+ * Warm follower/following modal page 1 on count-button hover/focus.
+ * Safe to fire repeatedly; respects global staleTime.
+ */
+export function prefetchFollowList(
+  queryClient: QueryClient,
+  userId: string,
+  kind: "followers" | "following"
+): void {
+  const uid = userId.trim();
+  if (!uid) return;
+  void queryClient.prefetchQuery({
+    queryKey: profileKeys.followList(uid, kind, 1, ""),
+    queryFn: () =>
+      kind === "followers"
+        ? getFollowersPage(uid, { page: 1, limit: FOLLOW_LIST_PAGE_SIZE, q: "" })
+        : getFollowingPage(uid, { page: 1, limit: FOLLOW_LIST_PAGE_SIZE, q: "" }),
+  });
 }

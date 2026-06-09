@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
-import ActivityCard from "@/components/ActivityCard";
-import BundledActivityCard from "@/components/BundledActivityCard";
+import ActivityFeedList from "@/components/ActivityFeedList";
 import DiscussionCard from "@/components/DiscussionCard";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -13,13 +12,14 @@ import {
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   getActivityHomeFeedPage,
   ACTIVITY_FEED_DEFAULT_LIMIT,
-  getProfileSummary,
+  getProfileHomeWeekly,
+  getProfileTrendInsight,
   type ActivityFeedPageResult,
   type Discussion,
 } from "@/lib/api";
 import type { InfiniteData } from "@tanstack/react-query";
 import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
-import { groupSessions, getActivityKey, type SessionItem, type ActivityItem as GroupedActivityItem } from "@/lib/groupSessions";
+import type { SessionItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";
@@ -29,8 +29,8 @@ import { COMPANY_NAME } from "@/lib/siteMeta";
 import {
   ownedProfileUserKey,
   profileKeys,
-  prefetchOwnProfileQueries,
 } from "@/lib/profileQueryKeys";
+import { isRaceKind } from "@/lib/sessionKind";
 
 const HOME_PATH = "/";
 const HOME_TITLE = `Home | ${COMPANY_NAME}`;
@@ -48,72 +48,15 @@ type RawActivityItem = SessionItem & {
   authorName?: string | null;
   authorAvatarUrl?: string | null;
   owner?: {
+    id?: string | null;
     displayName?: string | null;
     username?: string | null;
     avatarUrl?: string | null;
   };
 };
 
-/** Matches server `isRaceKind`: telemetry RACE/SPRINT or manual activity with manualSessionKind RACE. */
-function isRaceLikeSessionForWeeklyGoals(s: {
-  sessionType?: string | null;
-  manualSessionKind?: string | null;
-}): boolean {
-  const st = (s.sessionType ?? "").toUpperCase();
-  if (st === "RACE" || st === "SPRINT") return true;
-  if (st === "MANUAL_ACTIVITY") {
-    const k = (s.manualSessionKind ?? "").toUpperCase();
-    return k === "RACE";
-  }
-  return false;
-}
-
-function getActivityHeaderFromOwner(
-  session: RawActivityItem,
-  currentUser?: { id: string; avatarUrl?: string | null } | null
-): {
-  name: string;
-  avatar: string | null;
-} {
-  const owner = session.owner;
-  const sessionOwnerId =
-    session.authorId ??
-    ((owner && typeof owner === "object" && "id" in owner && typeof (owner as any).id === "string")
-      ? ((owner as any).id as string)
-      : null);
-  const isCurrentUsersSession =
-    Boolean(currentUser?.id) && Boolean(sessionOwnerId) && currentUser!.id === sessionOwnerId;
-  const name =
-    session.authorName?.trim() ||
-    owner?.displayName?.trim() ||
-    owner?.username?.trim() ||
-    session.driverName ||
-    "—";
-  const currentUserAvatar =
-    currentUser?.avatarUrl && currentUser.avatarUrl.trim().length > 0
-      ? currentUser.avatarUrl
-      : null;
-  const avatar =
-    (isCurrentUsersSession && currentUserAvatar
-      ? currentUserAvatar
-      : session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
-      ? session.authorAvatarUrl
-      : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
-        ? owner.avatarUrl
-        : null);
-  return { name, avatar };
-}
-
-function getProfileOwnerId(session: RawActivityItem): string | null {
-  if (typeof session.authorId === "string" && session.authorId.trim()) {
-    return session.authorId.trim();
-  }
-  const owner = session.owner;
-  const oid =
-    owner && typeof owner === "object" && "id" in owner && typeof (owner as { id?: unknown }).id === "string"
-      ? (owner as { id: string }).id
-      : null;
-  return oid && oid.trim() ? oid.trim() : null;
+function deltaNumber(curr: number, prev: number) {
+  return curr - prev;
 }
 
 function timeAgo(createdAt: string | Date): string {
@@ -124,10 +67,6 @@ function timeAgo(createdAt: string | Date): string {
   if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
   if (sec < 2592000) return `${Math.floor(sec / 86400)}d ago`;
   return date.toLocaleDateString();
-}
-
-function deltaNumber(curr: number, prev: number) {
-  return curr - prev;
 }
 
 function FeedSkeletonCard() {
@@ -164,6 +103,7 @@ export default function Index() {
   const { user } = useAuth();
   const [showUploadBanner, setShowUploadBanner] = useState(false);
   const [homeDiscussionsEnabled, setHomeDiscussionsEnabled] = useState(false);
+  const [homeTrendEnabled, setHomeTrendEnabled] = useState(false);
 
   /** Home feed (`type: "all"`); includes user id so cache does not leak across accounts. Match `setQueryData` patch sites. */
   const homeActivityFeedQueryKey = useMemo(
@@ -208,12 +148,18 @@ export default function Index() {
   );
 
   const profileSummaryKey = ownedProfileUserKey(user);
-  const { data: profileSummary, isPending: profileSummaryPending } = useQuery({
-    queryKey: profileKeys.summary(profileSummaryKey),
-    queryFn: getProfileSummary,
+  const { data: profileHomeWeekly, isPending: profileHomeWeeklyPending } = useQuery({
+    queryKey: profileKeys.homeWeekly(profileSummaryKey),
+    queryFn: getProfileHomeWeekly,
     enabled: Boolean(user),
   });
-  const profileWeeklyGoals = profileSummary?.weeklyGoals ?? null;
+  const profileWeeklyGoals = profileHomeWeekly?.weeklyGoals ?? null;
+
+  const { data: profileTrendInsight } = useQuery({
+    queryKey: profileKeys.trendInsight(profileSummaryKey),
+    queryFn: getProfileTrendInsight,
+    enabled: Boolean(user) && homeTrendEnabled,
+  });
 
   const {
     data: discussionPages,
@@ -277,6 +223,27 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) setHomeTrendEnabled(true);
+    };
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof requestIdleCallback !== "undefined") {
+      idleId = requestIdleCallback(run, { timeout: 2000 });
+    } else {
+      timeoutId = setTimeout(run, 1);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
+        cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
     if (searchParams.get("uploaded") === "1") {
       setShowUploadBanner(true);
       setSearchParams({}, { replace: true });
@@ -289,38 +256,11 @@ export default function Index() {
     }
   }, [searchParams, setSearchParams]);
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const run = () => {
-      if (!cancelled) prefetchOwnProfileQueries(queryClient, user);
-    };
-    let idleId: number | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (typeof requestIdleCallback !== "undefined") {
-      idleId = requestIdleCallback(run);
-    } else {
-      timeoutId = setTimeout(run, 1);
-    }
-    return () => {
-      cancelled = true;
-      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
-        cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-    };
-  }, [user, queryClient]);
-
-  // Group sessions into bundled activities
-  const groupedActivity = useMemo<GroupedActivityItem[]>(() => {
-    return groupSessions(activity);
-  }, [activity]);
-
   const weeklyStats = useMemo(() => {
     // Signed-in: only server weeklySnapshot (user + ISO week). Do not derive weekly stats from the home feed —
     // even though it is personalized, client-side rollups can still race or disagree with the server snapshot.
     if (user?.id) {
-      const snap = profileSummary?.weeklySnapshot;
+      const snap = profileHomeWeekly?.weeklySnapshot;
       if (snap) {
         return {
           sessionsCount: snap.sessions,
@@ -383,9 +323,9 @@ export default function Index() {
       lapsDelta,
       trackTimeDelta,
     };
-  }, [activity, profileSummary?.weeklySnapshot, user?.id]);
+  }, [activity, profileHomeWeekly?.weeklySnapshot, user?.id]);
 
-  const weeklySnapshotLoading = Boolean(user?.id) && profileSummaryPending;
+  const weeklySnapshotLoading = Boolean(user?.id) && profileHomeWeeklyPending;
 
   // Calculate weekly goals progress from activity
   const goalsStats = useMemo(() => {
@@ -398,14 +338,14 @@ export default function Index() {
     );
 
     const races = thisWeek.filter((s) =>
-      isRaceLikeSessionForWeeklyGoals({
+      isRaceKind({
         sessionType: s.sessionType ?? null,
         manualSessionKind: s.manualSessionKind ?? null,
       })
     ).length;
     const podiums = thisWeek.filter(
       (s) =>
-        isRaceLikeSessionForWeeklyGoals({
+        isRaceKind({
           sessionType: s.sessionType ?? null,
           manualSessionKind: s.manualSessionKind ?? null,
         }) &&
@@ -438,7 +378,7 @@ export default function Index() {
     };
   }, [profileWeeklyGoals, goalsStats]);
 
-  const showApexTrendCard = Boolean(user?.id && profileSummary?.apexTrendInsight);
+  const showApexTrendCard = Boolean(user?.id && profileTrendInsight?.apexTrendInsight);
 
   const showEmptyFeedOnboarding = useMemo(() => {
     return (
@@ -449,7 +389,7 @@ export default function Index() {
       !error &&
       homeDiscussionsEnabled &&
       !discussionsLoading &&
-      groupedActivity.length === 0 &&
+      activity.length === 0 &&
       discussions.length === 0
     );
   }, [
@@ -460,7 +400,7 @@ export default function Index() {
     error,
     homeDiscussionsEnabled,
     discussionsLoading,
-    groupedActivity.length,
+    activity.length,
     discussions.length,
   ]);
 
@@ -485,12 +425,13 @@ export default function Index() {
           trackTimeDelta={weeklyStats.trackTimeDelta}
         />
 
-        {showApexTrendCard && profileSummary?.apexTrendInsight && (
-          <ApexAnalysisTrendCard trend={profileSummary.apexTrendInsight} />
+        {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
+          <ApexAnalysisTrendCard trend={profileTrendInsight.apexTrendInsight} />
         )}
 
         {/* Goals */}
         <GoalsBar
+          loading={weeklySnapshotLoading}
           races={goalsForBar.races}
           podiums={goalsForBar.podiums}
           laps={goalsForBar.laps}
@@ -551,67 +492,18 @@ export default function Index() {
                   <OnboardingEmptyState />
                 </div>
               )}
-              {!error && !feedError &&
-                groupedActivity.map((item) => {
-                  if (item.type === "bundle") {
-                    return (
-                      <BundledActivityCard
-                        key={getActivityKey(item)}
-                        sessions={item.sessions}
-                        overflowCount={item.overflowCount}
-                        onSessionPatch={(id, patch) => {
-                          queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                            homeActivityFeedQueryKey,
-                            (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
-                          );
-                        }}
-                      />
+              {!error && !feedError && (
+                <ActivityFeedList
+                  sessions={activity as RawActivityItem[]}
+                  currentUser={user ?? null}
+                  onSessionPatch={(id, patch) => {
+                    queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                      homeActivityFeedQueryKey,
+                      (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                     );
-                  }
-                  const session = item.session;
-                  const header = getActivityHeaderFromOwner(session as RawActivityItem, user ?? null);
-                  const profileOwnerId = getProfileOwnerId(session as RawActivityItem);
-                  return (
-                    <ActivityCard
-                      key={getActivityKey(item)}
-                      id={session.id}
-                      profileUserId={profileOwnerId}
-                      userName={header.name}
-                      userAvatar={header.avatar}
-                      game="—"
-                      car={session.car ?? "—"}
-                      vehicleDisplay={
-                        session.vehicleDisplay ??
-                        (typeof session.carName === "string" ? session.carName : undefined)
-                      }
-                      source={
-                        session.source ??
-                        (session.sessionType === "MANUAL_ACTIVITY" ? "manual" : "telemetry")
-                      }
-                      track={session.track ?? "—"}
-                      position={session.position ?? null}
-                      totalRacers={session.totalDrivers ?? null}
-                      sessionType={session.sessionType}
-                      sim={session.sim}
-                      bestLapMs={session.bestLapMs}
-                      lapCount={session.lapCount}
-                      consistencyScore={session.consistencyScore}
-                      likeCount={session.likeCount ?? 0}
-                      commentCount={session.commentCount ?? 0}
-                      likedByMe={session.likedByMe ?? false}
-                      score={0}
-                      timestamp={timeAgo(session.createdAt)}
-                      likes={session.likeCount ?? 0}
-                      comments={session.commentCount ?? 0}
-                      onSessionPatch={(id, patch) => {
-                        queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                          homeActivityFeedQueryKey,
-                          (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
-                        );
-                      }}
-                    />
-                  );
-                })}
+                  }}
+                />
+              )}
               {!error && !feedError && hasNextPage && (
                 <div className="flex justify-center py-6">
                   <button

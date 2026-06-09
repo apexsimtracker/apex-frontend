@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Apple, Info, Monitor, Sparkles, Wifi } from "lucide-react";
+import { Apple, Info, Monitor, Sparkles, User, Wifi } from "lucide-react";
 import type { AgentOs } from "@/hooks/useDetectedAgentOs";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,12 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
   const internet: RequirementItem = {
     icon: Wifi,
     label: "Internet",
-    description: "Needed to authenticate and sync sessions to your account.",
+    description: "Needed to sign in and sync sessions to your account.",
+  };
+  const account: RequirementItem = {
+    icon: User,
+    label: "Website account",
+    description: "Sign in with the same email and password you use on the Apex website.",
   };
 
   if (os === "macos") {
@@ -29,6 +34,7 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
         description: "Runs from the menu bar on Monterey or later.",
       },
       pro,
+      account,
       internet,
     ];
   }
@@ -40,6 +46,7 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
         description: "AppImage-compatible distribution with system tray support.",
       },
       pro,
+      account,
       internet,
     ];
   }
@@ -50,6 +57,7 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
       description: "Runs from the system tray on 64-bit Windows.",
     },
     pro,
+    account,
     internet,
   ];
 }

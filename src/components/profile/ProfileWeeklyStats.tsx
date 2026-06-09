@@ -78,7 +78,9 @@ export function ProfileWeeklyStats({
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div>
-          <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Total Races</p>
+          <p className="mb-2 text-xs font-medium uppercase text-muted-foreground" title="Race sessions only — practice and qualifying excluded">
+            Total Races
+          </p>
           <p className="text-2xl font-bold text-foreground">{totalRaces}</p>
         </div>
         <div>

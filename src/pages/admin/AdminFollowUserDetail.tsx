@@ -30,7 +30,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 const LIST_PAGE_SIZE = 10;
 const REASON_MAX = 500;
 

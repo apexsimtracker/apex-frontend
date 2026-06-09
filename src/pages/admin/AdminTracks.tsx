@@ -47,7 +47,7 @@ import {
 import SimBadge from "@/components/SimBadge";
 
 const TITLE = `Admin · Tracks & catalogs | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 const SELECT_MANUAL_LIKE =
   "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/20 focus:outline-none focus:ring-0 disabled:opacity-50";

@@ -38,7 +38,7 @@ import {
 } from "@/pages/admin/adminSubscriptionBadges";
 
 const TITLE = `Admin · Users | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function RoleBadge({ role }: { role: "USER" | "ADMIN" }) {
   const isAdmin = role === "ADMIN";

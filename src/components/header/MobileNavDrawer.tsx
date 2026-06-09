@@ -5,13 +5,14 @@ import HeaderNavLinks from "./HeaderNavLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAccountMenuItemsForUser } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import AuthActionsPlaceholder from "./AuthActionsPlaceholder";
 
 type MobileNavDrawerProps = {
   onClose: () => void;
 };
 
 export default function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const accountItems = user
     ? getAccountMenuItemsForUser(user.role === "ADMIN")
@@ -21,7 +22,11 @@ export default function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
     <nav className="space-y-1 border-t border-white/10 py-4 lg:hidden">
       <HeaderNavLinks variant="mobile" onNavigate={onClose} />
 
-      {user ? (
+      {loading ? (
+        <div className="mt-2 border-t border-white/10 px-4 pt-4">
+          <AuthActionsPlaceholder className="h-20 w-full" />
+        </div>
+      ) : user ? (
         <>
           <div className="mt-2 border-t border-white/10 pt-2">
             <button

@@ -20,7 +20,7 @@ import {
 } from "@/pages/admin/adminTableLayout";
 
 const TITLE = `Admin · Contact inbox | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function formatContactStatus(status: string): string {
   const u = status.trim().toUpperCase();

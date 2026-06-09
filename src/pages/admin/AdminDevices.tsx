@@ -38,7 +38,7 @@ import {
 } from "@/pages/admin/adminTableLayout";
 
 const TITLE = `Admin · Devices & agent | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 function formatTs(iso: string | null): string {
   if (!iso) return "—";
@@ -184,7 +184,7 @@ export default function AdminDevices() {
       <PageMeta
         path="/admin/devices"
         title={TITLE}
-        description="Manage Apex Agent desktop pairings."
+        description="Manage legacy Apex Agent device tokens and web sign-in sessions."
         noindex
       />
       <div className={ADMIN_PAGE}>
@@ -192,8 +192,9 @@ export default function AdminDevices() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Devices & agent</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              <strong className="font-medium text-foreground">Agent devices</strong> are desktop pairings
-              (email code + Apex Agent). Browser sign-ins are managed under{" "}
+              <strong className="font-medium text-foreground">Legacy agent devices</strong> used the old
+              device-token flow. Current desktop agents sign in with email and password (JWT). Browser
+              sign-ins are managed under{" "}
               <Link className="text-primary underline-offset-4 hover:underline" to="/admin/email-auth?tab=auth">
                 Email &amp; auth ops
               </Link>
@@ -278,11 +279,11 @@ export default function AdminDevices() {
               <div className="px-6 py-16 text-center">
                 <p className="text-sm font-medium text-foreground">No agent devices</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Rows appear when a user pairs the Apex Agent (device token) with their account. Browsing the
-                  website alone does not create an agent device.
+                  Rows appear for legacy device-token pairings only. Current agents authenticate with website
+                  email and password and appear under web sign-in sessions.
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Try clearing filters if you expected a paired machine.
+                  Try clearing filters if you expected a legacy device row.
                 </p>
               </div>
             ) : (
@@ -427,7 +428,7 @@ export default function AdminDevices() {
             title="Revoke agent device"
             description={
               <>
-                The agent will no longer be able to upload using this pairing. Type{" "}
+                The legacy device token will no longer be able to upload. Type{" "}
                 <span className="font-mono text-foreground">revoke</span> to confirm.
               </>
             }

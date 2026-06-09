@@ -1,4 +1,5 @@
 import { Flag, Trophy, Gauge } from "lucide-react";
+import { SkeletonBlock } from "@/components/ui/skeleton";
 
 interface Goal {
   id: string;
@@ -20,6 +21,8 @@ interface GoalsBarProps {
   racesTarget?: number;
   podiumsTarget?: number;
   lapsTarget?: number;
+  /** When true, shows a placeholder while home weekly stats load. */
+  loading?: boolean;
 }
 
 function CircularProgress({
@@ -98,7 +101,25 @@ export default function GoalsBar({
   racesTarget = DEFAULT_RACES_TARGET,
   podiumsTarget = DEFAULT_PODIUMS_TARGET,
   lapsTarget = DEFAULT_LAPS_TARGET,
+  loading = false,
 }: GoalsBarProps) {
+  if (loading) {
+    return (
+      <div className="border-white/6 mt-6 rounded-lg border bg-card/20 px-4 py-3 backdrop-blur-lg">
+        <SkeletonBlock height={14} width={112} className="mb-3 bg-white/10" rounded="sm" />
+        <div className="flex items-center justify-around">
+          {([0, 1, 2] as const).map((i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <SkeletonBlock height={56} width={56} rounded="full" className="bg-white/10" />
+              <SkeletonBlock height={14} width={48} className="bg-white/10" rounded="sm" />
+              <SkeletonBlock height={10} width={56} className="bg-white/10" rounded="sm" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const goals: Goal[] = [
     {
       id: "races",

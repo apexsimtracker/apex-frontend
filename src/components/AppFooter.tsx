@@ -19,15 +19,14 @@ const footerHeadingClass =
 
 export default function AppFooter() {
   const { pathname } = useLocation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  const accountLinks = user
-    ? footerAuthenticatedAccountLinks
-    : footerGuestAccountLinks;
+  const accountLinks =
+    loading ? [] : user ? footerAuthenticatedAccountLinks : footerGuestAccountLinks;
   const year = new Date().getFullYear();
 
   return (

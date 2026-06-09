@@ -106,6 +106,18 @@ export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
 }
 
+export type ProfileHomeWeekly = Pick<ProfileSummary, "weeklySnapshot" | "weeklyGoals">;
+
+export async function getProfileHomeWeekly(): Promise<ProfileHomeWeekly> {
+  return apiGet<ProfileHomeWeekly>("/api/profile/home-weekly");
+}
+
+export type ProfileTrendInsight = Pick<ProfileSummary, "apexTrendInsight">;
+
+export async function getProfileTrendInsight(): Promise<ProfileTrendInsight> {
+  return apiGet<ProfileTrendInsight>("/api/profile/trend-insight");
+}
+
 /** GET /api/profile/summary/:userId — same shape as getProfileSummary; public. */
 export async function getProfileSummaryForUser(
   userId: string,

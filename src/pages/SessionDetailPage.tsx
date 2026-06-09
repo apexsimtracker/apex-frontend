@@ -5,9 +5,8 @@ import { Share2, PenLine, Pencil, Trash2, Repeat, Timer, Flag } from "lucide-rea
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
-import { formatSessionTypeUpper } from "@/lib/sim";
-import { formatActivitySource } from "@/lib/enumFormat";
 import SimBadge from "@/components/SimBadge";
+import SessionTypeTag from "@/components/SessionTypeTag";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import PageMeta from "@/components/PageMeta";
 import SessionShareModal from "@/components/SessionShareModal";
@@ -22,6 +21,8 @@ import {
   sanitizeLapTimesForConsistency,
 } from "@/lib/sessionShareText";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
+import { isRaceKind } from "@/lib/sessionKind";
+import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/displayPosition";
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   parseApexAnalysisDisplay,
@@ -290,6 +291,7 @@ export type SessionDetail = {
   carId?: string | null;
   vehicleDisplay?: string;
   position?: number | null;
+  qualifyingPosition?: number | null;
   totalDrivers?: number | null;
   bestLapMs?: number | null;
   bestLapLapNumber?: number | null;
@@ -312,32 +314,6 @@ export type SessionDetail = {
   /** Manual rows only: PRACTICE | QUALIFY | RACE */
   manualSessionKind?: string | null;
 };
-
-/** Same rule as GET /api/leaderboards?metric=fastestLap (see server sessionKind). */
-function sessionEligibleForGlobalFastestLapLeaderboard(s: SessionDetail): boolean {
-  const st = (s.sessionType ?? "").toUpperCase().trim();
-  if (st === "MANUAL_ACTIVITY") {
-    return (s.manualSessionKind ?? "").toUpperCase().trim() === "RACE";
-  }
-  return st === "RACE" || st === "SPRINT";
-}
-
-function primaryActivityLabel(session: SessionDetail): string {
-  const st = (session.sessionType ?? "").toUpperCase().trim();
-  if (st === "MANUAL_ACTIVITY") {
-    const mk = (session.manualSessionKind ?? "").toUpperCase().trim();
-    if (mk === "RACE") return "Manual · Race";
-    if (mk === "QUALIFY") return "Manual · Qualifying";
-    if (mk === "PRACTICE") return "Manual · Practice";
-    return "Manual";
-  }
-  const src = (session.source ?? "").toString().toUpperCase();
-  if (src === "AGENT" || st === "AGENT") return formatActivitySource("AGENT");
-  if (src === "TELEMETRY" || st === "TELEMETRY") {
-    return formatActivitySource("TELEMETRY");
-  }
-  return formatSessionTypeUpper(session.sessionType);
-}
 
 function isManualActivity(session: SessionDetail): boolean {
   const st = (session.sessionType ?? "").toUpperCase();
@@ -464,7 +440,6 @@ export default function SessionDetailPage() {
     );
   }
 
-  const sessionTypeLabel = primaryActivityLabel(session);
   const resolved = resolveSessionFields(session);
   const laps = normalizeLaps(
     (lapsData
@@ -488,14 +463,20 @@ export default function SessionDetailPage() {
   const isOwner = user?.id != null && session.userId === user.id;
   const canEditSession = isOwner;
   const canManualExtras = isManual && isOwner;
-  const stUp = (session.sessionType ?? "").toUpperCase();
-  const mkUp = (session.manualSessionKind ?? "").toUpperCase();
-  const hasRaceLikeFinish =
-    stUp === "RACE" ||
-    stUp === "QUALIFY" ||
-    stUp === "SPRINT" ||
-    (stUp === "MANUAL_ACTIVITY" && (mkUp === "RACE" || mkUp === "QUALIFY"));
-  const showPosition = hasRaceLikeFinish && session.position != null;
+  const displayPositionLabel = getDisplayPosition({
+    sessionType: session.sessionType,
+    manualSessionKind: session.manualSessionKind,
+    position: session.position,
+    qualifyingPosition: session.qualifyingPosition,
+    totalDrivers: session.totalDrivers,
+  });
+  const showPosition = shouldShowSessionPosition({
+    sessionType: session.sessionType,
+    manualSessionKind: session.manualSessionKind,
+    position: session.position,
+    qualifyingPosition: session.qualifyingPosition,
+    totalDrivers: session.totalDrivers,
+  });
   const fastestLapMs =
     laps.length > 0 ? Math.min(...laps.map((l) => l.timeMs)) : null;
   const personalBestMs = fastestLapMs;
@@ -601,9 +582,11 @@ export default function SessionDetailPage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs uppercase tracking-wider text-[rgb(240,28,28)]">
-              {sessionTypeLabel}
-            </p>
+            <SessionTypeTag
+              sessionType={session.sessionType}
+              manualSessionKind={session.manualSessionKind}
+              size="md"
+            />
             <SimBadge sim={resolved.sim ?? session.sim} />
             {isManual && (
               <span className="inline-flex items-center gap-1 rounded border border-violet-500/20 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-violet-300">
@@ -686,13 +669,7 @@ export default function SessionDetailPage() {
               Position
             </p>
             <p className="text-lg font-semibold text-white">
-              P{session.position}
-              {session.totalDrivers != null && (
-                <span className="text-sm font-normal text-white/60">
-                  {" "}
-                  / {session.totalDrivers}
-                </span>
-              )}
+              {displayPositionLabel}
             </p>
           </div>
         )}
@@ -709,7 +686,7 @@ export default function SessionDetailPage() {
           </p>
           {!hasNoLaps && (
             <p className="mt-2 text-xs leading-relaxed text-white/45">
-              {sessionEligibleForGlobalFastestLapLeaderboard(session) ? (
+              {isRaceKind(session) ? (
                 <>
                   The{" "}
                   <Link to="/leaderboards" className="text-white/55 underline underline-offset-2 hover:text-white/80">

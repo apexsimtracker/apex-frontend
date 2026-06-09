@@ -53,7 +53,7 @@ function truncateDescription(text: string): string {
   return t.slice(0, DESCRIPTION_TRUNCATE).trim() + "…";
 }
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 const emptyCategoryCounts = {
   all: 0,

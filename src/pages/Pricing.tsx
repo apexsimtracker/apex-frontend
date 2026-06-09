@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Cpu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BRAND_RED } from "@/lib/appConfig";
 import { useQuery } from "@tanstack/react-query";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -30,6 +33,7 @@ export default function Pricing() {
   const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("ANNUAL");
+  const [showAgentCta, setShowAgentCta] = useState(false);
 
   const { data: plans, isPending: plansLoading } = useQuery({
     queryKey: ["billing", "plans"],
@@ -118,6 +122,7 @@ export default function Pricing() {
       } else {
         setMessage("Welcome to Apex Pro! Your subscription is active.");
       }
+      setShowAgentCta(true);
     } catch (err) {
       setMessage(null);
       setWarning(null);
@@ -147,6 +152,30 @@ export default function Pricing() {
       <PageMeta title={title} description={description} path={PRICING_PATH} />
       <div className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
         <PricingHero />
+
+        {showAgentCta && message && !error && (
+          <div className="mt-8 rounded-xl border border-green-500/30 bg-green-500/10 p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-green-400">{message}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Download the Apex Agent and sign in with your website email and password to start
+                  automatic telemetry uploads.
+                </p>
+              </div>
+              <Button
+                asChild
+                className="shrink-0 text-white hover:opacity-90"
+                style={{ backgroundColor: BRAND_RED }}
+              >
+                <Link to="/agent?welcome=pro">
+                  <Cpu className="size-4" />
+                  Download Apex Agent
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         {plansLoading ? (
           <PricingPageSkeleton />

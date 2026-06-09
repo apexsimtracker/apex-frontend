@@ -561,7 +561,7 @@ export default function Settings() {
               <div className="-mx-1 divide-y divide-white/5">
                 <SettingsRow
                   label="Email notifications"
-                  description="Optional updates and announcements by email. Does not affect verification, password reset, or pairing emails."
+                  description="Optional updates and announcements by email. Does not affect verification, password reset, or Pro welcome emails."
                 >
                   <Switch
                     checked={settings.emailNotifications}

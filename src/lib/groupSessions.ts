@@ -1,7 +1,10 @@
 /**
- * Session Grouping Utility
- * 
- * Groups sessions into "stacked activity" bundles when they share:
+ * Session item types and legacy 2-hour carousel bundling.
+ *
+ * @deprecated Feed pages use {@link ./groupSessionsByWeekend.groupSessionsByWeekend} instead of `groupSessions()`.
+ * `SessionItem` remains the shared feed row type.
+ *
+ * Legacy `groupSessions` groups sessions into "stacked activity" bundles when they share:
  * - Same sim (e.g., iRacing)
  * - Same track
  * - Same vehicle (if available)
@@ -16,6 +19,8 @@
  * Bundles are capped at MAX_BUNDLE_SIZE (5) with overflow count.
  */
 
+import { compareSessionsForFeed, compareActivityItemsForFeed } from "./sessionFeedSort";
+
 export const TIME_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
 export const MAX_BUNDLE_SIZE = 5;
 
@@ -23,12 +28,15 @@ export type SessionItem = {
   id: string;
   driverName: string;
   track: string | null;
+  /** Display track label from API; used as fallback when grouping canonicalizes aliases. */
+  trackName?: string | null;
   car: string | null;
   carName?: string | null;
   vehicleDisplay?: string;
   position: number | null;
+  qualifyingPosition?: number | null;
   totalDrivers: number | null;
-  sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "UNKNOWN" | "MANUAL_ACTIVITY";
+  sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "QUALIFYING" | "WARMUP" | "UNKNOWN" | "MANUAL_ACTIVITY";
   /** Present for MANUAL_ACTIVITY rows from API (Practice / Qualifying / Race). */
   manualSessionKind?: string | null;
   sim?: string | null;
@@ -106,6 +114,7 @@ function canMergeIntoGroup(
   return false;
 }
 
+/** @deprecated Use `groupSessionsByWeekend` from `./groupSessionsByWeekend` for feed grouping. */
 export function groupSessions(
   sessions: SessionItem[],
   options: { timeWindowMs?: number; maxBundleSize?: number } = {}
@@ -117,12 +126,8 @@ export function groupSessions(
     return [];
   }
 
-  // Sort by createdAt descending (newest first) for stable ordering
-  const sorted = [...sessions].sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeB - timeA;
-  });
+  // Sort by feed order (day desc, type priority, start time desc)
+  const sorted = [...sessions].sort(compareSessionsForFeed);
 
   const result: ActivityItem[] = [];
   // Multiple groups can share the same base key but have different time clusters
@@ -163,12 +168,8 @@ export function groupSessions(
     if (group.sessions.length === 1) {
       result.push({ type: "single", session: group.sessions[0] });
     } else {
-      // Sort group by time (oldest first for carousel navigation)
-      const sortedGroup = group.sessions.sort((a, b) => {
-        const timeA = new Date(a.createdAt).getTime();
-        const timeB = new Date(b.createdAt).getTime();
-        return timeA - timeB;
-      });
+      // Sort group by feed order (race first within bundle carousel)
+      const sortedGroup = group.sessions.sort(compareSessionsForFeed);
       
       const displaySessions = sortedGroup.slice(0, maxBundleSize);
       const overflowCount = Math.max(0, sortedGroup.length - maxBundleSize);
@@ -182,15 +183,11 @@ export function groupSessions(
     }
   }
 
-  // Sort result by most recent session in each item
+  // Sort result by feed order (best session type in bundle, then latest start time)
   result.sort((a, b) => {
-    const timeA = a.type === "single" 
-      ? new Date(a.session.createdAt).getTime()
-      : Math.max(...a.sessions.map(s => new Date(s.createdAt).getTime()));
-    const timeB = b.type === "single"
-      ? new Date(b.session.createdAt).getTime()
-      : Math.max(...b.sessions.map(s => new Date(s.createdAt).getTime()));
-    return timeB - timeA;
+    const sessionsA = a.type === "single" ? [a.session] : a.sessions;
+    const sessionsB = b.type === "single" ? [b.session] : b.sessions;
+    return compareActivityItemsForFeed(sessionsA, sessionsB);
   });
 
   return result;

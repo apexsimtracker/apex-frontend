@@ -183,7 +183,36 @@ describe("groupSessions", () => {
     }
   });
 
-  it("sorts results by most recent session", () => {
+  it("sorts same-day sessions by type priority (race before qual before practice)", () => {
+    const day = "2024-01-15";
+    const sessions = [
+      createSession("practice", {
+        track: "Monza",
+        createdAt: `${day}T14:00:00Z`,
+        sessionType: "PRACTICE",
+      }),
+      createSession("qual", {
+        track: "Silverstone",
+        createdAt: `${day}T16:00:00Z`,
+        sessionType: "QUALIFYING",
+      }),
+      createSession("race", {
+        track: "Spa-Francorchamps",
+        createdAt: `${day}T12:00:00Z`,
+        sessionType: "RACE",
+      }),
+    ];
+
+    const result = groupSessions(sessions);
+    expect(result).toHaveLength(3);
+    expect(result.map((item) => (item.type === "single" ? item.session.id : null))).toEqual([
+      "race",
+      "qual",
+      "practice",
+    ]);
+  });
+
+  it("sorts results by most recent session on different days", () => {
     const sessions = [
       createSession("1", { createdAt: "2024-01-15T10:00:00Z" }),
       createSession("2", { 

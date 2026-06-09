@@ -29,6 +29,8 @@ type ProfileHeaderProps = {
   onToggleFollow?: () => void;
   onOpenFollowers?: () => void;
   onOpenFollowing?: () => void;
+  onPrefetchFollowers?: () => void;
+  onPrefetchFollowing?: () => void;
   onEditProfile?: () => void;
   streakDays: number;
   isPro?: boolean;
@@ -55,6 +57,8 @@ export function ProfileHeader({
   onToggleFollow,
   onOpenFollowers,
   onOpenFollowing,
+  onPrefetchFollowers,
+  onPrefetchFollowing,
   onEditProfile,
   streakDays,
   isPro = false,
@@ -105,6 +109,8 @@ export function ProfileHeader({
                   <button
                     type="button"
                     onClick={onOpenFollowers}
+                    onMouseEnter={onPrefetchFollowers}
+                    onFocus={onPrefetchFollowers}
                     className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
                   >
                     <span className="font-semibold text-foreground">{followersCount}</span>
@@ -113,6 +119,8 @@ export function ProfileHeader({
                   <button
                     type="button"
                     onClick={onOpenFollowing}
+                    onMouseEnter={onPrefetchFollowing}
+                    onFocus={onPrefetchFollowing}
                     className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
                   >
                     <span className="font-semibold text-foreground">{followingCount}</span>

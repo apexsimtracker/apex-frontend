@@ -13,9 +13,10 @@ import {
 } from "@/lib/api";
 import { profileKeys } from "@/lib/profileQueryKeys";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 
 type FollowListDialogProps = {
   open: boolean;
@@ -23,6 +24,18 @@ type FollowListDialogProps = {
   userId: string;
   listKind: "followers" | "following" | null;
 };
+
+function FollowRowSkeleton() {
+  return (
+    <li className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2">
+      <Skeleton className="size-8 shrink-0 rounded-full" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+    </li>
+  );
+}
 
 function FollowRow({ f, onNavigate }: { f: FollowUser; onNavigate: () => void }) {
   const name = f.displayName?.trim() || "—";
@@ -90,7 +103,7 @@ export function FollowListDialog({
 
   const enabled = open && Boolean(userId) && listKind !== null;
 
-  const { data, isPending, error } = useQuery({
+  const { data, isPending, isFetching, error } = useQuery({
     queryKey:
       listKind === null
         ? ["profile", "followList", "idle"]
@@ -108,6 +121,7 @@ export function FollowListDialog({
             q: debouncedSearch,
           }),
     enabled,
+    placeholderData: (previousData) => previousData,
   });
 
   const items = data?.items ?? [];
@@ -152,8 +166,12 @@ export function FollowListDialog({
           </div>
         )}
         <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-          {!enabled ? null : isPending ? (
-            <p className="py-4 text-sm text-muted-foreground">Loading…</p>
+          {!enabled ? null : isPending && !data ? (
+            <ul className="space-y-2" aria-busy="true" aria-label="Loading follow list">
+              {Array.from({ length: FOLLOW_LIST_PAGE_SIZE }, (_, i) => (
+                <FollowRowSkeleton key={i} />
+              ))}
+            </ul>
           ) : errMsg ? (
             <p className="py-4 text-sm text-destructive">{errMsg}</p>
           ) : items.length === 0 ? (
@@ -178,7 +196,7 @@ export function FollowListDialog({
             </ul>
           )}
         </div>
-        {enabled && !isPending && !errMsg && total > 0 && (
+        {enabled && !errMsg && total > 0 && (data || !isPending) && (
           <div className="shrink-0 space-y-3 border-t border-border pt-4">
             <p className="text-center text-xs text-muted-foreground">
               Showing {rangeStart}–{rangeEnd} of {total}
@@ -188,7 +206,7 @@ export function FollowListDialog({
                 page={currentPage}
                 totalPages={totalPages}
                 onPageChange={setPage}
-                disabled={isPending}
+                disabled={isFetching}
               />
             )}
           </div>

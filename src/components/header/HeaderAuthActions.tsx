@@ -10,10 +10,15 @@ import { NotificationsBell } from "@/components/NotificationsBell";
 import { UserSearchTrigger } from "@/components/UserSearchTrigger";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAccountMenu from "./UserAccountMenu";
+import AuthActionsPlaceholder from "./AuthActionsPlaceholder";
 
 export default function HeaderAuthActions() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
+
+  if (loading) {
+    return <AuthActionsPlaceholder />;
+  }
 
   if (!user) {
     return (

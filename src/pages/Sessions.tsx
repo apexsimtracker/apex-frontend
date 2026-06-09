@@ -5,8 +5,7 @@ import type { InfiniteData } from "@tanstack/react-query";
 import { Upload, PenLine, Cpu, X } from "lucide-react";
 import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
 import { BRAND_RED } from "@/lib/appConfig";
-import ActivityCard from "@/components/ActivityCard";
-import BundledActivityCard from "@/components/BundledActivityCard";
+import ActivityFeedList from "@/components/ActivityFeedList";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -18,12 +17,7 @@ import {
   type SessionsFilterType,
 } from "@/lib/api";
 import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
-import {
-  groupSessions,
-  getActivityKey,
-  type SessionItem,
-  type ActivityItem as GroupedActivityItem,
-} from "@/lib/groupSessions";
+import type { SessionItem } from "@/lib/groupSessions";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -41,42 +35,6 @@ function setOnboarded() {
 }
 
 type RawActivityItem = SessionItem & { type?: "session" };
-
-type ActivityOwner = {
-  displayName?: string | null;
-  username?: string | null;
-  avatarUrl?: string | null;
-};
-
-function getActivityHeaderFromOwner(session: RawActivityItem & { owner?: ActivityOwner }): {
-  name: string;
-  avatar: string | null;
-} {
-  const owner = session.owner;
-  const name =
-    session.authorName?.trim() ||
-    owner?.displayName?.trim() ||
-    owner?.username?.trim() ||
-    session.driverName ||
-    "—";
-  const avatar =
-    (session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
-      ? session.authorAvatarUrl
-      : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
-        ? owner.avatarUrl
-        : null);
-  return { name, avatar };
-}
-
-function timeAgo(createdAt: string | Date): string {
-  const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
-  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (sec < 60) return "just now";
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  if (sec < 2592000) return `${Math.floor(sec / 86400)}d ago`;
-  return date.toLocaleDateString();
-}
 
 function SessionCardSkeleton() {
   return (
@@ -251,11 +209,7 @@ export default function Sessions() {
     [setSearchParams]
   );
 
-  const groupedActivity = useMemo<GroupedActivityItem[]>(() => {
-    return groupSessions(activity);
-  }, [activity]);
-
-  const isEmpty = !loading && groupedActivity.length === 0;
+  const isEmpty = !loading && activity.length === 0;
   const showEmptyManual = isEmpty && validType === "manual";
   const showEmptyTelemetry = isEmpty && validType === "telemetry";
 
@@ -390,71 +344,18 @@ export default function Sessions() {
 
               {!loading && !error && !isEmpty && (
                 <div className="space-y-0">
-                  {groupedActivity.map((item) => {
-                    if (item.type === "bundle") {
-                      return (
-                        <BundledActivityCard
-                          key={getActivityKey(item)}
-                          sessions={item.sessions}
-                          overflowCount={item.overflowCount}
-                          onSessionPatch={(id, patch) => {
-                            queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                              ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
-                              (prev) =>
-                                patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
-                            );
-                          }}
-                        />
+                  <ActivityFeedList
+                    sessions={activity as RawActivityItem[]}
+                    linkCards
+                    currentUser={user ?? null}
+                    onSessionPatch={(id, patch) => {
+                      queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
+                        ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
+                        (prev) =>
+                          patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
                       );
-                    }
-                    const session = item.session;
-                  const header = getActivityHeaderFromOwner(session as RawActivityItem);
-                    return (
-                      <Link
-                        key={getActivityKey(item)}
-                        to={`/sessions/${session.id}`}
-                        className="block"
-                      >
-                        <ActivityCard
-                          id={session.id}
-                        userName={header.name}
-                        userAvatar={header.avatar}
-                          game="—"
-                          car={session.car ?? "—"}
-                          vehicleDisplay={
-                            session.vehicleDisplay ??
-                            (typeof session.carName === "string" ? session.carName : undefined)
-                          }
-                          source={
-                            session.source ??
-                            (session.sessionType === "MANUAL_ACTIVITY" ? "manual" : "telemetry")
-                          }
-                          track={session.track ?? "—"}
-                          position={session.position ?? null}
-                          totalRacers={session.totalDrivers ?? null}
-                          sessionType={session.sessionType}
-                          sim={session.sim}
-                          bestLapMs={session.bestLapMs}
-                          lapCount={session.lapCount}
-                          consistencyScore={session.consistencyScore}
-                          likeCount={session.likeCount ?? 0}
-                          commentCount={session.commentCount ?? 0}
-                          likedByMe={session.likedByMe ?? false}
-                          score={0}
-                          timestamp={timeAgo(session.createdAt)}
-                          likes={session.likeCount ?? 0}
-                          comments={session.commentCount ?? 0}
-                          onSessionPatch={(id, patch) => {
-                            queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                              ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
-                              (prev) =>
-                                patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
-                            );
-                          }}
-                        />
-                      </Link>
-                    );
-                  })}
+                    }}
+                  />
                   {hasNextPage && (
                     <div className="flex justify-center py-6">
                       <button

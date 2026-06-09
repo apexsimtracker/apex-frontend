@@ -107,7 +107,7 @@ export default function WeeklySnapshot({
 
       <div className={METRICS_GRID_CLASS}>
         <div className={metricCellClass(0)}>
-          <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1 sm:0">
+          <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1 sm:0" title="All session types — practice, qualifying, and race">
             Sessions
           </div>
           <div className="text-xl font-semibold tabular-nums text-white sm:text-2xl">

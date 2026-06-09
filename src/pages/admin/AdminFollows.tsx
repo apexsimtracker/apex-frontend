@@ -44,7 +44,7 @@ import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayo
 import { toast } from "sonner";
 
 const TITLE = `Admin · Follow graph | ${COMPANY_NAME}`;
-const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_DEBOUNCE_MS = 200;
 const PAGE_SIZE = 20;
 const REASON_MAX = 500;
 
