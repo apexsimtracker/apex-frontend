@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProfileView } from "@/components/ProfileView";
 import { FollowListDialog } from "@/components/FollowListDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import AppLoadingScreen from "@/components/AppLoadingScreen";
 import {
   resolveApiUrl,
   getProfileSummaryForUser,
@@ -201,9 +202,7 @@ export default function UserProfile() {
           description={`${COMPANY_NAME} driver profile, stats, and race history.`}
           path={`/user/${id}`}
         />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <p className="text-white/60">Loading...</p>
-        </div>
+        <AppLoadingScreen />
       </>
     );
   }

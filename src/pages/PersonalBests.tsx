@@ -92,7 +92,9 @@ export default function PersonalBests() {
               <tbody>
                 {data.personalBests.map((pb) => (
                   <tr key={pb.id} className="border-b border-white/5 last:border-0">
-                    <td className="px-4 py-3 text-foreground">{formatTrackName(pb.track)}</td>
+                    <td className="px-4 py-3 text-foreground">
+                      {pb.trackName ?? formatTrackName(pb.track)}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatCarName(pb.car)}
                     </td>

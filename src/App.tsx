@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Header from "./components/Header";
 import ScrollToTop from "./components/ScrollToTop";
 import HomeRoute from "./pages/HomeRoute";
@@ -59,6 +59,7 @@ import AdminSystem from "./pages/admin/AdminSystem";
 import AdminBroadcastDetail from "./pages/admin/AdminBroadcastDetail";
 import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
+import AppLoadingScreen from "./components/AppLoadingScreen";
 
 const Profile = lazy(() => import("./pages/Profile"));
 const SessionDetailPage = lazy(() => import("./pages/SessionDetailPage"));
@@ -71,11 +72,7 @@ const EditActivity = lazy(() => import("./pages/EditActivity"));
 const MaintenanceNotice = lazy(() => import("./pages/MaintenanceNotice"));
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-[40vh] flex-1 items-center justify-center py-16 text-sm text-muted-foreground">
-      Loading…
-    </div>
-  );
+  return <AppLoadingScreen variant="inline" />;
 }
 
 /** Old bookmarks: `/manual/:sessionId/edit` → `/sessions/:id/edit`. */
@@ -103,30 +100,25 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function App() {
-  useEffect(() => {
-    // Set dark mode on app load
-    document.documentElement.classList.add("dark");
-  }, []);
+function AppShell() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <AppLoadingScreen />;
+  }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <RevenueCatBootstrap />
-          <SessionDataCacheSync />
-          <Toaster theme="dark" />
-          <BrowserRouter>
-            <ScrollToTop />
-            <ImpersonationExitFab />
-            <div className="flex min-h-screen flex-col bg-background">
-              <Header />
-              <ProRequiredBanner />
-              <BroadcastBanner />
-              <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
-                <GlobalErrorBoundary>
-                  <Suspense fallback={<RouteFallback />}>
-                  <Routes>
+    <>
+      <ScrollToTop />
+      <ImpersonationExitFab />
+      <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <ProRequiredBanner />
+        <BroadcastBanner />
+        <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
+          <GlobalErrorBoundary>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
                     <Route path="/" element={<HomeRoute />} />
                     <Route
                       path="/profile"
@@ -291,12 +283,31 @@ export default function App() {
                     </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  </Suspense>
-                </GlobalErrorBoundary>
-              </main>
-              <AppFooter />
-            </div>
+              </Routes>
+            </Suspense>
+          </GlobalErrorBoundary>
+        </main>
+        <AppFooter />
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    // Set dark mode on app load
+    document.documentElement.classList.add("dark");
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <RevenueCatBootstrap />
+          <SessionDataCacheSync />
+          <Toaster theme="dark" />
+          <BrowserRouter>
+            <AppShell />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import AppLoadingScreen from "@/components/AppLoadingScreen";
 import type { MeResponse } from "@/auth/api";
 import { clearToken } from "@/auth/token";
 import {
@@ -376,9 +377,7 @@ export default function Profile() {
     return (
       <>
         <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} noindex />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <p className="text-white/60">Loading...</p>
-        </div>
+        <AppLoadingScreen />
       </>
     );
   }

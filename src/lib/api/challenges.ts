@@ -48,6 +48,27 @@ export async function getChallengesMeta(): Promise<ChallengesMeta> {
   return apiGet<ChallengesMeta>("/api/challenges/meta");
 }
 
+export type ChallengeSocialPreview = {
+  preview: { id: string; displayName: string }[];
+  moreCount: number;
+};
+
+export type ChallengeSocialPreviewResponse = {
+  previews: Record<string, ChallengeSocialPreview>;
+};
+
+export async function getChallengesSocialPreview(
+  challengeIds: string[]
+): Promise<ChallengeSocialPreviewResponse> {
+  if (challengeIds.length === 0) {
+    return { previews: {} };
+  }
+  const sp = new URLSearchParams({ ids: challengeIds.join(",") });
+  return apiGet<ChallengeSocialPreviewResponse>(
+    `/api/challenges/social-preview?${sp}`
+  );
+}
+
 export async function getChallengeSummary(): Promise<ChallengeSummary[]> {
   const raw = await apiGet<ChallengeSummary[]>("/api/challenges/summary");
   return Array.isArray(raw) ? raw.map(normalizeChallengeSummaryRow) : [];
@@ -72,7 +93,6 @@ function normalizeChallengeSummaryRow(row: ChallengeSummary): ChallengeSummary {
 export type ChallengeListItem = {
   id: string;
   title: string;
-  description: string;
   sim: string;
   track: string;
   carClass: string;

@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import ChallengeBrowseCard from "@/components/ChallengeBrowseCard";
+import { ChallengeBrowseGridSkeleton } from "@/components/ChallengeBrowseCardSkeleton";
 import {
   getChallengeList,
   getChallengesMeta,
+  getChallengesSocialPreview,
   joinChallenge,
   type ChallengeListParams,
 } from "@/lib/api";
@@ -19,6 +21,8 @@ const challengesTitle = `Challenges | ${COMPANY_NAME}`;
 const challengesDescription = `Sim racing challenges and tournaments on ${COMPANY_NAME}: compete, qualify, and climb leaderboards.`;
 
 const PAGE_SIZE = 12;
+const SKELETON_COUNT = 6;
+const META_STALE_MS = 5 * 60_000;
 
 type BrowseTab = "upcoming" | "live" | "past" | "joined";
 
@@ -50,6 +54,8 @@ export default function Challenges() {
   const [simFilter, setSimFilter] = useState<string>("");
   const [carClassFilter, setCarClassFilter] = useState("");
 
+  const joinedTabLoggedOut = tab === "joined" && !user;
+
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
     return () => window.clearTimeout(t);
@@ -68,23 +74,51 @@ export default function Challenges() {
     ...(carClassFilter.trim() ? { carClass: carClassFilter.trim() } : {}),
   };
 
+  const listQueryKey = useMemo(
+    () =>
+      [
+        "challenges",
+        "list",
+        user?.id ?? "anon",
+        tab,
+        page,
+        debouncedQ,
+        simFilter,
+        carClassFilter,
+      ] as const,
+    [user?.id, tab, page, debouncedQ, simFilter, carClassFilter]
+  );
+
+  const listQueryKeySerialized = JSON.stringify(listQueryKey);
+  const [settledListQueryKey, setSettledListQueryKey] = useState(listQueryKeySerialized);
+
   const {
     data: listData,
     isPending: listLoading,
+    isFetching: listFetching,
     error: listError,
     isError: listFailed,
   } = useQuery({
-    queryKey: [
-      "challenges",
-      "list",
-      user?.id ?? "anon",
-      tab,
-      page,
-      debouncedQ,
-      simFilter,
-      carClassFilter,
-    ],
+    queryKey: listQueryKey,
     queryFn: () => getChallengeList(listParams),
+    enabled: !joinedTabLoggedOut,
+  });
+
+  useEffect(() => {
+    if (!listFetching) {
+      setSettledListQueryKey(listQueryKeySerialized);
+    }
+  }, [listFetching, listQueryKeySerialized]);
+
+  const challengeIds = useMemo(
+    () => (listData?.items ?? []).map((c) => c.id),
+    [listData?.items]
+  );
+
+  const { data: socialData } = useQuery({
+    queryKey: ["challenges", "social", user?.id, challengeIds],
+    queryFn: () => getChallengesSocialPreview(challengeIds),
+    enabled: Boolean(user) && challengeIds.length > 0,
   });
 
   const { data: meta = null } = useQuery({
@@ -92,12 +126,14 @@ export default function Challenges() {
     queryFn: () => getChallengesMeta(),
     retry: false,
     enabled: Boolean(user),
+    staleTime: META_STALE_MS,
   });
 
   const joinMutation = useMutation({
     mutationFn: (challengeId: string) => joinChallenge(challengeId),
     onSuccess: (_, challengeId) => {
       void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
+      void queryClient.invalidateQueries({ queryKey: ["challenges", "social"] });
       void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
       void queryClient.invalidateQueries({
         queryKey: ["challenges", "detail", challengeId],
@@ -134,9 +170,25 @@ export default function Challenges() {
       : String(listError)
     : null;
 
-  const items = listData?.items ?? [];
+  const items = useMemo(() => {
+    const base = listData?.items ?? [];
+    if (!socialData?.previews) return base;
+    return base.map((item) => {
+      const social = socialData.previews[item.id];
+      if (!social) return item;
+      return {
+        ...item,
+        followedWhoJoined: social.preview,
+        followedWhoJoinedMoreCount: social.moreCount,
+      };
+    });
+  }, [listData?.items, socialData?.previews]);
+
   const totalPages = listData?.totalPages ?? 1;
-  const total = listData?.total ?? 0;
+  const total = joinedTabLoggedOut ? 0 : (listData?.total ?? 0);
+  const listQueryStale = settledListQueryKey !== listQueryKeySerialized;
+  const showListSkeleton =
+    !joinedTabLoggedOut && !listFailed && (listLoading || listQueryStale);
 
   const yourRank =
     meta?.yourRank != null && Number.isFinite(meta.yourRank) ? meta.yourRank : null;
@@ -223,31 +275,29 @@ export default function Challenges() {
             <div className="mb-4 text-sm text-neutral-400">{joinError}</div>
           )}
 
-          {listLoading && (
-            <div className="flex min-h-[240px] items-center justify-center py-16">
-              <p className="text-muted-foreground">Loading challenges…</p>
-            </div>
-          )}
+          {showListSkeleton && <ChallengeBrowseGridSkeleton count={SKELETON_COUNT} />}
 
-          {error && !listLoading && (
+          {error && !showListSkeleton && (
             <div className="flex min-h-[240px] items-center justify-center py-16">
               <p className="text-muted-foreground">{error}</p>
             </div>
           )}
 
-          {!listLoading && !error && total === 0 && (
+          {!showListSkeleton && !error && total === 0 && (
             <div className="flex min-h-[240px] items-center justify-center py-16">
               <p className="text-muted-foreground">
-                {debouncedQ || simFilter || carClassFilter.trim()
-                  ? "No challenges match your filters."
-                  : tab === "joined"
-                    ? "You haven’t joined any challenges yet."
-                    : "No challenges in this tab right now."}
+                {joinedTabLoggedOut
+                  ? "Sign in to see challenges you’ve joined."
+                  : debouncedQ || simFilter || carClassFilter.trim()
+                    ? "No challenges match your filters."
+                    : tab === "joined"
+                      ? "You haven’t joined any challenges yet."
+                      : "No challenges in this tab right now."}
               </p>
             </div>
           )}
 
-          {!listLoading && !error && total > 0 && (
+          {!showListSkeleton && !error && total > 0 && (
             <>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {items.map((c) => (

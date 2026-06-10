@@ -73,8 +73,8 @@ export type DiscussionsPageResult = {
   page: number;
   limit: number;
   hasMore: boolean;
-  /** Total rows matching the current filter (category + search). */
-  total: number;
+  /** Total rows matching the current filter; omitted when includeTotal=false. */
+  total?: number;
 };
 
 function normalizeDiscussionListItem(item: Record<string, unknown>): Discussion {
@@ -101,12 +101,15 @@ export async function getDiscussionsPage(params?: {
   q?: string;
   page?: number;
   limit?: number;
+  /** Skip expensive total count on the server (list uses hasMore only). */
+  includeTotal?: boolean;
 }): Promise<DiscussionsPageResult> {
   const sp = new URLSearchParams();
   if (params?.category) sp.set("category", params.category);
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.includeTotal === false) sp.set("includeTotal", "0");
   const query = sp.toString();
   const path = `/api/community/discussions${query ? `?${query}` : ""}`;
   const raw = await apiGet<
@@ -138,7 +141,7 @@ export async function getDiscussionsPage(params?: {
     page: typeof r.page === "number" ? r.page : 1,
     limit: typeof r.limit === "number" ? r.limit : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
     hasMore: Boolean(r.hasMore),
-    total: typeof r.total === "number" ? r.total : items.length,
+    total: typeof r.total === "number" ? r.total : undefined,
   };
 }
 

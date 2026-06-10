@@ -19,20 +19,42 @@ export function sanitizeLapTimesForConsistency(lapTimes: number[]): number[] {
   );
 }
 
+/** Gap-to-best tier thresholds (seconds). Must match backend CONSISTENCY_GAP_TIERS. */
+const CONSISTENCY_GAP_TIERS: { maxGapSec: number; score: number }[] = [
+  { maxGapSec: 0.2, score: 97.5 },
+  { maxGapSec: 0.3, score: 90 },
+  { maxGapSec: 0.4, score: 82.5 },
+  { maxGapSec: 0.5, score: 77.5 },
+  { maxGapSec: 0.8, score: 70 },
+  { maxGapSec: 1.0, score: 55 },
+  { maxGapSec: 1.2, score: 45 },
+  { maxGapSec: 1.5, score: 30 },
+  { maxGapSec: 2.0, score: 20 },
+  { maxGapSec: 3.0, score: 10 },
+];
+
+function lapConsistencyScore(gapToBestSec: number): number {
+  if (gapToBestSec <= 0) return 100;
+  for (const tier of CONSISTENCY_GAP_TIERS) {
+    if (gapToBestSec <= tier.maxGapSec) return tier.score;
+  }
+  return 5;
+}
+
 /**
- * Consistency proxy: 100 − (stdDev/mean)×100, clamped 0..100.
+ * Session consistency: mean of per-lap gap-to-best tier scores, clamped 0..100.
  * Must stay aligned with backend `consistencyPct` in apex/src/lib/sessionLapStats.ts.
  */
 export function calcConsistencyScore(lapTimes: number[]): number | null {
   const laps = sanitizeLapTimesForConsistency(lapTimes);
   if (laps.length < 3) return null;
-  const mean = laps.reduce((a, b) => a + b, 0) / laps.length;
-  if (mean <= 0) return null;
-  const variance =
-    laps.reduce((sum, t) => sum + (t - mean) ** 2, 0) / laps.length;
-  const stdDev = Math.sqrt(variance);
-  const pct = 100 - (stdDev / mean) * 100;
-  const clamped = Math.max(0, Math.min(100, pct));
+  const bestLapMs = Math.min(...laps);
+  if (bestLapMs <= 0) return null;
+  const scores = laps.map((lap) =>
+    lapConsistencyScore((lap - bestLapMs) / 1000)
+  );
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const clamped = Math.max(0, Math.min(100, avg));
   return Math.round(clamped);
 }
 

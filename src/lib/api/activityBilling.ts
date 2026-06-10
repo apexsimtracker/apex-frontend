@@ -298,6 +298,7 @@ export async function getBillingEntitlement(): Promise<BillingEntitlement> {
 export type PersonalBestRow = {
   id: string;
   track: string;
+  trackName?: string | null;
   car: string;
   bestLapMs: number;
   sessionId: string | null;

@@ -10,16 +10,8 @@ type ProtectedRouteProps = {
 };
 
 export default function ProtectedRoute({ children, message }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-white/60">Loading...</p>
-      </div>
-    );
-  }
 
   if (!user) {
     const state: AuthRedirectState = {

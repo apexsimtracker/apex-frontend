@@ -3,15 +3,7 @@ import Index from "./Index";
 import PublicHome from "./PublicHome";
 
 export default function HomeRoute() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-white/60">Loading...</p>
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   if (user) {
     return <Index />;

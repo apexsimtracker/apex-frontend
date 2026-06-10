@@ -1047,9 +1047,9 @@ export default function SessionDetailPage() {
               <div className="text-sm text-white/60">
                 {consistency == null
                   ? "Complete 3+ laps to score"
-                  : consistency >= 90
+                  : consistency >= 85
                     ? "Elite consistency"
-                    : consistency >= 75
+                    : consistency >= 65
                       ? "Solid consistency"
                       : "Needs consistency"}
               </div>

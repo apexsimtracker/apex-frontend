@@ -43,9 +43,18 @@ describe("getDisplayPosition", () => {
     ).toBeNull();
   });
 
-  it('returns Calculating... when race/qual position is missing', () => {
-    expect(getDisplayPosition({ sessionType: "RACE" })).toBe("Calculating...");
-    expect(getDisplayPosition({ sessionType: "QUALIFYING" })).toBe("Calculating...");
+  it("returns null when race/qual position is missing", () => {
+    expect(getDisplayPosition({ sessionType: "RACE" })).toBeNull();
+    expect(getDisplayPosition({ sessionType: "QUALIFYING" })).toBeNull();
+  });
+
+  it("returns null when race has totalDrivers but no position", () => {
+    expect(
+      getDisplayPosition({
+        sessionType: "RACE",
+        totalDrivers: 18,
+      })
+    ).toBeNull();
   });
 });
 

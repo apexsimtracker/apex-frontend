@@ -22,14 +22,10 @@ export function getDisplayPosition(session: DisplayPositionSession): string | nu
     if (qp != null && qp > 0) return `P${qp}${suffix}`;
   }
 
-  if (isRaceKind(session) || isQualifyingKind(session)) {
-    return "Calculating...";
-  }
-
   return null;
 }
 
-/** True when race/qual sessions should show a position row (including Calculating...). */
+/** True when race/qual sessions have a displayable finish position. */
 export function shouldShowSessionPosition(session: DisplayPositionSession): boolean {
   return getDisplayPosition(session) != null;
 }
@@ -37,7 +33,7 @@ export function shouldShowSessionPosition(session: DisplayPositionSession): bool
 /** Parse P{n} from getDisplayPosition for podium styling; returns 0 when not applicable. */
 export function displayPositionRank(session: DisplayPositionSession): number {
   const label = getDisplayPosition(session);
-  if (!label || label === "Calculating...") return 0;
+  if (!label) return 0;
   const m = /^P(\d+)/.exec(label);
   if (!m) return 0;
   const n = parseInt(m[1]!, 10);

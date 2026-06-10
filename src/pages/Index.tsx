@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { CheckCircle, X } from "lucide-react";
 import ActivityFeedList from "@/components/ActivityFeedList";
 import DiscussionCard from "@/components/DiscussionCard";
+import { DiscussionCardSkeleton } from "@/components/DiscussionCardSkeleton";
 import WeeklySnapshot from "@/components/WeeklySnapshot";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import {
@@ -173,6 +174,7 @@ export default function Index() {
       getDiscussionsPage({
         page: pageParam as number,
         limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+        includeTotal: false,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -520,9 +522,9 @@ export default function Index() {
           )}
           {homeDiscussionsEnabled &&
             (discussionsLoading ? (
-              <p className="mt-6 border-t border-white/5 py-6 text-sm text-muted-foreground">
-                Loading discussions…
-              </p>
+              <div className="mt-6 border-t border-white/5 py-6">
+                <DiscussionCardSkeleton count={3} />
+              </div>
             ) : (
               <>
                 {discussions.map((d) => (

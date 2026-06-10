@@ -329,7 +329,7 @@ function RaceCardContent({
   const isStrongSession =
     !isManual &&
     (item.lapCount ?? 0) > 5 &&
-    (item.consistencyScore ?? 0) >= 80;
+    (item.consistencyScore ?? 0) >= 75;
 
   const avatarSrc = resolveApiUrl(item.userAvatar);
 

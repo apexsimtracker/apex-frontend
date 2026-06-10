@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAdminSubscriptionList,
   postAdminSubscriptionSync,
+  postAdminSubscriptionSyncBatch,
   type AdminSubscriptionListParams,
   type AdminSubscriptionListRow,
 } from "@/lib/api/adminSubscriptions";
@@ -65,6 +66,7 @@ export default function AdminSubscriptions() {
   const [cancelAtEndOnly, setCancelAtEndOnly] = useState(false);
   const [staleSyncOnly, setStaleSyncOnly] = useState(false);
   const [syncingUserId, setSyncingUserId] = useState<string | null>(null);
+  const [syncingPage, setSyncingPage] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -122,6 +124,28 @@ export default function AdminSubscriptions() {
     onSettled: () => setSyncingUserId(null),
   });
 
+  const pageSyncMutation = useMutation({
+    mutationFn: (userIds: string[]) => postAdminSubscriptionSyncBatch(userIds),
+    onSuccess: async (result) => {
+      if (result.failed === 0) {
+        toast.success(
+          `Synced ${result.synced} subscription${result.synced === 1 ? "" : "s"} from RevenueCat`
+        );
+      } else {
+        toast.warning(
+          `Synced ${result.synced} of ${result.synced + result.failed}; ${result.failed} failed`
+        );
+      }
+      await qc.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
+    },
+    onError: (e) => {
+      toast.error(e instanceof ApiError ? e.message : "Page sync failed");
+    },
+    onSettled: () => setSyncingPage(false),
+  });
+
   const rows = data?.items ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
@@ -133,6 +157,15 @@ export default function AdminSubscriptions() {
     setSyncingUserId(row.userId);
     await syncMutation.mutateAsync(row.userId);
   }
+
+  async function handleSyncPage() {
+    if (rows.length === 0) return;
+    setSyncingPage(true);
+    await pageSyncMutation.mutateAsync(rows.map((r) => r.userId));
+  }
+
+  const pageSyncBusy = syncingPage && pageSyncMutation.isPending;
+  const rowSyncBusy = syncMutation.isPending;
 
   return (
     <>
@@ -322,10 +355,13 @@ export default function AdminSubscriptions() {
                             <Button
                               variant="outline"
                               size="sm"
-                              disabled={syncingUserId === r.userId && syncMutation.isPending}
+                              disabled={
+                                (syncingUserId === r.userId && rowSyncBusy) ||
+                                pageSyncBusy
+                              }
                               onClick={() => void handleSync(r)}
                             >
-                              {syncingUserId === r.userId && syncMutation.isPending ? (
+                              {syncingUserId === r.userId && rowSyncBusy ? (
                                 <Loader2 className="size-3 animate-spin" aria-hidden />
                               ) : (
                                 <RefreshCw className="size-3" aria-hidden />
@@ -339,9 +375,26 @@ export default function AdminSubscriptions() {
                 </table>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3 text-sm text-muted-foreground">
-                <p>
-                  Showing {rangeStart}–{rangeEnd} of {total.toLocaleString()}
-                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <p>
+                    Showing {rangeStart}–{rangeEnd} of {total.toLocaleString()}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pageSyncBusy || rowSyncBusy}
+                    onClick={() => void handleSyncPage()}
+                  >
+                    {pageSyncBusy ? (
+                      <Loader2 className="size-3 animate-spin" aria-hidden />
+                    ) : (
+                      <RefreshCw className="size-3" aria-hidden />
+                    )}
+                    <span className="ml-1.5">
+                      Sync page ({rows.length})
+                    </span>
+                  </Button>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"

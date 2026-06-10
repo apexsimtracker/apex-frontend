@@ -107,3 +107,21 @@ export async function postAdminSubscriptionSync(userId: string): Promise<{
     false
   );
 }
+
+export type AdminSubscriptionSyncBatchResult = {
+  success: boolean;
+  synced: number;
+  failed: number;
+  results: { userId: string; success: boolean; error: string | null }[];
+};
+
+export async function postAdminSubscriptionSyncBatch(
+  userIds: string[]
+): Promise<AdminSubscriptionSyncBatchResult> {
+  return fetchApi(
+    "POST",
+    "/api/admin/subscriptions/sync-batch",
+    { userIds },
+    false
+  );
+}

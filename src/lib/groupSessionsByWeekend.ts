@@ -51,6 +51,11 @@ function toTimestamp(value: string | Date): number {
 }
 
 function resolveTrackRaw(session: SessionItem): string | null {
+  const fromApi =
+    typeof session.trackName === "string" && session.trackName.trim()
+      ? session.trackName.trim()
+      : null;
+  if (fromApi) return fromApi;
   const raw = session.track?.trim() || session.trackName?.trim();
   return raw || null;
 }

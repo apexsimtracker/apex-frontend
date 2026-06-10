@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import DiscussionCard from "@/components/DiscussionCard";
+import { DiscussionCardSkeleton } from "@/components/DiscussionCardSkeleton";
 import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
 import {
   getDiscussionsPage,
@@ -124,6 +125,7 @@ export default function Community() {
         q: searchQuery.trim() || undefined,
         page: pageParam as number,
         limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+        includeTotal: false,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -266,47 +268,22 @@ export default function Community() {
                 />
               </span>
               <p className="text-xs font-medium">{cat.label}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground/50">
-                {categoryCountsPending ? "—" : categoryCounts[cat.value]}
-              </p>
+              <div className="mt-0.5 text-xs text-muted-foreground/50">
+                {categoryCountsPending ? (
+                  <SkeletonBlock className="mx-auto h-3 w-6 rounded" />
+                ) : (
+                  categoryCounts[cat.value]
+                )}
+              </div>
             </button>
           ))}
         </div>
 
-        {listRefetching && (
-          <div
-            className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] py-2.5 text-xs text-muted-foreground sm:text-sm"
-            role="status"
-            aria-live="polite"
-          >
-            <Loader2 className="size-4 shrink-0 animate-spin text-[rgb(240,28,28)]" aria-hidden />
-            <span>Loading discussions…</span>
-          </div>
-        )}
-
         {/* Discussions */}
         <div className="space-y-5 sm:space-y-6">
+          {listRefetching && <DiscussionCardSkeleton count={2} className="mb-2 space-y-5 sm:space-y-6" />}
           {loading ? (
-            <div className="space-y-5 sm:space-y-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-lg border border-white/10 bg-card/20 p-4 sm:p-5"
-                >
-                  <div className="mb-4 flex gap-3">
-                    <SkeletonBlock className="size-9 shrink-0 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <SkeletonBlock className="h-4 w-28 rounded" />
-                      <SkeletonBlock className="h-3 w-20 rounded" />
-                    </div>
-                  </div>
-                  <SkeletonBlock className="mb-3 h-3 w-24 rounded" />
-                  <SkeletonBlock className="mb-2 h-5 w-full max-w-md rounded" />
-                  <SkeletonBlock className="mb-2 h-4 w-full rounded" />
-                  <SkeletonBlock className="h-4 max-w-sm w-full rounded" />
-                </div>
-              ))}
-            </div>
+            <DiscussionCardSkeleton count={4} />
           ) : error ? (
             <div className="py-12 text-center">
               <p className="text-sm text-muted-foreground/60">{error}</p>
@@ -316,7 +293,13 @@ export default function Community() {
               <p className="text-sm text-muted-foreground/60">{emptyMessage}</p>
             </div>
           ) : (
-            <>
+            <div
+              className={cn(
+                "space-y-5 sm:space-y-6",
+                listRefetching && "pointer-events-none opacity-60"
+              )}
+              aria-busy={listRefetching || undefined}
+            >
               {discussions.map((d) => (
                 <DiscussionCard
                   key={d.id}
@@ -347,7 +330,7 @@ export default function Community() {
                   </button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
 

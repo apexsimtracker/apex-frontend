@@ -141,7 +141,7 @@ export default function DiscussionDetail() {
         page: commentsPage,
         limit: DISCUSSION_COMMENTS_PAGE_SIZE,
       }),
-    enabled: Boolean(id) && discussionQuery.isSuccess,
+    enabled: Boolean(id),
     placeholderData: keepPreviousData,
   });
 
@@ -158,12 +158,7 @@ export default function DiscussionDetail() {
       : "Failed to load comments."
     : null;
 
-  const loading =
-    Boolean(id) &&
-    (discussionQuery.isPending ||
-      (discussionQuery.isSuccess &&
-        !commentsQuery.data &&
-        commentsQuery.isPending));
+  const loading = Boolean(id) && discussionQuery.isPending;
 
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
