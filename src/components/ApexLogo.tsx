@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import {
   LOADING_LOGO_HEIGHT_PX,
   LOADING_LOGO_MAX_WIDTH_PX,
@@ -7,10 +7,11 @@ import { cn } from "@/lib/utils";
 
 type ApexLogoProps = {
   className?: string;
+  style?: CSSProperties;
 };
 
 /** Inline SVG fallback when `/logo.png` is unavailable. */
-export function ApexLogo({ className }: ApexLogoProps) {
+export function ApexLogo({ className, style }: ApexLogoProps) {
   const uid = useId().replace(/:/g, "");
   const swooshId = `apex-swoosh-${uid}`;
   const swoosh2Id = `apex-swoosh2-${uid}`;
@@ -22,6 +23,7 @@ export function ApexLogo({ className }: ApexLogoProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={style}
       aria-label="Apex Logo"
     >
       <path
@@ -120,14 +122,20 @@ export function ApexLogoImage({
 }: ApexLogoImageProps) {
   const [logoImgFailed, setLogoImgFailed] = useState(false);
 
+  const fixedDisplayStyle = fixedDisplaySize
+    ? {
+        display: "block" as const,
+        height: LOADING_LOGO_HEIGHT_PX,
+        width: LOADING_LOGO_MAX_WIDTH_PX,
+        maxWidth: LOADING_LOGO_MAX_WIDTH_PX,
+        aspectRatio: "112 / 40",
+        objectFit: "contain" as const,
+      }
+    : undefined;
+
   if (logoImgFailed) {
     return (
-      <ApexLogo
-        className={cn(
-          fixedDisplaySize ? "h-16 w-auto max-w-[179px]" : undefined,
-          className,
-        )}
-      />
+      <ApexLogo className={className} style={fixedDisplayStyle} />
     );
   }
 
@@ -137,17 +145,7 @@ export function ApexLogoImage({
       alt="Apex Logo"
       width={112}
       height={40}
-      style={
-        fixedDisplaySize
-          ? {
-              display: "block",
-              height: LOADING_LOGO_HEIGHT_PX,
-              width: "auto",
-              maxWidth: LOADING_LOGO_MAX_WIDTH_PX,
-              objectFit: "contain",
-            }
-          : undefined
-      }
+      style={fixedDisplayStyle}
       className={cn(
         fixedDisplaySize
           ? "object-contain object-center"

@@ -7,6 +7,10 @@ const pkg = JSON.parse(
   readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
 ) as { version?: string };
 const appVersion = pkg.version ?? "1.0.0";
+const gitCommitSha =
+  process.env.VERCEL_GIT_COMMIT_SHA?.trim() ||
+  process.env.GIT_COMMIT_SHA?.trim() ||
+  "";
 
 export default defineConfig({
   appType: "spa",
@@ -14,6 +18,7 @@ export default defineConfig({
 
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+    "import.meta.env.VITE_GIT_COMMIT_SHA": JSON.stringify(gitCommitSha),
   },
 
   build: {

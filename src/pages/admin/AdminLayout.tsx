@@ -80,7 +80,7 @@ const navGroups: { title: string; items: NavItem[] }[] = [
       { key: "notifications", label: "Notifications", icon: Bell, to: "/admin/notifications" },
       { key: "follows", label: "Follow graph", icon: UserCog, to: "/admin/follows" },
       { key: "contact", label: "Contact inbox", icon: Inbox, to: "/admin/contact" },
-      { key: "devices", label: "Devices & agent", icon: Server, to: "/admin/devices" },
+      { key: "devices", label: "Agent releases", icon: Server, to: "/admin/devices" },
       { key: "email-auth", label: "Email & auth ops", icon: Mail, to: "/admin/email-auth" },
       { key: "system", label: "System", icon: Wrench, to: "/admin/system" },
     ],

@@ -419,7 +419,7 @@ export default function Settings() {
     [changePasswordForm, changePwSubmitting]
   );
   /** Only for local/dev builds — never expose API host / connectivity test in production. */
-  const showDevSystemStatus = import.meta.env.DEV;
+  const showDevSystemStatus = import.meta.env.VITE_ENABLE_DEV_SYSTEM_STATUS === "true";
   const envLabel = import.meta.env.MODE === "production" ? "production" : "development";
   const apiHost = (() => {
     try {

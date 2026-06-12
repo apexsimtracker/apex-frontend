@@ -163,8 +163,22 @@ function formatCompact(value: number): string {
   return new Intl.NumberFormat().format(value);
 }
 
-function shortSha(value: string | null): string {
+function shortSha(value: string | null | undefined): string {
   return value ? value.slice(0, 8) : "—";
+}
+
+function resolveFrontendCommitSha(apiSha: string | null | undefined): string {
+  const clientSha = import.meta.env.VITE_GIT_COMMIT_SHA?.trim();
+  return clientSha || apiSha || null;
+}
+
+function formatUptimeSec(sec: number): string {
+  const days = Math.floor(sec / 86400);
+  const hours = Math.floor((sec % 86400) / 3600);
+  const minutes = Math.floor((sec % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 function labelForStatus(value: string): string {
@@ -351,7 +365,7 @@ function OverviewTab({ data }: { data: AdminSystemOverview }) {
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Frontend commit</span>
-              <span className="font-medium">{shortSha(data.build.frontendCommitSha)}</span>
+              <span className="font-medium">{shortSha(resolveFrontendCommitSha(data.build.frontendCommitSha))}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Backend platform</span>
@@ -509,7 +523,11 @@ function HealthTab({ data }: { data: AdminSystemHealth }) {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="API version" value={data.runtime.apiVersion} sub={data.runtime.environment} />
-        <MetricCard label="Uptime" value={`${formatCompact(data.runtime.uptimeSec)}s`} />
+        <MetricCard
+          label="Uptime"
+          value={formatUptimeSec(data.runtime.uptimeSec)}
+          sub={`${formatCompact(data.runtime.uptimeSec)}s total`}
+        />
         <MetricCard label="RSS memory" value={`${data.runtime.memory.rssMb} MB`} />
         <MetricCard label="Heap used" value={`${data.runtime.memory.heapUsedMb} MB`} />
       </div>
@@ -537,7 +555,7 @@ function HealthTab({ data }: { data: AdminSystemHealth }) {
             </p>
             <p>
               <span className="text-muted-foreground">Frontend commit:</span>{" "}
-              {shortSha(data.build.frontendCommitSha)}
+              {shortSha(resolveFrontendCommitSha(data.build.frontendCommitSha))}
             </p>
             <p>
               <span className="text-muted-foreground">Frontend URL:</span>{" "}

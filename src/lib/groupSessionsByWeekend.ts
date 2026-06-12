@@ -1,9 +1,10 @@
 /**
  * Race weekend grouping for activity feeds (Fix 5).
- * Groups sessions by author + track within a 48-hour window; breaks after P+Q+R cycle.
+ * Groups sessions by author + track + car within a 48-hour window; breaks after P+Q+R cycle.
  */
 
 import { formatTrackName } from "./tracks";
+import { formatCarName } from "./utils";
 import {
   isPracticeKind,
   isQualifyingKind,
@@ -67,6 +68,30 @@ export function normalizeTrackKeyForWeekend(session: SessionItem): string | null
   const lower = raw.toLowerCase();
   if (lower === "unknown" || lower.endsWith(".ibt")) return null;
   return formatTrackName(raw).trim().toLowerCase();
+}
+
+function resolveCarRaw(session: SessionItem): string | null {
+  const fromCarName =
+    typeof session.carName === "string" && session.carName.trim()
+      ? session.carName.trim()
+      : null;
+  if (fromCarName) return fromCarName;
+  const fromDisplay =
+    typeof session.vehicleDisplay === "string" && session.vehicleDisplay.trim()
+      ? session.vehicleDisplay.trim()
+      : null;
+  if (fromDisplay) return fromDisplay;
+  const raw = session.car?.trim();
+  return raw || null;
+}
+
+/** Canonical car key for grouping — merges display aliases when possible. */
+export function normalizeCarKeyForWeekend(session: SessionItem): string | null {
+  const raw = resolveCarRaw(session);
+  if (!raw) return null;
+  const lower = raw.toLowerCase();
+  if (lower === "unknown" || lower === "—") return null;
+  return formatCarName(raw).trim().toLowerCase();
 }
 
 function resolveAuthorId(session: SessionItem): string | null {
@@ -189,13 +214,14 @@ export function groupSessionsByWeekend(sessions: SessionItem[]): WeekendFeedItem
   for (const session of sortedAsc) {
     const authorId = resolveAuthorId(session);
     const trackKey = normalizeTrackKeyForWeekend(session);
+    const carKey = normalizeCarKeyForWeekend(session);
 
-    if (!authorId || !trackKey) {
+    if (!authorId || !trackKey || !carKey) {
       standalones.push(session);
       continue;
     }
 
-    const mapKey = `${authorId}:${trackKey}`;
+    const mapKey = `${authorId}:${trackKey}:${carKey}`;
     const sessionTime = toTimestamp(session.createdAt);
     const open = openGroups.get(mapKey);
 

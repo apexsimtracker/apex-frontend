@@ -183,6 +183,32 @@ describe("groupSessionsByWeekend", () => {
     }
   });
 
+  it("does not group same author + track when cars differ", () => {
+    const base = new Date("2024-06-01T12:00:00Z").getTime();
+    const hour = 60 * 60 * 1000;
+
+    const sessions = [
+      createSession("ferrari", {
+        car: "Ferrari 488 GT3",
+        sessionType: "QUALIFYING",
+        createdAt: new Date(base).toISOString(),
+      }),
+      createSession("porsche", {
+        car: "Porsche 911 GT3 R",
+        sessionType: "RACE",
+        createdAt: new Date(base + hour).toISOString(),
+      }),
+    ];
+
+    const result = groupSessionsByWeekend(sessions);
+    expect(result).toHaveLength(2);
+    expect(result.every((r) => r.type === "weekend")).toBe(true);
+    if (result[0].type === "weekend" && result[1].type === "weekend") {
+      expect(result[0].group.sessions).toHaveLength(1);
+      expect(result[1].group.sessions).toHaveLength(1);
+    }
+  });
+
   it("merges track aliases (spa vs Spa-Francorchamps) within 48h", () => {
     const base = new Date("2024-06-01T12:00:00Z").getTime();
     const hour = 60 * 60 * 1000;

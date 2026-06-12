@@ -3,7 +3,6 @@ import { ApexLogoImage } from "@/components/ApexLogo";
 import {
   LOADING_EXTENDED_DELAY_MS,
   LOADING_LOGO_HEIGHT_PX,
-  LOADING_LOGO_MAX_WIDTH_PX,
   LOADING_ROTATE_MS,
   LOADING_STATUS_LINES,
   LOADING_TIPS,
@@ -88,7 +87,7 @@ function LoadingScreenContent() {
     <div className="relative z-10 flex w-full max-w-md flex-col items-center px-6">
       <div
         className="relative flex shrink-0 items-center justify-center"
-        style={{ height: LOADING_LOGO_HEIGHT_PX, width: LOADING_LOGO_MAX_WIDTH_PX }}
+        style={{ height: LOADING_LOGO_HEIGHT_PX }}
       >
         <div
           className="pointer-events-none absolute inset-0 -m-4 rounded-full bg-[rgb(240,28,28)]/10 blur-xl"

@@ -323,10 +323,10 @@ export default function AdminDashboard() {
             )}
           </MetricsSection>
 
-          <MetricsSection<"devices"> title="Devices & sessions" cardCount={3} query={devicesQ}>
+          <MetricsSection<"devices"> title="Agent & sessions" cardCount={3} query={devicesQ}>
             {(m) => (
               <>
-                <MetricCard label="Paired devices" value={formatInt(m.devicesTotal)} />
+                <MetricCard label="Legacy device tokens" value={formatInt(m.devicesTotal)} />
                 <MetricCard label="Auth sessions (all)" value={formatInt(m.authSessionsTotal)} />
                 <MetricCard label="Auth sessions (active)" value={formatInt(m.authSessionsActive)} />
               </>
