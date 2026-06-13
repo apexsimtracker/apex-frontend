@@ -47,18 +47,15 @@ import {
   fetchAdminSystemDiagnostics,
   fetchAdminSystemHealth,
   fetchAdminSystemIncidents,
-  fetchAdminSystemLogs,
   fetchAdminSystemMaintenance,
   fetchAdminSystemOverview,
   patchAdminSystemFeature,
   patchAdminSystemIncident,
   patchAdminSystemMaintenance,
-  type AdminSystemAuditResponse,
   type AdminSystemDiagnostics,
   type AdminSystemFeature,
   type AdminSystemHealth,
   type AdminSystemIncident,
-  type AdminSystemLogsResponse,
   type AdminSystemMaintenanceWindow,
   type AdminSystemOverview,
   type IncidentStatus,
@@ -98,7 +95,7 @@ const TAB_LABEL: Record<TabId, string> = {
   features: "Features",
   operations: "Operations",
   diagnostics: "Diagnostics",
-  audit: "Audit & logs",
+  audit: "Audit",
 };
 
 const STATUS_PILL: Record<SystemStatusLevel, string> = {
@@ -146,7 +143,6 @@ const QUERY_KEYS = {
   maintenance: ["admin", "system", "maintenance"] as const,
   diagnostics: ["admin", "system", "diagnostics"] as const,
   audit: ["admin", "system", "audit"] as const,
-  logs: ["admin", "system", "logs"] as const,
 };
 
 function parseTab(raw: string | null): TabId {
@@ -1828,277 +1824,85 @@ function DiagnosticsTab({ data }: { data: AdminSystemDiagnostics }) {
   );
 }
 
-function AuditLogsTab() {
+function AuditTab() {
   const [source, setSource] = useState<"SYSTEM" | "USER_ACTION" | "ALL">("ALL");
-  const [level, setLevel] = useState<"TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL" | "">(
-    ""
-  );
   const [page, setPage] = useState(1);
-  const [logsPage, setLogsPage] = useState(1);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setPage(1);
   }, [source]);
 
-  useEffect(() => {
-    setLogsPage(1);
-  }, [level, search]);
-
-  const [auditQuery, logsQuery] = useQueries({
-    queries: [
-      {
-        queryKey: [...QUERY_KEYS.audit, source, page],
-        queryFn: () => fetchAdminSystemAudit({ page, pageSize: 20, source }),
-      },
-      {
-        queryKey: [...QUERY_KEYS.logs, level, search, logsPage],
-        queryFn: () =>
-          fetchAdminSystemLogs({
-            page: logsPage,
-            pageSize: 10,
-            level: level || undefined,
-            q: search || undefined,
-          }),
-      },
-    ],
-  }) as [UseQueryResult<AdminSystemAuditResponse>, UseQueryResult<AdminSystemLogsResponse>];
+  const auditQuery = useQuery({
+    queryKey: [...QUERY_KEYS.audit, source, page],
+    queryFn: () => fetchAdminSystemAudit({ page, pageSize: 20, source }),
+  });
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard
-          title="Admin audit trail"
-          description="Durable system audit events plus user-scoped admin actions."
-          action={
-            <select
-              className="rounded-md border border-white/10 bg-card px-3 py-2 text-sm"
-              value={source}
-              onChange={(e) => setSource(e.target.value as "SYSTEM" | "USER_ACTION" | "ALL")}
-            >
-              <option value="ALL">All sources</option>
-              <option value="SYSTEM">System events</option>
-              <option value="USER_ACTION">User actions</option>
-            </select>
-          }
-        >
-          {auditQuery.isPending ? (
-            <QueryLoading />
-          ) : auditQuery.isError ? (
-            <InlineError error={auditQuery.error} />
-          ) : auditQuery.data.items.length === 0 ? (
-            <EmptyState title="No audit events" description="No matching audit rows were found." />
-          ) : (
-            <div className="space-y-3">
-              {auditQuery.data.items.map((event) => (
-                <div key={event.id} className="rounded-lg border border-white/10 px-4 py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">{event.summary}</p>
-                    <span className="text-xs text-muted-foreground">{event.source}</span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {event.actorDisplayName ?? "Unknown actor"} · {formatDateTime(event.createdAt)}
-                  </p>
+      <SectionCard
+        title="Admin audit trail"
+        description="Durable system audit events plus user-scoped admin actions."
+        action={
+          <select
+            className="rounded-md border border-white/10 bg-card px-3 py-2 text-sm"
+            value={source}
+            onChange={(e) => setSource(e.target.value as "SYSTEM" | "USER_ACTION" | "ALL")}
+          >
+            <option value="ALL">All sources</option>
+            <option value="SYSTEM">System events</option>
+            <option value="USER_ACTION">User actions</option>
+          </select>
+        }
+      >
+        {auditQuery.isPending ? (
+          <QueryLoading />
+        ) : auditQuery.isError ? (
+          <InlineError error={auditQuery.error} />
+        ) : auditQuery.data.items.length === 0 ? (
+          <EmptyState title="No audit events" description="No matching audit rows were found." />
+        ) : (
+          <div className="space-y-3">
+            {auditQuery.data.items.map((event) => (
+              <div key={event.id} className="rounded-lg border border-white/10 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-foreground">{event.summary}</p>
+                  <span className="text-xs text-muted-foreground">{event.source}</span>
                 </div>
-              ))}
-              <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
-                <span>
-                  Page {auditQuery.data.page} of {auditQuery.data.totalPages}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((cur) => Math.max(1, cur - 1))}
-                  >
-                    Prev
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= auditQuery.data.totalPages}
-                    onClick={() =>
-                      setPage((cur) => Math.min(auditQuery.data.totalPages, cur + 1))
-                    }
-                  >
-                    Next
-                  </Button>
-                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {event.actorDisplayName ?? "Unknown actor"} · {formatDateTime(event.createdAt)}
+                </p>
               </div>
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard
-          title="Recent logs"
-          description="Latest backend log tail from the app-managed log file with request and event context."
-          action={
-            <div className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Search logs"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full sm:w-48"
-              />
-              <select
-                className="rounded-md border border-white/10 bg-card px-3 py-2 text-sm"
-                value={level}
-                onChange={(e) =>
-                  setLevel(
-                    e.target.value as "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL" | ""
-                  )
-                }
-              >
-                <option value="">All levels</option>
-                <option value="INFO">Info</option>
-                <option value="WARN">Warn</option>
-                <option value="ERROR">Error</option>
-                <option value="DEBUG">Debug</option>
-              </select>
-            </div>
-          }
-        >
-          {logsQuery.isPending ? (
-            <QueryLoading />
-          ) : logsQuery.isError ? (
-            <InlineError error={logsQuery.error} />
-          ) : logsQuery.data.items.length === 0 ? (
-            <EmptyState title="No logs found" description="No log lines matched the current filters." />
-          ) : (
-            <div className="space-y-3">
-              {logsQuery.data.items.map((entry, index) => (
-                <div
-                  key={`${entry.timestamp ?? "raw"}-${index}`}
-                  className="rounded-lg border border-white/10 px-4 py-3"
+            ))}
+            <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+              <span>
+                Page {auditQuery.data.page} of {auditQuery.data.totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((cur) => Math.max(1, cur - 1))}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {entry.level}
-                      </p>
-                      {entry.audit ? (
-                        <span className="rounded-full border border-violet-500/40 bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-200">
-                          Audit
-                        </span>
-                      ) : null}
-                      {entry.eventType ? (
-                        <span className="rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-[11px] text-sky-200">
-                          {entry.eventType}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{formatDateTime(entry.timestamp)}</p>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-foreground">{entry.message}</p>
-                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                    {entry.method || entry.url ? (
-                      <p>
-                        <span className="text-foreground/80">Request:</span>{" "}
-                        {[entry.method, entry.url].filter(Boolean).join(" ")}
-                      </p>
-                    ) : null}
-                    {entry.requestId ? (
-                      <p>
-                        <span className="text-foreground/80">Request ID:</span> {entry.requestId}
-                      </p>
-                    ) : null}
-                    {entry.statusCode != null ? (
-                      <p>
-                        <span className="text-foreground/80">Status:</span> {entry.statusCode}
-                      </p>
-                    ) : null}
-                    {entry.responseTimeMs != null ? (
-                      <p>
-                        <span className="text-foreground/80">Response time:</span>{" "}
-                        {entry.responseTimeMs} ms
-                      </p>
-                    ) : null}
-                    {entry.hostname ? (
-                      <p>
-                        <span className="text-foreground/80">Host:</span> {entry.hostname}
-                      </p>
-                    ) : null}
-                    {entry.remoteAddress ? (
-                      <p>
-                        <span className="text-foreground/80">Remote IP:</span> {entry.remoteAddress}
-                      </p>
-                    ) : null}
-                    {entry.userId ? (
-                      <p className="sm:col-span-2">
-                        <span className="text-foreground/80">User ID:</span> {entry.userId}
-                      </p>
-                    ) : null}
-                    {entry.error?.message ? (
-                      <p className="sm:col-span-2">
-                        <span className="text-foreground/80">Error:</span>{" "}
-                        {[entry.error.type, entry.error.message].filter(Boolean).join(": ")}
-                      </p>
-                    ) : null}
-                    {entry.metadata ? (
-                      <div className="sm:col-span-2">
-                        <p className="text-foreground/80">Metadata:</p>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          {Object.entries(entry.metadata)
-                            .slice(0, 6)
-                            .map(([key, value]) => (
-                              <span
-                                key={key}
-                                className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5"
-                              >
-                                {formatKeyValueLabel(key)}:{" "}
-                                {typeof value === "string"
-                                  ? value
-                                  : typeof value === "number" || typeof value === "boolean"
-                                    ? String(value)
-                                    : JSON.stringify(value)}
-                              </span>
-                            ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              <div className="flex items-center justify-between gap-4 pt-2 text-xs text-muted-foreground">
-                <div className="space-y-1">
-                  <p>
-                    Page {logsQuery.data.page} of {logsQuery.data.totalPages} · {logsQuery.data.total}{" "}
-                    matching log lines in the recent tail
-                  </p>
-                  <p>
-                    Source: {logsQuery.data.source} · tail window {logsQuery.data.tailWindowBytes} bytes
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={logsPage <= 1}
-                    onClick={() => setLogsPage((cur) => Math.max(1, cur - 1))}
-                  >
-                    Prev
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={logsPage >= logsQuery.data.totalPages}
-                    onClick={() =>
-                      setLogsPage((cur) => Math.min(logsQuery.data.totalPages, cur + 1))
-                    }
-                  >
-                    Next
-                  </Button>
-                </div>
+                  Prev
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= auditQuery.data.totalPages}
+                  onClick={() =>
+                    setPage((cur) => Math.min(auditQuery.data.totalPages, cur + 1))
+                  }
+                >
+                  Next
+                </Button>
               </div>
             </div>
-          )}
-        </SectionCard>
-      </div>
+          </div>
+        )}
+      </SectionCard>
     </div>
   );
 }
@@ -2226,7 +2030,7 @@ export default function AdminSystem() {
           </TabsContent>
 
           <TabsContent value="audit" className={ADMIN_TABS_CONTENT}>
-            <AuditLogsTab />
+            <AuditTab />
           </TabsContent>
         </Tabs>
       </div>

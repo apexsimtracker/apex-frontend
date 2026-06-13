@@ -326,36 +326,6 @@ export type AdminSystemAuditResponse = {
   totalPages: number;
 };
 
-export type AdminSystemLogsResponse = {
-  items: Array<{
-    timestamp: string | null;
-    level: string;
-    message: string;
-    requestId: string | null;
-    eventType: string | null;
-    method: string | null;
-    url: string | null;
-    hostname: string | null;
-    remoteAddress: string | null;
-    statusCode: number | null;
-    responseTimeMs: number | null;
-    audit: boolean;
-    userId: string | null;
-    metadata: Record<string, unknown> | null;
-    error: {
-      type: string | null;
-      message: string | null;
-    } | null;
-    raw: string;
-  }>;
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-  source: string;
-  tailWindowBytes: number;
-};
-
 function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -582,25 +552,6 @@ export async function fetchAdminSystemAudit(params?: {
       page: params?.page,
       pageSize: params?.pageSize,
       source: params?.source,
-    })}`,
-    undefined,
-    false
-  );
-}
-
-export async function fetchAdminSystemLogs(params?: {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-  level?: "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR" | "FATAL";
-}): Promise<AdminSystemLogsResponse> {
-  return fetchApi(
-    "GET",
-    `/api/admin/system/logs${buildQuery({
-      page: params?.page,
-      pageSize: params?.pageSize,
-      q: params?.q,
-      level: params?.level,
     })}`,
     undefined,
     false
