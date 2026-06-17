@@ -1,18 +1,26 @@
 import { type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getSafeReturnPath, parseAuthRedirectState } from "./authRedirect";
 
 type GuestOnlyRouteProps = {
   children: ReactNode;
-  /** Where to send authenticated users (default app home). */
+  /** Fallback when no post-login return path is present. */
   redirectTo?: string;
 };
 
-export default function GuestOnlyRoute({ children, redirectTo = "/" }: GuestOnlyRouteProps) {
+export default function GuestOnlyRoute({ children, redirectTo = "/profile" }: GuestOnlyRouteProps) {
   const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   if (user) {
-    return <Navigate to={redirectTo} replace />;
+    const authRedirect = parseAuthRedirectState(location.state);
+    const target = getSafeReturnPath(
+      authRedirect.from ?? searchParams.get("next"),
+      redirectTo
+    );
+    return <Navigate to={target} replace />;
   }
 
   return children;

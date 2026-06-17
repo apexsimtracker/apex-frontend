@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { authLogin, authMe, ApiError } from "@/lib/api";
 import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
@@ -28,6 +28,7 @@ import { persistSessionTokenFromAuthPayload } from "@/auth/token";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
@@ -40,6 +41,11 @@ export default function Login() {
   });
 
   const authRedirect = parseAuthRedirectState(location.state);
+  const returnFromQuery = searchParams.get("next");
+  const postLoginPath = getSafeReturnPath(
+    authRedirect.from ?? returnFromQuery,
+    "/profile"
+  );
 
   useEffect(() => {
     const state = location.state as { emailVerified?: boolean } | null;
@@ -87,8 +93,7 @@ export default function Login() {
         return;
       }
       window.dispatchEvent(new Event("apex:auth"));
-      const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
-      navigate(returnTo, { replace: true });
+      navigate(postLoginPath, { replace: true });
       return;
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {

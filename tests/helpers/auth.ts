@@ -87,18 +87,51 @@ export async function gotoAuthenticated(
   await page.evaluate(() => window.dispatchEvent(new Event("apex:auth")));
 }
 
+function matchesReturnPath(url: URL, returnTo: string): boolean {
+  const expected = new URL(returnTo, url.origin);
+  return (
+    url.pathname === expected.pathname &&
+    url.search === expected.search &&
+    url.hash === expected.hash
+  );
+}
+
 export async function loginViaUi(
   page: Page,
   email: string,
   password: string,
   returnTo = "/pricing"
 ): Promise<void> {
-  await page.goto("/login");
-  await page.evaluate((from) => {
-    window.history.replaceState({ usr: { from, message: null } }, "");
-  }, returnTo);
+  const next = encodeURIComponent(returnTo);
+  await page.goto(`/login?next=${next}`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 30_000 });
+  await page.waitForURL((url) => matchesReturnPath(url, returnTo), { timeout: 30_000 });
+}
+
+export async function logoutViaApi(
+  request: APIRequestContext,
+  auth: AuthSession
+): Promise<void> {
+  const { apiUrl } = getE2eEnv();
+  const res = await request.post(`${apiUrl}/api/auth/logout`, {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "X-Apex-Session": auth.sessionToken,
+    },
+  });
+  if (!res.ok()) {
+    const body = await res.text();
+    throw new Error(`Logout failed (${res.status()}): ${body}`);
+  }
+}
+
+export async function clearGuestSession(page: Page): Promise<void> {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.removeItem("apex_token");
+    localStorage.removeItem("apex_session_token");
+    sessionStorage.removeItem("apex_verify_email");
+  });
 }
