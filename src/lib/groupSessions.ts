@@ -36,7 +36,7 @@ export type SessionItem = {
   position: number | null;
   qualifyingPosition?: number | null;
   totalDrivers: number | null;
-  sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "QUALIFYING" | "WARMUP" | "UNKNOWN" | "MANUAL_ACTIVITY";
+  sessionType?: "PRACTICE" | "RACE" | "SPRINT" | "QUALIFY" | "QUALIFYING" | "WARMUP" | "TIME_TRIAL" | "TIMETRIAL" | "UNKNOWN" | "MANUAL_ACTIVITY";
   /** Present for MANUAL_ACTIVITY rows from API (Practice / Qualifying / Race). */
   manualSessionKind?: string | null;
   sim?: string | null;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -19,6 +19,13 @@ import {
   type NotificationSeverity,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+
+function isInternalAppPath(url: string): boolean {
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.startsWith("mailto:")) return false;
+  if (/^https?:\/\//i.test(trimmed)) return false;
+  return trimmed.startsWith("/");
+}
 
 const VISIBLE_BANNERS = 3;
 const VIEW_PING_DELAY_MS = 1500;
@@ -115,14 +122,23 @@ function BannerRow({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {broadcast.ctaLabel && broadcast.ctaUrl ? (
-            <a
-              href={broadcast.ctaUrl}
-              target={broadcast.ctaUrl.startsWith("http") ? "_blank" : undefined}
-              rel="noreferrer"
-              className="rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-white/15"
-            >
-              {broadcast.ctaLabel}
-            </a>
+            isInternalAppPath(broadcast.ctaUrl) ? (
+              <Link
+                to={broadcast.ctaUrl}
+                className="rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-white/15"
+              >
+                {broadcast.ctaLabel}
+              </Link>
+            ) : (
+              <a
+                href={broadcast.ctaUrl}
+                target={broadcast.ctaUrl.startsWith("http") ? "_blank" : undefined}
+                rel="noreferrer"
+                className="rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-white/15"
+              >
+                {broadcast.ctaLabel}
+              </a>
+            )
           ) : null}
           {broadcast.dismissible && (
             <button

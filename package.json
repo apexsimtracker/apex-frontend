@@ -8,6 +8,14 @@
     "seo:sitemap": "node scripts/generate-sitemap.mjs",
     "prebuild": "node scripts/generate-sitemap.mjs",
     "build": "vite build",
+    "build:mobile": "vite build && LANG=en_US.UTF-8 pnpm exec cap sync",
+    "build:mobile:dev": "vite build --mode mobile && LANG=en_US.UTF-8 pnpm exec cap sync",
+    "dev:ios": "pnpm exec cap run ios -l --port 8080 --target-name \"iPhone 15 Pro\"",
+    "dev:android": "JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" pnpm exec cap run android -l --port 8080 --target Pixel_3a_API_34_extension_level_7_arm64-v8a",
+    "cap:run:android": "JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" pnpm exec cap run android --target Pixel_3a_API_34_extension_level_7_arm64-v8a",
+    "cap:sync": "LANG=en_US.UTF-8 pnpm exec cap sync",
+    "cap:open:ios": "pnpm exec cap open ios",
+    "cap:open:android": "pnpm exec cap open android",
     "preview": "vite preview",
     "test": "vitest --run",
     "test:e2e": "playwright test",
@@ -20,6 +28,11 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@capacitor/browser": "8.0.3",
+    "@capacitor/core": "8.0.2",
+    "@capacitor/keyboard": "8.0.3",
+    "@capacitor/splash-screen": "8.0.1",
+    "@capacitor/status-bar": "8.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -64,6 +77,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@capacitor/android": "8.0.2",
+    "@capacitor/cli": "8.0.2",
+    "@capacitor/ios": "8.0.2",
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/typography": "^0.5.19",

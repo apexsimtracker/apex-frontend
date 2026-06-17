@@ -13,6 +13,7 @@ import {
   refreshBillingSubscription,
   type BillingConfigResponse,
 } from "@/lib/api";
+import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
 
 const BILLING_CONFIG_QUERY_KEY = ["billing", "config"] as const;
 
@@ -169,7 +170,7 @@ export function useRevenueCat() {
   const portalMutation = useMutation({
     mutationFn: async () => {
       const { url } = await createBillingPortalSession();
-      window.location.assign(url);
+      await openExternalUrl(url);
       return url;
     },
   });

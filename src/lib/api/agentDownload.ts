@@ -1,6 +1,7 @@
 import type { AgentOs } from "@/hooks/useDetectedAgentOs";
 import { AGENT_DOWNLOAD_FILENAMES } from "@/hooks/useDetectedAgentOs";
 import { API_BASE } from "./config";
+import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
 import { ApiError, ProRequiredError } from "./errors";
 import {
   buildApiAuthHeaders,
@@ -107,6 +108,6 @@ export async function getAgentDownloadLink(os: AgentOs): Promise<AgentDownloadRe
 export async function downloadAgentBinary(os: AgentOs): Promise<void> {
   const payload = await getAgentDownloadLink(os);
   if (payload.url) {
-    window.location.href = payload.url;
+    await openExternalUrl(payload.url);
   }
 }

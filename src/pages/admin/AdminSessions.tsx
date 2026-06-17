@@ -31,10 +31,30 @@ import {
 } from "@/pages/admin/adminTableLayout";
 import { MANUAL_ACTIVITY_SIMS, type SimOption } from "@/lib/manualActivityData";
 import SimBadge from "@/components/SimBadge";
+import SessionTypeTag from "@/components/SessionTypeTag";
 import { formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 
 const TITLE = `Admin · Sessions & laps | ${COMPANY_NAME}`;
 const SEARCH_DEBOUNCE_MS = 200;
+
+const SESSION_TYPE_FILTER_OPTIONS = [
+  { value: "", label: "All types" },
+  { value: "MANUAL_ACTIVITY", label: "Manual activity" },
+  { value: "RACE", label: "Race" },
+  { value: "SPRINT", label: "Sprint" },
+  { value: "PRACTICE", label: "Practice" },
+  { value: "QUALIFYING", label: "Qualifying" },
+  { value: "WARMUP", label: "Warmup" },
+  { value: "TIME_TRIAL", label: "Time trial" },
+  { value: "UNKNOWN", label: "Unknown" },
+] as const;
+
+const MANUAL_KIND_FILTER_OPTIONS = [
+  { value: "", label: "All manual kinds" },
+  { value: "PRACTICE", label: "Practice" },
+  { value: "QUALIFY", label: "Qualifying" },
+  { value: "RACE", label: "Race" },
+] as const;
 
 const PRESET_SELECT_CLASS =
   "rounded-md border border-white/10 bg-card px-3 py-2 text-sm";
@@ -78,6 +98,8 @@ export default function AdminSessions() {
   const [hasInvalidLaps, setHasInvalidLaps] = useState(false);
   const [missingTelemetry, setMissingTelemetry] = useState(false);
   const [multipleBestLaps, setMultipleBestLaps] = useState(false);
+  const [sessionTypeFilter, setSessionTypeFilter] = useState("");
+  const [manualKindFilter, setManualKindFilter] = useState("");
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -98,6 +120,8 @@ export default function AdminSessions() {
     hasInvalidLaps,
     missingTelemetry,
     multipleBestLaps,
+    sessionTypeFilter,
+    manualKindFilter,
   ]);
 
   const maxLapParsed = useMemo(() => {
@@ -123,6 +147,10 @@ export default function AdminSessions() {
       ...(hasInvalidLaps ? { hasInvalidLaps: true } : {}),
       ...(missingTelemetry ? { missingTelemetry: true } : {}),
       ...(multipleBestLaps ? { multipleBestLaps: true } : {}),
+      ...(sessionTypeFilter.trim() ? { sessionType: sessionTypeFilter.trim() } : {}),
+      ...(sessionTypeFilter === "MANUAL_ACTIVITY" && manualKindFilter.trim()
+        ? { manualSessionKind: manualKindFilter.trim() }
+        : {}),
     }),
     [
       page,
@@ -138,6 +166,8 @@ export default function AdminSessions() {
       hasInvalidLaps,
       missingTelemetry,
       multipleBestLaps,
+      sessionTypeFilter,
+      manualKindFilter,
     ]
   );
 
@@ -242,7 +272,9 @@ export default function AdminSessions() {
     processingStuck ||
     hasInvalidLaps ||
     missingTelemetry ||
-    multipleBestLaps;
+    multipleBestLaps ||
+    sessionTypeFilter ||
+    manualKindFilter;
 
   return (
     <>
@@ -341,6 +373,40 @@ export default function AdminSessions() {
                       </option>
                     ))}
                   </select>
+                  <select
+                    className={PRESET_SELECT_CLASS}
+                    value={sessionTypeFilter}
+                    onChange={(e) => {
+                      setPage(1);
+                      const next = e.target.value;
+                      setSessionTypeFilter(next);
+                      if (next !== "MANUAL_ACTIVITY") setManualKindFilter("");
+                    }}
+                    aria-label="Session type"
+                  >
+                    {SESSION_TYPE_FILTER_OPTIONS.map((opt) => (
+                      <option key={opt.value || "all"} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {sessionTypeFilter === "MANUAL_ACTIVITY" && (
+                    <select
+                      className={PRESET_SELECT_CLASS}
+                      value={manualKindFilter}
+                      onChange={(e) => {
+                        setPage(1);
+                        setManualKindFilter(e.target.value);
+                      }}
+                      aria-label="Manual session kind"
+                    >
+                      {MANUAL_KIND_FILTER_OPTIONS.map((opt) => (
+                        <option key={opt.value || "all-manual"} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Input
@@ -503,8 +569,11 @@ export default function AdminSessions() {
                         <td className="p-3 align-middle">
                           <SimBadge sim={r.sim} size="md" />
                         </td>
-                        <td className="p-3 align-middle text-xs text-muted-foreground">
-                          {r.sessionType ?? "—"}
+                        <td className="p-3 align-middle">
+                          <SessionTypeTag
+                            sessionType={r.sessionType}
+                            manualSessionKind={r.manualSessionKind}
+                          />
                         </td>
                         <td className="p-3 align-middle">
                           <div className="font-medium">{formatTrackName(r.track)}</div>

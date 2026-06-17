@@ -47,6 +47,7 @@ type ProfileViewProps = {
     total: number;
     items: RaceHistoryPageResult["items"];
     loading: boolean;
+    fetching?: boolean;
     onPageChange: (page: number) => void;
   };
   /** Set when GET .../race-history returned 403 for this viewer. */
@@ -110,6 +111,7 @@ export function ProfileView({
   const raceHistoryPageSize = raceHistoryPagination?.limit ?? 6;
   const raceHistoryTotalPages = raceHistoryPagination?.totalPages ?? 1;
   const raceHistoryLoading = raceHistoryPagination?.loading ?? false;
+  const raceHistoryFetching = raceHistoryPagination?.fetching ?? false;
   const raceHistoryRange =
     raceHistoryTotal === 0
       ? null
@@ -264,7 +266,7 @@ export function ProfileView({
                     ? {
                         page: raceHistoryPage,
                         totalPages: raceHistoryTotalPages,
-                        disabled: raceHistoryLoading,
+                        disabled: raceHistoryFetching,
                         onPageChange: raceHistoryPagination.onPageChange,
                         total: raceHistoryTotal,
                       }

@@ -4,6 +4,7 @@ import { ProRequiredError } from "./errors";
 import { emitProRequiredEvent } from "./fetchClient";
 
 vi.mock("./config", () => ({
+  getApiBase: () => "http://api.test",
   API_BASE: "http://api.test",
 }));
 

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, Plus, Upload, PenLine } from "lucide-react";
 import HeaderNavLinks from "./HeaderNavLinks";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import { getAccountMenuItemsForUser } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import AuthActionsPlaceholder from "./AuthActionsPlaceholder";
@@ -13,9 +14,10 @@ type MobileNavDrawerProps = {
 
 export default function MobileNavDrawer({ onClose }: MobileNavDrawerProps) {
   const { user, loading } = useAuth();
+  const { isNative } = usePlatform();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const accountItems = user
-    ? getAccountMenuItemsForUser(user.role === "ADMIN")
+    ? getAccountMenuItemsForUser(user.role === "ADMIN", isNative)
     : [];
 
   return (

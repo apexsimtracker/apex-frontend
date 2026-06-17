@@ -16,7 +16,7 @@ import {
 import { apiGet, resolveApiUrl } from "@/lib/api";
 import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
-import { COMPANY_NAME } from "@/lib/siteMeta";
+import { COMPANY_NAME, publicSessionUrl } from "@/lib/siteMeta";
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -413,7 +413,7 @@ export default function ActivityDetail() {
                 if (typeof navigator !== "undefined" && navigator.share && id) {
                   navigator.share({
                     title: `${activity.track} – ${activity.userName}`,
-                    url: window.location.href,
+                    url: publicSessionUrl(id),
                   }).catch(() => {});
                 }
               }}

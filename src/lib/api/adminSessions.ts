@@ -13,6 +13,7 @@ export type AdminSessionListRow = {
   track: string;
   car: string;
   sessionType: string | null;
+  manualSessionKind: string | null;
   ingestSource: string | null;
   challengeId: string | null;
   challengeTitle: string | null;
@@ -40,6 +41,8 @@ export type AdminSessionListParams = {
   missingTelemetry?: boolean;
   maxLapMs?: number;
   multipleBestLaps?: boolean;
+  sessionType?: string;
+  manualSessionKind?: string;
 };
 
 export async function fetchAdminSessionList(
@@ -66,6 +69,10 @@ export async function fetchAdminSessionList(
   if (params?.missingTelemetry) sp.set("missingTelemetry", "true");
   if (params?.maxLapMs != null) sp.set("maxLapMs", String(params.maxLapMs));
   if (params?.multipleBestLaps) sp.set("multipleBestLaps", "true");
+  if (params?.sessionType?.trim()) sp.set("sessionType", params.sessionType.trim());
+  if (params?.manualSessionKind?.trim()) {
+    sp.set("manualSessionKind", params.manualSessionKind.trim());
+  }
   const qs = sp.toString();
   return fetchApi("GET", `/api/admin/sessions${qs ? `?${qs}` : ""}`, undefined, false);
 }

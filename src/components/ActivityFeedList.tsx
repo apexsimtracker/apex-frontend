@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 import ActivityCard, { type SessionPatch } from "@/components/ActivityCard";
 import WeekendGroupHeader from "@/components/WeekendGroupHeader";
-import {
-  groupSessionsByWeekend,
-  getWeekendFeedItemKey,
-} from "@/lib/groupSessionsByWeekend";
+import type { ActivityFeedItem } from "@/lib/api/activityBilling";
 import type { SessionItem } from "@/lib/groupSessions";
 
 type ActivityOwner = {
@@ -21,6 +18,15 @@ export type ActivityFeedSession = SessionItem & {
   owner?: ActivityOwner;
   carName?: string | null;
 };
+
+function getActivityFeedItemKey(item: ActivityFeedItem): string {
+  if (item.type === "standalone") {
+    const session = item.session as { id?: string };
+    return `standalone-${session.id ?? "unknown"}`;
+  }
+  const g = item.group;
+  return `weekend-${g.authorId}-${g.trackKey}-${g.lastSessionAt}`;
+}
 
 function timeAgo(createdAt: string | Date): string {
   const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
@@ -128,7 +134,8 @@ function renderActivityCard(
 }
 
 export type ActivityFeedListProps = {
-  sessions: ActivityFeedSession[];
+  /** Server-grouped feed items (weekend groups + standalone sessions). */
+  items: ActivityFeedItem[];
   onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
   /** When true, wrap each card in a Link to session detail (Sessions page). */
   linkCards?: boolean;
@@ -136,21 +143,17 @@ export type ActivityFeedListProps = {
 };
 
 export default function ActivityFeedList({
-  sessions,
+  items,
   onSessionPatch,
   linkCards = false,
   currentUser,
 }: ActivityFeedListProps) {
-  // Weekend groups are computed on loaded sessions only (infinite-query pages). A weekend
-  // split across "Load more" may show incomplete headers until the next page is fetched.
-  const items = groupSessionsByWeekend(sessions);
-
   return (
     <>
       {items.map((item) => {
         if (item.type === "standalone") {
           return (
-            <div key={getWeekendFeedItemKey(item)}>
+            <div key={getActivityFeedItemKey(item)}>
               {renderActivityCard(item.session as ActivityFeedSession, {
                 onSessionPatch,
                 linkCards,
@@ -161,17 +164,20 @@ export default function ActivityFeedList({
         }
 
         return (
-          <div key={getWeekendFeedItemKey(item)} className="mb-2">
+          <div key={getActivityFeedItemKey(item)} className="mb-2">
             <WeekendGroupHeader group={item.group} />
-            {item.group.sessions.map((session) => (
-              <div key={session.id}>
-                {renderActivityCard(session as ActivityFeedSession, {
-                  onSessionPatch,
-                  linkCards,
-                  currentUser,
-                })}
-              </div>
-            ))}
+            {item.group.sessions.map((session) => {
+              const s = session as ActivityFeedSession;
+              return (
+                <div key={s.id}>
+                  {renderActivityCard(s, {
+                    onSessionPatch,
+                    linkCards,
+                    currentUser,
+                  })}
+                </div>
+              );
+            })}
           </div>
         );
       })}

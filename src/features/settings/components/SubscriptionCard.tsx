@@ -9,6 +9,7 @@ import {
   type BillingEntitlementStatus,
 } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
+import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBillingPlans } from "@/lib/api";
 
@@ -32,7 +33,7 @@ export function SubscriptionCard() {
   const portalMutation = useMutation({
     mutationFn: async () => {
       const { url } = await createBillingPortalSession();
-      window.location.assign(url);
+      await openExternalUrl(url);
       return url;
     },
   });

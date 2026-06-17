@@ -2,6 +2,7 @@ import "./global.css";
 
 import { createRoot } from "react-dom/client";
 import App from "./App";
+import { initNativeShell } from "./lib/capacitor/initNativeShell";
 
 declare global {
   interface Window {
@@ -22,7 +23,8 @@ async function clearStaleCaches(): Promise<void> {
 }
 
 window.__APEX_MOUNTED__ = false;
-clearStaleCaches().then(() => {
+clearStaleCaches().then(async () => {
   createRoot(document.getElementById("root")!).render(<App />);
   window.__APEX_MOUNTED__ = true;
+  await initNativeShell();
 });

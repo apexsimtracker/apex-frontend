@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSessionShareText,
   calcConsistencyScore,
   sanitizeLapTimesForConsistency,
 } from "./sessionShareText";
@@ -68,5 +69,32 @@ describe("calcConsistencyScore", () => {
       100_000,
       100_100,
     ]);
+  });
+});
+
+describe("buildSessionShareText", () => {
+  it("uses Sprint label for SPRINT telemetry sessions", () => {
+    const text = buildSessionShareText({
+      sessionType: "SPRINT",
+      trackName: "Monza",
+      carName: "Ferrari",
+      lapCount: 10,
+      bestLapMs: 90_000,
+      laps: [{ timeMs: 90_000 }, { timeMs: 90_100 }, { timeMs: 90_200 }],
+    });
+    expect(text.split("\n")[0]).toBe("Apex — Sprint @ Monza");
+  });
+
+  it("uses manualSessionKind label for MANUAL_ACTIVITY rows", () => {
+    const text = buildSessionShareText({
+      sessionType: "MANUAL_ACTIVITY",
+      manualSessionKind: "QUALIFY",
+      trackName: "Spa",
+      carName: "GT3",
+      lapCount: 5,
+      bestLapMs: 120_000,
+      laps: [{ timeMs: 120_000 }, { timeMs: 120_500 }, { timeMs: 121_000 }],
+    });
+    expect(text.split("\n")[0]).toMatch(/^Apex — Qualifying @ /);
   });
 });

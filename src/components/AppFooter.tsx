@@ -2,13 +2,14 @@ import { Link, useLocation } from "react-router-dom";
 import { APP_VERSION, SUPPORT_EMAIL } from "@/lib/appConfig";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import {
   FOOTER_TAGLINE,
   footerAuthenticatedAccountLinks,
   footerCompanyLinks,
   footerGuestAccountLinks,
   footerLegalLinks,
-  footerProductLinks,
+  getFooterProductLinks,
 } from "@/config/navigation";
 
 const footerLinkClass =
@@ -20,10 +21,13 @@ const footerHeadingClass =
 export default function AppFooter() {
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
+  const { isNative } = usePlatform();
 
   if (pathname.startsWith("/admin")) {
     return null;
   }
+
+  const productLinks = getFooterProductLinks(isNative);
 
   const accountLinks =
     loading ? [] : user ? footerAuthenticatedAccountLinks : footerGuestAccountLinks;
@@ -57,7 +61,7 @@ export default function AppFooter() {
           <div>
             <h2 className={footerHeadingClass}>Product</h2>
             <ul className="space-y-2">
-              {footerProductLinks.map((link) => (
+              {productLinks.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} className={footerLinkClass}>
                     {link.label}

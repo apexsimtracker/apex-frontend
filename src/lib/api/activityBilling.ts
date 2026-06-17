@@ -7,11 +7,15 @@ export type SessionsFilterType = "all" | "telemetry" | "manual";
 /** Default page size for GET /api/activity (must match server default). */
 export const ACTIVITY_FEED_DEFAULT_LIMIT = 5;
 
+/** Home feed first paint: cap hydrated sessions when weekends are session-heavy. */
+export const ACTIVITY_FEED_INITIAL_MAX_SESSIONS = 8;
+
 export type ActivityFeedPageResult = {
   items: unknown[];
   page: number;
   limit: number;
   hasMore: boolean;
+  nextGroupOffset?: number;
 };
 
 function feedToNumber(v: unknown): number | null {
@@ -23,7 +27,7 @@ function feedToNumber(v: unknown): number | null {
   return null;
 }
 
-/** Normalize one feed session item (GET /api/activity items). */
+/** Normalize one feed session post (nested in weekend groups or standalone). */
 export function normalizeFeedSession(item: unknown): unknown {
   if (!item || typeof item !== "object") return item;
   const outer = item as Record<string, unknown>;
@@ -84,6 +88,50 @@ export function normalizeFeedSession(item: unknown): unknown {
   return merged;
 }
 
+export type ActivityFeedWeekendGroup = {
+  trackKey: string;
+  trackName: string;
+  date: string;
+  sessions: unknown[];
+  hasRace: boolean;
+  hasQualifying: boolean;
+  hasPractice: boolean;
+  lastSessionAt: string;
+  weekendSummary: string;
+  authorId: string;
+};
+
+export type ActivityFeedItem =
+  | { type: "weekend"; group: ActivityFeedWeekendGroup }
+  | { type: "standalone"; session: unknown };
+
+/** Normalize one activity feed item (weekend group or standalone session). */
+export function normalizeActivityFeedItem(item: unknown): ActivityFeedItem | unknown {
+  if (!item || typeof item !== "object") return item;
+  const rec = item as Record<string, unknown>;
+
+  if (rec.type === "weekend" && rec.group && typeof rec.group === "object") {
+    const group = rec.group as Record<string, unknown>;
+    const sessions = Array.isArray(group.sessions)
+      ? group.sessions.map(normalizeFeedSession)
+      : [];
+    return {
+      type: "weekend" as const,
+      group: { ...group, sessions } as ActivityFeedWeekendGroup,
+    };
+  }
+
+  if (rec.type === "standalone" && rec.session) {
+    return {
+      type: "standalone" as const,
+      session: normalizeFeedSession(rec.session),
+    };
+  }
+
+  // Legacy flat session shape (pre-grouping API)
+  return normalizeFeedSession(item);
+}
+
 /**
  * Paginated activity feed (GET /api/activity).
  */
@@ -109,7 +157,7 @@ export async function getActivityFeedPage(options: {
 
   const items = Array.isArray(raw?.items) ? raw.items : [];
   return {
-    items: items.map(normalizeFeedSession),
+    items: items.map(normalizeActivityFeedItem),
     page: typeof raw?.page === "number" ? raw.page : page,
     limit: typeof raw?.limit === "number" ? raw.limit : limit,
     hasMore: Boolean(raw?.hasMore),
@@ -124,6 +172,8 @@ export async function getActivityHomeFeedPage(options: {
   type?: SessionsFilterType;
   page?: number;
   limit?: number;
+  groupOffset?: number;
+  maxSessions?: number;
 }): Promise<ActivityFeedPageResult> {
   const type = options.type ?? "all";
   const page = options.page ?? 1;
@@ -133,19 +183,28 @@ export async function getActivityHomeFeedPage(options: {
     page: String(page),
     limit: String(limit),
   });
+  if (options.groupOffset != null && options.groupOffset > 0) {
+    q.set("groupOffset", String(options.groupOffset));
+  }
+  if (options.maxSessions != null && options.maxSessions > 0) {
+    q.set("maxSessions", String(options.maxSessions));
+  }
   const raw = await apiGet<{
     items?: unknown[];
     page?: number;
     limit?: number;
     hasMore?: boolean;
+    nextGroupOffset?: number;
   }>(`/api/activity/home?${q.toString()}`);
 
   const items = Array.isArray(raw?.items) ? raw.items : [];
   return {
-    items: items.map(normalizeFeedSession),
+    items: items.map(normalizeActivityFeedItem),
     page: typeof raw?.page === "number" ? raw.page : page,
     limit: typeof raw?.limit === "number" ? raw.limit : limit,
     hasMore: Boolean(raw?.hasMore),
+    nextGroupOffset:
+      typeof raw?.nextGroupOffset === "number" ? raw.nextGroupOffset : undefined,
   };
 }
 

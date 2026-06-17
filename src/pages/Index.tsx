@@ -13,13 +13,15 @@ import {
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   getActivityHomeFeedPage,
   ACTIVITY_FEED_DEFAULT_LIMIT,
+  ACTIVITY_FEED_INITIAL_MAX_SESSIONS,
   getProfileHomeWeekly,
   getProfileTrendInsight,
   type ActivityFeedPageResult,
+  type ActivityFeedItem,
   type Discussion,
 } from "@/lib/api";
 import type { InfiniteData } from "@tanstack/react-query";
-import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
+import { patchActivityFeedInfiniteData, flattenFeedItemSessions } from "@/lib/activityFeedCache";
 import type { SessionItem } from "@/lib/groupSessions";
 import GoalsBar from "@/components/GoalsBar";
 import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
@@ -36,6 +38,11 @@ import { isRaceKind } from "@/lib/sessionKind";
 const HOME_PATH = "/";
 const HOME_TITLE = `Home | ${COMPANY_NAME}`;
 const HOME_DESCRIPTION = `Your signed-in ${COMPANY_NAME} feed: activity, weekly goals, sessions, leaderboards, challenges, and community.`;
+
+type HomeActivityFeedPageParam = {
+  groupOffset: number;
+  maxSessions?: number;
+};
 
 const HOME_DISCUSSIONS_QUERY_KEY = [
   "discussions",
@@ -128,24 +135,43 @@ export default function Index() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<
+    ActivityFeedPageResult,
+    Error,
+    InfiniteData<ActivityFeedPageResult>,
+    typeof homeActivityFeedQueryKey,
+    HomeActivityFeedPageParam
+  >({
     queryKey: homeActivityFeedQueryKey,
-    queryFn: ({ pageParam }) =>
-      getActivityHomeFeedPage({
+    queryFn: ({ pageParam }) => {
+      const param = pageParam as HomeActivityFeedPageParam;
+      return getActivityHomeFeedPage({
         type: "all",
-        page: pageParam as number,
+        groupOffset: param.groupOffset,
         limit: ACTIVITY_FEED_DEFAULT_LIMIT,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+        maxSessions: param.maxSessions,
+      });
+    },
+    initialPageParam: {
+      groupOffset: 0,
+      maxSessions: ACTIVITY_FEED_INITIAL_MAX_SESSIONS,
+    } satisfies HomeActivityFeedPageParam,
+    getNextPageParam: (lastPage): HomeActivityFeedPageParam | undefined =>
+      lastPage.hasMore
+        ? { groupOffset: lastPage.nextGroupOffset ?? 0 }
+        : undefined,
     placeholderData: (previousData) => previousData,
     enabled: Boolean(user),
   });
 
   const activity = useMemo(
-    () =>
-      (activityPages?.pages.flatMap((p) => p.items) ?? []) as RawActivityItem[],
+    () => (activityPages?.pages.flatMap((p) => p.items) ?? []) as ActivityFeedItem[],
     [activityPages]
+  );
+
+  const feedSessions = useMemo(
+    () => flattenFeedItemSessions(activity) as RawActivityItem[],
+    [activity]
   );
 
   const profileSummaryKey = ownedProfileUserKey(user);
@@ -288,10 +314,10 @@ export default function Index() {
     const startThisWeek = now - weekMs;
     const startPrevWeek = now - 2 * weekMs;
 
-    const thisWeek = activity.filter(
+    const thisWeek = feedSessions.filter(
       (i) => new Date(i.createdAt).getTime() >= startThisWeek,
     );
-    const prevWeek = activity.filter((i) => {
+    const prevWeek = feedSessions.filter((i) => {
       const t = new Date(i.createdAt).getTime();
       return t >= startPrevWeek && t < startThisWeek;
     });
@@ -325,7 +351,7 @@ export default function Index() {
       lapsDelta,
       trackTimeDelta,
     };
-  }, [activity, profileHomeWeekly?.weeklySnapshot, user?.id]);
+  }, [feedSessions, profileHomeWeekly?.weeklySnapshot, user?.id]);
 
   const weeklySnapshotLoading = Boolean(user?.id) && profileHomeWeeklyPending;
 
@@ -335,7 +361,7 @@ export default function Index() {
     const weekMs = 7 * 24 * 60 * 60 * 1000;
     const startThisWeek = now - weekMs;
 
-    const thisWeek = activity.filter(
+    const thisWeek = feedSessions.filter(
       (i) => new Date(i.createdAt).getTime() >= startThisWeek
     );
 
@@ -356,7 +382,7 @@ export default function Index() {
     ).length;
     const laps = thisWeek.reduce((sum, s) => sum + (s.lapCount ?? 0), 0);
     return { races, podiums, laps };
-  }, [activity]);
+  }, [feedSessions]);
 
   const goalsForBar = useMemo(() => {
     if (profileWeeklyGoals) {
@@ -496,7 +522,7 @@ export default function Index() {
               )}
               {!error && !feedError && (
                 <ActivityFeedList
-                  sessions={activity as RawActivityItem[]}
+                  items={activity}
                   currentUser={user ?? null}
                   onSessionPatch={(id, patch) => {
                     queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import AppLoadingScreen from "@/components/AppLoadingScreen";
@@ -154,7 +154,11 @@ export default function Profile() {
     enabled: Boolean(user),
   });
 
-  const { data: raceHistoryData, isPending: raceHistoryLoading } = useQuery({
+  const {
+    data: raceHistoryData,
+    isPending: raceHistoryLoading,
+    isFetching: raceHistoryFetching,
+  } = useQuery({
     queryKey: profileKeys.raceHistory(profileUserKey, raceHistoryPage),
     queryFn: () =>
       getProfileRaceHistory({
@@ -162,6 +166,7 @@ export default function Profile() {
         limit: RACE_HISTORY_PAGE_SIZE,
       }),
     enabled: Boolean(user),
+    placeholderData: (previousData) => previousData,
   });
 
   const { data: publicPreview } = useQuery({
@@ -247,6 +252,8 @@ export default function Profile() {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   }, [avatarPreview]);
 
+  const navigate = useNavigate();
+
   const handleSignOut = async () => {
     try {
       await authLogout();
@@ -254,7 +261,7 @@ export default function Profile() {
       // Server revoke is best-effort; always clear local credentials.
     }
     clearToken();
-    window.location.href = "/login";
+    navigate("/login", { replace: true });
   };
 
   const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
@@ -463,6 +470,7 @@ export default function Profile() {
           total: raceHistoryData?.total ?? 0,
           items: raceHistoryData?.items ?? [],
           loading: raceHistoryLoading,
+          fetching: raceHistoryFetching,
           onPageChange: setRaceHistoryPage,
         }}
       />

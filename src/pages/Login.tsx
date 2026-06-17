@@ -63,6 +63,7 @@ export default function Login() {
           type: "server",
           message: "No token returned. Please try again.",
         });
+        setLoading(false);
         return;
       }
       localStorage.setItem("apex_token", token);
@@ -82,11 +83,13 @@ export default function Login() {
           message:
             meErr instanceof Error ? meErr.message : "Could not load your session. Please try again.",
         });
+        setLoading(false);
         return;
       }
       window.dispatchEvent(new Event("apex:auth"));
       const returnTo = getSafeReturnPath(authRedirect.from, "/profile");
       navigate(returnTo, { replace: true });
+      return;
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setEmailNotVerified(true);
@@ -106,7 +109,6 @@ export default function Login() {
           message: err instanceof Error ? err.message : "Login failed.",
         });
       }
-    } finally {
       setLoading(false);
     }
   }
@@ -120,7 +122,11 @@ export default function Login() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="w-full space-y-4"
+          aria-busy={loading || undefined}
+        >
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
           {emailVerifiedMessage && (
             <p className="text-sm text-green-500" role="status">
@@ -221,7 +227,7 @@ export default function Login() {
             </button>
           </div>
 
-          <AuthPrimaryButton type="submit" disabled={loading}>
+          <AuthPrimaryButton type="submit" loading={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </AuthPrimaryButton>
 

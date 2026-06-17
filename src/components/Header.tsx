@@ -16,7 +16,7 @@ export default function Header() {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[hsl(var(--background))]/80 shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-50 select-none border-b border-white/10 bg-[hsl(var(--background))]/80 pt-[env(safe-area-inset-top)] shadow-[0_18px_40px_rgba(0,0,0,0.55)] backdrop-blur-md transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link

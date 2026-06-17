@@ -608,7 +608,8 @@ export default function AdminUserDetail() {
         localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
       }
       persistSessionTokenFromAuthPayload({});
-      window.location.assign("/");
+      window.dispatchEvent(new CustomEvent("apex:auth", { detail: { impersonation: true } }));
+      navigate("/", { replace: true });
     } catch (e) {
       setModError(e instanceof ApiError ? e.message : "Could not start impersonation");
       setImpersonateBusy(false);

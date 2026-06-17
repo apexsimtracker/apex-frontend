@@ -64,7 +64,7 @@ describe("groupSessionsByWeekend", () => {
 
     const result = groupSessionsByWeekend(sessions);
     expect(result).toHaveLength(2);
-    expect(result.every((r) => r.type === "weekend")).toBe(true);
+    expect(result.every((r) => r.type === "standalone")).toBe(true);
   });
 
   it("starts new group after complete P+Q+R cycle", () => {
@@ -115,9 +115,9 @@ describe("groupSessionsByWeekend", () => {
 
     const result = groupSessionsByWeekend(sessions);
     expect(result).toHaveLength(2);
-    expect(result.every((r) => r.type === "weekend")).toBe(true);
-    if (result[0].type === "weekend" && result[1].type === "weekend") {
-      expect(result[0].group.authorId).not.toBe(result[1].group.authorId);
+    expect(result.every((r) => r.type === "standalone")).toBe(true);
+    if (result[0].type === "standalone" && result[1].type === "standalone") {
+      expect(result[0].session.authorId).not.toBe(result[1].session.authorId);
     }
   });
 
@@ -131,6 +131,12 @@ describe("groupSessionsByWeekend", () => {
     const result = groupSessionsByWeekend(sessions);
     expect(result).toHaveLength(3);
     expect(result.every((r) => r.type === "standalone")).toBe(true);
+  });
+
+  it("emits single session as standalone (no weekend header)", () => {
+    const result = groupSessionsByWeekend([createSession("solo")]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.type).toBe("standalone");
   });
 
   it("shows P + R pills only when practice and race exist without qual", () => {
@@ -202,11 +208,7 @@ describe("groupSessionsByWeekend", () => {
 
     const result = groupSessionsByWeekend(sessions);
     expect(result).toHaveLength(2);
-    expect(result.every((r) => r.type === "weekend")).toBe(true);
-    if (result[0].type === "weekend" && result[1].type === "weekend") {
-      expect(result[0].group.sessions).toHaveLength(1);
-      expect(result[1].group.sessions).toHaveLength(1);
-    }
+    expect(result.every((r) => r.type === "standalone")).toBe(true);
   });
 
   it("merges track aliases (spa vs Spa-Francorchamps) within 48h", () => {
@@ -252,7 +254,7 @@ describe("groupSessionsByWeekend", () => {
 
     const result = groupSessionsByWeekend(sessions);
     expect(result).toHaveLength(2);
-    expect(result.every((r) => r.type === "weekend")).toBe(true);
+    expect(result.every((r) => r.type === "standalone")).toBe(true);
   });
 
   it("treats missing authorId as standalone", () => {

@@ -1,6 +1,8 @@
 /**
  * Race weekend grouping for activity feeds (Fix 5).
  * Groups sessions by author + track + car within a 48-hour window; breaks after P+Q+R cycle.
+ *
+ * @deprecated Feed pages use server-side grouping from GET /api/activity. Kept for unit tests only.
  */
 
 import { formatTrackName } from "./tracks";
@@ -238,16 +240,22 @@ export function groupSessionsByWeekend(sessions: SessionItem[]): WeekendFeedItem
     }
   }
 
-  const items: WeekendFeedItem[] = [
-    ...allGroups.map((g) => ({
-      type: "weekend" as const,
-      group: finalizeGroup(g),
-    })),
-    ...standalones.map((session) => ({
-      type: "standalone" as const,
-      session,
-    })),
-  ];
+  const items: WeekendFeedItem[] = [];
+
+  for (const g of allGroups) {
+    if (g.sessions.length === 1) {
+      items.push({ type: "standalone", session: g.sessions[0]! });
+    } else {
+      items.push({
+        type: "weekend" as const,
+        group: finalizeGroup(g),
+      });
+    }
+  }
+
+  for (const session of standalones) {
+    items.push({ type: "standalone", session });
+  }
 
   items.sort((a, b) => {
     const timeA =

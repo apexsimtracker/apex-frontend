@@ -1,22 +1,34 @@
 ---
-description: Deploy the app to production using Netlify or Vercel to make the site live
+description: Deploy the Apex SPA to production (Vercel-first)
 globs:
 alwaysApply: true
 ---
 
-Deploying the app to production is powered by either Netlify or Vercel through MCP (Model Context Protocol) integrations:
+# Deploying apex-frontend
 
-**For Netlify:**
+This repo is a **static Vite SPA**. Production API calls go to the **Fastify backend** (`apex` package), configured via `VITE_API_URL` at build time—not to routes inside this frontend repo.
 
-- If the Netlify tools are not available, tell the user to [Connect Netlify MCP](#open-mcp-popover).
-- If the user asks to deploy the app, use the appropriate Netlify MCP tools to deploy the app.
-- Note: Netlify builds the source code on their servers, so while it's good to check if `npm run build` works locally, it's not required.
-- Do not ask user to your any command in the terminal, use the Bash tool when needed.
+## Vercel (primary)
 
-**For Vercel:**
+- **Root directory:** `apex-frontend` when the git root is the monorepo; otherwise project root is this folder.
+- **Build command:** `pnpm build` (or `npm run build`)
+- **Install command:** `pnpm install`
+- **Output directory:** `dist`
+- **Environment:** set `VITE_API_URL` to the production API base URL (no trailing slash) for Production and Preview.
+- **`vercel.json`** at repo root defines SPA rewrites and `no-store` cache headers for `index.html`.
 
-- If the Vercel tools are not available, tell the user to [Connect Vercel MCP](#open-mcp-popover).
-- Vercel deployment should work automatically once connected - simply use the appropriate Vercel MCP tools.
-- Do not ask user to your any command in the terminal, use the Bash tool when needed.
+Use Vercel MCP tools when available. You may run `pnpm build` locally to verify; deployment does not require a Node server from this package.
 
-You can also suggest sharing the [Open Preview](#open-preview), but explain that it won't be a production-ready link.
+## Netlify
+
+Not configured in this repo (no `netlify.toml`). Do not assume Netlify functions or `dist/spa` paths from the old Fusion starter.
+
+## Preview vs production
+
+- Open Preview / `pnpm dev` is for UI review only—not a substitute for setting `VITE_API_URL` on the deployed build.
+- After deploy, smoke-test login, feed, and one authenticated API screen against the real backend.
+
+## Do not
+
+- Deploy expecting `pnpm start` or `dist/server`—those were removed with the Fusion boilerplate.
+- Point `VITE_API_URL` at the Vercel frontend URL; API requests must hit the Fastify host.

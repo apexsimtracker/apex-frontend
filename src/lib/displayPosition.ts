@@ -1,4 +1,4 @@
-import { isQualifyingKind, isRaceKind } from "./sessionKind";
+import { isQualifyingKind, isRaceKind, effectiveQualifyingPosition } from "./sessionKind";
 
 export type DisplayPositionSession = {
   sessionType?: string | null;
@@ -18,7 +18,7 @@ export function getDisplayPosition(session: DisplayPositionSession): string | nu
   }
 
   if (isQualifyingKind(session)) {
-    const qp = session.qualifyingPosition ?? session.position;
+    const qp = effectiveQualifyingPosition(session);
     if (qp != null && qp > 0) return `P${qp}${suffix}`;
   }
 

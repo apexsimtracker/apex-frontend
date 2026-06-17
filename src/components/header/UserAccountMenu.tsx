@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import {
   getAccountMenuItemsForUser,
   type AccountMenuItem,
@@ -56,6 +57,7 @@ function displayNameForUser(user: AuthUser): string {
 
 export default function UserAccountMenu() {
   const { user } = useAuth();
+  const { isNative } = usePlatform();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { signOut, isSigningOut } = useSignOut();
@@ -68,7 +70,7 @@ export default function UserAccountMenu() {
   if (!user) return null;
 
   const name = displayNameForUser(user);
-  const items = getAccountMenuItemsForUser(user.role === "ADMIN");
+  const items = getAccountMenuItemsForUser(user.role === "ADMIN", isNative);
 
   return (
     <DropdownMenu

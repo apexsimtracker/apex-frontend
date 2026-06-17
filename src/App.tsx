@@ -1,7 +1,7 @@
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Header from "./components/Header";
@@ -60,6 +60,7 @@ import AdminBroadcastDetail from "./pages/admin/AdminBroadcastDetail";
 import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
+import { isGuestAuthPath } from "./auth/guestAuthRoutes";
 
 const Profile = lazy(() => import("./pages/Profile"));
 const SessionDetailPage = lazy(() => import("./pages/SessionDetailPage"));
@@ -102,8 +103,12 @@ const queryClient = new QueryClient({
 
 function AppShell() {
   const { loading } = useAuth();
+  const location = useLocation();
+  const onGuestAuthPage = isGuestAuthPath(location.pathname);
 
-  if (loading) {
+  // Keep guest auth forms mounted while the session resolves so fields and button
+  // loading state are not wiped by the global splash screen.
+  if (loading && !onGuestAuthPage) {
     return <AppLoadingScreen />;
   }
 
@@ -111,7 +116,7 @@ function AppShell() {
     <>
       <ScrollToTop />
       <ImpersonationExitFab />
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-background pb-[env(safe-area-inset-bottom)]">
         <Header />
         <ProRequiredBanner />
         <BroadcastBanner />

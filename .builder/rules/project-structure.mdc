@@ -1,0 +1,53 @@
+---
+description: Apex frontend folder conventions and path aliases
+globs:
+alwaysApply: true
+---
+
+# Project structure
+
+Standard **Vite + React** layout at `apex-frontend/` root:
+
+```
+src/           Application source (@/ alias)
+public/        Static files served as /
+index.html     Vite HTML entry
+vite.config.ts Dev :8080, build → dist/, /api proxy
+```
+
+## Path alias
+
+- `@/*` → `src/*` (see `tsconfig.json` and `vite.config.ts`)
+- Example: `import { Header } from "@/components/Header"`
+
+## `src/` breakdown
+
+- **`main.tsx`** — boots React, imports `global.css`
+- **`App.tsx`** — `QueryClientProvider`, `AuthProvider`, routes, `Header` / `AppFooter` shell
+- **`pages/`** — route components; `HomeRoute` switches `Index` vs `PublicHome`
+- **`components/`** — shared UI (`ActivityCard`, `Header`, `profile/*`, `admin/*`, `ui/*`)
+- **`features/`** — optional modules for complex flows (settings, session detail, manual activity)
+- **`lib/`** — `api/` (HTTP client), `validation/`, `groupSessions.ts`, helpers
+- **`auth/`** — route guards only (not login forms—those are under `pages/`)
+- **`contexts/`** — `AuthContext`
+- **`config/`** — `navigation.ts` (nav source of truth)
+
+## API layer
+
+- All HTTP to backend: **`src/lib/api/`**
+- Add endpoints in domain files; export from `src/lib/api/index.ts` when shared
+- Never import from deleted `shared/` or `server/` paths
+
+## Config files (root)
+
+| File | Role |
+|------|------|
+| `tailwind.config.ts` | Scans `./index.html`, `./src/**/*` |
+| `eslint.config.js` | `src/**` = browser; `vite.config.ts` = node |
+| `components.json` | shadcn paths → `src/global.css`, `@/components` |
+| `vercel.json` | SPA hosting |
+
+## Monorepo context
+
+- Backend: sibling **`apex`** (Fastify, port 10000 default)
+- This package: frontend only; no `DATABASE_URL` or Prisma here

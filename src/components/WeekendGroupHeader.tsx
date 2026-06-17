@@ -1,5 +1,5 @@
 import { formatTrackName } from "@/lib/tracks";
-import type { WeekendGroup } from "@/lib/groupSessionsByWeekend";
+import type { ActivityFeedWeekendGroup } from "@/lib/api/activityBilling";
 
 const PILL_STYLES = {
   P: { color: "#888888", background: "rgba(136, 136, 136, 0.18)" },
@@ -8,7 +8,7 @@ const PILL_STYLES = {
 } as const;
 
 type WeekendGroupHeaderProps = {
-  group: WeekendGroup;
+  group: ActivityFeedWeekendGroup;
   className?: string;
 };
 

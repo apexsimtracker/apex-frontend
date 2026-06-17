@@ -7,12 +7,31 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & build
 node_modules
 dist
 dist-ssr
-*.local
 
-# Editor directories and files
+# Environment (secrets — commit only *.example templates)
+.env
+.env.*
+!.env.example
+!.env.e2e.example
+
+# Local overrides (never commit secrets)
+*.local
+.env.e2e.local
+
+# Playwright E2E
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Test / coverage
+coverage/
+
+# Editor & OS
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -24,4 +43,3 @@ dist-ssr
 *.sw?
 
 .config/
-!.env

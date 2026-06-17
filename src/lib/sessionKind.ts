@@ -45,3 +45,18 @@ export function isPracticeKind(session: {
   if (isWarmupKind(session)) return false;
   return st === "PRACTICE" || st === "UNKNOWN" || st === "" || st === "TIME_TRIAL" || st === "TIMETRIAL";
 }
+
+/** Qualifying finish position (qualifyingPosition preferred; legacy rows may use position). */
+export function effectiveQualifyingPosition(session: {
+  sessionType?: string | null;
+  manualSessionKind?: string | null;
+  qualifyingPosition?: number | null;
+  position?: number | null;
+}): number | null {
+  if (!isQualifyingKind(session)) return null;
+  const qp = session.qualifyingPosition;
+  if (qp != null && qp >= 1) return qp;
+  const pos = session.position;
+  if (pos != null && pos >= 1) return pos;
+  return null;
+}

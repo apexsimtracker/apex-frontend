@@ -1,0 +1,52 @@
+---
+description: How the frontend talks to the Apex Fastify API
+globs:
+alwaysApply: true
+---
+
+# API and backend boundary
+
+## Backend
+
+- **Real API:** Fastify app in the **`apex`** repo (not in `apex-frontend`).
+- **Base URL:** `API_BASE` in `src/lib/api/config.ts`
+  - `import.meta.env.VITE_API_URL` or `VITE_APEX_API_BASE_URL`
+  - Dev default: `http://127.0.0.1:10000`
+  - Prod build default if unset: `https://apex-25ft.onrender.com`
+
+## Local development
+
+- `pnpm dev` → Vite **:8080**
+- Requests to **`/api/*`** are proxied to `VITE_DEV_API_PROXY_TARGET` (default `http://127.0.0.1:10000`) via `vite.config.ts`
+- Run the apex backend locally so `/api/auth/me`, feed, sessions, etc. succeed
+
+## Client implementation
+
+- **`fetchApi`** (`src/lib/api/fetchClient.ts`) — central fetch; attaches JWT from `localStorage` key `apex_token`, device id, session token header
+- **401** — triggers `registerAuthExpiredHandler` (wired in `AuthContext`) unless `skipAuthExpiredCheck`
+- **Pro paywall** — `ProRequiredError` / `PRO_REQUIRED_EVENT` for subscription-gated features
+- **Domain modules** — `profile`, `community`, `challenges`, `manualAndUpload`, `adminUsers`, …
+
+## Auth flow
+
+1. Login/signup stores `apex_token` and dispatches `apex:auth`
+2. `AuthProvider` refetches or reads cache for `GET /api/auth/me`
+3. `ProtectedRoute` redirects to `/login` with return path in location state
+4. `AdminRoute` requires `user.role === "ADMIN"`
+
+## Adding an endpoint (frontend side)
+
+1. Add typed function in the appropriate `src/lib/api/<domain>.ts` file
+2. Use `apiGet` / `apiPost` / `fetchApi` — do not scatter raw `fetch` unless there is a strong reason
+3. Export from `index.ts` if used across multiple pages
+4. Consume via TanStack Query in UI with clear `queryKey` and invalidation on mutations
+
+## Do not
+
+- Add Express routes, `server/`, or `shared/api.ts` in this repo
+- Implement DB or secret-key logic in the frontend
+- Assume `DATABASE_URL` or `PORT=8080` env vars apply to this package—they belonged to the removed Fusion server
+
+## Asset URLs
+
+- API-returned paths like `/api/assets/...` → use **`resolveApiUrl()`** from `config.ts` so HTTPS and base URL are correct

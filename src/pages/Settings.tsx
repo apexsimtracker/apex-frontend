@@ -9,6 +9,7 @@ import {
   authLogout,
   updateMe,
   API_BASE,
+  getApiBase,
   changePassword,
   deleteAccount,
   downloadUserDataExport,
@@ -423,9 +424,9 @@ export default function Settings() {
   const envLabel = import.meta.env.MODE === "production" ? "production" : "development";
   const apiHost = (() => {
     try {
-      return new URL(API_BASE).host;
+      return new URL(getApiBase()).host;
     } catch {
-      return API_BASE;
+      return getApiBase();
     }
   })();
 

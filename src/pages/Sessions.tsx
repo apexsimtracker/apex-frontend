@@ -14,6 +14,7 @@ import {
   ACTIVITY_FEED_DEFAULT_LIMIT,
   isNetworkError,
   type ActivityFeedPageResult,
+  type ActivityFeedItem,
   type SessionsFilterType,
 } from "@/lib/api";
 import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
@@ -169,8 +170,7 @@ export default function Sessions() {
   });
 
   const activity = useMemo(
-    () =>
-      (activityPages?.pages.flatMap((p) => p.items) ?? []) as RawActivityItem[],
+    () => (activityPages?.pages.flatMap((p) => p.items) ?? []) as ActivityFeedItem[],
     [activityPages]
   );
 
@@ -345,7 +345,7 @@ export default function Sessions() {
               {!loading && !error && !isEmpty && (
                 <div className="space-y-0">
                   <ActivityFeedList
-                    sessions={activity as RawActivityItem[]}
+                    items={activity}
                     linkCards
                     currentUser={user ?? null}
                     onSessionPatch={(id, patch) => {

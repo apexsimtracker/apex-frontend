@@ -18,6 +18,8 @@ export type NavLinkItem = {
 export type FooterLinkItem = {
   label: string;
   to: string;
+  /** Hidden in Capacitor native shell (e.g. desktop-agent download). */
+  webOnly?: boolean;
 };
 
 export const primaryNavItems: NavLinkItem[] = [
@@ -35,13 +37,15 @@ export type AccountMenuItem = {
   prefetch?: NavPrefetch;
   /** Only shown when user.role === "ADMIN". */
   adminOnly?: boolean;
+  /** Hidden in Capacitor native shell (e.g. desktop-agent download). */
+  webOnly?: boolean;
 };
 
 export const accountMenuItems: AccountMenuItem[] = [
   { label: "Profile", to: "/profile", prefetch: "ownProfile" },
   { label: "Personal bests", to: "/personal-bests" },
   { label: "Settings", to: "/settings" },
-  { label: "Agent", to: "/agent" },
+  { label: "Agent", to: "/agent", webOnly: true },
   { label: "Admin dashboard", to: "/admin", adminOnly: true },
 ];
 
@@ -55,7 +59,7 @@ export const footerProductLinks: FooterLinkItem[] = [
   { label: "Challenges", to: "/challenges" },
   { label: "Leaderboards", to: "/leaderboards" },
   { label: "Pricing", to: "/pricing" },
-  { label: "Agent", to: "/agent" },
+  { label: "Agent", to: "/agent", webOnly: true },
 ];
 
 export const footerGuestAccountLinks: FooterLinkItem[] = [
@@ -82,6 +86,14 @@ export const footerLegalLinks: FooterLinkItem[] = [
 
 export const FOOTER_TAGLINE = "Sim racing performance hub";
 
+function withoutWebOnlyNavItems<T extends { webOnly?: boolean }>(
+  items: T[],
+  isNative: boolean,
+): T[] {
+  if (!isNative) return items;
+  return items.filter((item) => !item.webOnly);
+}
+
 export function getPrimaryNavItems(isAuthenticated: boolean): NavLinkItem[] {
   return primaryNavItems.filter((item) => {
     if (item.audience === "both") return true;
@@ -92,8 +104,14 @@ export function getPrimaryNavItems(isAuthenticated: boolean): NavLinkItem[] {
 
 export function getAccountMenuItemsForUser(
   isAdmin: boolean,
+  isNative = false,
 ): AccountMenuItem[] {
-  return accountMenuItems.filter((item) => !item.adminOnly || isAdmin);
+  const items = accountMenuItems.filter((item) => !item.adminOnly || isAdmin);
+  return withoutWebOnlyNavItems(items, isNative);
+}
+
+export function getFooterProductLinks(isNative = false): FooterLinkItem[] {
+  return withoutWebOnlyNavItems(footerProductLinks, isNative);
 }
 
 export function isNavPathActive(

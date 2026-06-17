@@ -33,7 +33,7 @@ function NavLinkDesktop({
       onMouseEnter={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
       onFocus={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
       className={cn(
-        "relative text-sm font-medium transition-colors",
+        "relative select-none text-sm font-medium transition-colors",
         active ? "text-white" : "text-foreground/70 hover:text-foreground",
       )}
     >
@@ -61,7 +61,7 @@ function NavLinkMobile({
       onFocus={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
       onClick={onNavigate}
       className={cn(
-        "block rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+        "block select-none rounded-lg px-4 py-2 text-sm font-medium transition-colors",
         active
           ? "bg-secondary/70 text-white"
           : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground",

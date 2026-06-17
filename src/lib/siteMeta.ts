@@ -16,6 +16,11 @@ export function defaultOgImageAbsolute(): string {
  * Ensures Open Graph / Twitter image URLs are absolute (required by crawlers).
  * Accepts full https URLs, protocol-relative URLs, or site-root paths like `/logo.png`.
  */
+/** Public web URL for a session detail page (share links, deep links). */
+export function publicSessionUrl(sessionId: string): string {
+  return `${SITE_ORIGIN}/sessions/${sessionId}`;
+}
+
 export function absoluteUrlForOg(url: string | null | undefined): string | undefined {
   if (url == null) return undefined;
   const t = String(url).trim();

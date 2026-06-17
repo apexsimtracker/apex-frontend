@@ -1,9 +1,38 @@
 ---
-description: Keep component and files small
+description: Keep React UI modular under src/
 globs:
 alwaysApply: true
 ---
 
-As development goes, break down complex UI into smaller components, avoiding very nested JSX trees.
-Also, even within a single page (route), feel free to create auxiliary extra smaller files to make the page more maintenable.
-Breaking big components into multiple files will help down the road when the user asks for changes or refactors.
+# UI organization
+
+As the app grows, **split large UI** instead of growing single files.
+
+## Where code lives
+
+| Kind | Location |
+|------|----------|
+| Route screens | `src/pages/` (and `src/pages/admin/` for admin) |
+| Reusable widgets | `src/components/` |
+| Feature-specific logic + UI | `src/features/<feature>/` (e.g. `settings/`, `session-detail/`) |
+| Design-system primitives | `src/components/ui/` |
+| Header / nav / footer links | `src/config/navigation.ts` + `src/components/header/` |
+
+## Practices
+
+- Avoid deep JSX trees in `pages/*`; extract sections into `components/` or `features/`.
+- Co-locate hooks and small presentational pieces with the feature (`features/settings/hooks/`, etc.).
+- Prefer **one route component per file** in `pages/`.
+- Use `cn()` from `@/lib/utils` for conditional Tailwind classes.
+- Global theme tokens live in `src/global.css`; do not duplicate color magic strings across pages when a token exists.
+
+## Routing
+
+- Register new paths in `src/App.tsx` **above** the `*` NotFound route.
+- Use `ProtectedRoute`, `GuestOnlyRoute`, or `AdminRoute` from `src/auth/` when access control applies.
+- Lazy-load heavy pages the same way as `Profile`, `Settings`, `SessionDetailPage`.
+
+## Do not
+
+- Reintroduce a `client/` subdirectory—`@/` maps to `src/`.
+- Add Express or local `/api` handlers in this repo; call the Fastify backend via `@/lib/api`.

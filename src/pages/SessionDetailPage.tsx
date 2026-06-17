@@ -20,6 +20,7 @@ import {
   resolveSessionFields,
   sanitizeLapTimesForConsistency,
 } from "@/lib/sessionShareText";
+import { publicSessionUrl } from "@/lib/siteMeta";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
 import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/displayPosition";
@@ -280,7 +281,18 @@ export type SessionSource = "TELEMETRY" | "MANUAL_ACTIVITY" | "AGENT" | string;
 
 export type SessionDetail = {
   id: string;
-  sessionType?: "PRACTICE" | "RACE" | "QUALIFY" | "UNKNOWN" | null;
+  sessionType?:
+    | "PRACTICE"
+    | "RACE"
+    | "SPRINT"
+    | "QUALIFY"
+    | "QUALIFYING"
+    | "MANUAL_ACTIVITY"
+    | "WARMUP"
+    | "TIME_TRIAL"
+    | "UNKNOWN"
+    | string
+    | null;
   sim?: string | null;
   game?: string | null;
   track: string | null;
@@ -356,10 +368,7 @@ export default function SessionDetailPage() {
   const session = sessionPayload?.session ?? null;
   const lapsData = sessionPayload?.lapsData ?? null;
 
-  const shareUrl = useMemo(() => {
-    if (!id || typeof window === "undefined") return "";
-    return `${window.location.origin}/sessions/${id}`;
-  }, [id]);
+  const shareUrl = useMemo(() => (id ? publicSessionUrl(id) : ""), [id]);
   const defaultTelemetryLapNumber = sessionPayload?.defaultTelemetryLapNumber ?? null;
   const telemetry = sessionPayload?.telemetry ?? null;
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked === true;

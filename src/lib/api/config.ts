@@ -2,20 +2,50 @@
  * API base URL resolution (unchanged from monolithic `api.ts`).
  * Relevant env vars: `VITE_API_URL`, `VITE_APEX_API_BASE_URL` (see Vite `import.meta.env`), `import.meta.env.PROD`.
  */
+import { Capacitor } from "@capacitor/core";
+
 /** Production backend (Render). Used when VITE_API_URL is unset in production builds. */
 const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 
 /** Default local API port (matches apex `PORT` default 10000, not the Vite dev port 8080). */
 const DEFAULT_DEV_API = "http://127.0.0.1:10000";
 
-/** Single source of truth for API base: VITE_API_URL, VITE_APEX_API_BASE_URL, or dev/prod defaults. */
-const API_BASE =
-  import.meta.env.VITE_API_URL ??
-  // Back-compat: some envs use this name in local dev.
-  import.meta.env.VITE_APEX_API_BASE_URL ??
-  (import.meta.env.PROD ? DEFAULT_PROD_API : DEFAULT_DEV_API);
+function resolveInitialApiBase(): string {
+  return (
+    import.meta.env.VITE_API_URL ??
+    // Back-compat: some envs use this name in local dev.
+    import.meta.env.VITE_APEX_API_BASE_URL ??
+    (import.meta.env.PROD ? DEFAULT_PROD_API : DEFAULT_DEV_API)
+  );
+}
 
-export { API_BASE };
+/** Android emulator: 127.0.0.1 is the emulator itself; 10.0.2.2 is the host Mac. */
+function apiBaseForPlatform(base: string): string {
+  if (
+    typeof window !== "undefined" &&
+    Capacitor.isNativePlatform() &&
+    Capacitor.getPlatform() === "android" &&
+    /\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(base)
+  ) {
+    return base.replace(/127\.0\.0\.1|localhost/g, "10.0.2.2");
+  }
+  return base;
+}
+
+/** Resolved at call time so Capacitor platform is available (Android 10.0.2.2 remap). */
+export function getApiBase(): string {
+  return apiBaseForPlatform(resolveInitialApiBase());
+}
+
+/** @deprecated Prefer `getApiBase()` — kept for `${API_BASE}` template compatibility. */
+export const API_BASE = {
+  toString(): string {
+    return getApiBase();
+  },
+  valueOf(): string {
+    return getApiBase();
+  },
+} as unknown as string;
 
 /** Resolve relative API-served assets (e.g. "/api/assets/...") to absolute URLs. */
 export function resolveApiUrl(url: string | null | undefined): string | null {
@@ -32,7 +62,7 @@ export function resolveApiUrl(url: string | null | undefined): string | null {
   if (!raw.startsWith("/api/")) return raw;
 
   const base =
-    String(import.meta.env.VITE_APEX_API_BASE_URL ?? "").trim() || API_BASE;
+    String(import.meta.env.VITE_APEX_API_BASE_URL ?? "").trim() || getApiBase();
   let normalizedBase = String(base).trim().replace(/\/+$/, "");
   // Avoid mixed-content avatar loads on HTTPS pages.
   if (/^http:\/\//i.test(normalizedBase)) {

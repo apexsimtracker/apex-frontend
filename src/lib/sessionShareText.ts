@@ -1,6 +1,32 @@
 import { formatLapMs, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
 import { formatSessionType } from "@/lib/sim";
+import {
+  resolveSessionTypeTagKind,
+  SESSION_TYPE_TAG_STYLES,
+  type SessionTypeTagKind,
+} from "@/lib/sessionTypeTag";
+
+const SESSION_KIND_FRIENDLY: Record<SessionTypeTagKind, string> = {
+  RACE: "Race",
+  QUALIFY: "Qualifying",
+  PRACTICE: "Practice",
+  WARMUP: "Warmup",
+  UNKNOWN: "Unknown",
+};
+
+function formatSessionKindLabel(session: {
+  sessionType?: string | null;
+  manualSessionKind?: string | null;
+}): string {
+  const st = (session.sessionType ?? "").trim().toUpperCase();
+  // Manual rows use manualSessionKind; tag kind collapses sprint into race for badges only.
+  if (st === "MANUAL_ACTIVITY") {
+    const kind = resolveSessionTypeTagKind(session);
+    return SESSION_KIND_FRIENDLY[kind] ?? SESSION_TYPE_TAG_STYLES[kind].label;
+  }
+  return formatSessionType(session.sessionType);
+}
 
 function pickFirstString(...candidates: unknown[]): string | null {
   for (const c of candidates) {
@@ -64,6 +90,7 @@ export function calcConsistencyScore(lapTimes: number[]): number | null {
  */
 export type SessionShareFields = {
   sessionType?: string | null;
+  manualSessionKind?: string | null;
   track?: string | null;
   trackName?: string | null;
   car?: string | null;
@@ -161,7 +188,10 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
  */
 export function buildSessionShareText(session: SessionShareFields & Record<string, unknown>): string {
   const resolved = resolveSessionFields(session);
-  const type = formatSessionType(session?.sessionType);
+  const type = formatSessionKindLabel({
+    sessionType: session?.sessionType,
+    manualSessionKind: (session as { manualSessionKind?: string | null }).manualSessionKind,
+  });
   const track = formatTrackName(resolved.track);
   const car =
     resolved.car ??

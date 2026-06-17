@@ -102,6 +102,7 @@ export default function UserProfile() {
   const {
     data: raceHistoryData,
     isPending: raceHistoryLoading,
+    isFetching: raceHistoryFetching,
     error: raceHistoryError,
   } = useQuery({
     queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
@@ -111,6 +112,7 @@ export default function UserProfile() {
         limit: RACE_HISTORY_PAGE_SIZE,
       }),
     enabled: Boolean(id) && viewerHasAccess,
+    placeholderData: (previousData) => previousData,
     retry: (failureCount, err) =>
       !(err instanceof ApiError && (err.status === 404 || err.status === 403)),
   });
@@ -351,6 +353,7 @@ export default function UserProfile() {
                 total: raceHistoryData?.total ?? 0,
                 items: raceHistoryData?.items ?? [],
                 loading: raceHistoryLoading,
+                fetching: raceHistoryFetching,
                 onPageChange: setRaceHistoryPage,
               }
             : undefined

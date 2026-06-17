@@ -65,6 +65,7 @@ export type ProfileSummary = {
     qualiPos: number | null;
     bestLapMs: number | null;
     source?: string | null;
+    manualSessionKind?: string | null;
   }>;
   statsByGame: Array<{
     sim: string;

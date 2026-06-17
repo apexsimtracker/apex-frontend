@@ -8,6 +8,7 @@ import { formatLapMs, formatCarName, formatCompactCount, cn } from "@/lib/utils"
 import { apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
 import { SessionCommentsModal } from "@/components/SessionCommentsModal";
 import { buildSessionShareText } from "@/lib/sessionShareText";
+import { publicSessionUrl } from "@/lib/siteMeta";
 import { getToken } from "@/auth/token";
 import { getSimDisplayName } from "@/lib/sim";
 import { formatTrackName } from "@/lib/tracks";
@@ -586,10 +587,7 @@ export default function ActivityCard(props: ActivityCardProps) {
   const [likePending, setLikePending] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
-  const shareUrl = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return `${window.location.origin}/sessions/${props.id}`;
-  }, [props.id]);
+  const shareUrl = useMemo(() => publicSessionUrl(props.id), [props.id]);
 
   const shareText = useMemo(
     () =>

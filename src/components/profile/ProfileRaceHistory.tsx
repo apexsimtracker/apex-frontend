@@ -1,5 +1,6 @@
 import { CheckCircle } from "lucide-react";
 import SimBadge from "@/components/SimBadge";
+import SessionTypeTag from "@/components/SessionTypeTag";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { formatLapMs, formatCarName, formatTrackName } from "@/lib/utils";
 
@@ -13,7 +14,26 @@ type RaceRow = {
   qualiPos: number | null;
   bestLapMs: number | null;
   source?: string | null;
+  manualSessionKind?: string | null;
 };
+
+function RaceSessionBadges({ race }: { race: RaceRow }) {
+  const isManual = race.source === "MANUAL_ACTIVITY";
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <SessionTypeTag
+        sessionType={race.source}
+        manualSessionKind={race.manualSessionKind}
+      />
+      <SimBadge sim={race.sim} size="md" />
+      {isManual && (
+        <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
+          Manual
+        </span>
+      )}
+    </div>
+  );
+}
 
 type ProfileRaceHistoryProps = {
   raceHistory: RaceRow[];
@@ -95,14 +115,7 @@ export function ProfileRaceHistory({
                     {new Date(race.date).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SimBadge sim={race.sim} size="md" />
-                      {race.source === "MANUAL_ACTIVITY" && (
-                        <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
-                          Manual
-                        </span>
-                      )}
-                    </div>
+                    <RaceSessionBadges race={race} />
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatCarName(race.car)}
@@ -150,13 +163,8 @@ export function ProfileRaceHistory({
             >
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <SimBadge sim={race.sim} size="md" />
-                    {race.source === "MANUAL_ACTIVITY" && (
-                      <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
-                        Manual
-                      </span>
-                    )}
+                  <div className="mb-1">
+                    <RaceSessionBadges race={race} />
                   </div>
                   <p className="text-xs sm:text-sm text-muted-foreground">{new Date(race.date).toLocaleDateString()}</p>
                 </div>
@@ -208,9 +216,9 @@ export function ProfileRaceHistory({
         )}
       </div>
 
-      {pagination && total > 0 && (
+      {pagination && pagination.totalPages > 1 && (
         <div className="mt-6 space-y-3">
-          {range && (
+          {range && total > 0 && (
             <p className="text-center text-xs text-muted-foreground">
               Showing {range.start}–{range.end} of {total}
             </p>
@@ -226,4 +234,3 @@ export function ProfileRaceHistory({
     </>
   );
 }
-

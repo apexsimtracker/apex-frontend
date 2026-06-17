@@ -1,4 +1,4 @@
-import { API_BASE } from "./config";
+import { getApiBase } from "./config";
 import { getOrCreateDeviceId } from "@/auth/deviceId";
 import { APEX_SESSION_TOKEN_KEY } from "@/auth/token";
 import { ApiError, ProRequiredError } from "./errors";
@@ -105,7 +105,7 @@ export async function fetchApi<T>(
   const url =
     path.startsWith("http")
       ? path
-      : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+      : `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
 
   let res: Response;
   try {

@@ -81,10 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     syncTokenFromStorage();
     const onAuth = (event: Event) => {
-      const detail = (event as CustomEvent<{ exitImpersonation?: boolean }>).detail;
-      // Exit impersonation: JWT swap does not need payload decoding; always drop cached /auth/me
-      // so we never render AdminRoute with the impersonated user while the admin token is live.
-      if (detail?.exitImpersonation) {
+      const detail = (
+        event as CustomEvent<{ exitImpersonation?: boolean; impersonation?: boolean }>
+      ).detail;
+      // Impersonation start/exit swaps JWTs without a full reload. Drop every cached query so
+      // billing, settings, activity, etc. from the prior identity cannot leak across the switch.
+      if (detail?.exitImpersonation || detail?.impersonation) {
         syncTokenFromStorage();
         if (!readHasToken()) {
           queryClient.setQueryData(AUTH_ME_QUERY_KEY, null);
@@ -92,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           queryClient.clear();
           return;
         }
-        queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
+        queryClient.clear();
         void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
         return;
       }

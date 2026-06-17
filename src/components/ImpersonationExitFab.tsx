@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +17,11 @@ import {
  * the impersonation JWT is simply abandoned (short TTL). Server-side revocation
  * would need a denylist — out of scope.
  *
- * Uses a full navigation to `/admin/users` (same idea as `window.location.assign` on
- * impersonate start) so TanStack Query and auth state cannot briefly keep the
- * impersonated user while Router navigates.
+ * Uses client-side navigation (WebView-safe). AuthContext clears all TanStack Query caches on
+ * `exitImpersonation` so impersonated-user data cannot leak back to the admin session.
  */
 export default function ImpersonationExitFab() {
+  const navigate = useNavigate();
   const [, bump] = useState(0);
 
   const refresh = useCallback(() => {
@@ -53,7 +54,7 @@ export default function ImpersonationExitFab() {
     window.dispatchEvent(
       new CustomEvent("apex:auth", { detail: { exitImpersonation: true } })
     );
-    window.location.assign("/admin/users");
+    navigate("/admin/users", { replace: true });
   };
 
   if (!visible) return null;
