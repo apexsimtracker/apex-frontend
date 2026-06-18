@@ -1,6 +1,6 @@
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
-import { extractErrorInfo, notifyAuthExpired } from "./fetchClient";
+import { buildApiAuthHeaders, extractErrorInfo, notifyAuthExpired } from "./fetchClient";
 
 export type DataExportFormat = "xlsx" | "pdf";
 
@@ -12,7 +12,6 @@ export async function downloadUserDataExport(options?: {
   format?: DataExportFormat;
   includeTelemetry?: boolean;
 }): Promise<void> {
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
   const format = options?.format ?? "xlsx";
   const includeTelemetry = options?.includeTelemetry === true;
   const params = new URLSearchParams();
@@ -27,7 +26,7 @@ export async function downloadUserDataExport(options?: {
   try {
     res = await fetch(url, {
       method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: buildApiAuthHeaders(),
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");

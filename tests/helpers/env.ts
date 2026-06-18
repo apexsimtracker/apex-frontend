@@ -97,8 +97,7 @@ export function getE2eEnv(): E2eEnv {
     ),
     proUserEmail: requireNonEmpty("E2E_PRO_USER_EMAIL", process.env.E2E_PRO_USER_EMAIL),
     webhookUserEmail:
-      process.env.E2E_WEBHOOK_USER_EMAIL?.trim() ||
-      requireNonEmpty("E2E_CHECKOUT_USER_EMAIL", process.env.E2E_CHECKOUT_USER_EMAIL),
+      process.env.E2E_WEBHOOK_USER_EMAIL?.trim() || personaEmail("webhookFree"),
     revenueCatWebhookSecret: process.env.REVENUECAT_WEBHOOK_SECRET?.trim() ?? "",
     adminSecret: process.env.ADMIN_SECRET?.trim() ?? "",
     billingConfigured: process.env.E2E_BILLING_CONFIGURED === "1",

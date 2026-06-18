@@ -1,5 +1,5 @@
 import { getOrCreateDeviceId } from "@/auth/deviceId";
-import { fetchApi, notifyAuthExpired } from "./fetchClient";
+import { buildApiAuthHeaders, fetchApi, notifyAuthExpired } from "./fetchClient";
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
 import type { SessionVisibility } from "./profile";
@@ -60,10 +60,7 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const token = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
+  const headers = buildApiAuthHeaders();
   const url = `${API_BASE}/api/profile/avatar`;
 
   const res = await fetch(url, {

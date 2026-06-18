@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { authHeaders, gotoAuthenticated, loginViaApi } from "./helpers/auth";
+import { authHeaders, clearGuestSession, gotoAuthenticated, loginViaApi } from "./helpers/auth";
 import {
+  ensureProSeedHasPro,
   fetchEntitlement,
   pollUntilHasPro,
   postRevenueCatWebhook,
@@ -10,6 +11,11 @@ import {
   waitForWebhookSync,
 } from "./helpers/billing";
 import { getE2eEnv, isBillingConfigured } from "./helpers/env";
+import { loginPersona } from "./helpers/personas";
+import {
+  getSessionDetailViaApi,
+  uploadSessionJsonViaApi,
+} from "./helpers/sessions";
 import { completeStripeCheckout } from "./helpers/stripe";
 
 test.describe("@billing", () => {
@@ -17,9 +23,9 @@ test.describe("@billing", () => {
     test.skip(!isBillingConfigured(), "Sandbox billing is not configured on the backend");
   });
 
-  test.describe("checkout", () => {
+  test.describe("B1 — checkout", () => {
     test.describe.configure({ mode: "serial" });
-    test("happy path: monthly Stripe checkout grants Pro", async ({ page, context, request }) => {
+    test("monthly Stripe checkout grants Pro", async ({ page, context, request }) => {
       test.setTimeout(180_000);
 
       const env = getE2eEnv();
@@ -64,7 +70,7 @@ test.describe("@billing", () => {
     });
   });
 
-  test.describe("portal", () => {
+  test.describe("B2 — portal", () => {
     test.describe.configure({ mode: "serial" });
     test("manage subscription opens Stripe billing portal", async ({ page, request }) => {
       test.setTimeout(90_000);
@@ -103,7 +109,7 @@ test.describe("@billing", () => {
     });
   });
 
-  test.describe("webhook", () => {
+  test.describe("B3 — webhook", () => {
     test("rejects requests without Authorization", async ({ request }) => {
       const { status } = await postRevenueCatWebhook(
         request,
@@ -270,6 +276,54 @@ test.describe("@billing", () => {
             "RevenueCat sync kept ACTIVE for this sandbox subscriber; Pro access until period end is still valid.",
         });
       }
+    });
+  });
+
+  test.describe("B4 — guest pricing CTA", () => {
+    test("logged-out /pricing shows sign-in to subscribe", async ({ page }) => {
+      await clearGuestSession(page);
+      await page.goto("/pricing");
+
+      await expect(page.getByRole("heading", { name: "Choose your plan" })).toBeVisible();
+      await expect(page.getByText(/Sandbox billing mode is enabled/i)).toBeVisible();
+
+      const signInCta = page.getByRole("button", { name: "Sign in to subscribe" });
+      await expect(signInCta).toBeVisible();
+
+      await signInCta.click();
+      await expect(page).toHaveURL(/\/login\?next=%2Fpricing/);
+      await expect(page.getByLabel("Email")).toBeVisible();
+    });
+  });
+
+  test.describe("B5 — pro gate", () => {
+    test("standard gets 403 on personal-bests; proSeed gets 200", async ({ request, page }) => {
+      const env = getE2eEnv();
+      const standardAuth = await loginPersona(request, "standard");
+      const proAuth = await ensureProSeedHasPro(request);
+
+      const freePbs = await request.get(`${env.apiUrl}/api/personal-bests`, {
+        headers: authHeaders(standardAuth.token, standardAuth.sessionToken),
+      });
+      expect(freePbs.status()).toBe(403);
+      const freeBody = (await freePbs.json()) as { code?: string };
+      expect(freeBody.code).toBe("PRO_REQUIRED");
+
+      const proPbs = await request.get(`${env.apiUrl}/api/personal-bests`, {
+        headers: authHeaders(proAuth.token, proAuth.sessionToken),
+      });
+      expect(proPbs.status()).toBe(200);
+
+      const upload = await uploadSessionJsonViaApi(
+        request,
+        proAuth,
+        "race_spa_ferrari-gt3_podium.json"
+      );
+      const detail = await getSessionDetailViaApi(request, proAuth, upload.sessionId);
+      expect(detail.proFeaturesLocked).not.toBe(true);
+
+      await gotoAuthenticated(page, proAuth, `/sessions/${upload.sessionId}`);
+      await expect(page.getByText("Unlock with Pro")).toHaveCount(0);
     });
   });
 });

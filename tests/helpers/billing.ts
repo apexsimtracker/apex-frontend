@@ -1,6 +1,7 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { authHeaders, type AuthSession } from "./auth";
 import { getE2eEnv } from "./env";
+import { loginPersona } from "./personas";
 
 export type RevenueCatWebhookPayload = {
   api_version?: string;
@@ -129,6 +130,38 @@ export async function fetchEntitlement(
     status?: string;
     cancelAtPeriodEnd?: boolean;
   };
+}
+
+/** Restore seeded Pro on e2e-pro@example.com after admin RC sync or webhook side effects. */
+export async function ensureProSeedHasPro(request: APIRequestContext): Promise<AuthSession> {
+  const auth = await loginPersona(request, "proSeed");
+  const { apiUrl, adminSecret } = getE2eEnv();
+  const headers = authHeaders(auth.token, auth.sessionToken);
+
+  const meRes = await request.get(`${apiUrl}/api/auth/me`, { headers });
+  if (meRes.ok()) {
+    const me = (await meRes.json()) as { hasPro?: boolean };
+    if (me.hasPro === true) {
+      return auth;
+    }
+  }
+
+  if (!adminSecret) {
+    throw new Error(
+      "proSeed lost Pro entitlement. Re-run `cd apex && E2E_SEED_PASSWORD=... npm run seed:e2e` " +
+        "or set ADMIN_SECRET so tests can restore via /api/billing/dev/set-entitlement."
+    );
+  }
+
+  const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  await setDevEntitlement(request, auth, {
+    plan: "PRO",
+    status: "ACTIVE",
+    currentPeriodStart: new Date().toISOString(),
+    currentPeriodEnd: periodEnd,
+  });
+  await pollUntilHasPro(request, auth, true);
+  return auth;
 }
 
 export async function setDevEntitlement(

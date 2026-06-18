@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { APIRequestContext, Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { authHeaders, type AuthSession } from "./auth";
 import { getE2eEnv } from "./env";
 import { sessionJsonFixture } from "./fixtures";
@@ -9,6 +9,11 @@ export type SessionUploadResult = {
   lapCount: number;
   status: string;
   duplicate: boolean;
+  challengeAttachWarning?: string | null;
+};
+
+export type SessionUploadOptions = {
+  challengeId?: string;
 };
 
 export type SessionDetailApi = {
@@ -31,6 +36,7 @@ type ManualUploadResponse = {
   lapCount?: number;
   status?: string;
   duplicate?: boolean;
+  challengeAttachWarning?: string;
   error?: string;
   message?: string;
 };
@@ -55,27 +61,80 @@ export async function authFromPage(page: Page): Promise<AuthSession> {
   return { token: tokens.token, sessionToken: tokens.sessionToken, userId: "" };
 }
 
+export async function clearUploadRateLimitViaApi(
+  request: APIRequestContext,
+  auth?: AuthSession,
+  options?: { all?: boolean; userId?: string }
+): Promise<void> {
+  const { apiUrl, adminSecret } = getE2eEnv();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (adminSecret) {
+    headers["x-admin-secret"] = adminSecret;
+  }
+  if (auth) {
+    headers.Authorization = `Bearer ${auth.token}`;
+    headers["X-Apex-Session"] = auth.sessionToken;
+  }
+
+  const res = await request.post(`${apiUrl}/api/sessions/dev/clear-upload-rate-limit`, {
+    headers,
+    data: {
+      ...(options?.all ? { all: true } : {}),
+      ...(options?.userId ? { userId: options.userId } : {}),
+    },
+  });
+
+  if (!res.ok()) {
+    const body = await res.text();
+    throw new Error(`clear-upload-rate-limit failed (${res.status()}): ${body}`);
+  }
+}
+
 export async function uploadSessionJsonViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  filename: string
+  filename: string,
+  options?: SessionUploadOptions
 ): Promise<SessionUploadResult> {
   const { apiUrl } = getE2eEnv();
   const filePath = sessionJsonFixture(filename);
+  const challengeId = options?.challengeId?.trim();
 
-  const res = await request.post(`${apiUrl}/api/sessions/manual-upload`, {
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-      "X-Apex-Session": auth.sessionToken,
+  const multipart: {
+    file: { name: string; mimeType: string; buffer: Buffer };
+    challengeId?: string;
+  } = {
+    file: {
+      name: filename,
+      mimeType: "application/json",
+      buffer: readFileSync(filePath),
     },
-    multipart: {
-      file: {
-        name: filename,
-        mimeType: "application/json",
-        buffer: readFileSync(filePath),
-      },
-    },
+  };
+  if (challengeId) {
+    multipart.challengeId = challengeId;
+  }
+
+  const uploadHeaders = {
+    Authorization: `Bearer ${auth.token}`,
+    "X-Apex-Session": auth.sessionToken,
+  };
+
+  let res = await request.post(`${apiUrl}/api/sessions/manual-upload`, {
+    headers: uploadHeaders,
+    multipart,
   });
+
+  if (res.status() === 429) {
+    await clearUploadRateLimitViaApi(request, auth, {
+      userId: auth.userId || undefined,
+    }).catch(() => clearUploadRateLimitViaApi(request, auth, { all: true }));
+    res = await request.post(`${apiUrl}/api/sessions/manual-upload`, {
+      headers: uploadHeaders,
+      multipart,
+    });
+  }
 
   if (!res.ok()) {
     const body = await res.text();
@@ -93,6 +152,7 @@ export async function uploadSessionJsonViaApi(
     lapCount: data.lapCount ?? 0,
     status: data.status ?? "processed",
     duplicate: Boolean(data.duplicate),
+    challengeAttachWarning: data.challengeAttachWarning?.trim() || null,
   };
 }
 
@@ -265,6 +325,30 @@ async function fetchActivityFeedPage(
   return (await res.json()) as ActivityFeedPayload;
 }
 
+const ACTIVITY_FEED_UI_PAGE_SIZE = 5;
+
+/** Page index (1-based) where a session appears in the UI feed pagination (limit 5). */
+export async function findActivityFeedPageForSession(
+  request: APIRequestContext,
+  auth: AuthSession,
+  sessionId: string,
+  type: "all" | "telemetry" | "manual" = "all",
+  maxPages = 150
+): Promise<number | null> {
+  for (let page = 1; page <= maxPages; page++) {
+    const body = await fetchActivityFeedPage(request, auth, {
+      type,
+      page,
+      limit: ACTIVITY_FEED_UI_PAGE_SIZE,
+    });
+    if (collectFeedSessionIds(body.items).includes(sessionId)) {
+      return page;
+    }
+    if (!body.hasMore) break;
+  }
+  return null;
+}
+
 export async function listActivityFeedSessionIds(
   request: APIRequestContext,
   auth: AuthSession,
@@ -275,6 +359,118 @@ export async function listActivityFeedSessionIds(
 
   for (let page = 1; page <= maxPages; page++) {
     const body = await fetchActivityFeedPage(request, auth, { type, page });
+    ids.push(...collectFeedSessionIds(body.items));
+    if (!body.hasMore) break;
+  }
+
+  return ids;
+}
+
+async function clickActivityFeedLoadMore(page: Page): Promise<boolean> {
+  const loadMore = page
+    .locator("main")
+    .getByRole("button", { name: "Load more", exact: true })
+    .first();
+  if (!(await loadMore.isVisible())) {
+    return false;
+  }
+
+  const activityResponse = page.waitForResponse(
+    (res) =>
+      (res.url().includes("/api/activity") || res.url().includes("/api/activity/home")) &&
+      res.request().method() === "GET" &&
+      res.ok()
+  );
+  await loadMore.click();
+  await activityResponse.catch(() => undefined);
+
+  try {
+    await loadMore.waitFor({ state: "visible", timeout: 20_000 });
+  } catch {
+    // No further pages — caller will decide if the target row is missing.
+  }
+  return true;
+}
+
+/** `/sessions` uses the global activity feed; paginate until a session link appears. */
+export async function expectSessionOnSessionsFeedPage(
+  page: Page,
+  sessionId: string,
+  options?: {
+    containsText?: RegExp | string;
+    maxLoadMoreClicks?: number;
+    feedType?: "all" | "telemetry" | "manual";
+    request?: APIRequestContext;
+    auth?: AuthSession;
+  }
+): Promise<void> {
+  const link = page.locator(`a[href="/sessions/${sessionId}"]`);
+
+  if (options?.request && options?.auth) {
+    const feedPage = await findActivityFeedPageForSession(
+      options.request,
+      options.auth,
+      sessionId,
+      options.feedType ?? "all"
+    );
+    expect(feedPage, `session ${sessionId} not found in activity feed`).not.toBeNull();
+    for (let pageIndex = 1; pageIndex < feedPage!; pageIndex++) {
+      expect(await clickActivityFeedLoadMore(page)).toBe(true);
+    }
+  } else {
+    const maxLoadMoreClicks = options?.maxLoadMoreClicks ?? 60;
+
+    for (let attempt = 0; attempt <= maxLoadMoreClicks; attempt++) {
+      try {
+        await expect(link).toBeVisible({ timeout: attempt === 0 ? 5_000 : 1_500 });
+        if (options?.containsText) {
+          await expect(link).toContainText(options.containsText);
+        }
+        return;
+      } catch {
+        // Not on the loaded pages yet — load more if available.
+      }
+
+      if (!(await clickActivityFeedLoadMore(page))) {
+        break;
+      }
+    }
+  }
+
+  await expect(link).toBeVisible({ timeout: 15_000 });
+  if (options?.containsText) {
+    await expect(link).toContainText(options.containsText);
+  }
+}
+
+async function fetchHomeFeedPage(
+  request: APIRequestContext,
+  auth: AuthSession,
+  query: { type: string; page: number; limit?: number }
+): Promise<ActivityFeedPayload> {
+  const { apiUrl } = getE2eEnv();
+  const limit = query.limit ?? 50;
+  const res = await request.get(
+    `${apiUrl}/api/activity/home?type=${encodeURIComponent(query.type)}&page=${query.page}&limit=${limit}`,
+    { headers: authHeaders(auth.token, auth.sessionToken) }
+  );
+  if (!res.ok()) {
+    const body = await res.text();
+    throw new Error(`GET /api/activity/home failed (${res.status()}): ${body}`);
+  }
+  return (await res.json()) as ActivityFeedPayload;
+}
+
+/** Home feed (GET /api/activity/home) — sessions from self + followed users. */
+export async function listHomeFeedSessionIds(
+  request: APIRequestContext,
+  auth: AuthSession,
+  maxPages = 10
+): Promise<string[]> {
+  const ids: string[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    const body = await fetchHomeFeedPage(request, auth, { type: "all", page });
     ids.push(...collectFeedSessionIds(body.items));
     if (!body.hasMore) break;
   }

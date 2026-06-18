@@ -486,6 +486,16 @@ export default function SessionDetailPage() {
     qualifyingPosition: session.qualifyingPosition,
     totalDrivers: session.totalDrivers,
   });
+  const showQualiGrid =
+    isRaceKind(session) &&
+    session.qualifyingPosition != null &&
+    session.qualifyingPosition > 0;
+  const qualiGridLabel =
+    showQualiGrid && session.totalDrivers != null && session.totalDrivers > 0
+      ? `P${session.qualifyingPosition} / ${session.totalDrivers}`
+      : showQualiGrid
+        ? `P${session.qualifyingPosition}`
+        : null;
   const fastestLapMs =
     laps.length > 0 ? Math.min(...laps.map((l) => l.timeMs)) : null;
   const personalBestMs = fastestLapMs;
@@ -669,7 +679,11 @@ export default function SessionDetailPage() {
 
       <div
         className={`mb-8 grid gap-4 grid-cols-1 sm:grid-cols-2 ${
-          showPosition ? "lg:grid-cols-4" : "lg:grid-cols-3"
+          showPosition && showQualiGrid
+            ? "lg:grid-cols-5"
+            : showPosition || showQualiGrid
+              ? "lg:grid-cols-4"
+              : "lg:grid-cols-3"
         }`}
       >
         {showPosition && (
@@ -680,6 +694,14 @@ export default function SessionDetailPage() {
             <p className="text-lg font-semibold text-white">
               {displayPositionLabel}
             </p>
+          </div>
+        )}
+        {showQualiGrid && qualiGridLabel && (
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+            <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
+              Quali position
+            </p>
+            <p className="text-lg font-semibold text-white">{qualiGridLabel}</p>
           </div>
         )}
         <div

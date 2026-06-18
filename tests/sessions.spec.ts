@@ -3,12 +3,14 @@ import { authHeaders, gotoAuthenticated } from "./helpers/auth";
 import { getE2eEnv } from "./helpers/env";
 import { loginPersona } from "./helpers/personas";
 import {
+  clearUploadRateLimitViaApi,
   createManualActivityViaApi,
   deleteManualActivityViaApi,
   getSessionDetailViaApi,
   getActivityFeedGroupingForSession,
   findWeekendGroupContainingSession,
   listActivityFeedSessionIds,
+  expectSessionOnSessionsFeedPage,
   uploadSessionJsonViaApi,
 } from "./helpers/sessions";
 
@@ -36,6 +38,11 @@ async function fillManualActivityBasics(page: Page): Promise<void> {
 
 test.describe("@sessions", () => {
   test.describe.configure({ mode: "serial" });
+
+  test.beforeAll(async ({ request }) => {
+    const adminAuth = await loginPersona(request, "admin");
+    await clearUploadRateLimitViaApi(request, adminAuth, { all: true }).catch(() => undefined);
+  });
 
   test("D1 — manual activity lifecycle: create → detail → edit → delete", async ({
     page,
@@ -108,11 +115,46 @@ test.describe("@sessions", () => {
     await expect(page.getByRole("heading", { name: /Spa/i })).toBeVisible();
     await expect(page.getByText("Total Laps").locator("..").getByText("8")).toBeVisible();
     await expect(page.getByText("Position").locator("..").getByText("P2 / 24")).toBeVisible();
+    await expect(page.getByText("Quali position").locator("..").getByText("P3 / 24")).toBeVisible();
 
     const detail = await getSessionDetailViaApi(request, auth, upload.sessionId);
     expect(detail.lapCount).toBe(8);
     expect(detail.position).toBe(2);
     expect(detail.qualifyingPosition).toBe(3);
+  });
+
+  test("D2b — JSON upload (qualifying): P3 / 24 on detail and sessions feed", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(120_000);
+    const auth = await loginPersona(request, "standard");
+    const upload = await uploadSessionJsonViaApi(
+      request,
+      auth,
+      "qualify_spa_ferrari-gt3_multi-lap.json"
+    );
+
+    const detail = await getSessionDetailViaApi(request, auth, upload.sessionId);
+    expect(detail.qualifyingPosition).toBe(3);
+
+    await gotoAuthenticated(page, auth, `/sessions/${upload.sessionId}`);
+    await expect(page.getByText("Position").locator("..").getByText("P3 / 24")).toBeVisible();
+
+    const feedIds = await listActivityFeedSessionIds(request, auth, "all", 25);
+    expect(feedIds).toContain(upload.sessionId);
+
+    await gotoAuthenticated(page, auth, "/sessions?sessionsType=telemetry");
+    await expect(page.getByRole("tab", { name: "Telemetry" })).toHaveAttribute(
+      "data-state",
+      "active"
+    );
+    await expectSessionOnSessionsFeedPage(page, upload.sessionId, {
+      containsText: /P3/i,
+      feedType: "telemetry",
+      request,
+      auth,
+    });
   });
 
   test("D3 — JSON upload (practice Monza): 7 laps", async ({ page, request }) => {

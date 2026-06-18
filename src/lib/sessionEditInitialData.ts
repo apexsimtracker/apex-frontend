@@ -5,6 +5,7 @@
 import type { ManualActivityInitialData } from "@/components/ManualActivityForm";
 import type { ManualActivitySim } from "@/lib/manualActivityData";
 import { telemetrySessionTypeToFormKind } from "@/lib/sessionEditMapping";
+import { effectiveQualifyingPosition } from "@/lib/sessionKind";
 import type { AdminSessionDetail } from "@/lib/api/adminSessions";
 
 /** Session GET `/api/sessions/:id` payload used by EditActivity (subset). */
@@ -76,7 +77,15 @@ export function manualActivityInitialFromPublicDetail(
     trackNameHint: data.trackName ?? null,
     carNameHint: data.carName ?? data.vehicleDisplay ?? null,
     manualSessionKind,
-    position: data.position,
+    position:
+      manualSessionKind === "QUALIFY"
+        ? (effectiveQualifyingPosition({
+            sessionType: data.sessionType,
+            manualSessionKind,
+            qualifyingPosition: data.qualifyingPosition,
+            position: data.position,
+          }) ?? data.position)
+        : data.position,
     totalDrivers: data.totalDrivers,
     qualifyingPosition: data.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
@@ -115,7 +124,15 @@ export function manualActivityInitialFromAdminDetail(
     trackNameHint: null,
     carNameHint: null,
     manualSessionKind,
-    position: d.position,
+    position:
+      manualSessionKind === "QUALIFY"
+        ? (effectiveQualifyingPosition({
+            sessionType: d.sessionType,
+            manualSessionKind,
+            qualifyingPosition: d.qualifyingPosition,
+            position: d.position,
+          }) ?? d.position)
+        : d.position,
     totalDrivers: d.totalDrivers,
     qualifyingPosition: d.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,

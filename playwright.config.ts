@@ -41,11 +41,15 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "npm run dev",
+      command: "pnpm dev",
       cwd: APEX_ROOT,
       url: apiHealthUrl,
       reuseExistingServer,
       timeout: 120_000,
+      env: {
+        ...process.env,
+        DISABLE_MANUAL_UPLOAD_RATE_LIMIT: "1",
+      },
     },
     {
       command: "pnpm dev",
