@@ -617,6 +617,11 @@ export default function SessionDetailPage() {
           <h1 className="mt-1 text-2xl font-semibold text-white">
             {formatTrackName(resolved.track)}
           </h1>
+          {totalLapsCount > 0 && (
+            <p className="mt-0.5 text-sm font-medium tabular-nums text-white/50">
+              {totalLapsCount} lap{totalLapsCount === 1 ? "" : "s"}
+            </p>
+          )}
           {import.meta.env.DEV && session.processingDurationMs != null && (
             <p className="mt-1 text-xs text-white/40">
               Ingestion: {(session.processingDurationMs / 1000).toFixed(1)}s

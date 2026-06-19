@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   bulkDeleteAdminSessions,
+  fetchAdminDuplicateClusters,
   fetchAdminSessionList,
+  mergeAdminDuplicateSessions,
+  type AdminDuplicateCluster,
   type AdminSessionListRow,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
@@ -98,6 +101,13 @@ export default function AdminSessions() {
   const [hasInvalidLaps, setHasInvalidLaps] = useState(false);
   const [missingTelemetry, setMissingTelemetry] = useState(false);
   const [multipleBestLaps, setMultipleBestLaps] = useState(false);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [keepByCluster, setKeepByCluster] = useState<Record<string, string>>({});
+  const [mergeTarget, setMergeTarget] = useState<{
+    cluster: AdminDuplicateCluster;
+    keepSessionId: string;
+  } | null>(null);
+  const [mergeConfirm, setMergeConfirm] = useState("");
   const [sessionTypeFilter, setSessionTypeFilter] = useState("");
   const [manualKindFilter, setManualKindFilter] = useState("");
 
@@ -183,6 +193,37 @@ export default function AdminSessions() {
       setSelected(new Set());
       setBulkOpen(false);
       setBulkConfirm("");
+    },
+  });
+
+  const duplicatesQuery = useQuery({
+    queryKey: ["admin", "sessions", "duplicates", debouncedUserId, simFilter],
+    queryFn: () =>
+      fetchAdminDuplicateClusters({
+        ...(debouncedUserId.trim() ? { userId: debouncedUserId.trim() } : {}),
+        ...(simFilter.trim() ? { sim: simFilter.trim() } : {}),
+        windowHours: 48,
+      }),
+    enabled: showDuplicates,
+  });
+
+  const mergeDuplicatesMutation = useMutation({
+    mutationFn: ({
+      cluster,
+      keepSessionId,
+    }: {
+      cluster: AdminDuplicateCluster;
+      keepSessionId: string;
+    }) =>
+      mergeAdminDuplicateSessions({
+        keepSessionId,
+        mergeSessionIds: cluster.sessionIds.filter((id) => id !== keepSessionId),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "sessions"] });
+      qc.invalidateQueries({ queryKey: ["admin", "sessions", "duplicates"] });
+      setMergeTarget(null);
+      setMergeConfirm("");
     },
   });
 
@@ -306,6 +347,14 @@ export default function AdminSessions() {
               type="button"
               variant="outline"
               size="sm"
+              onClick={() => setShowDuplicates((v) => !v)}
+            >
+              {showDuplicates ? "Hide duplicate review" : "Review duplicates"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={exportCsv}
               disabled={rows.length === 0}
             >
@@ -327,6 +376,126 @@ export default function AdminSessions() {
             </Button>
           </div>
         </div>
+
+        {showDuplicates && (
+          <div className={`${ADMIN_TABLE_CARD} mb-6 p-4`}>
+            <h2 className="text-sm font-semibold text-foreground">Duplicate session clusters (48h)</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Consecutive uploads with the same driver, session type, car, track, best lap time, and
+              lap count. Choose which session to keep (default: earliest upload), then merge to delete
+              the rest.
+            </p>
+            {duplicatesQuery.isPending ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
+              </div>
+            ) : duplicatesQuery.isError ? (
+              <p className="mt-4 text-sm text-destructive">Failed to load duplicate clusters.</p>
+            ) : (duplicatesQuery.data?.clusters.length ?? 0) === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">No duplicate clusters found.</p>
+            ) : (
+              <ul className="mt-4 space-y-4">
+                {duplicatesQuery.data!.clusters.map((cluster) => {
+                  const clusterKey = cluster.sessionIds.join("|");
+                  const selectedKeepId = keepByCluster[clusterKey] ?? cluster.keepSessionId;
+                  const sortedSessions = [...cluster.sessions].sort(
+                    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                  );
+
+                  return (
+                    <li
+                      key={clusterKey}
+                      className="rounded-md border border-white/10 bg-card/50 p-3 text-sm"
+                    >
+                      <div className="font-medium">
+                        {formatTrackName(cluster.track)} · {formatCarName(cluster.car)} ·{" "}
+                        {cluster.sessionType}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        User {cluster.userId} · {cluster.lapCount} lap(s) · best{" "}
+                        {formatLapMs(cluster.bestLapMs)} · {cluster.sessionIds.length} duplicate
+                        uploads
+                      </div>
+                      <div className={`${ADMIN_TABLE_SCROLL} mt-3`}>
+                        <table className={adminTable("min-w-[36rem]")}>
+                          <thead>
+                            <tr className="border-b border-white/10 text-muted-foreground">
+                              <th className={`${ADMIN_TH} w-16`}>Keep</th>
+                              <th className={ADMIN_TH}>Uploaded</th>
+                              <th className={ADMIN_TH}>Session</th>
+                              <th className={ADMIN_TH}>Dedupe key</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedSessions.map((s) => {
+                              const isSuggested = s.id === cluster.keepSessionId;
+                              return (
+                                <tr key={s.id} className="border-b border-white/5">
+                                  <td className="p-2 align-middle">
+                                    <input
+                                      type="radio"
+                                      name={`keep-${clusterKey}`}
+                                      checked={selectedKeepId === s.id}
+                                      onChange={() =>
+                                        setKeepByCluster((prev) => ({
+                                          ...prev,
+                                          [clusterKey]: s.id,
+                                        }))
+                                      }
+                                      aria-label={`Keep session ${s.id}`}
+                                      className="rounded-full border-white/20"
+                                    />
+                                  </td>
+                                  <td className="p-2 align-middle text-xs text-muted-foreground whitespace-nowrap">
+                                    {new Date(s.createdAt).toLocaleString()}
+                                    {isSuggested && (
+                                      <span className="ml-2 text-[10px] text-primary">suggested</span>
+                                    )}
+                                  </td>
+                                  <td className="p-2 align-middle">
+                                    <Link
+                                      to={`/admin/sessions/${encodeURIComponent(s.id)}`}
+                                      className="font-mono text-[11px] text-primary hover:underline"
+                                    >
+                                      {s.id}
+                                    </Link>
+                                  </td>
+                                  <td className="p-2 align-middle font-mono text-[10px] text-muted-foreground max-w-[12rem] truncate">
+                                    {s.clientSessionId ?? "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={mergeDuplicatesMutation.isPending}
+                          onClick={() => {
+                            setMergeTarget({ cluster, keepSessionId: selectedKeepId });
+                            setMergeConfirm("");
+                          }}
+                        >
+                          Merge {cluster.sessionIds.length} sessions…
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {mergeDuplicatesMutation.isError && !mergeTarget && (
+              <p className="mt-3 text-sm text-destructive">
+                {mergeDuplicatesMutation.error instanceof ApiError
+                  ? mergeDuplicatesMutation.error.message
+                  : "Merge failed."}
+              </p>
+            )}
+          </div>
+        )}
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -536,6 +705,7 @@ export default function AdminSessions() {
                       <th className={ADMIN_TH}>Track / car</th>
                       <th className={ADMIN_TH}>Laps</th>
                       <th className={ADMIN_TH}>Best</th>
+                      <th className={ADMIN_TH}>Dedupe key</th>
                       <th className={ADMIN_TH}>Challenge</th>
                       <th className="w-12 whitespace-nowrap p-3" />
                     </tr>
@@ -587,6 +757,9 @@ export default function AdminSessions() {
                         <td className="p-3 align-middle tabular-nums">{r.lapCount}</td>
                         <td className="p-3 align-middle tabular-nums text-muted-foreground min-w-[6rem]">
                           {formatLapMs(r.bestLapMs)}
+                        </td>
+                        <td className="p-3 align-middle font-mono text-[10px] text-muted-foreground max-w-[8rem] truncate">
+                          {r.clientSessionId ?? "—"}
                         </td>
                         <td className="p-3 align-middle text-xs">
                           {r.challengeId ? (
@@ -659,6 +832,83 @@ export default function AdminSessions() {
           </div>
         )}
       </div>
+
+      {mergeTarget && (
+        <BaseAlertDialog
+          isOpen={Boolean(mergeTarget)}
+          onClose={() => {
+            setMergeTarget(null);
+            setMergeConfirm("");
+          }}
+          title="Merge duplicate sessions"
+          description={
+            <>
+              Keep one session and permanently delete{" "}
+              {mergeTarget.cluster.sessionIds.length - 1} duplicate upload(s). All sessions in this
+              cluster share the same lap count ({mergeTarget.cluster.lapCount}) and best time (
+              {formatLapMs(mergeTarget.cluster.bestLapMs)}).
+              <span className="mt-3 block font-mono text-xs text-muted-foreground">
+                Keeping: {mergeTarget.keepSessionId}
+              </span>
+              <span className="mt-3 block text-xs">
+                Type <span className="font-mono text-destructive">merge</span> to confirm.
+              </span>
+            </>
+          }
+          size="sm"
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setMergeTarget(null);
+                  setMergeConfirm("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={
+                  mergeConfirm.trim().toLowerCase() !== "merge" ||
+                  mergeDuplicatesMutation.isPending
+                }
+                onClick={() =>
+                  mergeDuplicatesMutation.mutate({
+                    cluster: mergeTarget.cluster,
+                    keepSessionId: mergeTarget.keepSessionId,
+                  })
+                }
+              >
+                {mergeDuplicatesMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                    Merging…
+                  </>
+                ) : (
+                  "Merge"
+                )}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            value={mergeConfirm}
+            onChange={(e) => setMergeConfirm(e.target.value)}
+            placeholder="merge"
+            autoComplete="off"
+          />
+          {mergeDuplicatesMutation.isError && (
+            <p className="mt-2 text-sm text-destructive">
+              {mergeDuplicatesMutation.error instanceof ApiError
+                ? mergeDuplicatesMutation.error.message
+                : "Merge failed."}
+            </p>
+          )}
+        </BaseAlertDialog>
+      )}
 
       {bulkOpen && (
         <BaseAlertDialog

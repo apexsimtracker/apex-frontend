@@ -305,9 +305,16 @@ export default function ManualActivityForm({
       .map((t) => parseStrictManualLapTimeToMs(t))
       .filter((ms): ms is number => ms != null);
 
+    if (lapTimesMs.length === 0) {
+      form.setError("laps", {
+        type: "manual",
+        message: "At least one valid lap time is required",
+      });
+      return;
+    }
+
     const lapsOut = lapTimesMs.map((lapTimeMs) => ({ lapTimeMs }));
-    const bestLapMs =
-      lapTimesMs.length > 0 ? Math.min(...lapTimesMs) : undefined;
+    const bestLapMs = Math.min(...lapTimesMs);
 
     const kind = values.manualSessionKind.trim().toUpperCase() as
       | "PRACTICE"
@@ -328,9 +335,7 @@ export default function ManualActivityForm({
         kind === "RACE" && qualiNum !== undefined && Number.isFinite(qualiNum)
           ? qualiNum
           : undefined,
-      ...(lapsOut.length > 0
-        ? { laps: lapsOut, bestLapMs }
-        : {}),
+      ...(lapsOut.length > 0 ? { laps: lapsOut, bestLapMs } : {}),
       notes: values.notes.trim() || undefined,
     });
   }
@@ -706,36 +711,22 @@ export default function ManualActivityForm({
         <FormBlock
           layout={layout}
           title="Lap times"
-          description={
-            sessionKind === "RACE"
-              ? "Add at least one lap for fastest-lap leaderboards. Wins and podiums still count without laps."
-              : "Optional lap times for this session."
-          }
+          description="Add at least one valid lap time for this session."
         >
         <div className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
             {layout === "default" ? (
               <FormLabel className="text-white/80">
                 Laps{" "}
-                <span className="text-white/40">
-                  {sessionKind === "RACE"
-                    ? "(add at least one for fastest-lap leaderboards)"
-                    : "(optional)"}
-                </span>
+                <span className="text-white/40">(required)</span>
               </FormLabel>
             ) : (
-              <span className="text-xs font-medium text-white/50">Lap entries</span>
+              <span className="text-xs font-medium text-white/50">Lap entries (required)</span>
             )}
             <span className="text-xs text-white/40">
               {sim ? `Max ${maxLapsForSim} · ${fields.length} row${fields.length === 1 ? "" : "s"}` : "Select sim for limit"}
             </span>
           </div>
-          {layout === "default" && sessionKind === "RACE" && (
-            <p className="text-xs text-white/45">
-              Without lap times, the session still counts as a race for wins or podiums, but it will not contribute to
-              fastest lap (there are no laps stored to rank).
-            </p>
-          )}
           <div
             className={cn(
               layout === "page" && fields.length > 0 && "divide-y divide-white/5 rounded-lg border border-white/10"

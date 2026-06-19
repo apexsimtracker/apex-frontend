@@ -1,6 +1,5 @@
 /**
- * @deprecated Replaced by {@link ActivityFeedList} + {@link WeekendGroupHeader} (Fix 5 weekend grouping).
- * Kept for reference; no feed page imports this component.
+ * Carousel for multiple practice or qualifying sessions within a race weekend group.
  */
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
@@ -119,7 +118,7 @@ export default function BundledActivityCard({
 
   return (
     <div
-      className="border-white/6 mb-6 overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm"
+      className="border-white/6 mb-6 overflow-hidden rounded-lg border shadow-none transition-all duration-300 hover:shadow-sm"
       role="region"
       aria-label={`Bundle of ${sessions.length} sessions`}
       onKeyDown={handleKeyDown}

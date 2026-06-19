@@ -67,7 +67,7 @@ describe("groupSessionsByWeekend", () => {
     expect(result.every((r) => r.type === "standalone")).toBe(true);
   });
 
-  it("starts new group after complete P+Q+R cycle", () => {
+  it("starts new group after race concludes the weekend", () => {
     const base = new Date("2024-06-01T10:00:00Z").getTime();
     const hour = 60 * 60 * 1000;
 

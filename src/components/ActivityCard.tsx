@@ -27,6 +27,24 @@ function cleanTitle(item: ActivityCardItem): string {
   return "Practice Session";
 }
 
+function formatSessionLapCountLabel(lapCount: number | undefined): string {
+  const n = lapCount ?? 0;
+  return `${n} lap${n === 1 ? "" : "s"}`;
+}
+
+function LapCountStat({ lapCount }: { lapCount?: number }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
+        Laps
+      </p>
+      <p className="text-xs font-semibold tabular-nums text-white sm:text-sm">
+        {lapCount ?? 0}
+      </p>
+    </div>
+  );
+}
+
 /** Item shape for stats blocks and RaceCardContent */
 interface ActivityCardItem {
   id: string;
@@ -98,7 +116,7 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
   // If we only have Position + Car (no best lap), keep the layout balanced.
   if (showPosition && !showBest) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className={`grid ${(item.lapCount ?? 0) > 0 ? "grid-cols-3" : "grid-cols-2"} gap-4`}>
         <div className={`${getPodiumColor(pos)} flex items-center justify-between rounded-lg p-3`}>
           <div>
             <p className="mb-0.5 text-xs font-medium uppercase text-white/70">
@@ -116,6 +134,8 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
             </div>
           )}
         </div>
+
+        {(item.lapCount ?? 0) > 0 && <LapCountStat lapCount={item.lapCount} />}
 
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
@@ -154,7 +174,15 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
       )}
 
       {/* Secondary Stats - Subtle */}
-      <div className={`grid ${showBest ? "grid-cols-2" : "grid-cols-1"} gap-4`}>
+      <div
+        className={`grid ${
+          showBest && (item.lapCount ?? 0) > 0
+            ? "grid-cols-3"
+            : showBest
+              ? "grid-cols-2"
+              : "grid-cols-1"
+        } gap-4`}
+      >
         {showBest && (
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
@@ -165,6 +193,8 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
             </p>
           </div>
         )}
+
+        {showBest && (item.lapCount ?? 0) > 0 && <LapCountStat lapCount={item.lapCount} />}
 
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
@@ -213,7 +243,7 @@ function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
   );
 }
 
-/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Position (if present). No lap count or telemetry stats. */
+/** Manual activity: Sim • Track • Car (if present), Best Lap (if present), Position (if present). */
 function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
   const simName = getSimDisplayName(item.sim);
   const trackName = formatTrackName(item.track);
@@ -221,11 +251,20 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
   const parts = [simName, trackName];
   if (carName && carName !== "—") parts.push(carName);
   const metaLine = parts.join(" • ");
+  const showLaps = (item.lapCount ?? 0) > 0;
 
   return (
     <div>
       <div className="mb-3 text-xs text-white/50">{metaLine}</div>
-      <div className="grid grid-cols-2 gap-4">
+      <div
+        className={`grid gap-4 ${
+          showLaps && item.bestLapMs != null
+            ? "grid-cols-3"
+            : showLaps || item.bestLapMs != null
+              ? "grid-cols-2"
+              : "grid-cols-1"
+        }`}
+      >
         {item.bestLapMs != null && (
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
@@ -236,6 +275,7 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
             </p>
           </div>
         )}
+        {showLaps && <LapCountStat lapCount={item.lapCount} />}
         {shouldShowSessionPosition({
           sessionType: item.sessionType,
           manualSessionKind: item.manualSessionKind,
@@ -440,6 +480,11 @@ function RaceCardContent({
               <div className="mt-1.5 text-lg font-semibold text-white">
                 {cleanTitle(item)}
               </div>
+              {(item.lapCount ?? 0) > 0 && (
+                <div className="mt-1 text-xs font-medium tabular-nums text-white/50">
+                  {formatSessionLapCountLabel(item.lapCount)}
+                </div>
+              )}
             </div>
           </div>
 

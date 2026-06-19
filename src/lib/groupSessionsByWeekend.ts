@@ -110,8 +110,8 @@ function resolveAuthorId(session: SessionItem): string | null {
   return null;
 }
 
-function isCompleteWeekendCycle(group: MutableWeekendGroup): boolean {
-  return group.hasPractice && group.hasQualifying && group.hasRace;
+function isWeekendConcluded(group: MutableWeekendGroup): boolean {
+  return group.hasRace;
 }
 
 function updateKindFlags(group: MutableWeekendGroup, session: SessionItem): void {
@@ -229,7 +229,7 @@ export function groupSessionsByWeekend(sessions: SessionItem[]): WeekendFeedItem
 
     if (
       open &&
-      !isCompleteWeekendCycle(open) &&
+      !isWeekendConcluded(open) &&
       sessionTime - open.lastSessionAt <= WEEKEND_WINDOW_MS
     ) {
       addToMutableGroup(open, session);

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import ActivityCard, { type SessionPatch } from "@/components/ActivityCard";
+import BundledActivityCard from "@/components/BundledActivityCard";
 import WeekendGroupHeader from "@/components/WeekendGroupHeader";
 import type { ActivityFeedItem } from "@/lib/api/activityBilling";
 import type { SessionItem } from "@/lib/groupSessions";
+import { segmentWeekendSessionsForDisplay } from "@/lib/weekendDisplaySegments";
 
 type ActivityOwner = {
   id?: string | null;
@@ -149,7 +151,7 @@ export default function ActivityFeedList({
   currentUser,
 }: ActivityFeedListProps) {
   return (
-    <>
+    <div className="flex flex-col gap-6 [&_.mb-6]:mb-0">
       {items.map((item) => {
         if (item.type === "standalone") {
           return (
@@ -164,23 +166,45 @@ export default function ActivityFeedList({
         }
 
         return (
-          <div key={getActivityFeedItemKey(item)} className="mb-2">
-            <WeekendGroupHeader group={item.group} />
-            {item.group.sessions.map((session) => {
-              const s = session as ActivityFeedSession;
-              return (
-                <div key={s.id}>
-                  {renderActivityCard(s, {
-                    onSessionPatch,
-                    linkCards,
-                    currentUser,
-                  })}
-                </div>
-              );
-            })}
+          <div
+            key={getActivityFeedItemKey(item)}
+            className="overflow-hidden rounded-lg border border-white/[0.07]"
+          >
+            <WeekendGroupHeader
+              group={item.group}
+              className="mb-0 rounded-none border-0 border-b border-white/8 bg-transparent"
+            />
+            <div className="flex flex-col gap-6 p-3 sm:p-4">
+              {segmentWeekendSessionsForDisplay(item.group.sessions as SessionItem[]).map(
+                (segment) => {
+                  if (segment.type === "single") {
+                    const s = segment.session as ActivityFeedSession;
+                    return (
+                      <div key={s.id}>
+                        {renderActivityCard(s, {
+                          onSessionPatch,
+                          linkCards,
+                          currentUser,
+                        })}
+                      </div>
+                    );
+                  }
+
+                  const carouselKey = `${segment.kind}-${segment.sessions.map((s) => s.id).join("-")}`;
+                  return (
+                    <BundledActivityCard
+                      key={carouselKey}
+                      sessions={segment.sessions}
+                      overflowCount={0}
+                      onSessionPatch={onSessionPatch}
+                    />
+                  );
+                }
+              )}
+            </div>
           </div>
         );
       })}
-    </>
+    </div>
   );
 }

@@ -23,6 +23,7 @@ export type AdminSessionListRow = {
   processingStartedAt: string | null;
   processingCompletedAt: string | null;
   processingDurationMs: number | null;
+  clientSessionId: string | null;
   createdAt: string;
 };
 
@@ -226,4 +227,43 @@ export async function postAdminReconcileChallengeLeaderboard(body: {
   userId: string;
 }): Promise<{ ok: boolean }> {
   return fetchApi("POST", "/api/admin/sessions/reconcile-leaderboard", body, false);
+}
+
+export type AdminDuplicateCluster = {
+  sessionIds: string[];
+  keepSessionId: string;
+  track: string;
+  car: string;
+  sessionType: string;
+  userId: string;
+  sim: string;
+  bestLapMs: number | null;
+  lapCount: number;
+  sessions: Array<{
+    id: string;
+    createdAt: string;
+    lapCount: number;
+    clientSessionId: string | null;
+    bestLapMs: number | null;
+  }>;
+};
+
+export async function fetchAdminDuplicateClusters(params?: {
+  userId?: string;
+  sim?: string;
+  windowHours?: number;
+}): Promise<{ clusters: AdminDuplicateCluster[] }> {
+  const sp = new URLSearchParams();
+  if (params?.userId?.trim()) sp.set("userId", params.userId.trim());
+  if (params?.sim?.trim()) sp.set("sim", params.sim.trim());
+  if (params?.windowHours != null) sp.set("windowHours", String(params.windowHours));
+  const qs = sp.toString();
+  return fetchApi("GET", `/api/admin/sessions/duplicates${qs ? `?${qs}` : ""}`, undefined, false);
+}
+
+export async function mergeAdminDuplicateSessions(body: {
+  keepSessionId: string;
+  mergeSessionIds: string[];
+}): Promise<{ ok: boolean; keepSessionId: string; mergedCount: number; lapCount: number }> {
+  return fetchApi("POST", "/api/admin/sessions/merge", body, false);
 }
