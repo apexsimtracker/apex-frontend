@@ -1,4 +1,5 @@
 import { fetchApi } from "./fetchClient";
+import type { LapTimingHighlights, SessionTimingMinima } from "@/lib/sessionLapDisplay";
 import {
   buildManualActivityRequestBody,
   type ManualActivityRequest,
@@ -91,6 +92,7 @@ export type AdminSessionLapRow = {
   hasTelemetry: boolean;
   telemetrySampleCount: number | null;
   telemetry?: unknown;
+  highlights?: LapTimingHighlights | null;
 };
 
 export type AdminSessionDetail = {
@@ -118,6 +120,7 @@ export type AdminSessionDetail = {
   likeCount: number;
   commentCount: number;
   laps: AdminSessionLapRow[];
+  sessionTimingMinima?: SessionTimingMinima | null;
 };
 
 export async function fetchAdminSessionDetail(

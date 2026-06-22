@@ -44,8 +44,14 @@ import {
 import { LAP_FORMAT_MSG } from "@/lib/validation/manualActivity";
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
+  buildHighlightMapFromLaps,
   computeIdealLap,
+  computeSessionLapHighlights,
+  computeSessionTimingMinima,
   effectiveLapSectors,
+  timingHighlightClass,
+  type LapTimingHighlights,
+  type SessionTimingMinima,
 } from "@/lib/sessionLapDisplay";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import { titleizeEnum } from "@/lib/enumFormat";
@@ -266,10 +272,9 @@ export default function AdminSessionDetail() {
     if (!data?.laps?.length) {
       return {
         ideal: null as ReturnType<typeof computeIdealLap>,
+        sessionMinima: null as SessionTimingMinima | null,
+        highlightMap: null as Map<number, LapTimingHighlights> | null,
         bestLapMs: null as number | null,
-        bestS1: null as number | null,
-        bestS2: null as number | null,
-        bestS3: null as number | null,
         rows: [] as Array<{
           lap: AdminSessionLapRow;
           s1: number;
@@ -288,15 +293,23 @@ export default function AdminSessionDetail() {
       .map((l) => l.lapTimeMs)
       .filter((t) => Number.isFinite(t) && t > 0);
     const bestLapMs = finiteTimes.length ? Math.min(...finiteTimes) : null;
-    // Match SessionDetailPage: only real stored sectors count — never synthetic splits from effectiveLapSectors.
-    const bestS1Raw = Math.min(...laps.map((l) => l.sector1Ms ?? Infinity));
-    const bestS2Raw = Math.min(...laps.map((l) => l.sector2Ms ?? Infinity));
-    const bestS3Raw = Math.min(...laps.map((l) => l.sector3Ms ?? Infinity));
-    const bestS1 = Number.isFinite(bestS1Raw) ? bestS1Raw : null;
-    const bestS2 = Number.isFinite(bestS2Raw) ? bestS2Raw : null;
-    const bestS3 = Number.isFinite(bestS3Raw) ? bestS3Raw : null;
-    return { ideal, rows, bestLapMs, bestS1, bestS2, bestS3 };
-  }, [data?.laps]);
+    const normalizedForFallback = laps.map((l) => ({
+      lap: l.lapNumber,
+      timeMs: l.lapTimeMs,
+      isValid: l.isValid,
+      sector1Ms: l.sector1Ms,
+      sector2Ms: l.sector2Ms,
+      sector3Ms: l.sector3Ms,
+      highlights: l.highlights,
+    }));
+    const sessionMinima =
+      data.sessionTimingMinima ?? computeSessionTimingMinima(normalizedForFallback);
+    const highlightMap =
+      buildHighlightMapFromLaps(
+        normalizedForFallback.map((l) => ({ lap: l.lap, highlights: l.highlights }))
+      ) ?? computeSessionLapHighlights(normalizedForFallback);
+    return { ideal, rows, bestLapMs, sessionMinima, highlightMap };
+  }, [data?.laps, data?.sessionTimingMinima]);
 
   const title = useMemo(
     () => `Admin · Session | ${COMPANY_NAME}`,
@@ -565,7 +578,11 @@ export default function AdminSessionDetail() {
                 </Button>
               </div>
 
-              {adminLapsView.rows.length > 0 && adminLapsView.ideal && (
+              {adminLapsView.rows.length > 0 &&
+                (adminLapsView.sessionMinima?.s1Ms != null ||
+                  adminLapsView.sessionMinima?.s2Ms != null ||
+                  adminLapsView.sessionMinima?.s3Ms != null ||
+                  adminLapsView.ideal) && (
                 <div className="border-b border-white/10 px-4 py-4">
                   <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
                     Ideal Lap
@@ -574,25 +591,45 @@ export default function AdminSessionDetail() {
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S1</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.ideal.sector1Ms)}
+                        {formatLapMs(
+                          adminLapsView.sessionMinima?.s1Ms ??
+                            adminLapsView.ideal?.sector1Ms ??
+                            0
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S2</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.ideal.sector2Ms)}
+                        {formatLapMs(
+                          adminLapsView.sessionMinima?.s2Ms ??
+                            adminLapsView.ideal?.sector2Ms ??
+                            0
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S3</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.ideal.sector3Ms)}
+                        {formatLapMs(
+                          adminLapsView.sessionMinima?.s3Ms ??
+                            adminLapsView.ideal?.sector3Ms ??
+                            0
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">Time</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.ideal.lapTimeMs)}
+                        {formatLapMs(
+                          adminLapsView.sessionMinima?.s1Ms != null &&
+                            adminLapsView.sessionMinima?.s2Ms != null &&
+                            adminLapsView.sessionMinima?.s3Ms != null
+                            ? adminLapsView.sessionMinima.s1Ms +
+                                adminLapsView.sessionMinima.s2Ms +
+                                adminLapsView.sessionMinima.s3Ms
+                            : (adminLapsView.ideal?.lapTimeMs ?? 0)
+                        )}
                       </div>
                     </div>
                   </div>
@@ -650,6 +687,13 @@ export default function AdminSessionDetail() {
                         const fastest =
                           adminLapsView.bestLapMs != null &&
                           lap.lapTimeMs === adminLapsView.bestLapMs;
+                        const rowHighlights =
+                          adminLapsView.highlightMap?.get(lap.lapNumber) ?? {
+                            lap: "default" as const,
+                            s1: "default" as const,
+                            s2: "default" as const,
+                            s3: "default" as const,
+                          };
                         const deltaContent =
                           adminLapsView.bestLapMs == null ? (
                             "—"
@@ -682,45 +726,25 @@ export default function AdminSessionDetail() {
                               </span>
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${
-                                lap.sector1Ms != null &&
-                                adminLapsView.bestS1 != null &&
-                                lap.sector1Ms === adminLapsView.bestS1
-                                  ? "text-purple-400"
-                                  : "text-foreground/80"
-                              }`}
+                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s1)}`}
                             >
                               {formatLapMs(s1)}
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${
-                                lap.sector2Ms != null &&
-                                adminLapsView.bestS2 != null &&
-                                lap.sector2Ms === adminLapsView.bestS2
-                                  ? "text-purple-400"
-                                  : "text-foreground/80"
-                              }`}
+                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s2)}`}
                             >
                               {formatLapMs(s2)}
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${
-                                lap.sector3Ms != null &&
-                                adminLapsView.bestS3 != null &&
-                                lap.sector3Ms === adminLapsView.bestS3
-                                  ? "text-purple-400"
-                                  : "text-foreground/80"
-                              }`}
+                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s3)}`}
                             >
                               {formatLapMs(s3)}
                             </td>
                             <td className="px-2 py-2 text-right align-middle font-mono tabular-nums sm:px-4 sm:py-3">
                               <span
-                                className={
-                                  fastest
-                                    ? "font-semibold text-purple-400"
-                                    : "text-foreground/90"
-                                }
+                                className={timingHighlightClass(rowHighlights.lap, {
+                                  isLapTime: true,
+                                })}
                               >
                                 {formatLapMs(lap.lapTimeMs)}
                               </span>
