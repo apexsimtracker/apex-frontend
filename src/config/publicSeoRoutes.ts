@@ -20,4 +20,6 @@ export const PUBLIC_SEO_ROUTES: PublicSeoRoute[] = [
   { path: "/contact", changefreq: "monthly", priority: 0.55 },
   { path: "/terms-and-conditions", changefreq: "yearly", priority: 0.45 },
   { path: "/privacy-policy", changefreq: "yearly", priority: 0.45 },
+  { path: "/cookie-policy", changefreq: "yearly", priority: 0.45 },
+  { path: "/eula", changefreq: "yearly", priority: 0.4 },
 ];

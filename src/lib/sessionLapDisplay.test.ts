@@ -68,7 +68,7 @@ describe("computeSessionLapHighlights", () => {
     const laps = [lap(1, 92_000), lap(2, 90_000), lap(3, 88_000)];
     const h = computeSessionLapHighlights(laps);
 
-    expect(h.get(1)?.lap).toBe("green");
+    expect(h.get(1)?.lap).toBe("default");
     expect(h.get(2)?.lap).toBe("green");
     expect(h.get(3)?.lap).toBe("purple");
   });
@@ -77,7 +77,7 @@ describe("computeSessionLapHighlights", () => {
     const laps = [lap(1, 90_000), lap(2, 88_000), lap(3, 88_000)];
     const h = computeSessionLapHighlights(laps);
 
-    expect(h.get(1)?.lap).toBe("green");
+    expect(h.get(1)?.lap).toBe("default");
     expect(h.get(2)?.lap).toBe("purple");
     expect(h.get(3)?.lap).toBe("purple");
   });
@@ -90,9 +90,10 @@ describe("computeSessionLapHighlights", () => {
     ];
     const h = computeSessionLapHighlights(laps);
 
+    expect(h.get(1)?.s1).toBe("default");
+    expect(h.get(1)?.s2).toBe("default");
     expect(h.get(2)?.s1).toBe("green");
     expect(h.get(3)?.s1).toBe("purple");
-    expect(h.get(1)?.s2).toBe("green");
     expect(h.get(2)?.s2).toBe("purple");
     expect(h.get(3)?.s2).toBe("purple");
   });
@@ -107,7 +108,7 @@ describe("computeSessionLapHighlights", () => {
     const laps = [lap(1, 90_000), lap(2, 91_000), lap(3, 88_000)];
     const h = computeSessionLapHighlights(laps);
 
-    expect(h.get(1)?.lap).toBe("green");
+    expect(h.get(1)?.lap).toBe("default");
     expect(h.get(2)?.lap).toBe("default");
     expect(h.get(3)?.lap).toBe("purple");
   });
@@ -120,6 +121,41 @@ describe("computeSessionLapHighlights", () => {
     const h = computeSessionLapHighlights(laps);
     expect(h.get(1)?.s1).toBe("default");
     expect(h.get(2)?.s1).toBe("purple");
+  });
+
+  it("colors sectors independently per chronological PB and session best", () => {
+    const laps = [
+      lap(1, 86_800, { s1: 29_500, s2: 30_200, s3: 27_100 }),
+      lap(2, 85_200, { s1: 28_900, s2: 29_800, s3: 26_500 }),
+      lap(3, 85_050, { s1: 28_750, s2: 29_900, s3: 26_400 }),
+      lap(4, 84_400, { s1: 28_800, s2: 29_500, s3: 26_100 }),
+    ];
+    const h = computeSessionLapHighlights(laps);
+
+    expect(h.get(1)).toEqual({
+      lap: "default",
+      s1: "default",
+      s2: "default",
+      s3: "default",
+    });
+    expect(h.get(2)).toEqual({
+      lap: "green",
+      s1: "green",
+      s2: "green",
+      s3: "green",
+    });
+    expect(h.get(3)).toEqual({
+      lap: "green",
+      s1: "purple",
+      s2: "default",
+      s3: "green",
+    });
+    expect(h.get(4)).toEqual({
+      lap: "purple",
+      s1: "default",
+      s2: "purple",
+      s3: "purple",
+    });
   });
 });
 

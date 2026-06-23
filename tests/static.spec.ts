@@ -73,6 +73,14 @@ test.describe("@static", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "1. Introduction" })).toBeVisible();
 
+    await page.goto("/cookie-policy");
+    await expect(page.getByRole("heading", { level: 1, name: "Cookie & Storage Policy" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "1. Introduction" })).toBeVisible();
+
+    await page.goto("/eula");
+    await expect(page.getByRole("heading", { level: 1, name: "End User License Agreement (EULA)" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "1. Agreement" })).toBeVisible();
+
     await page.goto("/faq");
     await expect(
       page.getByRole("heading", { level: 1, name: "Frequently Asked Questions" })

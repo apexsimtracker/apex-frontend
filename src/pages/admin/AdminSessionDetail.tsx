@@ -49,6 +49,7 @@ import {
   computeSessionLapHighlights,
   computeSessionTimingMinima,
   effectiveLapSectors,
+  resolveEffectiveSectors,
   timingHighlightClass,
   type LapTimingHighlights,
   type SessionTimingMinima,
@@ -293,15 +294,24 @@ export default function AdminSessionDetail() {
       .map((l) => l.lapTimeMs)
       .filter((t) => Number.isFinite(t) && t > 0);
     const bestLapMs = finiteTimes.length ? Math.min(...finiteTimes) : null;
-    const normalizedForFallback = laps.map((l) => ({
-      lap: l.lapNumber,
-      timeMs: l.lapTimeMs,
-      isValid: l.isValid,
-      sector1Ms: l.sector1Ms,
-      sector2Ms: l.sector2Ms,
-      sector3Ms: l.sector3Ms,
-      highlights: l.highlights,
-    }));
+    const normalizedForFallback = laps.map((l) => {
+      const { sectors, sectorsEstimated } = resolveEffectiveSectors(
+        l.sector1Ms,
+        l.sector2Ms,
+        l.sector3Ms,
+        l.lapTimeMs
+      );
+      return {
+        lap: l.lapNumber,
+        timeMs: l.lapTimeMs,
+        isValid: l.isValid,
+        sector1Ms: sectors.s1,
+        sector2Ms: sectors.s2,
+        sector3Ms: sectors.s3,
+        sectorsEstimated,
+        highlights: l.highlights,
+      };
+    });
     const sessionMinima =
       data.sessionTimingMinima ?? computeSessionTimingMinima(normalizedForFallback);
     const highlightMap =

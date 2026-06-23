@@ -27,6 +27,7 @@ import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/displayPosi
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   buildHighlightMapFromLaps,
+  computeIdealLap,
   computeSessionLapHighlights,
   computeSessionTimingMinima,
   timingHighlightClass,
@@ -50,6 +51,7 @@ type RawLap = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
 
@@ -61,6 +63,7 @@ type NormalizedLap = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
 
@@ -74,6 +77,7 @@ function normalizeLaps(laps: RawLap[] | undefined): NormalizedLap[] {
     sector1Ms: l.sector1Ms,
     sector2Ms: l.sector2Ms,
     sector3Ms: l.sector3Ms,
+    sectorsEstimated: l.sectorsEstimated,
     highlights: l.highlights,
   }));
 }
@@ -293,6 +297,31 @@ export default function SessionDetailPage() {
     return computeSessionLapHighlights(laps);
   }, [laps, session?.sessionTimingMinima]);
 
+  const idealLap = useMemo(
+    () =>
+      computeIdealLap(
+        laps.map((l) => ({
+          lapTimeMs: l.timeMs,
+          sector1Ms: l.sector1Ms ?? null,
+          sector2Ms: l.sector2Ms ?? null,
+          sector3Ms: l.sector3Ms ?? null,
+        }))
+      ),
+    [laps]
+  );
+
+  const idealLapMs = useMemo(() => {
+    if (idealLap?.lapTimeMs != null) return idealLap.lapTimeMs;
+    if (
+      sessionMinima.s1Ms != null &&
+      sessionMinima.s2Ms != null &&
+      sessionMinima.s3Ms != null
+    ) {
+      return sessionMinima.s1Ms + sessionMinima.s2Ms + sessionMinima.s3Ms;
+    }
+    return sessionMinima.lapMs;
+  }, [idealLap, sessionMinima]);
+
   const sessionDetailDeniedMessage = (() => {
     if (!isError || !(queryError instanceof ApiError)) return null;
     if (queryError.status !== 403) return null;
@@ -403,13 +432,6 @@ export default function SessionDetailPage() {
         ? `P${session.qualifyingPosition}`
         : null;
   const bestLapMsFromLaps = sessionMinima.lapMs;
-  const hasSectors =
-    sessionMinima.s1Ms != null &&
-    sessionMinima.s2Ms != null &&
-    sessionMinima.s3Ms != null;
-  const idealLapMs = hasSectors
-    ? sessionMinima.s1Ms! + sessionMinima.s2Ms! + sessionMinima.s3Ms!
-    : null;
   const defaultLapHighlights = {
     lap: "default" as const,
     s1: "default" as const,
@@ -699,9 +721,11 @@ export default function SessionDetailPage() {
                   S1
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s1Ms != null
-                    ? formatLapMs(sessionMinima.s1Ms)
-                    : "—"}
+                  {idealLap?.sector1Ms != null
+                    ? formatLapMs(idealLap.sector1Ms)
+                    : sessionMinima.s1Ms != null
+                      ? formatLapMs(sessionMinima.s1Ms)
+                      : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -709,9 +733,11 @@ export default function SessionDetailPage() {
                   S2
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s2Ms != null
-                    ? formatLapMs(sessionMinima.s2Ms)
-                    : "—"}
+                  {idealLap?.sector2Ms != null
+                    ? formatLapMs(idealLap.sector2Ms)
+                    : sessionMinima.s2Ms != null
+                      ? formatLapMs(sessionMinima.s2Ms)
+                      : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -719,9 +745,11 @@ export default function SessionDetailPage() {
                   S3
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s3Ms != null
-                    ? formatLapMs(sessionMinima.s3Ms)
-                    : "—"}
+                  {idealLap?.sector3Ms != null
+                    ? formatLapMs(idealLap.sector3Ms)
+                    : sessionMinima.s3Ms != null
+                      ? formatLapMs(sessionMinima.s3Ms)
+                      : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -729,7 +757,7 @@ export default function SessionDetailPage() {
                   Time
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {formatLapMs(idealLapMs)}
+                  {idealLapMs != null ? formatLapMs(idealLapMs) : "—"}
                 </div>
               </div>
             </div>

@@ -8,7 +8,7 @@ import {
   footerAuthenticatedAccountLinks,
   footerCompanyLinks,
   footerGuestAccountLinks,
-  footerLegalLinks,
+  getFooterLegalLinks,
   getFooterProductLinks,
 } from "@/config/navigation";
 
@@ -28,6 +28,7 @@ export default function AppFooter() {
   }
 
   const productLinks = getFooterProductLinks(isNative);
+  const legalLinks = getFooterLegalLinks(isNative);
 
   const accountLinks =
     loading ? [] : user ? footerAuthenticatedAccountLinks : footerGuestAccountLinks;
@@ -99,7 +100,7 @@ export default function AppFooter() {
             </ul>
             <h2 className={footerHeadingClass}>Legal</h2>
             <ul className="space-y-2">
-              {footerLegalLinks.map((link) => (
+              {legalLinks.map((link) => (
                 <li key={link.to}>
                   <Link to={link.to} className={footerLinkClass}>
                     {link.label}

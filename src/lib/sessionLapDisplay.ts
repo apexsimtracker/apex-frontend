@@ -3,6 +3,56 @@
  * when DB rows omit sectors (telemetry ingest).
  */
 
+const SECTOR_MIRROR_EPS_MS = 2;
+
+function isMirroredSectorPair(s1Ms: number, s2Ms: number, epsMs = SECTOR_MIRROR_EPS_MS): boolean {
+  return s1Ms > 0 && s2Ms > 0 && Math.abs(s1Ms - s2Ms) <= epsMs;
+}
+
+function sectorsSumMatchesLap(
+  s1Ms: number,
+  s2Ms: number,
+  s3Ms: number,
+  lapTimeMs: number,
+  toleranceRatio = 0.02
+): boolean {
+  const sum = s1Ms + s2Ms + s3Ms;
+  const tol = Math.max(100, Math.round(lapTimeMs * toleranceRatio));
+  return Math.abs(sum - lapTimeMs) <= tol;
+}
+
+function validateSectorTripletForPersist(
+  sector1Ms: number | null | undefined,
+  sector2Ms: number | null | undefined,
+  sector3Ms: number | null | undefined,
+  lapTimeMs: number
+): { s1: number; s2: number; s3: number } | null {
+  if (
+    sector1Ms == null ||
+    sector2Ms == null ||
+    sector3Ms == null ||
+    sector1Ms <= 0 ||
+    sector2Ms <= 0 ||
+    sector3Ms <= 0
+  ) {
+    return null;
+  }
+  if (isMirroredSectorPair(sector1Ms, sector2Ms)) return null;
+  if (!sectorsSumMatchesLap(sector1Ms, sector2Ms, sector3Ms, lapTimeMs)) return null;
+  return { s1: sector1Ms, s2: sector2Ms, s3: sector3Ms };
+}
+
+function looksLikeSyntheticSectorSplit(
+  sector1Ms: number,
+  sector2Ms: number,
+  sector3Ms: number,
+  lapTimeMs: number
+): boolean {
+  if (!isMirroredSectorPair(sector1Ms, sector2Ms, 0)) return false;
+  const expected = Math.round(lapTimeMs * 0.33);
+  return sector1Ms === expected && sector2Ms === expected;
+}
+
 export function generateSyntheticSectors(lapTimeMs: number): {
   s1: number;
   s2: number;
@@ -12,6 +62,28 @@ export function generateSyntheticSectors(lapTimeMs: number): {
   const s2 = Math.round(lapTimeMs * 0.33);
   const s3 = lapTimeMs - s1 - s2;
   return { s1: Math.max(0, s1), s2: Math.max(0, s2), s3: Math.max(0, s3) };
+}
+
+/** Resolve display sectors and whether they are API-synthesized estimates. */
+export function resolveEffectiveSectors(
+  sector1Ms: number | null | undefined,
+  sector2Ms: number | null | undefined,
+  sector3Ms: number | null | undefined,
+  lapTimeMs: number
+): { sectors: { s1: number; s2: number; s3: number }; sectorsEstimated: boolean } {
+  const validated = validateSectorTripletForPersist(
+    sector1Ms,
+    sector2Ms,
+    sector3Ms,
+    lapTimeMs
+  );
+  if (
+    validated != null &&
+    !looksLikeSyntheticSectorSplit(validated.s1, validated.s2, validated.s3, lapTimeMs)
+  ) {
+    return { sectors: validated, sectorsEstimated: false };
+  }
+  return { sectors: generateSyntheticSectors(lapTimeMs), sectorsEstimated: true };
 }
 
 export function computeIdealLap(
@@ -29,9 +101,23 @@ export function computeIdealLap(
 } | null {
   if (laps.length === 0) return null;
 
-  const s1Values = laps.map((l) => l.sector1Ms).filter((v): v is number => v != null && v > 0);
-  const s2Values = laps.map((l) => l.sector2Ms).filter((v): v is number => v != null && v > 0);
-  const s3Values = laps.map((l) => l.sector3Ms).filter((v): v is number => v != null && v > 0);
+  const s1Values: number[] = [];
+  const s2Values: number[] = [];
+  const s3Values: number[] = [];
+
+  for (const lap of laps) {
+    const valid = validateSectorTripletForPersist(
+      lap.sector1Ms,
+      lap.sector2Ms,
+      lap.sector3Ms,
+      lap.lapTimeMs
+    );
+    if (valid) {
+      s1Values.push(valid.s1);
+      s2Values.push(valid.s2);
+      s3Values.push(valid.s3);
+    }
+  }
 
   if (s1Values.length === 0 || s2Values.length === 0 || s3Values.length === 0) {
     const bestLapTime = Math.min(...laps.map((l) => l.lapTimeMs));
@@ -61,13 +147,14 @@ export function effectiveLapSectors(l: {
   sector1Ms: number | null;
   sector2Ms: number | null;
   sector3Ms: number | null;
-}): { s1: number; s2: number; s3: number } {
-  const has =
-    l.sector1Ms != null && l.sector2Ms != null && l.sector3Ms != null;
-  if (has) {
-    return { s1: l.sector1Ms!, s2: l.sector2Ms!, s3: l.sector3Ms! };
-  }
-  return generateSyntheticSectors(l.lapTimeMs);
+}): { s1: number; s2: number; s3: number; sectorsEstimated: boolean } {
+  const { sectors, sectorsEstimated } = resolveEffectiveSectors(
+    l.sector1Ms,
+    l.sector2Ms,
+    l.sector3Ms,
+    l.lapTimeMs
+  );
+  return { ...sectors, sectorsEstimated };
 }
 
 export type TimingHighlight = "purple" | "green" | "default";
@@ -100,6 +187,7 @@ export type NormalizedLapInput = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorsEstimated?: boolean;
 };
 
 function isQualifyingLapTime(l: NormalizedLapInput): boolean {
@@ -182,7 +270,7 @@ export function computeSessionLapHighlights(
     let s3Milestone = false;
 
     if (isQualifyingLapTime(l) && l.timeMs < runningBestLap) {
-      lapMilestone = true;
+      lapMilestone = Number.isFinite(runningBestLap);
       runningBestLap = l.timeMs;
     }
     if (
@@ -190,7 +278,7 @@ export function computeSessionLapHighlights(
       isQualifyingSector(l.sector1Ms) &&
       l.sector1Ms < runningBestS1
     ) {
-      s1Milestone = true;
+      s1Milestone = Number.isFinite(runningBestS1);
       runningBestS1 = l.sector1Ms;
     }
     if (
@@ -198,7 +286,7 @@ export function computeSessionLapHighlights(
       isQualifyingSector(l.sector2Ms) &&
       l.sector2Ms < runningBestS2
     ) {
-      s2Milestone = true;
+      s2Milestone = Number.isFinite(runningBestS2);
       runningBestS2 = l.sector2Ms;
     }
     if (
@@ -206,7 +294,7 @@ export function computeSessionLapHighlights(
       isQualifyingSector(l.sector3Ms) &&
       l.sector3Ms < runningBestS3
     ) {
-      s3Milestone = true;
+      s3Milestone = Number.isFinite(runningBestS3);
       runningBestS3 = l.sector3Ms;
     }
 

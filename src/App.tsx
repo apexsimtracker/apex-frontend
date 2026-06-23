@@ -26,6 +26,8 @@ import Agent from "./pages/Agent";
 import NotFound from "./pages/NotFound";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import EULA from "./pages/EULA";
 import FAQPage from "./pages/FAQ";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -242,6 +244,8 @@ function AppShell() {
                     />
                     <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/cookie-policy" element={<CookiePolicy />} />
+                    <Route path="/eula" element={<EULA />} />
                     <Route path="/faq" element={<FAQPage />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />

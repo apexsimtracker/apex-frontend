@@ -82,6 +82,8 @@ export const footerCompanyLinks: FooterLinkItem[] = [
 export const footerLegalLinks: FooterLinkItem[] = [
   { label: "Terms", to: "/terms-and-conditions" },
   { label: "Privacy", to: "/privacy-policy" },
+  { label: "Cookies", to: "/cookie-policy" },
+  { label: "EULA", to: "/eula", webOnly: true },
 ];
 
 export const FOOTER_TAGLINE = "Sim racing performance hub";
@@ -112,6 +114,10 @@ export function getAccountMenuItemsForUser(
 
 export function getFooterProductLinks(isNative = false): FooterLinkItem[] {
   return withoutWebOnlyNavItems(footerProductLinks, isNative);
+}
+
+export function getFooterLegalLinks(isNative = false): FooterLinkItem[] {
+  return withoutWebOnlyNavItems(footerLegalLinks, isNative);
 }
 
 export function isNavPathActive(
