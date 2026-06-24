@@ -166,7 +166,7 @@ export function ProfileRaceHistory({
                   <div className="mb-1">
                     <RaceSessionBadges race={race} />
                   </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{new Date(race.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground sm:text-sm">{new Date(race.date).toLocaleDateString()}</p>
                 </div>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
@@ -186,7 +186,7 @@ export function ProfileRaceHistory({
                 <p className="text-sm font-semibold text-foreground">{formatTrackName(race.track)}</p>
                 <p className="text-xs text-muted-foreground">{formatCarName(race.car)}</p>
               </div>
-              <div className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-2 text-xs min-[480px]:grid-cols-3">
                 <div>
                   <p className="text-muted-foreground">Quali</p>
                   <p className="font-bold text-foreground">{race.qualiPos ?? "—"}</p>

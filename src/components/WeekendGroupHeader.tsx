@@ -38,7 +38,7 @@ export default function WeekendGroupHeader({ group, className = "" }: WeekendGro
   return (
     <div
       className={cn(
-        "mb-3 rounded-lg border border-white/8 px-4 py-3 sm:px-5",
+        "border-white/8 mb-3 rounded-lg border px-4 py-3 sm:px-5",
         className
       )}
       aria-label={`Race weekend at ${trackDisplay}`}

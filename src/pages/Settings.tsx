@@ -8,7 +8,6 @@ import {
   authMe,
   authLogout,
   updateMe,
-  API_BASE,
   getApiBase,
   changePassword,
   deleteAccount,

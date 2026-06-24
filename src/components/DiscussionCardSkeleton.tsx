@@ -32,7 +32,7 @@ export function DiscussionCardSkeleton({
           <SkeletonBlock className="mb-3 h-3 w-24 rounded" />
           <SkeletonBlock className="mb-2 h-5 w-full max-w-md rounded" />
           <SkeletonBlock className="mb-2 h-4 w-full rounded" />
-          <SkeletonBlock className="h-4 max-w-sm w-full rounded" />
+          <SkeletonBlock className="h-4 w-full max-w-sm rounded" />
         </div>
       ))}
     </div>

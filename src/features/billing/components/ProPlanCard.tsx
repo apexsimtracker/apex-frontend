@@ -179,7 +179,7 @@ export function ProPlanCard({
             </Button>
           </>
         ) : !billingConfig?.enabled ? (
-          <p className="rounded-lg border border-white/10 bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-white/10 bg-muted/30 p-3 text-sm text-muted-foreground">
             Billing is not configured for this environment yet.
           </p>
         ) : !isLoggedIn && showCatalogPricing ? (
@@ -216,7 +216,7 @@ export function ProPlanCard({
             )}
           </Button>
         ) : (
-          <p className="rounded-lg border border-white/10 bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-white/10 bg-muted/30 p-3 text-sm text-muted-foreground">
             No active RevenueCat packages are available for this account right now.
           </p>
         )}

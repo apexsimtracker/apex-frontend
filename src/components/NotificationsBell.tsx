@@ -266,7 +266,7 @@ export function NotificationsBell() {
           <div className="flex min-h-0 flex-1 flex-col px-0.5 py-4">
             {tab === "activity" ? (
               <>
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pr-1 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
                   <NotificationList
                     notifications={visibleNotifications}
                     loading={notifQuery.isPending}
@@ -290,7 +290,7 @@ export function NotificationsBell() {
               </>
             ) : (
               <>
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pr-1 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
                   <FollowRequestsPanel
                     loading={requestsQuery.isPending}
                     requests={visibleRequests}

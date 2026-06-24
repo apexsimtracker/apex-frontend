@@ -29,7 +29,7 @@ export function AgentPlatformSelector({ selectedOs, onSelect }: AgentPlatformSel
           aria-pressed={selectedOs === os}
           onClick={() => onSelect(os)}
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+            "flex flex-1 items-center justify-center gap-1.5 rounded-md p-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
             selectedOs === os
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"

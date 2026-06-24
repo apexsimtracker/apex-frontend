@@ -99,8 +99,8 @@ flowchart LR
 
 ### Activity feed
 
-- **`lib/groupSessions.ts`** — shared `SessionItem` type; legacy 2h `groupSessions()` (deprecated).
-- **`lib/groupSessionsByWeekend.ts`** — 48h author+track weekend grouping for feeds (Fix 5).
+- **`lib/sessionTypes.ts`** — shared `SessionItem` type for feed cards.
+- **`lib/weekendDisplaySegments.ts`** — weekend carousel/single segmentation for feed rows.
 - **`ActivityFeedList`**, **`WeekendGroupHeader`**, **`ActivityCard`** — feed rendering with weekend headers; manual vs telemetry via `sessionType` / `source`.
 
 ## Commands
@@ -169,13 +169,13 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 
 - Unit tests next to code (`*.test.ts`, `*.spec.ts`).
 - `vitest.config.ts` mirrors Vite `@` alias.
-- No component test harness yet; focus tests on pure lib logic (e.g. `groupSessionsByWeekend`, `apexAnalysisDisplay`).
+- No component test harness yet; focus tests on pure lib logic (e.g. `weekendDisplaySegments`, `apexAnalysisDisplay`).
 
 ## Common pitfalls
 
 - **Wrong API host** — must be Fastify backend, not the static frontend URL.
 - **Duplicate React** — single `package.json` / one `node_modules`; do not reintroduce a nested `client/package.json`.
-- **Session types** — API may send `MANUAL_ACTIVITY`; include in unions when typing feed items (`SessionItem` in `groupSessions.ts`).
+- **Session types** — API may send `MANUAL_ACTIVITY`; include in unions when typing feed items (`SessionItem` in `sessionTypes.ts`).
 - **Asset URLs** — use `resolveApiUrl()` for `/api/assets/...` paths from the API.
 
 ## Related docs

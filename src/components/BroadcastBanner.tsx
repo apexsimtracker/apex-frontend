@@ -195,7 +195,7 @@ export default function BroadcastBanner() {
     },
   });
 
-  const broadcasts = data?.broadcasts ?? [];
+  const broadcasts = useMemo(() => data?.broadcasts ?? [], [data?.broadcasts]);
   const visible = useMemo(
     () => (expanded ? broadcasts : broadcasts.slice(0, VISIBLE_BANNERS)),
     [broadcasts, expanded]

@@ -83,7 +83,7 @@ export async function verifyAdminAgentReleases(): Promise<{
   return fetchApi("POST", "/api/admin/agent/verify", undefined, false);
 }
 
-function parsePublishErrorPayload(text: string, status: number): string {
+function parsePublishErrorPayload(text: string, _status: number): string {
   let message = "Agent release upload failed";
   if (!text) return message;
   try {

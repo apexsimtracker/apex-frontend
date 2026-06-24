@@ -292,7 +292,6 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           };
           const displayLabel = getDisplayPosition(displaySession);
           const pos = displayPositionRank(displaySession);
-          const total = activityPositionValue(item.totalRacers);
           return (
             <div>
               <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">

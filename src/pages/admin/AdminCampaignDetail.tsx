@@ -209,7 +209,7 @@ export default function AdminCampaignDetail() {
 
             <div className="mt-6 rounded-xl border border-white/10">
               <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-                <div className="flex min-w-0 flex-wrap flex-1 items-center gap-3">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
                   <Input
                     placeholder="Search recipient email or name…"
                     value={searchInput}

@@ -171,14 +171,14 @@ export function AdminWebSignInsPanel() {
       {!sessionsQuery.isError && (
         <div className={ADMIN_TABLE_CARD}>
           <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-            <div className="flex min-w-0 flex-wrap flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
               <Input
                 placeholder="Search user email or name…"
                 value={sessionSearchInput}
                 onChange={(e) => setSessionSearchInput(e.target.value)}
                 className="w-full min-w-[12rem] max-w-xs"
               />
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+              <label className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={sessionSuspiciousOnly}
@@ -236,10 +236,10 @@ export function AdminWebSignInsPanel() {
                         </Link>
                         <div className="text-xs text-muted-foreground">{row.user.email}</div>
                       </td>
-                      <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                      <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                         {formatTs(row.lastActiveAt)}
                       </td>
-                      <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                      <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                         {formatTs(row.soonestExpiresAt)}
                       </td>
                       <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>

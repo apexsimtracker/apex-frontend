@@ -185,7 +185,7 @@ export default function Login() {
           <FormRootMessage />
           {suspendedReason !== undefined && (
             <div
-              className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-3 text-sm text-red-100"
+              className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100"
               role="alert"
             >
               <p className="font-medium text-red-50">

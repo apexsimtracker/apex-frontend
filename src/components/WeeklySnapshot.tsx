@@ -107,13 +107,13 @@ export default function WeeklySnapshot({
 
       <div className={METRICS_GRID_CLASS}>
         <div className={metricCellClass(0)}>
-          <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1 sm:0" title="All session types — practice, qualifying, and race">
+          <div className="sm:0 mb-1 text-[11px] uppercase tracking-wider text-white/50" title="All session types — practice, qualifying, and race">
             Sessions
           </div>
           <div className="text-xl font-semibold tabular-nums text-white sm:text-2xl">
             {sessionsCount}
           </div>
-          <div className="mt-1.5 flex my-2.5 sm:my-0 justify-start">
+          <div className="my-2.5 mt-1.5 flex justify-start sm:my-0">
             <TrendChip
               improvement={sessionImprovement}
               displayText={sessionDisplay}
@@ -122,13 +122,13 @@ export default function WeeklySnapshot({
         </div>
 
         <div className={metricCellClass(1)}>
-          <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1 sm:0">
+          <div className="sm:0 mb-1 text-[11px] uppercase tracking-wider text-white/50">
             TRACK TIME
           </div>
           <div className="text-xl font-semibold tabular-nums text-white sm:text-2xl">
             {formatDuration(trackTimeMs)}
           </div>
-          <div className="mt-1.5 flex my-2.5 sm:my-0 justify-start">
+          <div className="my-2.5 mt-1.5 flex justify-start sm:my-0">
             <TrendChip
               improvement={trackTimeImprovement}
               displayText={trackTimeDisplay}
@@ -137,13 +137,13 @@ export default function WeeklySnapshot({
         </div>
 
         <div className={metricCellClass(2)}>
-          <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1 sm:0">
+          <div className="sm:0 mb-1 text-[11px] uppercase tracking-wider text-white/50">
             Laps
           </div>
           <div className="text-xl font-semibold tabular-nums text-white sm:text-2xl">
             {totalLaps}
           </div>
-          <div className="mt-1.5 flex my-2.5 sm:my-0 justify-start">
+          <div className="my-2.5 mt-1.5 flex justify-start sm:my-0">
             <TrendChip
               improvement={lapsImprovement}
               displayText={lapsDisplay}

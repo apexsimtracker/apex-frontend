@@ -119,16 +119,21 @@ export async function fetchEntitlement(
   cancelAtPeriodEnd?: boolean;
 }> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.get(`${apiUrl}/api/billing/entitlement`, {
+  const res = await request.get(`${apiUrl}/api/auth/me`, {
     headers: authHeaders(auth.token, auth.sessionToken),
   });
   if (!res.ok()) {
-    throw new Error(`GET /api/billing/entitlement failed (${res.status()})`);
+    throw new Error(`GET /api/auth/me failed (${res.status()})`);
   }
-  return (await res.json()) as {
+  const me = (await res.json()) as {
     effectivePlan?: string;
-    status?: string;
+    subscriptionStatus?: string;
     cancelAtPeriodEnd?: boolean;
+  };
+  return {
+    effectivePlan: me.effectivePlan,
+    status: me.subscriptionStatus,
+    cancelAtPeriodEnd: me.cancelAtPeriodEnd,
   };
 }
 

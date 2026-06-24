@@ -174,7 +174,7 @@ export default function UserProfile() {
     } finally {
       setFollowLoading(false);
     }
-  }, [currentUser, id, preview?.isFollowing, preview?.followRelationship, queryClient, raceHistoryPage]);
+  }, [currentUser, id, preview, queryClient, raceHistoryPage, setFollowLoading, setFollowActionError]);
 
   if (!id) {
     return (

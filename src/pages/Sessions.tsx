@@ -18,7 +18,6 @@ import {
   type SessionsFilterType,
 } from "@/lib/api";
 import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
-import type { SessionItem } from "@/lib/groupSessions";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -34,8 +33,6 @@ function setOnboarded() {
     localStorage.setItem(ONBOARDED_KEY, "true");
   }
 }
-
-type RawActivityItem = SessionItem & { type?: "session" };
 
 function SessionCardSkeleton() {
   return (

@@ -334,26 +334,6 @@ export async function createBillingPortalSession(): Promise<{ url: string }> {
   return apiPost<{ url: string }>("/api/billing/portal", {});
 }
 
-export type BillingEntitlementStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
-
-export type BillingEntitlement = {
-  plan: EntitlementPlan;
-  status: BillingEntitlementStatus;
-  billingInterval: BillingInterval | null;
-  currentPeriodStart: string | null;
-  currentPeriodEnd: string | null;
-  pastDueSince: string | null;
-  effectivePlan: EntitlementPlan;
-  cancelAtPeriodEnd: boolean;
-  planDisplayName: string | null;
-  lastSyncedAt: string | null;
-  authenticated?: boolean;
-};
-
-export async function getBillingEntitlement(): Promise<BillingEntitlement> {
-  return apiGet<BillingEntitlement>("/api/billing/entitlement");
-}
-
 export type PersonalBestRow = {
   id: string;
   track: string;

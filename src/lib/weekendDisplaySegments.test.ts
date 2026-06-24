@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { segmentWeekendSessionsForDisplay } from "./weekendDisplaySegments";
-import type { SessionItem } from "./groupSessions";
+import type { SessionItem } from "./sessionTypes";
 
 function session(
   id: string,

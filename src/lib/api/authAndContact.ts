@@ -16,6 +16,9 @@ export type AuthUser = {
   hasPro?: boolean;
   effectivePlan?: "FREE" | "PRO";
   billingInterval?: "MONTHLY" | "ANNUAL" | null;
+  subscriptionStatus?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
+  cancelAtPeriodEnd?: boolean;
+  currentPeriodEnd?: string | null;
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;
@@ -158,8 +161,6 @@ export async function authRegister(
 }
 
 /** @deprecated Use authRegister. Kept for compatibility. */
-export const authSignup = authRegister;
-
 /** POST /api/auth/forgot-password — request reset code via email. Body: { email }. */
 export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
   return fetchApi<ForgotPasswordResponse>("POST", "/api/auth/forgot-password", {
@@ -267,10 +268,6 @@ export async function authLogin(
 
 export async function authLogout(): Promise<void> {
   await fetchApi<{ ok?: boolean }>("POST", "/api/auth/logout", undefined, true);
-}
-
-export async function updateProfile(displayName: string): Promise<AuthUser> {
-  return fetchApi<AuthUser>("PATCH", "/api/settings/profile", { displayName: displayName.trim() });
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<{ ok?: boolean }> {

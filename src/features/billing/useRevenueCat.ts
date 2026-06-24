@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LogLevel,
@@ -175,10 +174,8 @@ export function useRevenueCat() {
     },
   });
 
-  const availablePackages = useMemo(
-    () => offeringsQuery.data?.current?.availablePackages ?? [],
-    [offeringsQuery.data]
-  );
+  const availablePackages =
+    offeringsQuery.data?.current?.availablePackages ?? [];
 
   return {
     billingConfig: billingConfigQuery.data ?? null,

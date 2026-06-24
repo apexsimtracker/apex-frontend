@@ -10,7 +10,6 @@ import SessionTypeTag from "@/components/SessionTypeTag";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import PageMeta from "@/components/PageMeta";
 import SessionShareModal from "@/components/SessionShareModal";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -579,7 +578,7 @@ export default function SessionDetailPage() {
       </div>
 
       <div
-        className={`mb-8 grid gap-4 grid-cols-1 sm:grid-cols-2 ${showPosition && showQualiGrid
+        className={`mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${showPosition && showQualiGrid
             ? "lg:grid-cols-5"
             : showPosition || showQualiGrid
               ? "lg:grid-cols-4"
@@ -768,22 +767,22 @@ export default function SessionDetailPage() {
           <table className="w-full min-w-[32rem]">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="px-2 py-2 text-left text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-left text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   Lap
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   S1
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   S2
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   S3
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   Time
                 </th>
-                <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
+                <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider text-white/60 sm:px-4 sm:py-3">
                   DELTA
                 </th>
               </tr>
@@ -833,7 +832,7 @@ export default function SessionDetailPage() {
                           : undefined
                       }
                     >
-                      <td className="px-2 py-2 font-medium text-white sm:px-4 sm:py-3">
+                      <td className="p-2 font-medium text-white sm:px-4 sm:py-3">
                         <span className="inline-flex items-center gap-1.5">
                           {row.lap}
                           {isFastest && (
@@ -842,30 +841,30 @@ export default function SessionDetailPage() {
                         </span>
                       </td>
                       <td
-                        className={`px-2 py-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
-                            ? "select-none blur-sm text-white/40"
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                            ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s1)
                           }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector1Ms)}
                       </td>
                       <td
-                        className={`px-2 py-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
-                            ? "select-none blur-sm text-white/40"
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                            ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s2)
                           }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector2Ms)}
                       </td>
                       <td
-                        className={`px-2 py-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
-                            ? "select-none blur-sm text-white/40"
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                            ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s3)
                           }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector3Ms)}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono sm:px-4 sm:py-3">
+                      <td className="p-2 text-right font-mono sm:px-4 sm:py-3">
                         <span
                           className={timingHighlightClass(rowHighlights.lap, {
                             isLapTime: true,
@@ -875,7 +874,7 @@ export default function SessionDetailPage() {
                         </span>
                       </td>
                       <td
-                        className={`px-2 py-2 text-right sm:px-4 sm:py-3 ${row.timeMs === bestLapMsFromLaps
+                        className={`p-2 text-right sm:px-4 sm:py-3 ${row.timeMs === bestLapMsFromLaps
                             ? "text-sm font-medium text-white"
                             : "text-sm text-white/60"
                           }`}

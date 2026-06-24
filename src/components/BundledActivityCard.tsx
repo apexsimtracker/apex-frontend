@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ActivityCard, { type SessionPatch } from "./ActivityCard";
-import { type SessionItem } from "@/lib/groupSessions";
+import { type SessionItem } from "@/lib/sessionTypes";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ActivityOwner = {

@@ -13,7 +13,7 @@ import { createDiscussionViaApi, deleteDiscussionViaApi } from "./helpers/commun
 import { getE2eEnv, isBillingConfigured } from "./helpers/env";
 import { ensureProSeedHasPro } from "./helpers/billing";
 import { loginPersona } from "./helpers/personas";
-import { authFromPage, uploadSessionJsonViaApi } from "./helpers/sessions";
+import { uploadSessionJsonViaApi } from "./helpers/sessions";
 
 const METRIC_SECTIONS = [
   "Accounts",

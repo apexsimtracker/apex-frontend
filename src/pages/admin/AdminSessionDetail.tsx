@@ -319,7 +319,7 @@ export default function AdminSessionDetail() {
         normalizedForFallback.map((l) => ({ lap: l.lap, highlights: l.highlights }))
       ) ?? computeSessionLapHighlights(normalizedForFallback);
     return { ideal, rows, bestLapMs, sessionMinima, highlightMap };
-  }, [data?.laps, data?.sessionTimingMinima]);
+  }, [data]);
 
   const title = useMemo(
     () => `Admin · Session | ${COMPANY_NAME}`,
@@ -593,7 +593,7 @@ export default function AdminSessionDetail() {
                   adminLapsView.sessionMinima?.s2Ms != null ||
                   adminLapsView.sessionMinima?.s3Ms != null ||
                   adminLapsView.ideal) && (
-                <div className="border-b border-white/10 px-4 py-4">
+                <div className="border-b border-white/10 p-4">
                   <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
                     Ideal Lap
                   </div>
@@ -650,34 +650,34 @@ export default function AdminSessionDetail() {
                 <table className="w-full min-w-[48rem] text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-muted-foreground">
-                      <th className="px-2 py-2 text-left text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-left text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Lap
                       </th>
-                      <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         S1
                       </th>
-                      <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         S2
                       </th>
-                      <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         S3
                       </th>
-                      <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Time
                       </th>
-                      <th className="px-2 py-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Delta
                       </th>
-                      <th className="px-2 py-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Valid
                       </th>
-                      <th className="px-2 py-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Best
                       </th>
-                      <th className="px-2 py-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                      <th className="p-2 text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Telemetry
                       </th>
-                      <th className="w-12 whitespace-nowrap px-2 py-2 sm:px-4 sm:py-3" />
+                      <th className="w-12 whitespace-nowrap p-2 sm:px-4 sm:py-3" />
                     </tr>
                   </thead>
                   <tbody>
@@ -727,7 +727,7 @@ export default function AdminSessionDetail() {
                                 : undefined
                             }
                           >
-                            <td className="px-2 py-2 align-middle font-medium tabular-nums text-foreground sm:px-4 sm:py-3">
+                            <td className="p-2 align-middle font-medium tabular-nums text-foreground sm:px-4 sm:py-3">
                               <span className="inline-flex items-center gap-1.5">
                                 {lap.lapNumber}
                                 {fastest && (
@@ -736,21 +736,21 @@ export default function AdminSessionDetail() {
                               </span>
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s1)}`}
+                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s1)}`}
                             >
                               {formatLapMs(s1)}
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s2)}`}
+                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s2)}`}
                             >
                               {formatLapMs(s2)}
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s3)}`}
+                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s3)}`}
                             >
                               {formatLapMs(s3)}
                             </td>
-                            <td className="px-2 py-2 text-right align-middle font-mono tabular-nums sm:px-4 sm:py-3">
+                            <td className="p-2 text-right align-middle font-mono tabular-nums sm:px-4 sm:py-3">
                               <span
                                 className={timingHighlightClass(rowHighlights.lap, {
                                   isLapTime: true,
@@ -760,7 +760,7 @@ export default function AdminSessionDetail() {
                               </span>
                             </td>
                             <td
-                              className={`px-2 py-2 text-right align-middle text-sm sm:px-4 sm:py-3 ${
+                              className={`p-2 text-right align-middle text-sm sm:px-4 sm:py-3 ${
                                 lap.lapTimeMs === adminLapsView.bestLapMs
                                   ? "font-medium text-foreground"
                                   : "text-muted-foreground"
@@ -768,20 +768,20 @@ export default function AdminSessionDetail() {
                             >
                               {deltaContent}
                             </td>
-                            <td className="px-2 py-2 align-middle sm:px-4 sm:py-3">
+                            <td className="p-2 align-middle sm:px-4 sm:py-3">
                               {lap.isValid ? "yes" : "no"}
                             </td>
-                            <td className="px-2 py-2 align-middle sm:px-4 sm:py-3">
+                            <td className="p-2 align-middle sm:px-4 sm:py-3">
                               {lap.isBestLap ? "★" : "—"}
                             </td>
-                            <td className="px-2 py-2 align-middle text-xs text-muted-foreground sm:px-4 sm:py-3">
+                            <td className="p-2 align-middle text-xs text-muted-foreground sm:px-4 sm:py-3">
                               {lap.hasTelemetry
                                 ? lap.telemetrySampleCount != null
                                   ? `${lap.telemetrySampleCount} pts`
                                   : "yes"
                                 : "—"}
                             </td>
-                            <td className="px-2 py-2 text-right align-middle sm:px-4 sm:py-3">
+                            <td className="p-2 text-right align-middle sm:px-4 sm:py-3">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" aria-label="Lap actions">

@@ -1,4 +1,4 @@
-import type { SessionItem } from "./groupSessions";
+import type { SessionItem } from "./sessionTypes";
 import {
   isPracticeKind,
   isQualifyingKind,

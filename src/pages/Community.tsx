@@ -236,7 +236,7 @@ export default function Community() {
           <button
             type="button"
             onClick={openNewDiscussion}
-            className="whitespace-nowrap mt-2.5 sm:mt-0 rounded-lg px-3 py-2.5 text-xs font-medium text-white transition-colors sm:px-4 sm:py-2 sm:text-sm"
+            className="mt-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium text-white transition-colors sm:mt-0 sm:px-4 sm:py-2 sm:text-sm"
             style={{ backgroundColor: "rgb(240, 28, 28)" }}
           >
             New Discussion

@@ -84,7 +84,7 @@ export function AdminUserWebSessionsSection({
     enabled: Boolean(userId),
   });
 
-  const items = detailQuery.data?.items ?? [];
+  const items = useMemo(() => detailQuery.data?.items ?? [], [detailQuery.data?.items]);
   const detailUser = detailQuery.data?.user;
   const totalPages = detailQuery.data?.totalPages ?? 1;
 
@@ -121,7 +121,7 @@ export function AdminUserWebSessionsSection({
     mutationFn: async (uid: string) => {
       await deleteAllAdminAuthSessionsForUser(uid);
     },
-    onSuccess: async (_, uid) => {
+    onSuccess: async () => {
       toast.success("All web sessions revoked for this user.");
       setRevokeAllOpen(false);
       setRevokeAllConfirm("");

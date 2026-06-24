@@ -97,7 +97,7 @@ export default function MaintenanceNotice() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+            className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             Back
@@ -135,7 +135,7 @@ export default function MaintenanceNotice() {
           <div className="space-y-6">
             <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/40">
               <div className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent" />
-              <div className="space-y-5 px-6 py-6 sm:px-8 sm:py-8">
+              <div className="space-y-5 p-6 sm:p-8">
                 <div className="flex flex-wrap items-center gap-3">
                   <span
                     className={`inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(maintenanceQuery.data.status)}`}

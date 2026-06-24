@@ -22,7 +22,7 @@ import {
 } from "@/lib/api";
 import type { InfiniteData } from "@tanstack/react-query";
 import { patchActivityFeedInfiniteData, flattenFeedItemSessions } from "@/lib/activityFeedCache";
-import type { SessionItem } from "@/lib/groupSessions";
+import type { SessionItem } from "@/lib/sessionTypes";
 import GoalsBar from "@/components/GoalsBar";
 import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
 import OnboardingEmptyState from "@/components/OnboardingEmptyState";

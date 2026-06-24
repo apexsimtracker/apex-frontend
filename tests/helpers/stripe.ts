@@ -1,4 +1,4 @@
-import { expect, type BrowserContext, type FrameLocator, type Page } from "@playwright/test";
+import { type BrowserContext, type FrameLocator, type Page } from "@playwright/test";
 
 const STRIPE_TEST_CARD = "4242424242424242";
 const STRIPE_TEST_EXP = "12 / 28";

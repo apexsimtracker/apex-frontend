@@ -87,24 +87,25 @@ test.describe("@billing", () => {
         "Pro user must have active Pro on /pricing (complete sandbox purchase or sync first)"
       );
 
-      const portalReq = page.waitForRequest(
-        (req) => req.url().includes("/api/billing/portal") && req.method() === "POST"
+      const portalResponsePromise = page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/billing/portal") && res.request().method() === "POST"
       );
-      const portalNav = page.waitForURL(/billing\.stripe\.com/, { timeout: 45_000 });
+      const portalNavPromise = page.waitForURL(/billing\.stripe\.com/, {
+        timeout: 45_000,
+        waitUntil: "commit",
+      });
 
       await page.getByTestId("billing-manage-subscription").click();
 
-      const req = await portalReq;
-      expect(req.headers().authorization ?? "").toMatch(/^Bearer /i);
+      const portalResponse = await portalResponsePromise;
+      expect(portalResponse.request().headers().authorization ?? "").toMatch(/^Bearer /i);
+      expect(portalResponse.ok()).toBeTruthy();
 
-      const res = await req.response();
-      expect(res).not.toBeNull();
-      expect(res!.ok()).toBeTruthy();
-
-      const body = (await res!.json()) as { url?: string };
+      const body = (await portalResponse.json()) as { url?: string };
       expect(body.url).toMatch(/^https:\/\/billing\.stripe\.com/);
 
-      await portalNav;
+      await portalNavPromise;
       expect(page.url()).toMatch(/billing\.stripe\.com/);
     });
   });

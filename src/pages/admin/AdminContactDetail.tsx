@@ -84,7 +84,7 @@ export default function AdminContactDetail() {
     if (!data) return;
     setStatusDraft(data.status);
     setNotesDraft(data.internalNotes ?? "");
-  }, [data?.id]);
+  }, [data]);
 
   const saveMutation = useMutation({
     mutationFn: () =>

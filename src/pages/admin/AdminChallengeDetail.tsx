@@ -821,7 +821,7 @@ export default function AdminChallengeDetail() {
                     return (
                       <li key={p.userId}>
                         <div
-                          className={`flex items-center justify-between gap-2 rounded-md px-2 py-2 transition-colors hover:bg-white/5 ${banned ? "opacity-70" : ""}`}
+                          className={`flex items-center justify-between gap-2 rounded-md p-2 transition-colors hover:bg-white/5 ${banned ? "opacity-70" : ""}`}
                         >
                           <div className="flex min-w-0 items-center gap-2">
                             <Link

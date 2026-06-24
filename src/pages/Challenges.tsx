@@ -182,7 +182,7 @@ export default function Challenges() {
         followedWhoJoinedMoreCount: social.moreCount,
       };
     });
-  }, [listData?.items, socialData?.previews]);
+  }, [listData?.items, socialData]);
 
   const totalPages = listData?.totalPages ?? 1;
   const total = joinedTabLoggedOut ? 0 : (listData?.total ?? 0);

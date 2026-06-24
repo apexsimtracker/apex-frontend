@@ -40,7 +40,7 @@ export default function AppFooter() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* Brand */}
           <div className="sm:col-span-2 md:col-span-1">
-            <Link to="/" className="inline-block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 rounded">
+            <Link to="/" className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70">
               <img
                 src="/logo.png?v=4"
                 alt={`${COMPANY_NAME} logo`}

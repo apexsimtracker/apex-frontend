@@ -27,8 +27,6 @@ import {
   ADMIN_PAGE,
   ADMIN_TABLE_CARD,
   ADMIN_TABLE_SCROLL,
-  ADMIN_TD,
-  ADMIN_TD_ACTIONS,
   ADMIN_TH,
   adminTable,
 } from "@/pages/admin/adminTableLayout";
@@ -446,7 +444,7 @@ export default function AdminSessions() {
                                       className="rounded-full border-white/20"
                                     />
                                   </td>
-                                  <td className="p-2 align-middle text-xs text-muted-foreground whitespace-nowrap">
+                                  <td className="whitespace-nowrap p-2 align-middle text-xs text-muted-foreground">
                                     {new Date(s.createdAt).toLocaleString()}
                                     {isSuggested && (
                                       <span className="ml-2 text-[10px] text-primary">suggested</span>
@@ -460,7 +458,7 @@ export default function AdminSessions() {
                                       {s.id}
                                     </Link>
                                   </td>
-                                  <td className="p-2 align-middle font-mono text-[10px] text-muted-foreground max-w-[12rem] truncate">
+                                  <td className="max-w-[12rem] truncate p-2 align-middle font-mono text-[10px] text-muted-foreground">
                                     {s.clientSessionId ?? "—"}
                                   </td>
                                 </tr>
@@ -722,7 +720,7 @@ export default function AdminSessions() {
                             className="rounded border-white/20"
                           />
                         </td>
-                        <td className="p-3 align-middle text-xs text-muted-foreground whitespace-nowrap">
+                        <td className="whitespace-nowrap p-3 align-middle text-xs text-muted-foreground">
                           {new Date(r.createdAt).toLocaleString()}
                         </td>
                         <td className="p-3 align-middle">
@@ -755,10 +753,10 @@ export default function AdminSessions() {
                           )}
                         </td>
                         <td className="p-3 align-middle tabular-nums">{r.lapCount}</td>
-                        <td className="p-3 align-middle tabular-nums text-muted-foreground min-w-[6rem]">
+                        <td className="min-w-[6rem] p-3 align-middle tabular-nums text-muted-foreground">
                           {formatLapMs(r.bestLapMs)}
                         </td>
-                        <td className="p-3 align-middle font-mono text-[10px] text-muted-foreground max-w-[8rem] truncate">
+                        <td className="max-w-[8rem] truncate p-3 align-middle font-mono text-[10px] text-muted-foreground">
                           {r.clientSessionId ?? "—"}
                         </td>
                         <td className="p-3 align-middle text-xs">

@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = useMemo(
     () => resolveAuthUser(tokenPresent, meQuery),
-    [tokenPresent, meQuery.data, meQuery.isError, meQuery.error]
+    [tokenPresent, meQuery]
   );
 
   // Has token but /api/auth/me not resolved yet (success or confirmed 401/403). Use isFetching so

@@ -565,7 +565,7 @@ export default function ManualActivityForm({
                           disabled={isSubmitting}
                           onClick={() => field.onChange(option.value)}
                           className={cn(
-                            "rounded-md px-2 py-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                            "rounded-md p-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
                             active
                               ? "bg-white text-black shadow-sm"
                               : "text-white/60 hover:text-white"
@@ -754,7 +754,7 @@ export default function ManualActivityForm({
                             disabled={isSubmitting}
                             placeholder="1:32.456 · 92.456 · 0:59.900"
                             className={cn(
-                              "mt-1 w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 transition-colors focus:outline-none focus:ring-0 disabled:opacity-50",
+                              "mt-1 w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50",
                               lapInvalid
                                 ? "border-red-500/50 focus:border-red-500/50"
                                 : "border-white/10 focus:border-white/25 focus:bg-white/[0.07]"

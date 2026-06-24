@@ -58,7 +58,7 @@ export default function ApexAnalysisTrendCard({
 
   return (
     <section
-      className="mt-6 rounded-lg border border-white/6 bg-card/20 p-4 backdrop-blur-lg"
+      className="border-white/6 mt-6 rounded-lg border bg-card/20 p-4 backdrop-blur-lg"
       aria-labelledby="apex-analysis-heading"
     >
       <div className="flex items-center justify-between gap-3">

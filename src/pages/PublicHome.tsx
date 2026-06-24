@@ -57,7 +57,7 @@ export default function PublicHome() {
       <div className="relative overflow-x-hidden bg-background">
         {/* Circular gradients - glow - left */}
         <div
-          className="absolute top-0 left-0 top-auto h-[min(42vw,18rem)] w-[min(40vw,17rem)] -translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px] sm:opacity-[0.32] lg:h-[22rem] lg:w-[20rem] lg:opacity-[0.38] lg:blur-[80px]"
+          className="absolute left-0 top-0 top-auto h-[min(42vw,18rem)] w-[min(40vw,17rem)] -translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px] sm:opacity-[0.32] lg:h-[22rem] lg:w-[20rem] lg:opacity-[0.38] lg:blur-[80px]"
           style={{
             background:
               "radial-gradient(closest-side, rgba(234, 88, 12, 0.22) 0%, rgba(220, 38, 38, 0.12) 58%, transparent 75%)",
@@ -66,7 +66,7 @@ export default function PublicHome() {
 
         {/* Circular gradients - glow - right */}
         <div
-          className="absolute top-0 right-0 top-auto h-[min(42vw,18rem)] w-[min(40vw,17rem)] translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px] sm:opacity-[0.32] lg:h-[22rem] lg:w-[20rem] lg:opacity-[0.38] lg:blur-[80px]"
+          className="absolute right-0 top-0 top-auto h-[min(42vw,18rem)] w-[min(40vw,17rem)] translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px] sm:opacity-[0.32] lg:h-[22rem] lg:w-[20rem] lg:opacity-[0.38] lg:blur-[80px]"
           style={{
             background:
               "radial-gradient(closest-side, rgba(234, 88, 12, 0.22) 0%, rgba(220, 38, 38, 0.12) 58%, transparent 75%)",

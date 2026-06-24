@@ -117,7 +117,7 @@ function NavItemLink({
       <Icon
         className={cn(
           "shrink-0 opacity-90",
-          collapsed ? "size-[1.125rem] block" : "size-4"
+          collapsed ? "block size-[1.125rem]" : "size-4"
         )}
         aria-hidden
       />
@@ -200,7 +200,7 @@ export default function AdminLayout() {
       {mobileOpen ? (
         <button
           type="button"
-          className="fixed inset-x-0 bottom-0 top-28 z-40 bg-black/60 lg:hidden lg:top-16"
+          className="fixed inset-x-0 bottom-0 top-28 z-40 bg-black/60 lg:top-16 lg:hidden"
           aria-label="Close menu"
           onClick={() => setMobileOpen(false)}
         />
@@ -217,7 +217,7 @@ export default function AdminLayout() {
           navCollapsed ? "lg:w-16" : "lg:w-60"
         )}
       >
-        <div className="flex shrink-0 items-center justify-end gap-1 border-b border-white/10 px-2 py-2 lg:border-b-0 lg:px-1 lg:pt-2">
+        <div className="flex shrink-0 items-center justify-end gap-1 border-b border-white/10 p-2 lg:border-b-0 lg:px-1 lg:pt-2">
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
@@ -246,7 +246,7 @@ export default function AdminLayout() {
         <nav
           className={cn(
             "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 pb-6 pt-2 lg:py-0",
-            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+            "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
             navCollapsed ? "lg:px-1.5" : "lg:px-3"
           )}
         >

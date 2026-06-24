@@ -1,5 +1,5 @@
 import type { InfiniteData } from "@tanstack/react-query";
-import type { ActivityFeedPageResult, ActivityFeedItem } from "@/lib/api";
+import type { ActivityFeedPageResult } from "@/lib/api";
 
 function patchSessionInFeedItem(
   item: unknown,

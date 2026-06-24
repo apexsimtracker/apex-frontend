@@ -6,10 +6,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import {
   ArrowLeft,
-  ChevronRight,
   Heart,
   MessageCircle,
   Reply,
@@ -348,7 +346,7 @@ export default function DiscussionDetail() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
               Back
@@ -373,15 +371,15 @@ export default function DiscussionDetail() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
               Back
             </button>
           </div>
-          <div className="overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
+          <div className="border-white/6 overflow-hidden rounded-xl border bg-card/20 shadow-none backdrop-blur-lg">
             <div className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent" />
-            <div className="flex gap-3 border-b border-white/6 px-5 py-4 sm:px-6">
+            <div className="border-white/6 flex gap-3 border-b px-5 py-4 sm:px-6">
               <SkeletonBlock className="size-10 shrink-0 rounded-full" />
               <div className="flex-1 space-y-2 pt-1">
                 <SkeletonBlock className="h-4 w-32 rounded" />
@@ -389,12 +387,12 @@ export default function DiscussionDetail() {
               </div>
             </div>
             <div className="space-y-3 px-5 py-6 sm:px-6">
-              <SkeletonBlock className="h-8 max-w-md w-full rounded-lg" />
+              <SkeletonBlock className="h-8 w-full max-w-md rounded-lg" />
               <SkeletonBlock className="h-4 w-full rounded" />
               <SkeletonBlock className="h-4 w-full rounded" />
               <SkeletonBlock className="h-4 w-3/4 rounded" />
             </div>
-            <div className="flex gap-4 border-t border-white/6 bg-white/[0.02] px-5 py-4 sm:px-6">
+            <div className="border-white/6 flex gap-4 border-t bg-white/[0.02] px-5 py-4 sm:px-6">
               <SkeletonBlock className="h-9 w-20 rounded-lg" />
               <SkeletonBlock className="h-9 w-20 rounded-lg" />
               <SkeletonBlock className="h-9 w-20 rounded-lg" />
@@ -424,13 +422,13 @@ export default function DiscussionDetail() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
               Back
             </button>
           </div>
-          <div className="rounded-xl border border-dashed border-white/12 bg-card/15 px-6 py-10 text-center backdrop-blur-sm">
+          <div className="border-white/12 rounded-xl border border-dashed bg-card/15 px-6 py-10 text-center backdrop-blur-sm">
             <p className="text-sm text-muted-foreground">
               {discussionError ?? "Post not found."}
             </p>
@@ -502,14 +500,14 @@ export default function DiscussionDetail() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/6 bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
+            className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             Back
           </button>
         </div>
 
-        <article className="relative overflow-hidden rounded-xl border border-white/6 bg-card/20 shadow-none backdrop-blur-lg">
+        <article className="border-white/6 relative overflow-hidden rounded-xl border bg-card/20 shadow-none backdrop-blur-lg">
           <div
             className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent"
             aria-hidden
@@ -551,7 +549,7 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          <div className="border-b border-white/6 px-5 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-7">
+          <div className="border-white/6 border-b px-5 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-7">
             <button
               type="button"
               onClick={() => {
@@ -585,7 +583,7 @@ export default function DiscussionDetail() {
             </button>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-white/8 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-foreground/90">
+              <span className="border-white/8 inline-flex items-center gap-1.5 rounded-md border bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-foreground/90">
                 <DiscussionCategoryIcon
                   categoryKey={discussion.category ?? "general"}
                   className="size-3.5 text-white/70"
@@ -625,7 +623,7 @@ export default function DiscussionDetail() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/6 bg-white/[0.02] px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
+          <div className="border-white/6 flex flex-wrap items-center gap-2 border-t bg-white/[0.02] px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
             <button
               type="button"
               onClick={handleLikeClick}
@@ -633,7 +631,7 @@ export default function DiscussionDetail() {
               aria-pressed={Boolean(discussion.likedByMe)}
               aria-label={discussion.likedByMe ? "Unlike post" : "Like post"}
               className={cn(
-                "inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:border-white/12 hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
+                "border-white/8 hover:border-white/12 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
                 discussion.likedByMe &&
                 "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500"
               )}
@@ -648,7 +646,7 @@ export default function DiscussionDetail() {
                 {formatCompactCount(discussion.likeCount ?? 0)}
               </span>
             </button>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
+            <div className="border-white/8 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
               <MessageCircle className="size-4 shrink-0 opacity-80" aria-hidden />
               <span
                 title={String(
@@ -666,7 +664,7 @@ export default function DiscussionDetail() {
                 )}
               </span>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
+            <div className="border-white/8 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
               <Eye className="size-4 shrink-0 opacity-80" aria-hidden />
               <span title={String(discussion.views ?? 0)}>
                 {formatCompactCount(discussion.views ?? 0)}
@@ -679,7 +677,7 @@ export default function DiscussionDetail() {
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-8">
             <div className="flex items-center gap-2.5">
               <div
-                className="flex size-9 items-center justify-center rounded-lg border border-white/8 bg-white/[0.04]"
+                className="border-white/8 flex size-9 items-center justify-center rounded-lg border bg-white/[0.04]"
                 aria-hidden
               >
                 <Reply className="size-4 text-muted-foreground" />
@@ -714,7 +712,7 @@ export default function DiscussionDetail() {
           )}
 
           {!commentsError && repliesTotal === 0 && (
-            <div className="mb-8 rounded-xl border border-dashed border-white/12 bg-white/[0.02] px-6 py-12 text-center">
+            <div className="border-white/12 mb-8 rounded-xl border border-dashed bg-white/[0.02] px-6 py-12 text-center">
               <MessageCircle
                 className="mx-auto mb-3 size-10 text-muted-foreground/35"
                 strokeWidth={1.25}
@@ -731,8 +729,8 @@ export default function DiscussionDetail() {
             <ul className="space-y-3 sm:space-y-4">
               {(comments ?? []).map((c) => (
                 <li key={c.id}>
-                  <div className="overflow-hidden rounded-xl border border-white/6 bg-card/15 backdrop-blur-sm">
-                    <div className="border-l-2 border-l-[rgba(240,28,28,0.35)] bg-card/25 px-4 py-4 sm:px-5 sm:py-5">
+                  <div className="border-white/6 overflow-hidden rounded-xl border bg-card/15 backdrop-blur-sm">
+                    <div className="border-l-2 border-l-[rgba(240,28,28,0.35)] bg-card/25 p-4 sm:p-5">
                       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
                         <CommentAuthorAvatar author={c.author} />
                         <div className="min-w-0 flex-1 pt-0.5">
@@ -770,7 +768,7 @@ export default function DiscussionDetail() {
             </div>
           )}
 
-          <div className="mt-10 overflow-hidden rounded-xl border border-white/6 bg-card/20 p-5 shadow-none backdrop-blur-lg sm:p-6">
+          <div className="border-white/6 mt-10 overflow-hidden rounded-xl border bg-card/20 p-5 shadow-none backdrop-blur-lg sm:p-6">
             <div className="mb-4 flex items-center gap-2">
               <MessageCircle className="size-4 text-muted-foreground" aria-hidden />
               <span className="text-sm font-semibold text-foreground">Add a reply</span>

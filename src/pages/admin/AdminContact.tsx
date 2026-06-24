@@ -109,7 +109,7 @@ export default function AdminContact() {
         {!isError && (
           <div className={ADMIN_TABLE_CARD}>
             <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-              <div className="flex min-w-0 flex-wrap flex-1 items-center gap-3">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
                 <Input
                   placeholder="Search name, email, message…"
                   value={qInput}
@@ -207,7 +207,7 @@ export default function AdminContact() {
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.id} className="border-b border-white/5">
-                        <td className={`${ADMIN_TD} whitespace-nowrap text-muted-foreground tabular-nums`}>
+                        <td className={`${ADMIN_TD} whitespace-nowrap tabular-nums text-muted-foreground`}>
                           {new Date(r.createdAt).toLocaleString(undefined, {
                             month: "short",
                             day: "numeric",

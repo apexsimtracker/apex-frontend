@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import type { BillingInterval } from "@/lib/api";
-import { getBillingEntitlement, getBillingPlans } from "@/lib/api";
+import { getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
 import { useRevenueCat } from "@/features/billing/useRevenueCat";
 import { FreePlanCard } from "@/features/billing/components/FreePlanCard";
@@ -20,6 +20,10 @@ import {
   pickDefaultInterval,
   resolvePackagesByInterval,
 } from "@/features/billing/packageMapping";
+import {
+  formatAccessUntilLabel,
+  isSubscriptionCanceled,
+} from "@/features/billing/subscriptionStatusDisplay";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PRICING_PATH = "/pricing";
@@ -52,11 +56,19 @@ export default function Pricing() {
     isRefreshingSubscription,
   } = useRevenueCat();
 
-  const { data: entitlement } = useQuery({
-    queryKey: ["billing", "entitlement"],
-    queryFn: getBillingEntitlement,
-    enabled: Boolean(user),
-  });
+  const isPro = user?.hasPro === true;
+  const currentSubscriptionLabel = formatCurrentSubscriptionLabel(
+    user
+      ? {
+          effectivePlan: user.effectivePlan,
+          billingInterval: user.billingInterval ?? null,
+        }
+      : undefined,
+    plans
+  );
+  const userBillingInterval = user?.billingInterval ?? null;
+  const isCanceled = isSubscriptionCanceled(user);
+  const accessUntilLabel = formatAccessUntilLabel(user?.currentPeriodEnd);
 
   const resolvedPackages = useMemo(
     () => resolvePackagesByInterval(availablePackages),
@@ -80,16 +92,6 @@ export default function Pricing() {
       return pickDefaultInterval(resolvedPackages);
     });
   }, [availablePackages, resolvedPackages]);
-
-  const isPro = user?.hasPro === true;
-  const isCanceled =
-    entitlement?.status === "CANCELED" || entitlement?.cancelAtPeriodEnd === true;
-  const accessUntilLabel = entitlement?.currentPeriodEnd
-    ? new Date(entitlement.currentPeriodEnd).toLocaleDateString(undefined, {
-        dateStyle: "medium",
-      })
-    : null;
-  const currentSubscriptionLabel = formatCurrentSubscriptionLabel(entitlement, plans);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -207,7 +209,7 @@ export default function Pricing() {
               currentSubscriptionLabel={currentSubscriptionLabel}
               isCanceled={isCanceled}
               accessUntilLabel={accessUntilLabel}
-              entitlementBillingInterval={entitlement?.billingInterval ?? null}
+              entitlementBillingInterval={userBillingInterval}
               message={message}
               warning={warning}
               error={error}

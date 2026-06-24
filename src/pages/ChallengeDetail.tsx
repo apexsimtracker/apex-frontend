@@ -5,13 +5,13 @@ import { ArrowLeft } from "lucide-react";
 import { formatLapDelta, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import {
+  getChallenge,
   getChallengeLeaderboard,
   getChallengeEntrantSessions,
-  getCompetition,
   joinChallenge,
   leaveChallenge,
   type ChallengeApiStatus,
-  type CompetitionDetail,
+  type ChallengeDetail,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 import { formatSimEnum } from "@/lib/enumFormat";
@@ -72,9 +72,9 @@ export default function ChallengeDetail() {
     queryKey: ["challenges", "detail", id ?? "", user?.id ?? "anon"],
     queryFn: async () => {
       if (!id) throw new Error("Missing challenge ID");
-      const data = await getCompetition(id);
+      const data = await getChallenge(id);
       if (!data) throw new Error("Challenge not found");
-      return data as CompetitionDetail;
+      return data;
     },
     enabled: Boolean(id),
   });
@@ -162,7 +162,7 @@ export default function ChallengeDetail() {
     if (!challenge?.countdownTargetIso) return null;
     const t = new Date(challenge.countdownTargetIso).getTime();
     return Math.max(0, t - now);
-  }, [challenge?.countdownTargetIso, now]);
+  }, [challenge, now]);
 
   if (!id) {
     return (

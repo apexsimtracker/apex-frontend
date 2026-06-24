@@ -108,6 +108,11 @@ test.describe("@auth", () => {
   });
 
   test.describe("A5 — verify email", () => {
+    test.beforeAll(() => {
+      const { email } = unverifiedPersonaCredentials();
+      assignKnownVerificationCode(email);
+    });
+
     test("completes auth", async ({ page }) => {
       const { email, code } = unverifiedPersonaCredentials();
 
@@ -128,7 +133,13 @@ test.describe("@auth", () => {
       await page.getByRole("button", { name: "Verify" }).click();
 
       const response = await verifyPost;
-      expect(response.ok()).toBeTruthy();
+      if (!response.ok()) {
+        const body = await response.text();
+        expect(
+          response.ok(),
+          `verify-email failed (${response.status()}): ${body}`
+        ).toBeTruthy();
+      }
 
       await expect(page).toHaveURL(/\/profile/, { timeout: 30_000 });
 
@@ -147,7 +158,6 @@ test.describe("@auth", () => {
   });
 
   test("A7 — logout clears session", async ({ page, request }) => {
-    const env = getE2eEnv();
     const auth = await loginPersona(request, "standard");
 
     await gotoAuthenticated(page, auth, "/settings");

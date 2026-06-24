@@ -3,7 +3,7 @@ import ActivityCard, { type SessionPatch } from "@/components/ActivityCard";
 import BundledActivityCard from "@/components/BundledActivityCard";
 import WeekendGroupHeader from "@/components/WeekendGroupHeader";
 import type { ActivityFeedItem } from "@/lib/api/activityBilling";
-import type { SessionItem } from "@/lib/groupSessions";
+import type { SessionItem } from "@/lib/sessionTypes";
 import { segmentWeekendSessionsForDisplay } from "@/lib/weekendDisplaySegments";
 
 type ActivityOwner = {
@@ -172,7 +172,7 @@ export default function ActivityFeedList({
           >
             <WeekendGroupHeader
               group={item.group}
-              className="mb-0 rounded-none border-0 border-b border-white/8 bg-transparent"
+              className="border-white/8 mb-0 rounded-none border-0 border-b bg-transparent"
             />
             <div className="flex flex-col gap-6 p-3 sm:p-4">
               {segmentWeekendSessionsForDisplay(item.group.sessions as SessionItem[]).map(

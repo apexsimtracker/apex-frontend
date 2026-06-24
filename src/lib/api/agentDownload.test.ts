@@ -27,7 +27,12 @@ describe("agentDownload API", () => {
   const revokeObjectURLMock = vi.fn();
   const anchorClickMock = vi.fn();
   const appendChildMock = vi.fn((node: Node) => node);
-  const locationState = { href: "http://localhost/agent" };
+  const locationState = {
+    href: "http://localhost/agent",
+    assign: vi.fn((url: string) => {
+      locationState.href = url;
+    }),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,6 +96,9 @@ describe("agentDownload API", () => {
           "X-Apex-Session": "session-abc",
         }),
       }
+    );
+    expect(locationState.assign).toHaveBeenCalledWith(
+      "https://r2.example.com/signed?token=abc"
     );
     expect(locationState.href).toBe("https://r2.example.com/signed?token=abc");
     expect(createObjectURLMock).not.toHaveBeenCalled();

@@ -243,15 +243,15 @@ export default function AdminUsers() {
             <div className="flex min-h-0 flex-1 flex-col gap-3">
               <p className="text-sm text-foreground">
                 Scanned{" "}
-                <span className="tabular-nums font-medium">{previewData.scanned}</span>{" "}
+                <span className="font-medium tabular-nums">{previewData.scanned}</span>{" "}
                 accounts ·{" "}
-                <span className="tabular-nums font-medium">{previewData.totalMatching}</span>{" "}
+                <span className="font-medium tabular-nums">{previewData.totalMatching}</span>{" "}
                 use a disposable domain
                 {previewData.pendingFlagCount > 0 ? (
                   <>
                     {" "}
                     ·{" "}
-                    <span className="tabular-nums font-medium text-amber-100">
+                    <span className="font-medium tabular-nums text-amber-100">
                       {previewData.pendingFlagCount}
                     </span>{" "}
                     not yet flagged

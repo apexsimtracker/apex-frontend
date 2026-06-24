@@ -91,12 +91,6 @@ export type AuthSignalsMetrics = Pick<
   "emailCodesTotal" | "passwordResetCodesPending"
 >;
 
-// Legacy aggregate endpoint. The dashboard now uses the per-section fetchers
-// below for progressive rendering, but this is preserved for back-compat.
-export async function fetchAdminMetrics(): Promise<AdminMetrics> {
-  return fetchApi<AdminMetrics>("GET", "/api/admin/metrics", undefined, false);
-}
-
 export async function fetchAdminAccountsMetrics(): Promise<AccountsMetrics> {
   return fetchApi<AccountsMetrics>("GET", "/api/admin/metrics/accounts", undefined, false);
 }

@@ -339,7 +339,7 @@ export function AdminAgentReleasesPanel() {
               <tbody>
                 {historyQuery.data?.items.map((row) => (
                   <tr key={row.id} className="border-b border-white/5">
-                    <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                    <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                       {formatTs(row.publishedAt)}
                     </td>
                     <td className={ADMIN_TD}>{OS_LABELS[row.os]}</td>
@@ -385,7 +385,7 @@ export function AdminAgentReleasesPanel() {
               <tbody>
                 {downloadsQuery.data?.items.map((row) => (
                   <tr key={row.id} className="border-b border-white/5">
-                    <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                    <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                       {formatTs(row.createdAt)}
                     </td>
                     <td className={ADMIN_TD}>

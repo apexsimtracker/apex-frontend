@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ApexLogoImage } from "@/components/ApexLogo";
 import {
   LOADING_EXTENDED_DELAY_MS,
@@ -11,8 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 
 function useLoadingExtendedContent() {
-  const startedAtRef = useRef(Date.now());
-  const startedAt = startedAtRef.current;
+  const [startedAt] = useState(() => Date.now());
 
   const [extendedVisible, setExtendedVisible] = useState(
     () => Date.now() - startedAt >= LOADING_EXTENDED_DELAY_MS,
@@ -53,7 +52,7 @@ function LoadingGlowBackground() {
   return (
     <>
       <div
-        className="pointer-events-none absolute top-0 left-0 h-[min(42vw,18rem)] w-[min(40vw,17rem)] -translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px]"
+        className="pointer-events-none absolute left-0 top-0 h-[min(42vw,18rem)] w-[min(40vw,17rem)] -translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px]"
         style={{
           background:
             "radial-gradient(closest-side, rgba(234, 88, 12, 0.22) 0%, rgba(220, 38, 38, 0.12) 58%, transparent 75%)",
@@ -61,7 +60,7 @@ function LoadingGlowBackground() {
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute top-0 right-0 h-[min(42vw,18rem)] w-[min(40vw,17rem)] translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px]"
+        className="pointer-events-none absolute right-0 top-0 h-[min(42vw,18rem)] w-[min(40vw,17rem)] translate-x-1/4 translate-y-1/3 rounded-full opacity-[0.28] blur-[64px]"
         style={{
           background:
             "radial-gradient(closest-side, rgba(234, 88, 12, 0.22) 0%, rgba(220, 38, 38, 0.12) 58%, transparent 75%)",

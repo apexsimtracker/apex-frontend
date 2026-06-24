@@ -225,7 +225,7 @@ export function AdminEmailOpsTab() {
                           </Link>
                           <div className="text-xs text-muted-foreground">{r.email}</div>
                         </td>
-                        <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                           {formatTs(r.emailVerificationExpiresAt)}
                         </td>
                         <td className={`${ADMIN_TD} text-muted-foreground`}>{r.emailStatus}</td>
@@ -327,13 +327,13 @@ export function AdminEmailOpsTab() {
                         <td className={`${ADMIN_TD} font-mono text-xs text-muted-foreground`}>
                           {r.emailMasked}
                         </td>
-                        <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                           {formatTs(r.expiresAt)}
                         </td>
                         <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
                           {r.attempts}
                         </td>
-                        <td className={`${ADMIN_TD} text-muted-foreground tabular-nums`}>
+                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
                           {formatTs(r.createdAt)}
                         </td>
                       </tr>

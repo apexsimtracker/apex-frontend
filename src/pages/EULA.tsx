@@ -26,7 +26,7 @@ export default function EULA() {
               </p>
             </header>
 
-            <div className="space-y-8 text-sm leading-relaxed text-foreground/90 [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white [&_strong]:text-foreground [&_code]:text-foreground/80">
+            <div className="space-y-8 text-sm leading-relaxed text-foreground/90 [&_a]:text-white/70 [&_a]:underline [&_a]:underline-offset-2 [&_a]:hover:text-white [&_code]:text-foreground/80 [&_strong]:text-foreground">
               <section className="space-y-3">
                 <h2 className="text-base font-semibold text-foreground">1. Agreement</h2>
                 <p>

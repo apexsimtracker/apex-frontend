@@ -601,7 +601,7 @@ function FeatureStateBadge({ feature }: { feature: AdminSystemFeature }) {
         "inline-flex w-fit items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium",
         live
           ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
-          : "border-rose-500/35 bg-rose-500/12 text-rose-200"
+          : "bg-rose-500/12 border-rose-500/35 text-rose-200"
       )}
     >
       {live ? "Live" : "Disabled"}
@@ -1564,7 +1564,7 @@ function OperationsTab() {
                     <p className="mt-3 text-sm text-muted-foreground">{window.description}</p>
                   ) : null}
                   {window.linkedBroadcast ? (
-                    <div className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3 py-3">
+                    <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Linked notice
                       </p>
@@ -1948,7 +1948,6 @@ export default function AdminSystem() {
       qc.invalidateQueries({ queryKey: QUERY_KEYS.maintenance }),
       qc.invalidateQueries({ queryKey: QUERY_KEYS.diagnostics }),
       qc.invalidateQueries({ queryKey: QUERY_KEYS.audit }),
-      qc.invalidateQueries({ queryKey: QUERY_KEYS.logs }),
     ]);
   };
 
