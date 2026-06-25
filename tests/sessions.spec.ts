@@ -377,16 +377,19 @@ test.describe("@sessions", () => {
       "race_spa_ferrari-gt3_podium.json",
     ] as const;
 
+    const runSuffix = `d9-${Date.now()}`;
     const weekendIds: string[] = [];
-    for (const file of weekendFiles) {
-      const upload = await uploadSessionJsonViaApi(request, auth, file);
+    for (let i = 0; i < weekendFiles.length; i++) {
+      const upload = await uploadSessionJsonViaApi(request, auth, weekendFiles[i]!, {
+        recentWeekendWindow: { index: weekendFiles.length - 1 - i, spacingMs: 60 * 60 * 1000 },
+        uniqueSuffix: runSuffix,
+      });
       weekendIds.push(upload.sessionId);
     }
-    const staleUpload = await uploadSessionJsonViaApi(
-      request,
-      auth,
-      "practice_spa_ferrari-gt3_stale-weekend.json"
-    );
+    const staleUpload = await uploadSessionJsonViaApi(request, auth, "practice_spa_ferrari-gt3_stale-weekend.json", {
+      recentWeekendWindow: { index: 72, spacingMs: 60 * 60 * 1000, hoursBeforeNow: 96 },
+      uniqueSuffix: runSuffix,
+    });
 
     for (const sessionId of weekendIds) {
       expect(await getActivityFeedGroupingForSession(request, auth, sessionId)).toBe("weekend");

@@ -7,6 +7,7 @@ import { DrivingTracesChart } from "./DrivingTracesChart";
 import { FuelAnalysisChart } from "./FuelAnalysisChart";
 import { LapSelector } from "./LapSelector";
 import { TyreAnalysisChart } from "./TyreAnalysisChart";
+import { isManualIngest } from "./telemetryEligibility";
 import { useTelemetrySummary, useTelemetryTraces } from "./useSessionTelemetry";
 
 type TabId = "driving" | "fuel" | "tyres";
@@ -15,16 +16,6 @@ type TelemetryAnalysisSectionProps = {
   sessionId: string;
   ingestPath?: string | null;
 };
-
-function isManualIngest(ingestPath?: string | null): boolean {
-  const p = (ingestPath ?? "").trim().toLowerCase();
-  return (
-    p === "manual_form" ||
-    p === "manual_upload_ibt" ||
-    p === "manual_upload_json" ||
-    p === ""
-  );
-}
 
 export function TelemetryAnalysisSection({
   sessionId,
@@ -137,17 +128,43 @@ export function TelemetryAnalysisSection({
     );
   }
 
-  if (!summary.eligible || !hasAnyData) {
+  if (!summary.eligible) {
     return (
       <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-center">
         <div className="text-xs uppercase tracking-wider text-white/50">
           Telemetry Analysis
         </div>
         <p className="mt-2 text-sm text-white/60">
-          {summary.eligibilityReason === "NO_DATA"
-            ? "No telemetry data is stored for this session yet. Re-upload via a current Apex Agent build to capture traces."
-            : "Telemetry analysis is not available for this session."}
+          Telemetry analysis is not available for this session.
         </p>
+      </div>
+    );
+  }
+
+  if (!hasAnyData) {
+    return (
+      <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
+        <div className="text-xs uppercase tracking-wider text-white/50">
+          Telemetry Analysis
+        </div>
+        <p className="mt-1 text-sm text-white/60">
+          Agent session · {summary.simKey.replace(/_/g, " ")}
+        </p>
+        <p className="mt-4 text-sm text-white/60">
+          Lap times are stored, but driving traces, fuel, and tyre data were not captured for this
+          session. Re-upload via a current Apex Agent build after driving at least one complete lap.
+        </p>
+        {summary.laps.length > 0 && (
+          <div className="mt-6">
+            <LapSelector
+              laps={summary.laps}
+              selectedLap={selectedLap}
+              compareLap={compareLap}
+              onSelectLap={setSelectedLap}
+              onSelectCompare={setCompareLap}
+            />
+          </div>
+        )}
       </div>
     );
   }

@@ -16,17 +16,20 @@ Or step by step:
 # 1. Backend env (DATABASE_URL, JWT_SECRET, SECRET_PEPPER, R2, billing keys)
 cp apex/.env.example apex/.env   # if needed
 
-# 2. Playwright env
+# 2. Database: migrations + catalog only (no default users)
+cd apex && npm run prisma:migrate:deploy   # or migrate reset --force on fresh DB
+
+# 3. Playwright env
 cp apex-frontend/.env.e2e.example apex-frontend/.env.e2e.local
 # Set E2E_USER_PASSWORD in .env.e2e.local
 
-# 3. Seed 12 personas + active challenge
+# 4. Seed 12 personas + active challenge
 cd apex && E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run seed:e2e
 
-# 4. Link IBT fixtures (requires repo-root .ibt-files/)
+# 5. Link IBT fixtures (requires repo-root .ibt-files/)
 cd apex && npm run setup:e2e-fixtures
 
-# 5. Playwright
+# 6. Playwright
 cd apex-frontend && pnpm exec playwright install chromium
 ```
 
@@ -72,5 +75,40 @@ cd apex && npm run dev          # :10000
 cd apex-frontend && pnpm dev    # :8080
 cd apex-frontend && pnpm test:e2e
 ```
+
+## Reset E2E data (without full DB reset)
+
+Playwright creates sessions, discussions, follows, etc. Two cleanup commands target **only** E2E personas (`e2e-*@example.com` and optional billing sandbox emails). They never touch catalog tracks/cars or non-E2E users.
+
+```bash
+cd apex
+set -a && source ../apex-frontend/.env.e2e.local && set +a
+E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run reset:e2e   # keep users, wipe test data, re-seed
+# or
+npm run purge:e2e                                        # delete E2E users + all related rows (no re-seed)
+# or, to purge then recreate personas:
+E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run purge:e2e -- --reseed
+```
+
+| Command | What it does |
+|---------|----------------|
+| **`reset:e2e`** | Deletes sessions, follows, discussions, challenge entries, etc. for E2E users. **Keeps** the user rows. Re-runs `seed:e2e` to restore baseline. |
+| **`purge:e2e`** | Deletes the E2E challenge, then **removes E2E user rows** (cascades sessions, laps, subscriptions, participants, follows, …). **Does not** re-seed unless you pass `--reseed`. |
+
+Shared options:
+
+- `--dry-run` — show row counts, change nothing
+- `--include-billing` — also target Gmail sandbox users (`E2E_CHECKOUT_USER_EMAIL`, `E2E_PRO_USER_EMAIL`)
+
+`reset:e2e` only:
+
+- `--skip-reseed` — delete test data without running `seed:e2e`
+
+`purge:e2e` only:
+
+- `--reseed` — run `seed:e2e` after purge (recreates 12 personas + challenge)
+- `--skip-anonymized-deletes` — keep soft-deleted placeholder users (`deleted_*@deleted.local` from account-deletion tests)
+
+This is faster than `prisma migrate reset` when you only need a clean slate for the next E2E run.
 
 See also [E2E_BILLING.md](./E2E_BILLING.md).

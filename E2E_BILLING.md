@@ -43,6 +43,10 @@ With servers already running (`apex` on `:10000`, frontend on `:8080`):
 pnpm test:e2e
 ```
 
+### After `prisma migrate reset`
+
+Seeded `@example.com` personas are restored with `npm run seed:e2e`. **Sandbox billing accounts are not** — they are real Gmail addresses in `.env.e2e.local` (`E2E_CHECKOUT_USER_EMAIL`, `E2E_PRO_USER_EMAIL`). Re-register them in the app (same email + `E2E_USER_PASSWORD`) before running checkout/portal webhook suites, or those tests will skip with an explicit message.
+
 Playwright can also start both servers automatically (disabled reuse when `CI=true`):
 
 ```bash

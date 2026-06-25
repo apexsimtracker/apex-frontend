@@ -14,7 +14,59 @@ export type SessionUploadResult = {
 
 export type SessionUploadOptions = {
   challengeId?: string;
+  /**
+   * Rewrite fixture `startedAt` / `endedAt` (and session ids) so uploads land in a recent
+   * window — required for weekend feed grouping after a long E2E run buries stale dates.
+   */
+  recentWeekendWindow?: {
+    /** Index within the weekend sequence (0 = earliest). */
+    index: number;
+    /** Gap between session start times (default 1h). */
+    spacingMs?: number;
+    /** Hours before now for the last session in the pack (default 2). */
+    hoursBeforeNow?: number;
+  };
+  /** Unique suffix for sessionId / clientSessionId (allows re-uploading the same fixture). */
+  uniqueSuffix?: string;
 };
+
+type JsonFixture = Record<string, unknown>;
+
+function loadSessionJsonFixture(filename: string): JsonFixture {
+  const filePath = sessionJsonFixture(filename);
+  return JSON.parse(readFileSync(filePath, "utf8")) as JsonFixture;
+}
+
+function applySessionUploadFixtureOptions(
+  fixture: JsonFixture,
+  options?: SessionUploadOptions
+): Buffer {
+  const next: JsonFixture = { ...fixture };
+
+  if (options?.uniqueSuffix) {
+    const suffix = options.uniqueSuffix.trim();
+    for (const key of ["sessionId", "clientSessionId"] as const) {
+      const raw = next[key];
+      if (typeof raw === "string" && raw.trim()) {
+        next[key] = `${raw}-${suffix}`;
+      }
+    }
+  }
+
+  const window = options?.recentWeekendWindow;
+  if (window) {
+    const spacingMs = window.spacingMs ?? 60 * 60 * 1000;
+    const hoursBeforeNow = window.hoursBeforeNow ?? 2;
+    const packEndMs = Date.now() - hoursBeforeNow * 60 * 60 * 1000;
+    const packStartMs = packEndMs - window.index * spacingMs;
+    const startedAt = new Date(packStartMs);
+    const endedAt = new Date(packStartMs + 45 * 60 * 1000);
+    next.startedAt = startedAt.toISOString();
+    next.endedAt = endedAt.toISOString();
+  }
+
+  return Buffer.from(JSON.stringify(next));
+}
 
 export type SessionDetailApi = {
   id?: string;
@@ -99,8 +151,11 @@ export async function uploadSessionJsonViaApi(
   options?: SessionUploadOptions
 ): Promise<SessionUploadResult> {
   const { apiUrl } = getE2eEnv();
-  const filePath = sessionJsonFixture(filename);
   const challengeId = options?.challengeId?.trim();
+  const fixtureBuffer = applySessionUploadFixtureOptions(
+    loadSessionJsonFixture(filename),
+    options
+  );
 
   const multipart: {
     file: { name: string; mimeType: string; buffer: Buffer };
@@ -109,7 +164,7 @@ export async function uploadSessionJsonViaApi(
     file: {
       name: filename,
       mimeType: "application/json",
-      buffer: readFileSync(filePath),
+      buffer: fixtureBuffer,
     },
   };
   if (challengeId) {

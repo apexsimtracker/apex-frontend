@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { authHeaders, clearGuestSession, gotoAuthenticated, loginViaApi } from "./helpers/auth";
+import { authHeaders, clearGuestSession, gotoAuthenticated, loginViaApi, type AuthSession } from "./helpers/auth";
 import {
   ensureProSeedHasPro,
   fetchEntitlement,
@@ -18,6 +18,22 @@ import {
 } from "./helpers/sessions";
 import { completeStripeCheckout } from "./helpers/stripe";
 
+/** Sandbox billing uses real Gmail accounts — absent after `prisma migrate reset`. */
+async function loginSandboxBillingUser(
+  request: import("@playwright/test").APIRequestContext,
+  email: string,
+  password: string
+): Promise<AuthSession | null> {
+  try {
+    return await loginViaApi(request, email, password);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("(401)")) {
+      return null;
+    }
+    throw err;
+  }
+}
+
 test.describe("@billing", () => {
   test.beforeAll(() => {
     test.skip(!isBillingConfigured(), "Sandbox billing is not configured on the backend");
@@ -29,10 +45,18 @@ test.describe("@billing", () => {
       test.setTimeout(180_000);
 
       const env = getE2eEnv();
-      const auth = await loginViaApi(request, env.checkoutUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(
+        request,
+        env.checkoutUserEmail,
+        env.password
+      );
+      test.skip(
+        !auth,
+        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+      );
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(
@@ -40,7 +64,7 @@ test.describe("@billing", () => {
         "Checkout user already has Pro — cancel sandbox subscription or use a fresh account"
       );
 
-      await gotoAuthenticated(page, auth, "/pricing");
+      await gotoAuthenticated(page, auth!, "/pricing");
 
       if (await page.getByTestId("billing-pro-active").isVisible().catch(() => false)) {
         test.skip(true, "Checkout user already shows Pro on pricing page");
@@ -58,13 +82,13 @@ test.describe("@billing", () => {
         page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i)
       ).toBeVisible({ timeout: 30_000 });
 
-      await pollUntilHasPro(request, auth, true, 60_000);
+      await pollUntilHasPro(request, auth!, true, 60_000);
 
-      const entitlement = await fetchEntitlement(request, auth);
+      const entitlement = await fetchEntitlement(request, auth!);
       expect(entitlement.effectivePlan).toBe("PRO");
 
       const pbs = await request.get(`${env.apiUrl}/api/personal-bests`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       expect(pbs.status()).toBe(200);
     });
@@ -76,9 +100,13 @@ test.describe("@billing", () => {
       test.setTimeout(90_000);
 
       const env = getE2eEnv();
-      const auth = await loginViaApi(request, env.proUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(request, env.proUserEmail, env.password);
+      test.skip(
+        !auth,
+        "Sandbox Pro user not in DB — sign up E2E_PRO_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+      );
 
-      await gotoAuthenticated(page, auth, "/pricing");
+      await gotoAuthenticated(page, auth!, "/pricing");
 
       const proActive = page.getByTestId("billing-pro-active");
       const hasProUi = await proActive.isVisible().catch(() => false);
@@ -161,7 +189,7 @@ test.describe("@billing", () => {
         event: {
           id: `e2e-exp-${Date.now()}`,
           type: "EXPIRATION",
-          app_user_id: auth.userId,
+          app_user_id: auth!.userId,
           entitlement_ids: ["pro"],
           expiration_at_ms: Date.now() - 60_000,
         },
@@ -183,10 +211,14 @@ test.describe("@billing", () => {
       const env = getE2eEnv();
       test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
 
-      const auth = await loginViaApi(request, env.checkoutUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(request, env.checkoutUserEmail, env.password);
+      test.skip(
+        !auth,
+        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+      );
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(
@@ -199,7 +231,7 @@ test.describe("@billing", () => {
         event: {
           id: `e2e-exp-active-${Date.now()}`,
           type: "EXPIRATION",
-          app_user_id: auth.userId,
+          app_user_id: auth!.userId,
           entitlement_ids: ["pro"],
           expiration_at_ms: Date.now() - 60_000,
         },
@@ -208,15 +240,15 @@ test.describe("@billing", () => {
       expect(status).toBe(200);
       expect(body).toEqual({ received: true });
 
-      await waitForWebhookSync(request, auth);
+      await waitForWebhookSync(request, auth!);
 
       const meAfter = await request.get(`${env.apiUrl}/api/auth/me`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meAfterBody = (await meAfter.json()) as { hasPro?: boolean };
       expect(meAfterBody.hasPro).toBe(true);
 
-      const entitlement = await fetchEntitlement(request, auth);
+      const entitlement = await fetchEntitlement(request, auth!);
       expect(entitlement.effectivePlan).toBe("PRO");
     });
 
@@ -226,11 +258,15 @@ test.describe("@billing", () => {
       const env = getE2eEnv();
       test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
 
-      const auth = await loginViaApi(request, env.proUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(request, env.proUserEmail, env.password);
+      test.skip(
+        !auth,
+        "Sandbox Pro user not in DB — sign up E2E_PRO_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+      );
       const periodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
       if (env.adminSecret) {
-        await setDevEntitlement(request, auth, {
+        await setDevEntitlement(request, auth!, {
           plan: "PRO",
           status: "ACTIVE",
           currentPeriodStart: new Date().toISOString(),
@@ -239,7 +275,7 @@ test.describe("@billing", () => {
       }
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(meBeforeBody.hasPro !== true, "Pro user required for cancellation webhook test");
@@ -249,7 +285,7 @@ test.describe("@billing", () => {
         event: {
           id: `e2e-cancel-${Date.now()}`,
           type: "CANCELLATION",
-          app_user_id: auth.userId,
+          app_user_id: auth!.userId,
           entitlement_ids: ["pro"],
           expiration_at_ms: new Date(periodEnd).getTime(),
         },
@@ -257,15 +293,15 @@ test.describe("@billing", () => {
 
       expect(status).toBe(200);
 
-      await waitForWebhookSync(request, auth);
+      await waitForWebhookSync(request, auth!);
 
       const meAfter = await request.get(`${env.apiUrl}/api/auth/me`, {
-        headers: authHeaders(auth.token, auth.sessionToken),
+        headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meBody = (await meAfter.json()) as { hasPro?: boolean };
       expect(meBody.hasPro).toBe(true);
 
-      const entitlement = await fetchEntitlement(request, auth);
+      const entitlement = await fetchEntitlement(request, auth!);
       expect(entitlement.effectivePlan).toBe("PRO");
 
       const showsCanceled =
