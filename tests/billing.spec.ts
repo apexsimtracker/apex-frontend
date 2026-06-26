@@ -6,7 +6,6 @@ import {
   pollUntilHasPro,
   postRevenueCatWebhook,
   selectMonthlyInterval,
-  setDevEntitlement,
   waitForOfferingsReady,
   waitForWebhookSync,
 } from "./helpers/billing";
@@ -79,7 +78,7 @@ test.describe("@billing", () => {
 
       await expect(page.getByTestId("billing-pro-active")).toBeVisible({ timeout: 60_000 });
       await expect(
-        page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i)
+        page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i).first()
       ).toBeVisible({ timeout: 30_000 });
 
       await pollUntilHasPro(request, auth!, true, 60_000);
@@ -258,27 +257,24 @@ test.describe("@billing", () => {
       const env = getE2eEnv();
       test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
 
-      const auth = await loginSandboxBillingUser(request, env.proUserEmail, env.password);
+      // Prefer checkout user (active Stripe/RC sandbox after B1); fall back to pro user.
+      const auth =
+        (await loginSandboxBillingUser(request, env.checkoutUserEmail, env.password)) ??
+        (await loginSandboxBillingUser(request, env.proUserEmail, env.password));
       test.skip(
         !auth,
-        "Sandbox Pro user not in DB — sign up E2E_PRO_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+        "Sandbox billing user not in DB — sign up E2E_CHECKOUT_USER_EMAIL or E2E_PRO_USER_EMAIL"
       );
       const periodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-
-      if (env.adminSecret) {
-        await setDevEntitlement(request, auth!, {
-          plan: "PRO",
-          status: "ACTIVE",
-          currentPeriodStart: new Date().toISOString(),
-          currentPeriodEnd: periodEnd,
-        });
-      }
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
         headers: authHeaders(auth!.token, auth!.sessionToken),
       });
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
-      test.skip(meBeforeBody.hasPro !== true, "Pro user required for cancellation webhook test");
+      test.skip(
+        meBeforeBody.hasPro !== true,
+        "User must have active Pro (complete B1 checkout or sync sandbox subscription first)"
+      );
 
       const { status } = await postRevenueCatWebhook(request, {
         api_version: "1.0",

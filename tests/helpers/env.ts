@@ -1,3 +1,7 @@
+/**
+ * E2E env helpers (apex-frontend). Persona keys and billing flags are duplicated in
+ * `apex-agent/tests/electron/helpers/env.ts` — keep both in sync when adding personas.
+ */
 import { config as loadEnv } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";

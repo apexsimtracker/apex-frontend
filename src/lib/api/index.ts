@@ -25,7 +25,7 @@ export * from "./adminCommunity";
 export * from "./adminLeaderboards";
 export * from "./adminCatalog";
 export * from "./adminSessions";
-export * from "./adminDevices";
+export * from "./adminAuthSessions";
 export * from "./adminAgentReleases";
 export * from "./adminFollows";
 export * from "./adminNotifications";

@@ -14,8 +14,8 @@ describe("parseApexAnalysisDisplay", () => {
     ]);
   });
 
-  it("reads legacy string array", () => {
-    expect(parseApexAnalysisDisplay(["line one"]).insights).toEqual(["line one"]);
+  it("returns empty insights when payload is null", () => {
+    expect(parseApexAnalysisDisplay(null).insights).toEqual([]);
   });
 
   it("reads FREE locked payload", () => {

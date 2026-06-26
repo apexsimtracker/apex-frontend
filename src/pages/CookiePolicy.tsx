@@ -19,7 +19,7 @@ export default function CookiePolicy() {
                 Cookie &amp; Storage Policy
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Last updated: 23 June 2026
+                Last updated: 26 June 2026
               </p>
             </header>
 
@@ -158,10 +158,12 @@ export default function CookiePolicy() {
                   system’s application data directory, not in browser storage:
                 </p>
                 <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
-                  <li><code>token.json</code> — access, refresh, and session tokens;</li>
-                  <li><code>apex_client_device_id.txt</code> — installation UUID;</li>
-                  <li><code>pro_state.json</code> — cached Pro entitlement requirement state;</li>
-                  <li><code>failed_uploads/</code> — session JSON payloads that failed to upload (diagnostic).</li>
+                  <li>
+                    <code>token.json</code> — access JWT, optional refresh token, and server session token (
+                    <code>X-Apex-Session</code>);
+                  </li>
+                  <li><code>apex_client_device_id.txt</code> — installation UUID sent as <code>X-Apex-Device-Id</code>;</li>
+                  <li><code>pro_state.json</code> — cached Pro entitlement requirement state.</li>
                 </ul>
               </section>
 

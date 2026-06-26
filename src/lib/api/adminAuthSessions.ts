@@ -1,6 +1,6 @@
 import { fetchApi } from "./fetchClient";
 
-export type AdminDeviceUser = {
+export type AdminAuthSessionUser = {
   id: string;
   email: string;
   displayName: string;
@@ -9,70 +9,11 @@ export type AdminDeviceUser = {
   isDeleted: boolean;
 };
 
-export type AdminDeviceRow = {
-  id: string;
-  name: string | null;
-  createdAt: string;
-  lastSeenAt: string | null;
-  revokedAt: string | null;
-  revokedReason: string | null;
-  user: AdminDeviceUser;
-};
-
-export type AdminDeviceListParams = {
-  page?: number;
-  pageSize?: number;
-  q?: string;
-  staleDays?: number;
-  includeRevoked?: boolean;
-  sort?: "lastSeenAt_desc" | "createdAt_desc";
-};
-
-export async function fetchAdminDeviceList(params?: AdminDeviceListParams): Promise<{
-  items: AdminDeviceRow[];
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-}> {
-  const sp = new URLSearchParams();
-  if (params?.page != null) sp.set("page", String(params.page));
-  if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
-  if (params?.q?.trim()) sp.set("q", params.q.trim());
-  if (params?.staleDays != null && params.staleDays > 0) sp.set("staleDays", String(params.staleDays));
-  if (params?.includeRevoked) sp.set("includeRevoked", "true");
-  if (params?.sort) sp.set("sort", params.sort);
-  const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/devices${qs ? `?${qs}` : ""}`, undefined, false);
-}
-
-/** One agent device by id (same payload as a list row). */
-export async function fetchAdminDevice(deviceId: string): Promise<AdminDeviceRow> {
-  return fetchApi(
-    "GET",
-    `/api/admin/devices/${encodeURIComponent(deviceId)}`,
-    undefined,
-    false
-  );
-}
-
-export async function patchAdminDevice(deviceId: string, body: { name: string }): Promise<{ ok: boolean }> {
-  return fetchApi("PATCH", `/api/admin/devices/${encodeURIComponent(deviceId)}`, body, false);
-}
-
-export async function deleteAdminDevice(deviceId: string, reason?: string): Promise<void> {
-  let q = "";
-  if (reason !== undefined && reason.trim() !== "") {
-    q = `?reason=${encodeURIComponent(reason.trim())}`;
-  }
-  await fetchApi("DELETE", `/api/admin/devices/${encodeURIComponent(deviceId)}${q}`, undefined, false);
-}
-
 /** One row per user with active web sessions (aggregated). */
 export type AdminAuthSessionUserSummaryRow = {
-  user: AdminDeviceUser;
+  user: AdminAuthSessionUser;
   activeSessionCount: number;
-  /** Distinct browsers/devices (client id or UA hash fallback). */
+  /** Distinct browser installations (X-Apex-Device-Id when present). */
   distinctDeviceCount: number;
   maxRiskScore: number;
   /** Sessions at or above default suspicion threshold (50). */
@@ -141,7 +82,7 @@ export async function fetchAdminAuthSessionsForUser(
   userId: string,
   params?: FetchAdminAuthSessionsForUserParams
 ): Promise<{
-  user: AdminDeviceUser;
+  user: AdminAuthSessionUser;
   scope: "active" | "all";
   items: AdminAuthSessionDetailRow[];
   page: number;

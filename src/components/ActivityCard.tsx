@@ -16,8 +16,8 @@ import {
   displayPositionRank,
   getDisplayPosition,
   shouldShowSessionPosition,
-} from "@/lib/displayPosition";
-import { isPracticeKind } from "@/lib/sessionKind";
+  isPracticeKind,
+} from "@/lib/sessionKind";
 
 /** Never show .ibt filename; use formatted track name or "Practice Session" */
 function cleanTitle(item: ActivityCardItem): string {

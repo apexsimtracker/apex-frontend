@@ -7,7 +7,6 @@ export type AdminMetrics = {
   usersAdmins: number;
   sessionsTotal: number;
   lapsTotal: number;
-  devicesTotal: number;
   authSessionsTotal: number;
   authSessionsActive: number;
   discussionsTotal: number;
@@ -51,9 +50,9 @@ export type RacingMetrics = Pick<
   | "sessionCommentsTotal"
 >;
 
-export type DevicesMetrics = Pick<
+export type AuthSessionsMetrics = Pick<
   AdminMetrics,
-  "devicesTotal" | "authSessionsTotal" | "authSessionsActive"
+  "authSessionsTotal" | "authSessionsActive"
 >;
 
 export type CommunityMetrics = Pick<
@@ -99,8 +98,8 @@ export async function fetchAdminRacingMetrics(): Promise<RacingMetrics> {
   return fetchApi<RacingMetrics>("GET", "/api/admin/metrics/racing", undefined, false);
 }
 
-export async function fetchAdminDevicesMetrics(): Promise<DevicesMetrics> {
-  return fetchApi<DevicesMetrics>("GET", "/api/admin/metrics/devices", undefined, false);
+export async function fetchAdminAuthSessionsMetrics(): Promise<AuthSessionsMetrics> {
+  return fetchApi<AuthSessionsMetrics>("GET", "/api/admin/metrics/devices", undefined, false);
 }
 
 export async function fetchAdminCommunityMetrics(): Promise<CommunityMetrics> {

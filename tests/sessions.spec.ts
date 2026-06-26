@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { authHeaders, gotoAuthenticated } from "./helpers/auth";
+import { gotoAuthenticated } from "./helpers/auth";
 import { getE2eEnv } from "./helpers/env";
 import { loginPersona } from "./helpers/personas";
 import {
@@ -281,54 +281,7 @@ test.describe("@sessions", () => {
     ).toBeTruthy();
   });
 
-  test("D6 — pro-locked analytics: free viewer vs Pro charts", async ({ page, request }) => {
-    const freeViewerAuth = await loginPersona(request, "standard");
-    const ownerAuth = await loginPersona(request, "checkoutSeed");
-    const proAuth = await loginPersona(request, "proSeed");
-
-    const upload = await uploadSessionJsonViaApi(
-      request,
-      ownerAuth,
-      "practice_spa_ferrari-gt3_12laps_analysis.json"
-    );
-
-    await gotoAuthenticated(page, freeViewerAuth, `/sessions/${upload.sessionId}`);
-    await expect(page.getByText("Unlock with Pro").first()).toBeVisible();
-    await expect(page.getByText("Sector breakdown and ideal lap times")).toBeVisible();
-
-    const freeDetail = await getSessionDetailViaApi(request, freeViewerAuth, upload.sessionId);
-    expect(freeDetail.proFeaturesLocked).toBe(true);
-
-    await gotoAuthenticated(page, proAuth, `/sessions/${upload.sessionId}`);
-    await expect(page.getByText("Unlock with Pro")).toHaveCount(0);
-    await expect(page.getByText("Ideal Lap")).toBeVisible();
-    const proDetail = await getSessionDetailViaApi(request, proAuth, upload.sessionId);
-    expect(proDetail.proFeaturesLocked).not.toBe(true);
-  });
-
-  test("D7 — personal bests: Pro table vs free upgrade CTA", async ({ page, request }) => {
-    const standardAuth = await loginPersona(request, "standard");
-    const proAuth = await loginPersona(request, "proSeed");
-
-    await gotoAuthenticated(page, standardAuth, "/personal-bests");
-    await expect(page.getByRole("heading", { name: "Personal bests" })).toBeVisible();
-    await expect(
-      page.getByText(/Personal bests tracking is an Apex Pro feature/i)
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: "View Pro plans" })).toBeVisible();
-
-    await gotoAuthenticated(page, proAuth, "/personal-bests");
-    await expect(page.getByRole("heading", { name: "Personal bests" })).toBeVisible();
-    await expect(
-      page.getByText(/Personal bests tracking is an Apex Pro feature/i)
-    ).not.toBeVisible();
-
-    const env = getE2eEnv();
-    const pbsRes = await request.get(`${env.apiUrl}/api/personal-bests`, {
-      headers: authHeaders(proAuth.token, proAuth.sessionToken),
-    });
-    expect(pbsRes.status()).toBe(200);
-  });
+  // Pro-gate coverage (personal bests API + session detail unlock) lives in billing.spec.ts B5.
 
   test("D8 — dedupe JSON uploads: duplicate noop then extended laps", async ({ page, request }) => {
     test.setTimeout(120_000);

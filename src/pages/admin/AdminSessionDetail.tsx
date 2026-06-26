@@ -45,11 +45,7 @@ import { LAP_FORMAT_MSG } from "@/lib/validation/manualActivity";
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   buildHighlightMapFromLaps,
-  computeIdealLap,
-  computeSessionLapHighlights,
-  computeSessionTimingMinima,
-  effectiveLapSectors,
-  resolveEffectiveSectors,
+  EMPTY_SESSION_TIMING_MINIMA,
   timingHighlightClass,
   type LapTimingHighlights,
   type SessionTimingMinima,
@@ -272,53 +268,45 @@ export default function AdminSessionDetail() {
   const adminLapsView = useMemo(() => {
     if (!data?.laps?.length) {
       return {
-        ideal: null as ReturnType<typeof computeIdealLap>,
+        idealLapMs: null as number | null,
         sessionMinima: null as SessionTimingMinima | null,
         highlightMap: null as Map<number, LapTimingHighlights> | null,
         bestLapMs: null as number | null,
         rows: [] as Array<{
           lap: AdminSessionLapRow;
-          s1: number;
-          s2: number;
-          s3: number;
+          s1: number | null;
+          s2: number | null;
+          s3: number | null;
         }>,
       };
     }
     const laps = data.laps;
-    const ideal = computeIdealLap(laps);
     const rows = laps.map((lap) => ({
       lap,
-      ...effectiveLapSectors(lap),
+      s1: lap.sector1Ms,
+      s2: lap.sector2Ms,
+      s3: lap.sector3Ms,
     }));
     const finiteTimes = laps
       .map((l) => l.lapTimeMs)
       .filter((t) => Number.isFinite(t) && t > 0);
     const bestLapMs = finiteTimes.length ? Math.min(...finiteTimes) : null;
-    const normalizedForFallback = laps.map((l) => {
-      const { sectors, sectorsEstimated } = resolveEffectiveSectors(
-        l.sector1Ms,
-        l.sector2Ms,
-        l.sector3Ms,
-        l.lapTimeMs
-      );
-      return {
-        lap: l.lapNumber,
-        timeMs: l.lapTimeMs,
-        isValid: l.isValid,
-        sector1Ms: sectors.s1,
-        sector2Ms: sectors.s2,
-        sector3Ms: sectors.s3,
-        sectorsEstimated,
-        highlights: l.highlights,
-      };
-    });
-    const sessionMinima =
-      data.sessionTimingMinima ?? computeSessionTimingMinima(normalizedForFallback);
+    const normalizedForHighlights = laps.map((l) => ({
+      lap: l.lapNumber,
+      highlights: l.highlights,
+    }));
+    const sessionMinima = data.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA;
     const highlightMap =
-      buildHighlightMapFromLaps(
-        normalizedForFallback.map((l) => ({ lap: l.lap, highlights: l.highlights }))
-      ) ?? computeSessionLapHighlights(normalizedForFallback);
-    return { ideal, rows, bestLapMs, sessionMinima, highlightMap };
+      buildHighlightMapFromLaps(normalizedForHighlights) ??
+      buildHighlightMapFromLaps(normalizedForHighlights, { missingAsDefault: true }) ??
+      new Map<number, LapTimingHighlights>();
+    const idealLapMs =
+      sessionMinima.s1Ms != null &&
+      sessionMinima.s2Ms != null &&
+      sessionMinima.s3Ms != null
+        ? sessionMinima.s1Ms + sessionMinima.s2Ms + sessionMinima.s3Ms
+        : sessionMinima.lapMs;
+    return { idealLapMs, rows, bestLapMs, sessionMinima, highlightMap };
   }, [data]);
 
   const title = useMemo(
@@ -592,7 +580,7 @@ export default function AdminSessionDetail() {
                 (adminLapsView.sessionMinima?.s1Ms != null ||
                   adminLapsView.sessionMinima?.s2Ms != null ||
                   adminLapsView.sessionMinima?.s3Ms != null ||
-                  adminLapsView.ideal) && (
+                  adminLapsView.idealLapMs != null) && (
                 <div className="border-b border-white/10 p-4">
                   <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
                     Ideal Lap
@@ -601,45 +589,25 @@ export default function AdminSessionDetail() {
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S1</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(
-                          adminLapsView.sessionMinima?.s1Ms ??
-                            adminLapsView.ideal?.sector1Ms ??
-                            0
-                        )}
+                        {formatLapMs(adminLapsView.sessionMinima?.s1Ms ?? 0)}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S2</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(
-                          adminLapsView.sessionMinima?.s2Ms ??
-                            adminLapsView.ideal?.sector2Ms ??
-                            0
-                        )}
+                        {formatLapMs(adminLapsView.sessionMinima?.s2Ms ?? 0)}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">S3</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(
-                          adminLapsView.sessionMinima?.s3Ms ??
-                            adminLapsView.ideal?.sector3Ms ??
-                            0
-                        )}
+                        {formatLapMs(adminLapsView.sessionMinima?.s3Ms ?? 0)}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs uppercase tracking-wider text-muted-foreground">Time</div>
                       <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(
-                          adminLapsView.sessionMinima?.s1Ms != null &&
-                            adminLapsView.sessionMinima?.s2Ms != null &&
-                            adminLapsView.sessionMinima?.s3Ms != null
-                            ? adminLapsView.sessionMinima.s1Ms +
-                                adminLapsView.sessionMinima.s2Ms +
-                                adminLapsView.sessionMinima.s3Ms
-                            : (adminLapsView.ideal?.lapTimeMs ?? 0)
-                        )}
+                        {formatLapMs(adminLapsView.idealLapMs ?? 0)}
                       </div>
                     </div>
                   </div>

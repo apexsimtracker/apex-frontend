@@ -182,6 +182,7 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const profileSaveInFlightRef = useRef(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
 
@@ -265,10 +266,11 @@ export default function Profile() {
   };
 
   const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
-    if (!user) return;
+    if (!user || profileSaveInFlightRef.current) return;
     const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
     const trimmedName = values.displayName.trim();
     if (avatarError) return;
+    profileSaveInFlightRef.current = true;
     setEditLoading(true);
     profileEditForm.clearErrors("root");
     try {
@@ -283,7 +285,6 @@ export default function Profile() {
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Avatar upload failed.";
           profileEditForm.setError("root", { type: "server", message: msg });
-          setEditLoading(false);
           return;
         }
       }
@@ -377,6 +378,7 @@ export default function Profile() {
       });
     } finally {
       setEditLoading(false);
+      profileSaveInFlightRef.current = false;
     }
   };
 

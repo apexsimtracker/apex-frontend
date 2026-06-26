@@ -61,12 +61,14 @@ pnpm typecheck:e2e      # strict TS for tests/
 |-------|------|------------------|
 | Checkout | `E2E_CHECKOUT_USER_EMAIL` | Monthly subscribe → Stripe test card → Pro UI + `hasPro` |
 | Portal | `E2E_PRO_USER_EMAIL` | `POST /api/billing/portal` → `billing.stripe.com` |
-| Webhook | API only | Auth rejection, TEST event, EXPIRATION (free user), EXPIRATION (active sub stays Pro), CANCELLATION |
+| Webhook | API only | Auth rejection, TEST event, EXPIRATION (free user), EXPIRATION (active sub stays Pro), CANCELLATION (checkout user with active Pro) |
 
 **Notes**
 
 - Checkout user must **not** already have Pro (or the test skips).
 - Portal user must have **active Pro** and preferably a Stripe customer id (otherwise portal may 409).
+- **CANCELLATION** runs against the checkout user when they have Pro after B1; it no longer calls `dev/set-entitlement` (that path could send a spurious Pro welcome email).
+- Completing **B1 checkout** sends a real **Welcome to Apex Pro** email to `E2E_CHECKOUT_USER_EMAIL` when SMTP is configured — expected sandbox behavior.
 - Webhook `EXPIRATION` always re-syncs from RevenueCat. If the user still has an active sandbox subscription, `hasPro` stays `true` (covered by a dedicated test). To test revoke-to-free, use a user with no Pro in RC or set `E2E_WEBHOOK_USER_EMAIL`.
 - Stripe checkout UX can flake; re-run with `--headed` or inspect `playwright-report/`.
 

@@ -240,7 +240,6 @@ export type AdminSystemDiagnostics = {
     missingTelemetrySessions: number;
     multipleBestLapSessions: number;
     highRiskAuthSessions: number;
-    staleDevices: number;
     supportBacklog: number;
     failedEmailDeliveries: number;
     catalogOrphans: number;
@@ -262,20 +261,6 @@ export type AdminSystemDiagnostics = {
     suspiciousSessionCount: number;
     maxRiskScore: number;
     lastSeenAt: string | null;
-  }>;
-  staleDevices: Array<{
-    id: string;
-    name: string | null;
-    createdAt: string;
-    lastSeenAt: string | null;
-    user: {
-      id: string;
-      email: string;
-      displayName: string;
-      role: string;
-      suspendedAt: string | null;
-      isDeleted: boolean;
-    };
   }>;
   supportBacklog: Array<{
     id: string;

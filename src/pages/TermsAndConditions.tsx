@@ -19,7 +19,7 @@ export default function TermsAndConditions() {
                 Terms &amp; Conditions
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Last updated: 23 June 2026
+                Last updated: 26 June 2026
               </p>
             </header>
 
@@ -72,9 +72,9 @@ export default function TermsAndConditions() {
                   or the minimum age required in your country if higher.
                 </p>
                 <p>
-                  You may link the Apex Agent to your account via login or pairing. You are responsible for ensuring
-                  the Agent runs only on devices you control and that you sign out or uninstall the Agent when you no
-                  longer wish it to upload data on your behalf.
+                  You may link the Apex Agent to your account by signing in with your {COMPANY_NAME} credentials in
+                  the Agent. You are responsible for ensuring the Agent runs only on devices you control and that you
+                  sign out or uninstall the Agent when you no longer wish it to upload data on your behalf.
                 </p>
               </section>
 
@@ -118,8 +118,8 @@ export default function TermsAndConditions() {
                     authenticated and entitled to use upload features;
                   </li>
                   <li>
-                    Store authentication tokens and a device identifier locally in the Agent’s application data
-                    directory.
+                    Store your access JWT, server session token, and a randomly generated installation identifier
+                    locally in the Agent’s application data directory.
                   </li>
                 </ul>
                 <p>

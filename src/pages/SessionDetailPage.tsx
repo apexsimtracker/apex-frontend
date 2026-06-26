@@ -22,13 +22,12 @@ import {
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
-import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/displayPosition";
+import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/sessionKind";
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   buildHighlightMapFromLaps,
-  computeIdealLap,
-  computeSessionLapHighlights,
-  computeSessionTimingMinima,
+  coerceSessionDetailLaps,
+  EMPTY_SESSION_TIMING_MINIMA,
   timingHighlightClass,
   type LapTimingHighlights,
   type SessionTimingMinima,
@@ -86,7 +85,17 @@ type BackendLapLite = {
   lapTimeMs: number;
   isValid: boolean;
   isBestLap: boolean;
+  sector1Ms?: number | null;
+  sector2Ms?: number | null;
+  sector3Ms?: number | null;
+  sectorsEstimated?: boolean;
+  highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
+
+function attachNormalizedLaps(session: SessionDetail, lapsPayload: unknown[] | null): SessionDetail {
+  if (!lapsPayload || lapsPayload.length === 0) return session;
+  return { ...session, laps: coerceSessionDetailLaps(lapsPayload) };
+}
 
 type SessionDetailResponse =
   | SessionDetail
@@ -103,7 +112,6 @@ type SessionDetailResponse =
 
 function parseSessionDetailApiResponse(data: SessionDetailResponse): {
   session: SessionDetail;
-  lapsData: BackendLapLite[] | null;
   proFeaturesLocked: boolean;
   apexAnalysis: ApexAnalysisPayload;
 } {
@@ -133,37 +141,36 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
       (Array.isArray((outer as any)?.laps) ? ((outer as any).laps as unknown[]) : null) ??
       (Array.isArray((base as any)?.laps) ? ((base as any).laps as unknown[]) : null);
 
-    const lite =
-      Array.isArray(lapsPayload) &&
-        lapsPayload.length > 0 &&
-        typeof (lapsPayload[0] as any)?.lapNumber === "number" &&
-        typeof (lapsPayload[0] as any)?.lapTimeMs === "number"
-        ? (lapsPayload as BackendLapLite[])
-        : null;
-
-    const apexRaw =
-      (d as { apexAnalysis?: ApexAnalysisPayload }).apexAnalysis ??
-      (mergedSession as { apexAnalysis?: ApexAnalysisPayload }).apexAnalysis ??
-      [];
+    const apexRaw = normalizeApexAnalysisPayload(
+      (d as { apexAnalysis?: unknown }).apexAnalysis ??
+        (mergedSession as { apexAnalysis?: unknown }).apexAnalysis
+    );
     return {
-      session: mergedSession,
-      lapsData: lite,
+      session: attachNormalizedLaps(mergedSession, lapsPayload),
       proFeaturesLocked: Boolean((d as { proFeaturesLocked?: boolean }).proFeaturesLocked),
-      apexAnalysis: apexRaw ?? [],
+      apexAnalysis: apexRaw,
     };
   }
 
   const flat = data as SessionDetail & {
     proFeaturesLocked?: boolean;
-    apexAnalysis?: ApexAnalysisPayload;
+    apexAnalysis?: unknown;
     ingestPath?: string | null;
+    laps?: unknown[];
   };
+  const flatLaps = Array.isArray(flat.laps) ? flat.laps : null;
   return {
-    session: flat,
-    lapsData: null,
+    session: attachNormalizedLaps(flat, flatLaps),
     proFeaturesLocked: Boolean(flat.proFeaturesLocked),
-    apexAnalysis: flat.apexAnalysis ?? [],
+    apexAnalysis: normalizeApexAnalysisPayload(flat.apexAnalysis),
   };
+}
+
+function normalizeApexAnalysisPayload(raw: unknown): ApexAnalysisPayload {
+  if (raw && typeof raw === "object" && !Array.isArray(raw) && "locked" in raw) {
+    return raw as ApexAnalysisPayload;
+  }
+  return { locked: false, insights: [] };
 }
 
 export type SessionSource = "TELEMETRY" | "MANUAL_ACTIVITY" | "AGENT" | string;
@@ -257,60 +264,37 @@ export default function SessionDetailPage() {
   });
 
   const session = sessionPayload?.session ?? null;
-  const lapsData = sessionPayload?.lapsData ?? null;
 
   const shareUrl = useMemo(() => (id ? publicSessionUrl(id) : ""), [id]);
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked === true;
-  const apexAnalysis = sessionPayload?.apexAnalysis ?? [];
+  const apexAnalysis =
+    sessionPayload?.apexAnalysis ?? ({ locked: false, insights: [] } as ApexAnalysisPayload);
 
   const laps = useMemo(() => {
     if (!session) return [] as NormalizedLap[];
-    return normalizeLaps(
-      (lapsData
-        ? lapsData.map((l) => ({
-          lapNumber: l.lapNumber,
-          lapTimeMs: l.lapTimeMs,
-          isValid: l.isValid,
-          isBestLap: l.isBestLap,
-          lap: l.lapNumber,
-        }))
-        : session.laps) as RawLap[] | undefined
-    )
+    return normalizeLaps(session.laps as RawLap[] | undefined)
       .filter((l) => Number.isFinite(l.lap) && l.lap > 0)
       .sort((a, b) => a.lap - b.lap);
-  }, [session, lapsData]);
+  }, [session]);
 
   const sessionMinima = useMemo(
-    () => session?.sessionTimingMinima ?? computeSessionTimingMinima(laps),
-    [session?.sessionTimingMinima, laps]
+    () => session?.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA,
+    [session?.sessionTimingMinima]
   );
 
   const lapHighlights = useMemo(() => {
     if (laps.length === 0) return new Map<number, LapTimingHighlights>();
-    const fromApi = buildHighlightMapFromLaps(laps);
-    if (fromApi) return fromApi;
-    if (session?.sessionTimingMinima != null) {
-      const partial = buildHighlightMapFromLaps(laps, { missingAsDefault: true });
-      if (partial) return partial;
-    }
-    return computeSessionLapHighlights(laps);
-  }, [laps, session?.sessionTimingMinima]);
-
-  const idealLap = useMemo(
-    () =>
-      computeIdealLap(
-        laps.map((l) => ({
-          lapTimeMs: l.timeMs,
-          sector1Ms: l.sector1Ms ?? null,
-          sector2Ms: l.sector2Ms ?? null,
-          sector3Ms: l.sector3Ms ?? null,
-        }))
-      ),
-    [laps]
-  );
+    return (
+      buildHighlightMapFromLaps(laps) ??
+      buildHighlightMapFromLaps(laps, { missingAsDefault: true }) ??
+      new Map<number, LapTimingHighlights>()
+    );
+  }, [laps]);
 
   const idealLapMs = useMemo(() => {
-    if (idealLap?.lapTimeMs != null) return idealLap.lapTimeMs;
+    const fromApi = (session as { idealLap?: { lapTimeMs?: number | null } | null })?.idealLap
+      ?.lapTimeMs;
+    if (fromApi != null && Number.isFinite(fromApi)) return fromApi;
     if (
       sessionMinima.s1Ms != null &&
       sessionMinima.s2Ms != null &&
@@ -319,7 +303,7 @@ export default function SessionDetailPage() {
       return sessionMinima.s1Ms + sessionMinima.s2Ms + sessionMinima.s3Ms;
     }
     return sessionMinima.lapMs;
-  }, [idealLap, sessionMinima]);
+  }, [session, sessionMinima]);
 
   const sessionDetailDeniedMessage = (() => {
     if (!isError || !(queryError instanceof ApiError)) return null;
@@ -720,11 +704,7 @@ export default function SessionDetailPage() {
                   S1
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {idealLap?.sector1Ms != null
-                    ? formatLapMs(idealLap.sector1Ms)
-                    : sessionMinima.s1Ms != null
-                      ? formatLapMs(sessionMinima.s1Ms)
-                      : "—"}
+                  {sessionMinima.s1Ms != null ? formatLapMs(sessionMinima.s1Ms) : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -732,11 +712,7 @@ export default function SessionDetailPage() {
                   S2
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {idealLap?.sector2Ms != null
-                    ? formatLapMs(idealLap.sector2Ms)
-                    : sessionMinima.s2Ms != null
-                      ? formatLapMs(sessionMinima.s2Ms)
-                      : "—"}
+                  {sessionMinima.s2Ms != null ? formatLapMs(sessionMinima.s2Ms) : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -744,11 +720,7 @@ export default function SessionDetailPage() {
                   S3
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {idealLap?.sector3Ms != null
-                    ? formatLapMs(idealLap.sector3Ms)
-                    : sessionMinima.s3Ms != null
-                      ? formatLapMs(sessionMinima.s3Ms)
-                      : "—"}
+                  {sessionMinima.s3Ms != null ? formatLapMs(sessionMinima.s3Ms) : "—"}
                 </div>
               </div>
               <div className="text-right">

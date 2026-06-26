@@ -5,6 +5,7 @@ import { getE2eEnv } from "./helpers/env";
 import { loginPersona } from "./helpers/personas";
 import {
   DEFAULT_WEEKLY_GOALS,
+  deleteAvatarFromR2ByPublicUrl,
   deleteSessionViaAdminApi,
   getFollowStatusViaApi,
   getMeViaApi,
@@ -72,6 +73,7 @@ test.describe("@profile", () => {
     const auth = await loginPersona(request, "standard");
     const baseline = await getMeViaApi(request, auth);
     const originalAvatarUrl = baseline.avatarUrl ?? null;
+    let uploadedAvatarUrl: string | null = null;
 
     try {
       await gotoAuthenticated(page, auth, "/profile");
@@ -100,6 +102,7 @@ test.describe("@profile", () => {
       }
       const uploadBody = (await uploadRes.json()) as { avatarUrl?: string | null };
       expect(uploadBody.avatarUrl?.trim()).toBeTruthy();
+      uploadedAvatarUrl = uploadBody.avatarUrl?.trim() ?? null;
 
       const patchRes = await patchMe;
       expect(patchRes.ok()).toBeTruthy();
@@ -107,6 +110,9 @@ test.describe("@profile", () => {
       const me = await getMeViaApi(request, auth);
       expect(me.avatarUrl?.trim()).toBeTruthy();
     } finally {
+      if (uploadedAvatarUrl && uploadedAvatarUrl !== originalAvatarUrl) {
+        deleteAvatarFromR2ByPublicUrl(uploadedAvatarUrl);
+      }
       await patchMeViaApi(request, auth, { avatarUrl: originalAvatarUrl }).catch(() => undefined);
     }
   });

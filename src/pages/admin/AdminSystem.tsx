@@ -1760,24 +1760,7 @@ function DiagnosticsTab({ data }: { data: AdminSystemDiagnostics }) {
         </SectionCard>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <SectionCard title="Stale devices" description="Devices that have not reported recently.">
-          {data.staleDevices.length === 0 ? (
-            <EmptyState title="No stale devices" description="There are no obviously stale devices." />
-          ) : (
-            <div className="space-y-3">
-              {data.staleDevices.map((device) => (
-                <div key={device.id} className="rounded-lg border border-white/10 px-4 py-3">
-                  <p className="text-sm font-medium text-foreground">{device.user.displayName}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {device.name ?? "Unnamed device"} · last seen {formatDateTime(device.lastSeenAt)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-
+      <div className="grid gap-6 xl:grid-cols-2">
         <SectionCard title="Support backlog" description="Oldest unresolved contact submissions.">
           {data.supportBacklog.length === 0 ? (
             <EmptyState title="No support backlog" description="The contact queue is clear." />

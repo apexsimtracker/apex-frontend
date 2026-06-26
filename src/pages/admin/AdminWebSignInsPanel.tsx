@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteAllAdminAuthSessionsForUser,
   fetchAdminAuthSessionUsersList,
-  fetchAdminDevicesMetrics,
+  fetchAdminAuthSessionsMetrics,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 import {
@@ -55,8 +55,8 @@ export function AdminWebSignInsPanel() {
   const qc = useQueryClient();
 
   const { data: metrics, isPending: metricsPending } = useQuery({
-    queryKey: ["admin", "metrics", "devices"],
-    queryFn: fetchAdminDevicesMetrics,
+    queryKey: ["admin", "metrics", "authSessions"],
+    queryFn: fetchAdminAuthSessionsMetrics,
     staleTime: 0,
   });
 
@@ -80,7 +80,7 @@ export function AdminWebSignInsPanel() {
   }, [debouncedSessionSearch, sessionSuspiciousOnly]);
 
   useEffect(() => {
-    void qc.invalidateQueries({ queryKey: ["admin", "metrics", "devices"] });
+    void qc.invalidateQueries({ queryKey: ["admin", "metrics", "authSessions"] });
   }, [qc]);
 
   const sessionsQuery = useQuery({

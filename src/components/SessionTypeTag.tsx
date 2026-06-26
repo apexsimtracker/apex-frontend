@@ -1,4 +1,4 @@
-import { getSessionTypeTagStyle } from "@/lib/sessionTypeTag";
+import { getSessionTypeTagStyle } from "@/lib/sessionKind";
 
 interface SessionTypeTagProps {
   sessionType?: string | null;

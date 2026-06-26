@@ -128,8 +128,7 @@ export function normalizeActivityFeedItem(item: unknown): ActivityFeedItem | unk
     };
   }
 
-  // Legacy flat session shape (pre-grouping API)
-  return normalizeFeedSession(item);
+  return item;
 }
 
 /**

@@ -12,14 +12,14 @@ import {
   fetchAdminAuthSignalsMetrics,
   fetchAdminCommunityMetrics,
   fetchAdminCompetitionMetrics,
-  fetchAdminDevicesMetrics,
+  fetchAdminAuthSessionsMetrics,
   fetchAdminRacingMetrics,
   fetchAdminSocialMetrics,
   type AccountsMetrics,
   type AuthSignalsMetrics,
   type CommunityMetrics,
   type CompetitionMetrics,
-  type DevicesMetrics,
+  type AuthSessionsMetrics,
   type RacingMetrics,
   type SocialMetrics,
   ApiError,
@@ -35,7 +35,7 @@ const SECTION_STALE_TIME_MS = 60_000;
 type SectionKey =
   | "accounts"
   | "racing"
-  | "devices"
+  | "authSessions"
   | "community"
   | "social"
   | "competition"
@@ -44,7 +44,7 @@ type SectionKey =
 type SectionDataMap = {
   accounts: AccountsMetrics;
   racing: RacingMetrics;
-  devices: DevicesMetrics;
+  authSessions: AuthSessionsMetrics;
   community: CommunityMetrics;
   social: SocialMetrics;
   competition: CompetitionMetrics;
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
   const [
     accountsQ,
     racingQ,
-    devicesQ,
+    authSessionsQ,
     communityQ,
     socialQ,
     competitionQ,
@@ -222,10 +222,10 @@ export default function AdminDashboard() {
         staleTime: SECTION_STALE_TIME_MS,
       } satisfies UseQueryOptions<RacingMetrics>,
       {
-        queryKey: ["admin", "metrics", "devices"],
-        queryFn: fetchAdminDevicesMetrics,
+        queryKey: ["admin", "metrics", "authSessions"],
+        queryFn: fetchAdminAuthSessionsMetrics,
         staleTime: SECTION_STALE_TIME_MS,
-      } satisfies UseQueryOptions<DevicesMetrics>,
+      } satisfies UseQueryOptions<AuthSessionsMetrics>,
       {
         queryKey: ["admin", "metrics", "community"],
         queryFn: fetchAdminCommunityMetrics,
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
   }) as [
     UseQueryResult<AccountsMetrics>,
     UseQueryResult<RacingMetrics>,
-    UseQueryResult<DevicesMetrics>,
+    UseQueryResult<AuthSessionsMetrics>,
     UseQueryResult<CommunityMetrics>,
     UseQueryResult<SocialMetrics>,
     UseQueryResult<CompetitionMetrics>,
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
   const anySectionFetching =
     accountsQ.isFetching ||
     racingQ.isFetching ||
-    devicesQ.isFetching ||
+    authSessionsQ.isFetching ||
     communityQ.isFetching ||
     socialQ.isFetching ||
     competitionQ.isFetching ||
@@ -323,10 +323,9 @@ export default function AdminDashboard() {
             )}
           </MetricsSection>
 
-          <MetricsSection<"devices"> title="Agent & sessions" cardCount={3} query={devicesQ}>
+          <MetricsSection<"authSessions"> title="Agent & sessions" cardCount={2} query={authSessionsQ}>
             {(m) => (
               <>
-                <MetricCard label="Legacy device tokens" value={formatInt(m.devicesTotal)} />
                 <MetricCard label="Auth sessions (all)" value={formatInt(m.authSessionsTotal)} />
                 <MetricCard label="Auth sessions (active)" value={formatInt(m.authSessionsActive)} />
               </>

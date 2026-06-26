@@ -60,7 +60,7 @@ async function triggerBlobDownload(blob: Blob, filename: string): Promise<void> 
 /**
  * GET /api/agent/download-link?os= — Pro-only agent installer.
  *
- * - R2 presigned / legacy redirect: JSON `{ url, expiresAt, filename, os }` → navigate to `url`
+ * - R2 presigned JSON: `{ url, expiresAt, filename, os }` → navigate to `url`
  * - Dev local file: `application/octet-stream` → blob download
  */
 export async function getAgentDownloadLink(os: AgentOs): Promise<AgentDownloadResponse> {

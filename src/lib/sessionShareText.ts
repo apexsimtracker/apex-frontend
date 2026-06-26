@@ -5,7 +5,7 @@ import {
   resolveSessionTypeTagKind,
   SESSION_TYPE_TAG_STYLES,
   type SessionTypeTagKind,
-} from "@/lib/sessionTypeTag";
+} from "@/lib/sessionKind";
 
 const SESSION_KIND_FRIENDLY: Record<SessionTypeTagKind, string> = {
   RACE: "Race",

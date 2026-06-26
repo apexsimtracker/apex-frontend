@@ -210,7 +210,7 @@ export default function Pricing() {
               isCanceled={isCanceled}
               accessUntilLabel={accessUntilLabel}
               entitlementBillingInterval={userBillingInterval}
-              message={message}
+              message={showAgentCta ? null : message}
               warning={warning}
               error={error}
               onSubscribe={() => void handlePurchase()}

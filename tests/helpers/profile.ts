@@ -41,6 +41,21 @@ export function isR2Configured(): boolean {
   );
 }
 
+/** Best-effort R2 delete for E2E avatar teardown (requires R2 env vars). */
+export function deleteAvatarFromR2ByPublicUrl(publicUrl: string | null | undefined): void {
+  const trimmed = publicUrl?.trim();
+  if (!trimmed || !isR2Configured()) return;
+  try {
+    execSync(`npx tsx scripts/e2e/delete-r2-avatar.ts ${JSON.stringify(trimmed)}`, {
+      cwd: APEX_ROOT,
+      env: process.env,
+      stdio: "pipe",
+    });
+  } catch {
+    // best-effort teardown
+  }
+}
+
 export async function getMeViaApi(
   request: APIRequestContext,
   auth: AuthSession

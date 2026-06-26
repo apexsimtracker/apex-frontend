@@ -23,6 +23,3 @@ export default function ProtectedRoute({ children, message }: ProtectedRouteProp
 
   return children ?? <Outlet />;
 }
-
-/** @deprecated Prefer `ProtectedRoute` */
-export { ProtectedRoute as RequireAuth };

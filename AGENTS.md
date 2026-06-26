@@ -165,6 +165,17 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 - App runs in **dark mode** by default (`document.documentElement.classList.add("dark")` in `App.tsx`).
 - Brand accent: `BRAND_RED` in `src/lib/appConfig.ts`.
 
+### Android dev (Capacitor)
+
+`pnpm dev:android` and `pnpm cap:run:android` use [`scripts/run-android.mjs`](scripts/run-android.mjs).
+
+Optional env overrides:
+
+```bash
+export CAP_ANDROID_TARGET="Pixel_3a_API_34_extension_level_7_arm64-v8a"  # AVD id; omit to use default device
+export JAVA_HOME="/path/to/jbr"  # optional; macOS defaults to Android Studio JBR when installed
+```
+
 ## Testing
 
 - Unit tests next to code (`*.test.ts`, `*.spec.ts`).

@@ -22,7 +22,7 @@ export default function EULA() {
                 Apex Agent Desktop Application — Windows, macOS &amp; Linux
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Last updated: 23 June 2026
+                Last updated: 26 June 2026
               </p>
             </header>
 
@@ -80,11 +80,14 @@ export default function EULA() {
                   </li>
                   <li>
                     <strong>Network transmission:</strong> sends parsed session JSON to {COMPANY_NAME} servers over
-                    HTTPS when you are signed in and entitled to upload. Raw simulator files are not uploaded.
+                    HTTPS when you are signed in with your account credentials and entitled to upload. Raw simulator
+                    files are not uploaded. Uploads are authenticated with your user JWT and server session token (see
+                    our <Link to="/privacy-policy">Privacy Policy</Link>).
                   </li>
                   <li>
-                    <strong>Local persistence:</strong> stores authentication tokens, a device UUID, optional failed
-                    upload payloads, and Pro-gating state in the Agent’s application data directory.
+                    <strong>Local persistence:</strong> stores your access JWT, server session token, a randomly
+                    generated installation UUID (<code>X-Apex-Device-Id</code>), and cached Pro-gating state in the
+                    Agent’s application data directory.
                   </li>
                 </ul>
                 <p>

@@ -31,49 +31,14 @@ function followListParamsToSearch(params?: {
   return q ? `?${q}` : "";
 }
 
-/** Backend may return paginated object or legacy raw array; UI always needs `items`. */
-function filterFollowUsersByQuery(items: FollowUser[], q: string): FollowUser[] {
-  const tokens = q
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .map((t) => t.trim())
-    .filter(Boolean);
-  if (tokens.length === 0) return items;
-  return items.filter((u) => {
-    const name = (u.displayName ?? "").toLowerCase();
-    const haystack = name;
-    return tokens.every((t) => haystack.includes(t));
-  });
-}
-
+/** Backend returns paginated object; UI always needs `items`. */
 function normalizeFollowListPageResult(
-  raw: FollowListPageResult | FollowUser[] | null | undefined,
+  raw: FollowListPageResult | null | undefined,
   fallbackPage: number,
-  fallbackLimit: number,
-  searchQ: string
+  fallbackLimit: number
 ): FollowListPageResult {
-  if (Array.isArray(raw)) {
-    let items = raw;
-    const q = searchQ.trim();
-    if (q) {
-      items = filterFollowUsersByQuery(items, q);
-    }
-    const total = items.length;
-    const totalPages = total === 0 ? 1 : Math.max(1, Math.ceil(total / fallbackLimit));
-    const page = Math.min(Math.max(1, fallbackPage), totalPages);
-    const skip = (page - 1) * fallbackLimit;
-    const pageItems = items.slice(skip, skip + fallbackLimit);
-    return {
-      items: pageItems,
-      page,
-      limit: fallbackLimit,
-      total,
-      totalPages,
-    };
-  }
-  if (raw && typeof raw === "object" && Array.isArray((raw as FollowListPageResult).items)) {
-    return raw as FollowListPageResult;
+  if (raw && typeof raw === "object" && Array.isArray(raw.items)) {
+    return raw;
   }
   return {
     items: [],
@@ -102,32 +67,30 @@ export async function unfollowUser(
   );
 }
 
-/** GET /api/users/:id/followers — paginated (or legacy array). */
+/** GET /api/users/:id/followers — paginated. */
 export async function getFollowersPage(
   userId: string,
   params?: { page?: number; limit?: number; q?: string }
 ): Promise<FollowListPageResult> {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
-  const q = params?.q?.trim() ?? "";
-  const raw = await apiGet<FollowListPageResult | FollowUser[]>(
+  const raw = await apiGet<FollowListPageResult>(
     `/api/users/${encodeURIComponent(userId)}/followers${followListParamsToSearch(params)}`
   );
-  return normalizeFollowListPageResult(raw, page, limit, q);
+  return normalizeFollowListPageResult(raw, page, limit);
 }
 
-/** GET /api/users/:id/following — paginated (or legacy array). */
+/** GET /api/users/:id/following — paginated. */
 export async function getFollowingPage(
   userId: string,
   params?: { page?: number; limit?: number; q?: string }
 ): Promise<FollowListPageResult> {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
-  const q = params?.q?.trim() ?? "";
-  const raw = await apiGet<FollowListPageResult | FollowUser[]>(
+  const raw = await apiGet<FollowListPageResult>(
     `/api/users/${encodeURIComponent(userId)}/following${followListParamsToSearch(params)}`
   );
-  return normalizeFollowListPageResult(raw, page, limit, q);
+  return normalizeFollowListPageResult(raw, page, limit);
 }
 
 export async function getFollowStatus(userId: string): Promise<FollowRelationshipStatus> {

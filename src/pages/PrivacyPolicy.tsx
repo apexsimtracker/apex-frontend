@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
                 Privacy Policy
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Last updated: 23 June 2026
+                Last updated: 26 June 2026
               </p>
             </header>
 
@@ -72,27 +72,25 @@ export default function PrivacyPolicy() {
                   </li>
                 </ul>
 
-                <h3 className="font-medium text-foreground">3.2 Authentication, device, and security data</h3>
+                <h3 className="font-medium text-foreground">3.2 Authentication and security data</h3>
                 <ul className="list-disc space-y-1.5 pl-5 text-foreground/90">
                   <li>
-                    <strong>Session tokens:</strong> JWT access tokens, opaque server session identifiers, and
-                    optional refresh tokens (persisted in browser local storage on web/mobile, or in the Agent’s local
-                    application data directory on desktop).
+                    <strong>Session tokens:</strong> JWT access tokens, opaque server session identifiers sent as{" "}
+                    <code className="text-foreground/80">X-Apex-Session</code>, and optional refresh tokens
+                    (persisted in browser local storage on web/mobile, or in the Agent’s local application data
+                    directory on desktop).
                   </li>
                   <li>
-                    <strong>Device identifier:</strong> a randomly generated UUID created on first use of a browser or
-                    Agent installation, sent as <code className="text-foreground/80">X-Apex-Device-Id</code> to
-                    associate login sessions with a device.
+                    <strong>Installation identifier:</strong> a randomly generated UUID created on first use of a
+                    browser or Agent installation, sent as{" "}
+                    <code className="text-foreground/80">X-Apex-Device-Id</code> to associate login sessions and
+                    agent uploads with an installation (not hardware identifiers).
                   </li>
                   <li>
                     <strong>Auth session records:</strong> when you sign in or verify your email, we store your user
                     agent string, first and last seen IP addresses, approximate geographic location derived from IP
                     (country, region, city, latitude/longitude via GeoLite lookup), and a risk score used for fraud
                     prevention.
-                  </li>
-                  <li>
-                    <strong>Agent pairing codes:</strong> hashed codes used to link the desktop Agent to your
-                    account (deleted when you close your account).
                   </li>
                 </ul>
 
@@ -209,14 +207,15 @@ export default function PrivacyPolicy() {
                   </li>
                   <li>
                     <strong>Le Mans Ultimate (file watch):</strong> reads{" "}
-                    <code className="text-foreground/80">.duckdb</code> or CSV telemetry exports from your LMU user
-                    data folder in read-only mode and uploads lap-time summaries (without full driving traces).
+                    <code className="text-foreground/80">.duckdb</code> telemetry exports from your LMU user data
+                    folder in read-only mode and uploads lap-time summaries (without full driving traces).
                   </li>
                 </ul>
                 <p>
                   Uploads are sent via HTTPS to <code className="text-foreground/80">POST /laps/upload</code> as
-                  multipart JSON, authenticated with your bearer token and server session token. Failed uploads may
-                  be saved locally in the Agent’s application data directory for diagnostic purposes.
+                  multipart JSON, authenticated with your bearer JWT,{" "}
+                  <code className="text-foreground/80">X-Apex-Session</code> server session token, and{" "}
+                  <code className="text-foreground/80">X-Apex-Device-Id</code> installation identifier.
                 </p>
 
                 <h3 className="font-medium text-foreground">4.3 Third-party integrations</h3>
@@ -350,7 +349,7 @@ export default function PrivacyPolicy() {
                     account deletion unless separately removed.
                   </li>
                   <li>
-                    <strong>Agent local data:</strong> authentication tokens and failed upload files on your device
+                    <strong>Agent local data:</strong> authentication tokens and installation UUID on your device
                     remain until you sign out, uninstall the Agent, or delete local application data.
                   </li>
                 </ul>
@@ -389,7 +388,7 @@ export default function PrivacyPolicy() {
                   <li>
                     <strong>Erasure (account deletion):</strong> in Settings, use “Delete account” and confirm with
                     your password. This performs a soft delete: your email, name, bio, avatar reference, and password
-                    are anonymised; active auth sessions, device tokens, and pairing codes are revoked. Certain data
+                    are anonymised; active auth sessions are revoked. Certain data
                     (for example uploaded session telemetry, community posts, billing cache, and contact records) may
                     persist in anonymised or disassociated form. To request fuller erasure, contact us at{" "}
                     <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
@@ -419,7 +418,7 @@ export default function PrivacyPolicy() {
                 <h2 className="text-base font-semibold text-foreground">12. Security</h2>
                 <p>
                   We implement appropriate technical and organisational measures including password hashing with a
-                  server-side pepper, hashed session and device tokens, HTTPS transport, and access controls on
+                  server-side pepper, hashed opaque session tokens, HTTPS transport, and access controls on
                   telemetry and billing endpoints. No method of transmission or storage is completely secure; use a
                   strong, unique password and keep your Agent installation secure.
                 </p>

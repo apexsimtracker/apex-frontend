@@ -1281,20 +1281,6 @@ export default function AdminUserDetail() {
 
           <AdminUserWebSessionsSection variant="page" userId={id} />
 
-          {detail.devices.length > 0 && (
-            <div className="mb-8 rounded-xl border border-white/10 p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Devices</h2>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {detail.devices.map((d) => (
-                  <li key={d.id}>
-                    {d.name ?? "Device"} — last seen{" "}
-                    {d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString() : "—"}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {detail.challengeBans.length > 0 && (
             <div className="mb-8 rounded-xl border border-white/10 p-4">
               <h2 className="mb-3 text-sm font-semibold text-foreground">Challenge bans</h2>

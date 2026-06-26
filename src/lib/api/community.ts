@@ -112,36 +112,17 @@ export async function getDiscussionsPage(params?: {
   if (params?.includeTotal === false) sp.set("includeTotal", "0");
   const query = sp.toString();
   const path = `/api/community/discussions${query ? `?${query}` : ""}`;
-  const raw = await apiGet<
-    DiscussionsPageResult | Discussion[] | { discussions?: Discussion[] }
-  >(path);
+  const raw = await apiGet<DiscussionsPageResult>(path);
 
-  if (Array.isArray(raw)) {
-    const items = raw.map((x) => normalizeDiscussionListItem(x as Record<string, unknown>));
-    return {
-      items,
-      page: 1,
-      limit: items.length,
-      hasMore: false,
-      total: items.length,
-    };
-  }
-  const legacy = raw as { discussions?: Discussion[]; items?: unknown[] };
-  const rawItems = Array.isArray(legacy.items)
-    ? legacy.items
-    : Array.isArray(legacy.discussions)
-      ? legacy.discussions
-      : [];
-  const items = rawItems.map((x) =>
+  const items = (Array.isArray(raw.items) ? raw.items : []).map((x) =>
     normalizeDiscussionListItem(x as Record<string, unknown>)
   );
-  const r = raw as DiscussionsPageResult;
   return {
     items,
-    page: typeof r.page === "number" ? r.page : 1,
-    limit: typeof r.limit === "number" ? r.limit : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
-    hasMore: Boolean(r.hasMore),
-    total: typeof r.total === "number" ? r.total : undefined,
+    page: typeof raw.page === "number" ? raw.page : 1,
+    limit: typeof raw.limit === "number" ? raw.limit : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+    hasMore: Boolean(raw.hasMore),
+    total: typeof raw.total === "number" ? raw.total : undefined,
   };
 }
 
@@ -200,54 +181,37 @@ export type DiscussionCommentsPageResult = {
   totalPages: number;
 };
 
-/** Normalize GET /discussions/:id/comments — supports paginated JSON or legacy bare array. */
+/** Normalize GET /discussions/:id/comments — paginated JSON from API. */
 function normalizeDiscussionCommentsPage(
   raw: unknown,
   fallbackLimit: number
 ): DiscussionCommentsPageResult {
-  if (Array.isArray(raw)) {
+  if (!raw || typeof raw !== "object") {
     return {
-      items: raw as DiscussionComment[],
+      items: [],
       page: 1,
       limit: fallbackLimit,
-      total: raw.length,
+      total: 0,
       totalPages: 1,
     };
   }
-  if (raw && typeof raw === "object") {
-    const o = raw as Record<string, unknown>;
-    const items = Array.isArray(o.items)
-      ? (o.items as DiscussionComment[])
-      : Array.isArray(o.comments)
-        ? (o.comments as DiscussionComment[])
-        : [];
-    const limit =
-      typeof o.limit === "number" && Number.isFinite(o.limit)
-        ? o.limit
-        : fallbackLimit;
-    const page =
-      typeof o.page === "number" && Number.isFinite(o.page) && o.page >= 1
-        ? Math.floor(o.page)
-        : 1;
-    const total =
-      typeof o.total === "number" && Number.isFinite(o.total)
-        ? o.total
-        : items.length;
-    const totalPages =
-      typeof o.totalPages === "number" && Number.isFinite(o.totalPages) && o.totalPages >= 1
-        ? Math.floor(o.totalPages)
-        : total === 0
-          ? 1
-          : Math.max(1, Math.ceil(total / limit));
-    return { items, page, limit, total, totalPages };
-  }
-  return {
-    items: [],
-    page: 1,
-    limit: fallbackLimit,
-    total: 0,
-    totalPages: 1,
-  };
+  const o = raw as Record<string, unknown>;
+  const items = Array.isArray(o.items) ? (o.items as DiscussionComment[]) : [];
+  const limit =
+    typeof o.limit === "number" && Number.isFinite(o.limit) ? o.limit : fallbackLimit;
+  const page =
+    typeof o.page === "number" && Number.isFinite(o.page) && o.page >= 1
+      ? Math.floor(o.page)
+      : 1;
+  const total =
+    typeof o.total === "number" && Number.isFinite(o.total) ? o.total : items.length;
+  const totalPages =
+    typeof o.totalPages === "number" && Number.isFinite(o.totalPages) && o.totalPages >= 1
+      ? Math.floor(o.totalPages)
+      : total === 0
+        ? 1
+        : Math.max(1, Math.ceil(total / limit));
+  return { items, page, limit, total, totalPages };
 }
 
 export async function getDiscussionComments(

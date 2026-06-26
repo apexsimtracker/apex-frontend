@@ -163,12 +163,6 @@ export type AdminUserDetailResponse = {
     reason: string | null;
     createdAt: string;
   }[];
-  devices: {
-    id: string;
-    name: string | null;
-    lastSeenAt: string | null;
-    createdAt: string;
-  }[];
 };
 
 export async function fetchAdminUserDetail(userId: string): Promise<AdminUserDetailResponse> {

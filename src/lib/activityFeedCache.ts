@@ -34,9 +34,6 @@ function patchSessionInFeedItem(
     return rec;
   }
 
-  // Legacy flat session item (pre-grouping API)
-  const flat = rec as { id?: string };
-  if (flat.id === id) return { ...rec, ...patch };
   return item;
 }
 
@@ -71,8 +68,6 @@ export function flattenFeedItemSessions(items: unknown[]): Record<string, unknow
           if (s && typeof s === "object") out.push(s as Record<string, unknown>);
         }
       }
-    } else if (typeof rec.id === "string") {
-      out.push(rec);
     }
   }
   return out;

@@ -30,8 +30,6 @@ export type ManualActivityRequest = {
   totalDrivers?: number;
   /** Race sessions: qualifying finishing position. */
   qualifyingPosition?: number;
-  /** Legacy single lap; ignored by API when `laps` is non-empty. */
-  bestLapMs?: number;
   /** Ordered lap times (ms). */
   laps?: { lapTimeMs: number }[];
   notes?: string;
@@ -47,7 +45,7 @@ export type ManualActivityResponse = {
 /**
  * Build JSON body so `laps` is never lost: `JSON.stringify` drops keys whose value is `undefined`,
  * which previously omitted `laps` and led to sessions with no Lap rows.
- * When laps are present, also sends `bestLapMs` (min) so the server always has a fallback field.
+ * When laps are present, also sends `bestLapMs` (min) for server convenience.
  */
 export function buildManualActivityRequestBody(
   data: ManualActivityRequest
@@ -90,8 +88,6 @@ export function buildManualActivityRequestBody(
   if (laps.length > 0) {
     body.laps = laps;
     body.bestLapMs = Math.min(...laps.map((l) => l.lapTimeMs));
-  } else if (data.bestLapMs != null && Number.isFinite(data.bestLapMs)) {
-    body.bestLapMs = Math.round(data.bestLapMs);
   }
 
   if (data.challengeId != null && String(data.challengeId).trim() !== "") {
