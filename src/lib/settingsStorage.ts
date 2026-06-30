@@ -46,10 +46,12 @@ function parseStored(raw: string | null): ApexSettings | null {
       emailNotifications:
         data.emailNotifications ?? DEFAULT_APEX_SETTINGS.emailNotifications,
       showNotificationBadge,
-      privateProfile: data.privateProfile ?? DEFAULT_APEX_SETTINGS.privateProfile,
+      privateProfile:
+        data.privateProfile ?? DEFAULT_APEX_SETTINGS.privateProfile,
       manualFollowApproval:
         data.manualFollowApproval ?? DEFAULT_APEX_SETTINGS.manualFollowApproval,
-      sessionVisibility: migratedVisibility ?? DEFAULT_APEX_SETTINGS.sessionVisibility,
+      sessionVisibility:
+        migratedVisibility ?? DEFAULT_APEX_SETTINGS.sessionVisibility,
     };
   } catch {
     return null;

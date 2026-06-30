@@ -13,7 +13,8 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
   const pro: RequirementItem = {
     icon: Sparkles,
     label: "Apex Pro",
-    description: "Active subscription required to download and upload telemetry.",
+    description:
+      "Active subscription required to download and upload telemetry.",
   };
   const internet: RequirementItem = {
     icon: Wifi,
@@ -23,7 +24,8 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
   const account: RequirementItem = {
     icon: User,
     label: "Website account",
-    description: "Sign in with the same email and password you use on the Apex website.",
+    description:
+      "Sign in with the same email and password you use on the Apex website.",
   };
 
   if (os === "macos") {
@@ -43,7 +45,8 @@ function requirementsForOs(os: AgentOs): RequirementItem[] {
       {
         icon: Monitor,
         label: "Linux x64",
-        description: "AppImage-compatible distribution with system tray support.",
+        description:
+          "AppImage-compatible distribution with system tray support.",
       },
       pro,
       account,
@@ -77,7 +80,10 @@ type AgentInstallRequirementsProps = {
   className?: string;
 };
 
-export function AgentInstallRequirements({ os, className }: AgentInstallRequirementsProps) {
+export function AgentInstallRequirements({
+  os,
+  className,
+}: AgentInstallRequirementsProps) {
   const requirements = requirementsForOs(os);
   const scopeNote = platformScopeNote(os);
 
@@ -85,15 +91,16 @@ export function AgentInstallRequirements({ os, className }: AgentInstallRequirem
     <section
       className={cn(
         "rounded-xl border border-white/10 bg-card/50 p-6 sm:p-7",
-        className
+        className,
       )}
     >
       <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
         Before you install
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Everything you need on {os === "macos" ? "Mac" : os === "linux" ? "Linux" : "Windows"} for
-        this build.
+        Everything you need on{" "}
+        {os === "macos" ? "Mac" : os === "linux" ? "Linux" : "Windows"} for this
+        build.
       </p>
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -109,7 +116,9 @@ export function AgentInstallRequirements({ os, className }: AgentInstallRequirem
               <item.icon className="size-4 text-muted-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{item.label}</p>
+              <p className="text-sm font-medium text-foreground">
+                {item.label}
+              </p>
               {item.description ? (
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {item.description}
@@ -125,12 +134,17 @@ export function AgentInstallRequirements({ os, className }: AgentInstallRequirem
           className="mt-5 flex gap-3 rounded-lg border border-white/10 bg-muted/20 px-4 py-3.5"
           role="note"
         >
-          <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Info
+            className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
               Platform scope
             </p>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{scopeNote}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              {scopeNote}
+            </p>
           </div>
         </div>
       ) : null}

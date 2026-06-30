@@ -9,13 +9,15 @@ type MeQuerySlice = {
 };
 
 export function isUnauthorizedMeError(error: unknown): boolean {
-  return error instanceof ApiError && (error.status === 401 || error.status === 403);
+  return (
+    error instanceof ApiError && (error.status === 401 || error.status === 403)
+  );
 }
 
 /** Resolve session user from token presence and /api/auth/me query state. */
 export function resolveAuthUser(
   tokenPresent: boolean,
-  meQuery: MeQuerySlice
+  meQuery: MeQuerySlice,
 ): AuthUser | null {
   if (!tokenPresent) return null;
   if (meQuery.isError && isUnauthorizedMeError(meQuery.error)) {
@@ -28,9 +30,10 @@ export function resolveAuthUser(
 export function resolveAuthLoading(
   tokenPresent: boolean,
   meQuery: MeQuerySlice,
-  meRefetching: boolean
+  meRefetching: boolean,
 ): boolean {
-  const isUnauthorizedError = meQuery.isError && isUnauthorizedMeError(meQuery.error);
+  const isUnauthorizedError =
+    meQuery.isError && isUnauthorizedMeError(meQuery.error);
   return (
     tokenPresent &&
     !isUnauthorizedError &&

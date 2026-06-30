@@ -53,14 +53,19 @@ export default function VerifyEmail() {
   useEffect(() => {
     const fromState = (location.state as { email?: string } | null)?.email;
     const fromStorage =
-      typeof sessionStorage !== "undefined" ? sessionStorage.getItem(PENDING_VERIFY_KEY) : null;
+      typeof sessionStorage !== "undefined"
+        ? sessionStorage.getItem(PENDING_VERIFY_KEY)
+        : null;
     const resolved = (fromState ?? fromStorage ?? "").trim();
     if (resolved) setEmailState(resolved);
   }, [location.state]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
-    const t = setInterval(() => setResendCooldown((c) => Math.max(0, c - 1)), 1000);
+    const t = setInterval(
+      () => setResendCooldown((c) => Math.max(0, c - 1)),
+      1000,
+    );
     return () => clearInterval(t);
   }, [resendCooldown]);
 
@@ -84,10 +89,13 @@ export default function VerifyEmail() {
         persistSessionTokenFromAuthPayload(data);
         sessionStorage.removeItem(PENDING_VERIFY_KEY);
         try {
-          await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+          await queryClient.fetchQuery({
+            queryKey: AUTH_ME_QUERY_KEY,
+            queryFn: authMe,
+          });
           prefetchHomeWeeklyAfterAuth(
             queryClient,
-            queryClient.getQueryData(AUTH_ME_QUERY_KEY)
+            queryClient.getQueryData(AUTH_ME_QUERY_KEY),
           );
         } catch (meErr) {
           localStorage.removeItem("apex_token");
@@ -97,7 +105,9 @@ export default function VerifyEmail() {
           form.setError("root", {
             type: "server",
             message:
-              meErr instanceof Error ? meErr.message : "Could not load your session. Please try signing in.",
+              meErr instanceof Error
+                ? meErr.message
+                : "Could not load your session. Please try signing in.",
           });
           return;
         }
@@ -107,7 +117,11 @@ export default function VerifyEmail() {
       }
       sessionStorage.removeItem(PENDING_VERIFY_KEY);
       setSuccess("Email verified. You can sign in now.");
-      setTimeout(() => navigate("/login", { replace: true, state: { emailVerified: true } }), 1500);
+      setTimeout(
+        () =>
+          navigate("/login", { replace: true, state: { emailVerified: true } }),
+        1500,
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Verification failed.";
       form.setError("root", { type: "server", message: msg });
@@ -133,11 +147,16 @@ export default function VerifyEmail() {
       setSuccess("A new verification code has been sent.");
       const nextIn =
         data.nextResendInSeconds ??
-        (data.resendAt ? Math.max(0, data.resendAt - Math.floor(Date.now() / 1000)) : null);
+        (data.resendAt
+          ? Math.max(0, data.resendAt - Math.floor(Date.now() / 1000))
+          : null);
       setResendCooldown(nextIn ?? RESEND_COOLDOWN_SEC);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to resend code.";
-      if (msg.toLowerCase().includes("expired") || msg.toLowerCase().includes("code")) {
+      if (
+        msg.toLowerCase().includes("expired") ||
+        msg.toLowerCase().includes("code")
+      ) {
         form.setError("root", {
           type: "server",
           message: "Code expired. Request a new one.",
@@ -163,13 +182,17 @@ export default function VerifyEmail() {
           noindex
         />
         <div className="w-full space-y-4 text-center">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Verification</h1>
-          <p className="text-sm text-muted-foreground">Missing email. Please sign up again.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Verification
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Missing email. Please sign up again.
+          </p>
           <Link
             to="/signup"
             className={cn(
               "inline-block w-full rounded-md px-4 py-2 text-center font-medium transition-opacity hover:opacity-90",
-              authPrimarySolidButtonClassName
+              authPrimarySolidButtonClassName,
             )}
           >
             Go to Sign up
@@ -193,13 +216,20 @@ export default function VerifyEmail() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Verify your email</h1>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="w-full space-y-4"
+        >
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Verify your email
+          </h1>
           <p className="text-sm text-muted-foreground">
             We sent a verification code to your email.
           </p>
           {hasEmail && (
-            <p className="break-all text-sm font-medium text-foreground/90">{email}</p>
+            <p className="break-all text-sm font-medium text-foreground/90">
+              {email}
+            </p>
           )}
 
           <FormField
@@ -207,7 +237,9 @@ export default function VerifyEmail() {
             name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-foreground">Verification code</FormLabel>
+                <FormLabel className="text-foreground">
+                  Verification code
+                </FormLabel>
                 <FormControl>
                   <Input
                     inputMode="numeric"

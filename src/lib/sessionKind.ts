@@ -41,10 +41,18 @@ export function isPracticeKind(session: {
 }): boolean {
   const st = (session.sessionType ?? "").toUpperCase().trim();
   if (st === "MANUAL_ACTIVITY") {
-    return (session.manualSessionKind ?? "").toUpperCase().trim() === "PRACTICE";
+    return (
+      (session.manualSessionKind ?? "").toUpperCase().trim() === "PRACTICE"
+    );
   }
   if (isWarmupKind(session)) return false;
-  return st === "PRACTICE" || st === "UNKNOWN" || st === "" || st === "TIME_TRIAL" || st === "TIMETRIAL";
+  return (
+    st === "PRACTICE" ||
+    st === "UNKNOWN" ||
+    st === "" ||
+    st === "TIME_TRIAL" ||
+    st === "TIMETRIAL"
+  );
 }
 
 /** Qualifying finish position (qualifyingPosition preferred; legacy rows may use position). */
@@ -133,7 +141,9 @@ export type DisplayPositionSession = {
 };
 
 /** Race/qual result label for session cards and detail, or null for practice. */
-export function getDisplayPosition(session: DisplayPositionSession): string | null {
+export function getDisplayPosition(
+  session: DisplayPositionSession,
+): string | null {
   const total = session.totalDrivers;
   const suffix = total != null && total > 0 ? ` / ${total}` : "";
 
@@ -150,7 +160,9 @@ export function getDisplayPosition(session: DisplayPositionSession): string | nu
 }
 
 /** True when race/qual sessions have a displayable finish position. */
-export function shouldShowSessionPosition(session: DisplayPositionSession): boolean {
+export function shouldShowSessionPosition(
+  session: DisplayPositionSession,
+): boolean {
   return getDisplayPosition(session) != null;
 }
 

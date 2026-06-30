@@ -111,7 +111,9 @@ function BannerRow({
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">{broadcast.title}</span>
+            <span className="text-sm font-semibold text-foreground">
+              {broadcast.title}
+            </span>
             <span
               className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${theme.chip}`}
             >
@@ -132,7 +134,9 @@ function BannerRow({
             ) : (
               <a
                 href={broadcast.ctaUrl}
-                target={broadcast.ctaUrl.startsWith("http") ? "_blank" : undefined}
+                target={
+                  broadcast.ctaUrl.startsWith("http") ? "_blank" : undefined
+                }
                 rel="noreferrer"
                 className="rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-foreground transition hover:bg-white/15"
               >
@@ -179,10 +183,16 @@ export default function BroadcastBanner() {
     mutationFn: (id: string) => dismissBroadcast(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ["broadcasts", "active"] });
-      const prev = qc.getQueryData<{ broadcasts: ActiveBroadcast[] }>(["broadcasts", "active"]);
-      qc.setQueryData<{ broadcasts: ActiveBroadcast[] }>(["broadcasts", "active"], (cur) => ({
-        broadcasts: (cur?.broadcasts ?? []).filter((b) => b.id !== id),
-      }));
+      const prev = qc.getQueryData<{ broadcasts: ActiveBroadcast[] }>([
+        "broadcasts",
+        "active",
+      ]);
+      qc.setQueryData<{ broadcasts: ActiveBroadcast[] }>(
+        ["broadcasts", "active"],
+        (cur) => ({
+          broadcasts: (cur?.broadcasts ?? []).filter((b) => b.id !== id),
+        }),
+      );
       return { prev };
     },
     onError: (_err, _id, ctx) => {
@@ -198,7 +208,7 @@ export default function BroadcastBanner() {
   const broadcasts = useMemo(() => data?.broadcasts ?? [], [data?.broadcasts]);
   const visible = useMemo(
     () => (expanded ? broadcasts : broadcasts.slice(0, VISIBLE_BANNERS)),
-    [broadcasts, expanded]
+    [broadcasts, expanded],
   );
   const overflow = broadcasts.length - VISIBLE_BANNERS;
 

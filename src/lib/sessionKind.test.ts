@@ -14,8 +14,15 @@ describe("sessionKind (frontend)", () => {
     expect(isRaceKind({ sessionType: "RACE" })).toBe(true);
     expect(isRaceKind({ sessionType: "SPRINT" })).toBe(true);
     expect(isRaceKind({ sessionType: "QUALIFYING" })).toBe(false);
-    expect(isRaceKind({ sessionType: "MANUAL_ACTIVITY", manualSessionKind: "RACE" })).toBe(true);
-    expect(isRaceKind({ sessionType: "MANUAL_ACTIVITY", manualSessionKind: "QUALIFY" })).toBe(false);
+    expect(
+      isRaceKind({ sessionType: "MANUAL_ACTIVITY", manualSessionKind: "RACE" }),
+    ).toBe(true);
+    expect(
+      isRaceKind({
+        sessionType: "MANUAL_ACTIVITY",
+        manualSessionKind: "QUALIFY",
+      }),
+    ).toBe(false);
   });
 
   it("isWarmupKind is separate from practice", () => {
@@ -33,39 +40,51 @@ describe("resolveSessionTypeTagKind", () => {
       resolveSessionTypeTagKind({
         sessionType: "MANUAL_ACTIVITY",
         manualSessionKind: "RACE",
-      })
+      }),
     ).toBe("RACE");
   });
 
   it("maps qualifying kinds to QUALIFY", () => {
-    expect(resolveSessionTypeTagKind({ sessionType: "QUALIFYING" })).toBe("QUALIFY");
-    expect(resolveSessionTypeTagKind({ sessionType: "QUALIFY" })).toBe("QUALIFY");
+    expect(resolveSessionTypeTagKind({ sessionType: "QUALIFYING" })).toBe(
+      "QUALIFY",
+    );
+    expect(resolveSessionTypeTagKind({ sessionType: "QUALIFY" })).toBe(
+      "QUALIFY",
+    );
     expect(
       resolveSessionTypeTagKind({
         sessionType: "MANUAL_ACTIVITY",
         manualSessionKind: "QUALIFY",
-      })
+      }),
     ).toBe("QUALIFY");
   });
 
   it("maps practice kinds to PRACTICE", () => {
-    expect(resolveSessionTypeTagKind({ sessionType: "PRACTICE" })).toBe("PRACTICE");
+    expect(resolveSessionTypeTagKind({ sessionType: "PRACTICE" })).toBe(
+      "PRACTICE",
+    );
     expect(
       resolveSessionTypeTagKind({
         sessionType: "MANUAL_ACTIVITY",
         manualSessionKind: "PRACTICE",
-      })
+      }),
     ).toBe("PRACTICE");
   });
 
   it("maps warmup to WARMUP", () => {
     expect(resolveSessionTypeTagKind({ sessionType: "WARMUP" })).toBe("WARMUP");
-    expect(resolveSessionTypeTagKind({ sessionType: "WARM_UP" })).toBe("WARMUP");
+    expect(resolveSessionTypeTagKind({ sessionType: "WARM_UP" })).toBe(
+      "WARMUP",
+    );
   });
 
   it("falls back to UNKNOWN for unrecognized types", () => {
-    expect(resolveSessionTypeTagKind({ sessionType: "CUSTOM" })).toBe("UNKNOWN");
-    expect(resolveSessionTypeTagKind({ sessionType: "UNKNOWN" })).toBe("PRACTICE");
+    expect(resolveSessionTypeTagKind({ sessionType: "CUSTOM" })).toBe(
+      "UNKNOWN",
+    );
+    expect(resolveSessionTypeTagKind({ sessionType: "UNKNOWN" })).toBe(
+      "PRACTICE",
+    );
   });
 
   it("uses client-spec colors", () => {
@@ -84,7 +103,7 @@ describe("getDisplayPosition", () => {
         sessionType: "RACE",
         position: 3,
         totalDrivers: 18,
-      })
+      }),
     ).toBe("P3 / 18");
   });
 
@@ -94,7 +113,7 @@ describe("getDisplayPosition", () => {
         sessionType: "QUALIFYING",
         qualifyingPosition: 2,
         totalDrivers: 18,
-      })
+      }),
     ).toBe("P2 / 18");
   });
 
@@ -105,7 +124,7 @@ describe("getDisplayPosition", () => {
         manualSessionKind: "QUALIFY",
         position: 4,
         totalDrivers: 20,
-      })
+      }),
     ).toBe("P4 / 20");
   });
 
@@ -115,7 +134,7 @@ describe("getDisplayPosition", () => {
         sessionType: "PRACTICE",
         position: 1,
         totalDrivers: 20,
-      })
+      }),
     ).toBeNull();
   });
 
@@ -129,7 +148,7 @@ describe("getDisplayPosition", () => {
       getDisplayPosition({
         sessionType: "RACE",
         totalDrivers: 18,
-      })
+      }),
     ).toBeNull();
   });
 });
@@ -141,7 +160,7 @@ describe("displayPositionRank", () => {
         sessionType: "RACE",
         position: 2,
         totalDrivers: 18,
-      })
+      }),
     ).toBe(2);
     expect(displayPositionRank({ sessionType: "QUALIFYING" })).toBe(0);
   });

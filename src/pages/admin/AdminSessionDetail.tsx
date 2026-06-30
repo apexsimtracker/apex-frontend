@@ -19,13 +19,17 @@ import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import {
-  BaseAlertDialog,
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowLeft, Trash2, MoreHorizontal, Timer, Flag } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Trash2,
+  MoreHorizontal,
+  Timer,
+  Flag,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +58,9 @@ import { useCatalogs } from "@/hooks/useCatalogs";
 import { titleizeEnum } from "@/lib/enumFormat";
 import { toast } from "sonner";
 
-function formatIngestSourceLabel(ingestSource: string | null | undefined): string {
+function formatIngestSourceLabel(
+  ingestSource: string | null | undefined,
+): string {
   const raw = (ingestSource ?? "").trim();
   if (!raw) return "—";
   return titleizeEnum(raw);
@@ -81,14 +87,21 @@ function AdminSessionCatalogBanner({
 
   return (
     <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-950/35 px-3 py-2.5 text-xs leading-snug text-amber-100">
-      <p className="font-medium text-amber-50">Track / car may be missing from catalog</p>
+      <p className="font-medium text-amber-50">
+        Track / car may be missing from catalog
+      </p>
       <p className="mt-1.5 text-amber-100/95">
-        Stored tokens often come from telemetry (.ibt, etc.) before rows exist in the catalog. Add them under{" "}
-        <Link to="/admin/tracks" className="font-medium text-primary underline underline-offset-2">
+        Stored tokens often come from telemetry (.ibt, etc.) before rows exist
+        in the catalog. Add them under{" "}
+        <Link
+          to="/admin/tracks"
+          className="font-medium text-primary underline underline-offset-2"
+        >
           Tracks &amp; catalogs
         </Link>{" "}
-        (manually or via catalog consistency). Until then, the dropdowns show your stored tokens; you can still save
-        laps and other fields. Pick a catalog track/car once they exist to normalize this session.
+        (manually or via catalog consistency). Until then, the dropdowns show
+        your stored tokens; you can still save laps and other fields. Pick a
+        catalog track/car once they exist to normalize this session.
       </p>
       <p className="mt-2 break-all font-mono text-[10px] text-amber-200/80">
         <span className="text-amber-100/70">Track token:</span> {trackToken}
@@ -120,7 +133,7 @@ function parseOptionalSectorMs(raw: string): number | null {
     if (Number.isFinite(n) && n >= 0 && n <= 600_000) return n;
   }
   throw new Error(
-    "Invalid sector time. Use formats like 0:28.500 or 28.500, or paste milliseconds."
+    "Invalid sector time. Use formats like 0:28.500 or 28.500, or paste milliseconds.",
   );
 }
 
@@ -136,11 +149,10 @@ export default function AdminSessionDetail() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
   const [lapDialog, setLapDialog] = useState<
-    | { mode: "edit"; lap: AdminSessionLapRow }
-    | { mode: "create" }
-    | null
+    { mode: "edit"; lap: AdminSessionLapRow } | { mode: "create" } | null
   >(null);
-  const [lapDeleteTarget, setLapDeleteTarget] = useState<AdminSessionLapRow | null>(null);
+  const [lapDeleteTarget, setLapDeleteTarget] =
+    useState<AdminSessionLapRow | null>(null);
 
   const { data, isPending, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["admin", "sessions", id, includeTelemetry],
@@ -151,7 +163,8 @@ export default function AdminSessionDetail() {
   const [editFormError, setEditFormError] = useState<string | null>(null);
 
   const activityMutation = useMutation({
-    mutationFn: (body: ManualActivityRequest) => putAdminSessionActivity(id, body),
+    mutationFn: (body: ManualActivityRequest) =>
+      putAdminSessionActivity(id, body),
   });
 
   async function handleActivitySubmit(payload: {
@@ -180,7 +193,7 @@ export default function AdminSessionDetail() {
       setEditOpen(false);
     } catch (err) {
       setEditFormError(
-        err instanceof ApiError ? err.message : "Failed to update session."
+        err instanceof ApiError ? err.message : "Failed to update session.",
       );
     }
   }
@@ -295,10 +308,13 @@ export default function AdminSessionDetail() {
       lap: l.lapNumber,
       highlights: l.highlights,
     }));
-    const sessionMinima = data.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA;
+    const sessionMinima =
+      data.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA;
     const highlightMap =
       buildHighlightMapFromLaps(normalizedForHighlights) ??
-      buildHighlightMapFromLaps(normalizedForHighlights, { missingAsDefault: true }) ??
+      buildHighlightMapFromLaps(normalizedForHighlights, {
+        missingAsDefault: true,
+      }) ??
       new Map<number, LapTimingHighlights>();
     const idealLapMs =
       sessionMinima.s1Ms != null &&
@@ -309,20 +325,24 @@ export default function AdminSessionDetail() {
     return { idealLapMs, rows, bestLapMs, sessionMinima, highlightMap };
   }, [data]);
 
-  const title = useMemo(
-    () => `Admin · Session | ${COMPANY_NAME}`,
-    []
-  );
+  const title = useMemo(() => `Admin · Session | ${COMPANY_NAME}`, []);
 
   if (!id) {
     return (
-      <div className="mx-auto max-w-6xl text-sm text-muted-foreground">Missing session id.</div>
+      <div className="mx-auto max-w-6xl text-sm text-muted-foreground">
+        Missing session id.
+      </div>
     );
   }
 
   return (
     <>
-      <PageMeta path={`/admin/sessions/${id}`} title={title} description="Session admin detail." noindex />
+      <PageMeta
+        path={`/admin/sessions/${id}`}
+        title={title}
+        description="Session admin detail."
+        noindex
+      />
 
       <div className="mx-auto min-w-0 max-w-6xl">
         <div className="mb-6">
@@ -337,7 +357,9 @@ export default function AdminSessionDetail() {
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load session."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load session."}
           </div>
         )}
 
@@ -351,19 +373,31 @@ export default function AdminSessionDetail() {
           <>
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">Session</h1>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">{data.id}</p>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  Session
+                </h1>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  {data.id}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <SimBadge sim={data.sim} size="md" />
                   <Button type="button" variant="outline" size="sm" asChild>
-                    <Link to={`/sessions/${data.id}`} target="_blank" rel="noreferrer">
+                    <Link
+                      to={`/sessions/${data.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Public page
                     </Link>
                   </Button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" onClick={() => setEditOpen(true)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setEditOpen(true)}
+                >
                   Edit session
                 </Button>
                 <Button
@@ -377,7 +411,10 @@ export default function AdminSessionDetail() {
                 >
                   {isFetching && includeTelemetry ? (
                     <>
-                      <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden />
+                      <Loader2
+                        className="mr-1.5 size-4 animate-spin"
+                        aria-hidden
+                      />
                       Loading…
                     </>
                   ) : includeTelemetry ? (
@@ -423,10 +460,13 @@ export default function AdminSessionDetail() {
                 >
                   {data.userDisplayName}
                 </Link>
-                <span className="mt-1 block font-mono text-xs text-muted-foreground">{data.userId}</span>
+                <span className="mt-1 block font-mono text-xs text-muted-foreground">
+                  {data.userId}
+                </span>
                 {data.driverName && (
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Driver: <span className="text-foreground">{data.driverName}</span>
+                    Driver:{" "}
+                    <span className="text-foreground">{data.driverName}</span>
                   </p>
                 )}
               </div>
@@ -434,8 +474,12 @@ export default function AdminSessionDetail() {
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Track / car
                 </h2>
-                <p className="mt-1 font-medium">{formatTrackName(data.track)}</p>
-                <p className="text-muted-foreground">{formatCarName(data.car)}</p>
+                <p className="mt-1 font-medium">
+                  {formatTrackName(data.track)}
+                </p>
+                <p className="text-muted-foreground">
+                  {formatCarName(data.car)}
+                </p>
                 <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
                   {data.track} · {data.car}
                 </p>
@@ -446,14 +490,18 @@ export default function AdminSessionDetail() {
                 </h2>
                 <p className="mt-1 text-sm">{data.sessionType ?? "—"}</p>
                 {data.manualSessionKind && (
-                  <p className="text-xs text-muted-foreground">Manual: {data.manualSessionKind}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Manual: {data.manualSessionKind}
+                  </p>
                 )}
               </div>
               <div>
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Source
                 </h2>
-                <p className="mt-1 text-sm">{formatIngestSourceLabel(data.ingestSource)}</p>
+                <p className="mt-1 text-sm">
+                  {formatIngestSourceLabel(data.ingestSource)}
+                </p>
                 {data.ingestSource && (
                   <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
                     {data.ingestSource}
@@ -486,7 +534,9 @@ export default function AdminSessionDetail() {
                   {data.position != null && (
                     <p className="mt-1 text-sm tabular-nums">
                       Finish: P{data.position}
-                      {data.totalDrivers != null ? ` / ${data.totalDrivers}` : ""}
+                      {data.totalDrivers != null
+                        ? ` / ${data.totalDrivers}`
+                        : ""}
                     </p>
                   )}
                   {data.qualifyingPosition != null && (
@@ -537,10 +587,13 @@ export default function AdminSessionDetail() {
                   Processing
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {data.processingStartedAt ?? "—"} → {data.processingCompletedAt ?? "—"}
+                  {data.processingStartedAt ?? "—"} →{" "}
+                  {data.processingCompletedAt ?? "—"}
                 </p>
                 {data.processingDurationMs != null && (
-                  <p className="text-xs text-muted-foreground">{data.processingDurationMs} ms</p>
+                  <p className="text-xs text-muted-foreground">
+                    {data.processingDurationMs} ms
+                  </p>
                 )}
               </div>
               {data.notes?.trim() && (
@@ -548,7 +601,9 @@ export default function AdminSessionDetail() {
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Notes
                   </h2>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{data.notes.trim()}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                    {data.notes.trim()}
+                  </p>
                 </div>
               )}
             </div>
@@ -581,38 +636,46 @@ export default function AdminSessionDetail() {
                   adminLapsView.sessionMinima?.s2Ms != null ||
                   adminLapsView.sessionMinima?.s3Ms != null ||
                   adminLapsView.idealLapMs != null) && (
-                <div className="border-b border-white/10 p-4">
-                  <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
-                    Ideal Lap
+                  <div className="border-b border-white/10 p-4">
+                    <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+                      Ideal Lap
+                    </div>
+                    <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4 sm:gap-2">
+                      <div className="text-right">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                          S1
+                        </div>
+                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
+                          {formatLapMs(adminLapsView.sessionMinima?.s1Ms ?? 0)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                          S2
+                        </div>
+                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
+                          {formatLapMs(adminLapsView.sessionMinima?.s2Ms ?? 0)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                          S3
+                        </div>
+                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
+                          {formatLapMs(adminLapsView.sessionMinima?.s3Ms ?? 0)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                          Time
+                        </div>
+                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
+                          {formatLapMs(adminLapsView.idealLapMs ?? 0)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4 sm:gap-2">
-                    <div className="text-right">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">S1</div>
-                      <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.sessionMinima?.s1Ms ?? 0)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">S2</div>
-                      <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.sessionMinima?.s2Ms ?? 0)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">S3</div>
-                      <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.sessionMinima?.s3Ms ?? 0)}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Time</div>
-                      <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                        {formatLapMs(adminLapsView.idealLapMs ?? 0)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
 
               <div className="overflow-x-auto overscroll-x-contain">
                 <table className="w-full min-w-[48rem] text-left text-sm">
@@ -651,12 +714,20 @@ export default function AdminSessionDetail() {
                   <tbody>
                     {adminLapsView.rows.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-10 text-center sm:px-4">
+                        <td
+                          colSpan={10}
+                          className="px-2 py-10 text-center sm:px-4"
+                        >
                           <div className="flex flex-col items-center gap-2">
                             <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-black/20">
-                              <Timer className="size-5 text-muted-foreground" aria-hidden />
+                              <Timer
+                                className="size-5 text-muted-foreground"
+                                aria-hidden
+                              />
                             </div>
-                            <div className="text-sm text-muted-foreground">No laps for this session.</div>
+                            <div className="text-sm text-muted-foreground">
+                              No laps for this session.
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -665,13 +736,14 @@ export default function AdminSessionDetail() {
                         const fastest =
                           adminLapsView.bestLapMs != null &&
                           lap.lapTimeMs === adminLapsView.bestLapMs;
-                        const rowHighlights =
-                          adminLapsView.highlightMap?.get(lap.lapNumber) ?? {
-                            lap: "default" as const,
-                            s1: "default" as const,
-                            s2: "default" as const,
-                            s3: "default" as const,
-                          };
+                        const rowHighlights = adminLapsView.highlightMap?.get(
+                          lap.lapNumber,
+                        ) ?? {
+                          lap: "default" as const,
+                          s1: "default" as const,
+                          s2: "default" as const,
+                          s3: "default" as const,
+                        };
                         const deltaContent =
                           adminLapsView.bestLapMs == null ? (
                             "—"
@@ -682,7 +754,7 @@ export default function AdminSessionDetail() {
                             </span>
                           ) : (
                             formatLapDeltaMsForDisplay(
-                              lap.lapTimeMs - adminLapsView.bestLapMs
+                              lap.lapTimeMs - adminLapsView.bestLapMs,
                             )
                           );
                         return (
@@ -699,7 +771,10 @@ export default function AdminSessionDetail() {
                               <span className="inline-flex items-center gap-1.5">
                                 {lap.lapNumber}
                                 {fastest && (
-                                  <Flag className="size-4 shrink-0 text-foreground/90" aria-hidden />
+                                  <Flag
+                                    className="size-4 shrink-0 text-foreground/90"
+                                    aria-hidden
+                                  />
                                 )}
                               </span>
                             </td>
@@ -720,9 +795,12 @@ export default function AdminSessionDetail() {
                             </td>
                             <td className="p-2 text-right align-middle font-mono tabular-nums sm:px-4 sm:py-3">
                               <span
-                                className={timingHighlightClass(rowHighlights.lap, {
-                                  isLapTime: true,
-                                })}
+                                className={timingHighlightClass(
+                                  rowHighlights.lap,
+                                  {
+                                    isLapTime: true,
+                                  },
+                                )}
                               >
                                 {formatLapMs(lap.lapTimeMs)}
                               </span>
@@ -752,7 +830,11 @@ export default function AdminSessionDetail() {
                             <td className="p-2 text-right align-middle sm:px-4 sm:py-3">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" aria-label="Lap actions">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Lap actions"
+                                  >
                                     <MoreHorizontal className="size-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -761,7 +843,9 @@ export default function AdminSessionDetail() {
                                     onClick={() => {
                                       lapSaveMutation.reset();
                                       setLapEdit({
-                                        lapTimeMs: formatMsToLapTime(lap.lapTimeMs),
+                                        lapTimeMs: formatMsToLapTime(
+                                          lap.lapTimeMs,
+                                        ),
                                         s1:
                                           lap.sector1Ms != null
                                             ? formatMsToLapTime(lap.sector1Ms)
@@ -803,7 +887,9 @@ export default function AdminSessionDetail() {
               </div>
               {includeTelemetry && (
                 <div className="border-t border-white/10 p-4">
-                  <h3 className="text-sm font-medium text-foreground">Per-lap telemetry (JSON)</h3>
+                  <h3 className="text-sm font-medium text-foreground">
+                    Per-lap telemetry (JSON)
+                  </h3>
                   {isFetching ? (
                     <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -817,13 +903,13 @@ export default function AdminSessionDetail() {
                           telemetry: l.telemetry,
                         })),
                         null,
-                        2
+                        2,
                       )}
                     </pre>
                   ) : (
                     <p className="mt-3 text-sm text-muted-foreground">
-                      No per-lap telemetry JSON is stored for this session. Many ingest paths only persist
-                      lap times and sectors.
+                      No per-lap telemetry JSON is stored for this session. Many
+                      ingest paths only persist lap times and sectors.
                     </p>
                   )}
                 </div>
@@ -844,20 +930,24 @@ export default function AdminSessionDetail() {
         mobileVariant="fullscreen"
         bodyClassName="min-h-0"
       >
-          {data ? (
-            <>
-              <AdminSessionCatalogBanner sim={data.sim} trackToken={data.track} carToken={data.car} />
-              <ManualActivityForm
-                key={`admin-edit-${id}-${data.laps.length}`}
-                initialData={manualActivityInitialFromAdminDetail(data)}
-                onSubmit={handleActivitySubmit}
-                submitLabel="Save changes"
-                submittingLabel="Saving…"
-                isSubmitting={activityMutation.isPending}
-                errorMessage={editFormError}
-              />
-            </>
-          ) : null}
+        {data ? (
+          <>
+            <AdminSessionCatalogBanner
+              sim={data.sim}
+              trackToken={data.track}
+              carToken={data.car}
+            />
+            <ManualActivityForm
+              key={`admin-edit-${id}-${data.laps.length}`}
+              initialData={manualActivityInitialFromAdminDetail(data)}
+              onSubmit={handleActivitySubmit}
+              submitLabel="Save changes"
+              submittingLabel="Saving…"
+              isSubmitting={activityMutation.isPending}
+              errorMessage={editFormError}
+            />
+          </>
+        ) : null}
       </BaseModal>
 
       <BaseAlertDialog
@@ -867,19 +957,25 @@ export default function AdminSessionDetail() {
         description={
           <>
             This removes all laps and cannot be undone. Type{" "}
-            <span className="font-mono text-destructive">delete</span> to confirm.
+            <span className="font-mono text-destructive">delete</span> to
+            confirm.
           </>
         }
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+            >
               Cancel
             </Button>
             <Button
               type="button"
               variant="destructive"
               disabled={
-                deleteConfirm.trim().toLowerCase() !== "delete" || deleteMutation.isPending
+                deleteConfirm.trim().toLowerCase() !== "delete" ||
+                deleteMutation.isPending
               }
               onClick={() => deleteMutation.mutate()}
             >
@@ -895,18 +991,18 @@ export default function AdminSessionDetail() {
           </>
         }
       >
-          <Input
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            placeholder="delete"
-          />
-          {deleteMutation.isError && (
-            <p className="text-sm text-destructive">
-              {deleteMutation.error instanceof ApiError
-                ? deleteMutation.error.message
-                : "Delete failed"}
-            </p>
-          )}
+        <Input
+          value={deleteConfirm}
+          onChange={(e) => setDeleteConfirm(e.target.value)}
+          placeholder="delete"
+        />
+        {deleteMutation.isError && (
+          <p className="text-sm text-destructive">
+            {deleteMutation.error instanceof ApiError
+              ? deleteMutation.error.message
+              : "Delete failed"}
+          </p>
+        )}
       </BaseAlertDialog>
 
       <BaseAlertDialog
@@ -971,10 +1067,11 @@ export default function AdminSessionDetail() {
         description={
           <>
             Lap time uses the same strict format as manual activity (
-            <span className="font-mono">m:ss.mmm</span> or <span className="font-mono">ss.mmm</span>,
-            seconds two digits with a colon). Sectors accept those formats, or shorter splits like{" "}
-            <span className="font-mono">28.500</span>, or raw milliseconds. Saving runs
-            best-lap normalization.
+            <span className="font-mono">m:ss.mmm</span> or{" "}
+            <span className="font-mono">ss.mmm</span>, seconds two digits with a
+            colon). Sectors accept those formats, or shorter splits like{" "}
+            <span className="font-mono">28.500</span>, or raw milliseconds.
+            Saving runs best-lap normalization.
           </>
         }
         size="md"
@@ -1007,129 +1104,151 @@ export default function AdminSessionDetail() {
           </>
         }
       >
-          {lapDialog?.mode === "edit" && (
-            <div className="grid gap-3">
+        {lapDialog?.mode === "edit" && (
+          <div className="grid gap-3">
+            <label className="text-xs text-muted-foreground">
+              Lap time
+              <Input
+                className="mt-1 font-mono"
+                placeholder="1:32.456"
+                autoComplete="off"
+                value={lapEdit.lapTimeMs}
+                onChange={(e) =>
+                  setLapEdit((x) => ({ ...x, lapTimeMs: e.target.value }))
+                }
+              />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
               <label className="text-xs text-muted-foreground">
-                Lap time
+                S1 <span className="text-muted-foreground/70">(optional)</span>
                 <Input
-                  className="mt-1 font-mono"
-                  placeholder="1:32.456"
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
                   autoComplete="off"
-                  value={lapEdit.lapTimeMs}
-                  onChange={(e) => setLapEdit((x) => ({ ...x, lapTimeMs: e.target.value }))}
+                  value={lapEdit.s1}
+                  onChange={(e) =>
+                    setLapEdit((x) => ({ ...x, s1: e.target.value }))
+                  }
                 />
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                <label className="text-xs text-muted-foreground">
-                  S1 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapEdit.s1}
-                    onChange={(e) => setLapEdit((x) => ({ ...x, s1: e.target.value }))}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  S2 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapEdit.s2}
-                    onChange={(e) => setLapEdit((x) => ({ ...x, s2: e.target.value }))}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  S3 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapEdit.s3}
-                    onChange={(e) => setLapEdit((x) => ({ ...x, s3: e.target.value }))}
-                  />
-                </label>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={lapEdit.isValid}
-                  onChange={(e) => setLapEdit((x) => ({ ...x, isValid: e.target.checked }))}
+              <label className="text-xs text-muted-foreground">
+                S2 <span className="text-muted-foreground/70">(optional)</span>
+                <Input
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
+                  autoComplete="off"
+                  value={lapEdit.s2}
+                  onChange={(e) =>
+                    setLapEdit((x) => ({ ...x, s2: e.target.value }))
+                  }
                 />
-                Valid for stats
               </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={lapEdit.isBestLap}
-                  onChange={(e) => setLapEdit((x) => ({ ...x, isBestLap: e.target.checked }))}
+              <label className="text-xs text-muted-foreground">
+                S3 <span className="text-muted-foreground/70">(optional)</span>
+                <Input
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
+                  autoComplete="off"
+                  value={lapEdit.s3}
+                  onChange={(e) =>
+                    setLapEdit((x) => ({ ...x, s3: e.target.value }))
+                  }
                 />
-                Mark as best (server may normalize)
               </label>
             </div>
-          )}
-          {lapDialog?.mode === "create" && (
-            <div className="grid gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lapEdit.isValid}
+                onChange={(e) =>
+                  setLapEdit((x) => ({ ...x, isValid: e.target.checked }))
+                }
+              />
+              Valid for stats
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lapEdit.isBestLap}
+                onChange={(e) =>
+                  setLapEdit((x) => ({ ...x, isBestLap: e.target.checked }))
+                }
+              />
+              Mark as best (server may normalize)
+            </label>
+          </div>
+        )}
+        {lapDialog?.mode === "create" && (
+          <div className="grid gap-3">
+            <label className="text-xs text-muted-foreground">
+              Lap time
+              <Input
+                className="mt-1 font-mono"
+                placeholder="1:32.456"
+                autoComplete="off"
+                value={lapCreate.lapTimeMs}
+                onChange={(e) =>
+                  setLapCreate((x) => ({ ...x, lapTimeMs: e.target.value }))
+                }
+              />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
               <label className="text-xs text-muted-foreground">
-                Lap time
+                S1 <span className="text-muted-foreground/70">(optional)</span>
                 <Input
-                  className="mt-1 font-mono"
-                  placeholder="1:32.456"
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
                   autoComplete="off"
-                  value={lapCreate.lapTimeMs}
-                  onChange={(e) => setLapCreate((x) => ({ ...x, lapTimeMs: e.target.value }))}
+                  value={lapCreate.s1}
+                  onChange={(e) =>
+                    setLapCreate((x) => ({ ...x, s1: e.target.value }))
+                  }
                 />
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                <label className="text-xs text-muted-foreground">
-                  S1 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapCreate.s1}
-                    onChange={(e) => setLapCreate((x) => ({ ...x, s1: e.target.value }))}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  S2 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapCreate.s2}
-                    onChange={(e) => setLapCreate((x) => ({ ...x, s2: e.target.value }))}
-                  />
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  S3 <span className="text-muted-foreground/70">(optional)</span>
-                  <Input
-                    className="mt-1 font-mono text-xs"
-                    placeholder="0:28.500"
-                    autoComplete="off"
-                    value={lapCreate.s3}
-                    onChange={(e) => setLapCreate((x) => ({ ...x, s3: e.target.value }))}
-                  />
-                </label>
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={lapCreate.isValid}
-                  onChange={(e) => setLapCreate((x) => ({ ...x, isValid: e.target.checked }))}
+              <label className="text-xs text-muted-foreground">
+                S2 <span className="text-muted-foreground/70">(optional)</span>
+                <Input
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
+                  autoComplete="off"
+                  value={lapCreate.s2}
+                  onChange={(e) =>
+                    setLapCreate((x) => ({ ...x, s2: e.target.value }))
+                  }
                 />
-                Valid for stats
+              </label>
+              <label className="text-xs text-muted-foreground">
+                S3 <span className="text-muted-foreground/70">(optional)</span>
+                <Input
+                  className="mt-1 font-mono text-xs"
+                  placeholder="0:28.500"
+                  autoComplete="off"
+                  value={lapCreate.s3}
+                  onChange={(e) =>
+                    setLapCreate((x) => ({ ...x, s3: e.target.value }))
+                  }
+                />
               </label>
             </div>
-          )}
-          {lapSaveMutation.isError && (
-            <p className="text-sm text-destructive">
-              {lapSaveMutation.error instanceof Error
-                ? lapSaveMutation.error.message
-                : "Save failed"}
-            </p>
-          )}
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={lapCreate.isValid}
+                onChange={(e) =>
+                  setLapCreate((x) => ({ ...x, isValid: e.target.checked }))
+                }
+              />
+              Valid for stats
+            </label>
+          </div>
+        )}
+        {lapSaveMutation.isError && (
+          <p className="text-sm text-destructive">
+            {lapSaveMutation.error instanceof Error
+              ? lapSaveMutation.error.message
+              : "Save failed"}
+          </p>
+        )}
       </BaseModal>
     </>
   );

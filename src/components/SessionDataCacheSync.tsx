@@ -15,7 +15,8 @@ export default function SessionDataCacheSync() {
     }
     if (typeof window === "undefined") return undefined;
     window.addEventListener("apex:activity-updated", onActivityUpdated);
-    return () => window.removeEventListener("apex:activity-updated", onActivityUpdated);
+    return () =>
+      window.removeEventListener("apex:activity-updated", onActivityUpdated);
   }, [queryClient]);
 
   return null;

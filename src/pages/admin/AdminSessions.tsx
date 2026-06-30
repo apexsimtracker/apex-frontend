@@ -86,7 +86,10 @@ export default function AdminSessions() {
   const debouncedUserId = useDebouncedValue(userIdFilter, SEARCH_DEBOUNCE_MS);
   const [simFilter, setSimFilter] = useState<string>("");
   const [challengeIdFilter, setChallengeIdFilter] = useState("");
-  const debouncedChallengeId = useDebouncedValue(challengeIdFilter, SEARCH_DEBOUNCE_MS);
+  const debouncedChallengeId = useDebouncedValue(
+    challengeIdFilter,
+    SEARCH_DEBOUNCE_MS,
+  );
   const [fromIso, setFromIso] = useState("");
   const [toIso, setToIso] = useState("");
   const debouncedFromIso = useDebouncedValue(fromIso, SEARCH_DEBOUNCE_MS);
@@ -100,7 +103,9 @@ export default function AdminSessions() {
   const [missingTelemetry, setMissingTelemetry] = useState(false);
   const [multipleBestLaps, setMultipleBestLaps] = useState(false);
   const [showDuplicates, setShowDuplicates] = useState(false);
-  const [keepByCluster, setKeepByCluster] = useState<Record<string, string>>({});
+  const [keepByCluster, setKeepByCluster] = useState<Record<string, string>>(
+    {},
+  );
   const [mergeTarget, setMergeTarget] = useState<{
     cluster: AdminDuplicateCluster;
     keepSessionId: string;
@@ -146,7 +151,9 @@ export default function AdminSessions() {
       ...(debouncedQ.trim() ? { q: debouncedQ.trim() } : {}),
       ...(debouncedUserId.trim() ? { userId: debouncedUserId.trim() } : {}),
       ...(simFilter.trim() ? { sim: simFilter.trim() } : {}),
-      ...(debouncedChallengeId.trim() ? { challengeId: debouncedChallengeId.trim() } : {}),
+      ...(debouncedChallengeId.trim()
+        ? { challengeId: debouncedChallengeId.trim() }
+        : {}),
       ...(debouncedFromIso.trim() ? { from: debouncedFromIso.trim() } : {}),
       ...(debouncedToIso.trim() ? { to: debouncedToIso.trim() } : {}),
       ...(maxLapParsed != null ? { maxLapMs: maxLapParsed } : {}),
@@ -155,7 +162,9 @@ export default function AdminSessions() {
       ...(hasInvalidLaps ? { hasInvalidLaps: true } : {}),
       ...(missingTelemetry ? { missingTelemetry: true } : {}),
       ...(multipleBestLaps ? { multipleBestLaps: true } : {}),
-      ...(sessionTypeFilter.trim() ? { sessionType: sessionTypeFilter.trim() } : {}),
+      ...(sessionTypeFilter.trim()
+        ? { sessionType: sessionTypeFilter.trim() }
+        : {}),
       ...(sessionTypeFilter === "MANUAL_ACTIVITY" && manualKindFilter.trim()
         ? { manualSessionKind: manualKindFilter.trim() }
         : {}),
@@ -176,7 +185,7 @@ export default function AdminSessions() {
       multipleBestLaps,
       sessionTypeFilter,
       manualKindFilter,
-    ]
+    ],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -215,7 +224,9 @@ export default function AdminSessions() {
     }) =>
       mergeAdminDuplicateSessions({
         keepSessionId,
-        mergeSessionIds: cluster.sessionIds.filter((id) => id !== keepSessionId),
+        mergeSessionIds: cluster.sessionIds.filter(
+          (id) => id !== keepSessionId,
+        ),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "sessions"] });
@@ -247,7 +258,8 @@ export default function AdminSessions() {
     const pageIds = rows.map((r) => r.id);
     setSelected((prev) => {
       const next = new Set(prev);
-      const allInPage = pageIds.length > 0 && pageIds.every((id) => next.has(id));
+      const allInPage =
+        pageIds.length > 0 && pageIds.every((id) => next.has(id));
       if (allInPage) {
         for (const id of pageIds) next.delete(id);
       } else {
@@ -317,17 +329,27 @@ export default function AdminSessions() {
 
   return (
     <>
-      <PageMeta path="/admin/sessions" title={TITLE} description="Session review and moderation." noindex />
+      <PageMeta
+        path="/admin/sessions"
+        title={TITLE}
+        description="Session review and moderation."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Sessions & laps</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Sessions & laps
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Investigate uploads, fix laps, and manage sessions (with leaderboard &amp; personal-best
-              reconciliation on the server).
+              Investigate uploads, fix laps, and manage sessions (with
+              leaderboard &amp; personal-best reconciliation on the server).
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              <Link to="/admin/tracks" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/admin/tracks"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 Tracks &amp; catalogs
               </Link>{" "}
               — cross-check unknown track/car tokens.{" "}
@@ -377,27 +399,39 @@ export default function AdminSessions() {
 
         {showDuplicates && (
           <div className={`${ADMIN_TABLE_CARD} mb-6 p-4`}>
-            <h2 className="text-sm font-semibold text-foreground">Duplicate session clusters (48h)</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              Duplicate session clusters (48h)
+            </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Consecutive uploads with the same driver, session type, car, track, best lap time, and
-              lap count. Choose which session to keep (default: earliest upload), then merge to delete
-              the rest.
+              Consecutive uploads with the same driver, session type, car,
+              track, best lap time, and lap count. Choose which session to keep
+              (default: earliest upload), then merge to delete the rest.
             </p>
             {duplicatesQuery.isPending ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-5 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : duplicatesQuery.isError ? (
-              <p className="mt-4 text-sm text-destructive">Failed to load duplicate clusters.</p>
+              <p className="mt-4 text-sm text-destructive">
+                Failed to load duplicate clusters.
+              </p>
             ) : (duplicatesQuery.data?.clusters.length ?? 0) === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">No duplicate clusters found.</p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                No duplicate clusters found.
+              </p>
             ) : (
               <ul className="mt-4 space-y-4">
                 {duplicatesQuery.data!.clusters.map((cluster) => {
                   const clusterKey = cluster.sessionIds.join("|");
-                  const selectedKeepId = keepByCluster[clusterKey] ?? cluster.keepSessionId;
+                  const selectedKeepId =
+                    keepByCluster[clusterKey] ?? cluster.keepSessionId;
                   const sortedSessions = [...cluster.sessions].sort(
-                    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    (a, b) =>
+                      new Date(a.createdAt).getTime() -
+                      new Date(b.createdAt).getTime(),
                   );
 
                   return (
@@ -406,13 +440,13 @@ export default function AdminSessions() {
                       className="rounded-md border border-white/10 bg-card/50 p-3 text-sm"
                     >
                       <div className="font-medium">
-                        {formatTrackName(cluster.track)} · {formatCarName(cluster.car)} ·{" "}
-                        {cluster.sessionType}
+                        {formatTrackName(cluster.track)} ·{" "}
+                        {formatCarName(cluster.car)} · {cluster.sessionType}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         User {cluster.userId} · {cluster.lapCount} lap(s) · best{" "}
-                        {formatLapMs(cluster.bestLapMs)} · {cluster.sessionIds.length} duplicate
-                        uploads
+                        {formatLapMs(cluster.bestLapMs)} ·{" "}
+                        {cluster.sessionIds.length} duplicate uploads
                       </div>
                       <div className={`${ADMIN_TABLE_SCROLL} mt-3`}>
                         <table className={adminTable("min-w-[36rem]")}>
@@ -426,9 +460,13 @@ export default function AdminSessions() {
                           </thead>
                           <tbody>
                             {sortedSessions.map((s) => {
-                              const isSuggested = s.id === cluster.keepSessionId;
+                              const isSuggested =
+                                s.id === cluster.keepSessionId;
                               return (
-                                <tr key={s.id} className="border-b border-white/5">
+                                <tr
+                                  key={s.id}
+                                  className="border-b border-white/5"
+                                >
                                   <td className="p-2 align-middle">
                                     <input
                                       type="radio"
@@ -447,7 +485,9 @@ export default function AdminSessions() {
                                   <td className="whitespace-nowrap p-2 align-middle text-xs text-muted-foreground">
                                     {new Date(s.createdAt).toLocaleString()}
                                     {isSuggested && (
-                                      <span className="ml-2 text-[10px] text-primary">suggested</span>
+                                      <span className="ml-2 text-[10px] text-primary">
+                                        suggested
+                                      </span>
                                     )}
                                   </td>
                                   <td className="p-2 align-middle">
@@ -473,7 +513,10 @@ export default function AdminSessions() {
                           size="sm"
                           disabled={mergeDuplicatesMutation.isPending}
                           onClick={() => {
-                            setMergeTarget({ cluster, keepSessionId: selectedKeepId });
+                            setMergeTarget({
+                              cluster,
+                              keepSessionId: selectedKeepId,
+                            });
                             setMergeConfirm("");
                           }}
                         >
@@ -497,7 +540,9 @@ export default function AdminSessions() {
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load sessions."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load sessions."}
           </div>
         )}
 
@@ -568,7 +613,10 @@ export default function AdminSessions() {
                       aria-label="Manual session kind"
                     >
                       {MANUAL_KIND_FILTER_OPTIONS.map((opt) => (
-                        <option key={opt.value || "all-manual"} value={opt.value}>
+                        <option
+                          key={opt.value || "all-manual"}
+                          value={opt.value}
+                        >
                           {opt.label}
                         </option>
                       ))}
@@ -650,11 +698,16 @@ export default function AdminSessions() {
 
             {isPending ? (
               <div className="flex justify-center px-4 py-12" aria-busy="true">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : rows.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <p className="text-sm font-medium text-foreground">No sessions match</p>
+                <p className="text-sm font-medium text-foreground">
+                  No sessions match
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Try clearing filters or search terms.
                 </p>
@@ -744,15 +797,21 @@ export default function AdminSessions() {
                           />
                         </td>
                         <td className="p-3 align-middle">
-                          <div className="font-medium">{formatTrackName(r.track)}</div>
-                          <div className="text-muted-foreground">{formatCarName(r.car)}</div>
+                          <div className="font-medium">
+                            {formatTrackName(r.track)}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {formatCarName(r.car)}
+                          </div>
                           {r.invalidLapCount > 0 && (
                             <div className="mt-1 text-xs text-amber-400">
                               {r.invalidLapCount} invalid lap(s)
                             </div>
                           )}
                         </td>
-                        <td className="p-3 align-middle tabular-nums">{r.lapCount}</td>
+                        <td className="p-3 align-middle tabular-nums">
+                          {r.lapCount}
+                        </td>
                         <td className="min-w-[6rem] p-3 align-middle tabular-nums text-muted-foreground">
                           {formatLapMs(r.bestLapMs)}
                         </td>
@@ -779,16 +838,26 @@ export default function AdminSessions() {
                         <td className="p-3 text-right align-middle">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" aria-label="Actions">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Actions"
+                              >
                                 <MoreHorizontal className="size-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/sessions/${r.id}`}>View / edit</Link>
+                                <Link to={`/admin/sessions/${r.id}`}>
+                                  View / edit
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/sessions/${r.id}`} target="_blank" rel="noreferrer">
+                                <Link
+                                  to={`/sessions/${r.id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
                                   Open public session
                                 </Link>
                               </DropdownMenuItem>
@@ -842,14 +911,16 @@ export default function AdminSessions() {
           description={
             <>
               Keep one session and permanently delete{" "}
-              {mergeTarget.cluster.sessionIds.length - 1} duplicate upload(s). All sessions in this
-              cluster share the same lap count ({mergeTarget.cluster.lapCount}) and best time (
+              {mergeTarget.cluster.sessionIds.length - 1} duplicate upload(s).
+              All sessions in this cluster share the same lap count (
+              {mergeTarget.cluster.lapCount}) and best time (
               {formatLapMs(mergeTarget.cluster.bestLapMs)}).
               <span className="mt-3 block font-mono text-xs text-muted-foreground">
                 Keeping: {mergeTarget.keepSessionId}
               </span>
               <span className="mt-3 block text-xs">
-                Type <span className="font-mono text-destructive">merge</span> to confirm.
+                Type <span className="font-mono text-destructive">merge</span>{" "}
+                to confirm.
               </span>
             </>
           }
@@ -918,10 +989,11 @@ export default function AdminSessions() {
           title="Delete sessions"
           description={
             <>
-              Permanently delete {selected.size} session(s) and cascade laps. Leaderboards and
-              personal bests will be recomputed server-side.
+              Permanently delete {selected.size} session(s) and cascade laps.
+              Leaderboards and personal bests will be recomputed server-side.
               <span className="mt-3 block text-xs">
-                Type <span className="font-mono text-destructive">delete</span> to confirm.
+                Type <span className="font-mono text-destructive">delete</span>{" "}
+                to confirm.
               </span>
             </>
           }
@@ -942,7 +1014,8 @@ export default function AdminSessions() {
                 type="button"
                 variant="destructive"
                 disabled={
-                  bulkConfirm.trim().toLowerCase() !== "delete" || bulkDeleteMutation.isPending
+                  bulkConfirm.trim().toLowerCase() !== "delete" ||
+                  bulkDeleteMutation.isPending
                 }
                 onClick={() => bulkDeleteMutation.mutate([...selected])}
               >
@@ -958,19 +1031,19 @@ export default function AdminSessions() {
             </>
           }
         >
-            <Input
-              value={bulkConfirm}
-              onChange={(e) => setBulkConfirm(e.target.value)}
-              placeholder="delete"
-              autoComplete="off"
-            />
-            {bulkDeleteMutation.isError && (
-              <p className="mt-2 text-sm text-destructive">
-                {bulkDeleteMutation.error instanceof ApiError
-                  ? bulkDeleteMutation.error.message
-                  : "Delete failed."}
-              </p>
-            )}
+          <Input
+            value={bulkConfirm}
+            onChange={(e) => setBulkConfirm(e.target.value)}
+            placeholder="delete"
+            autoComplete="off"
+          />
+          {bulkDeleteMutation.isError && (
+            <p className="mt-2 text-sm text-destructive">
+              {bulkDeleteMutation.error instanceof ApiError
+                ? bulkDeleteMutation.error.message
+                : "Delete failed."}
+            </p>
+          )}
         </BaseAlertDialog>
       )}
     </>

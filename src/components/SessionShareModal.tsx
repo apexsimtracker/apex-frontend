@@ -120,145 +120,145 @@ export default function SessionShareModal({
       size="sm"
       bodyClassName="flex min-h-0 flex-col gap-5 pt-1"
     >
-          <section aria-labelledby="share-prefill-heading">
-            <h3
-              id="share-prefill-heading"
-              className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Prefills in the app
-            </h3>
-            <nav
-              className="flex flex-col gap-2"
-              aria-label="Share options with prefilled text"
-            >
-              <EmailShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                subject={headline}
-                body={`${shareText}\n\n`}
-                aria-label="Share by email"
-              >
-                <EmailIcon size={ICON_SIZE} round />
-                <span className="font-medium">Email</span>
-              </EmailShareButton>
+      <section aria-labelledby="share-prefill-heading">
+        <h3
+          id="share-prefill-heading"
+          className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          Prefills in the app
+        </h3>
+        <nav
+          className="flex flex-col gap-2"
+          aria-label="Share options with prefilled text"
+        >
+          <EmailShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            subject={headline}
+            body={`${shareText}\n\n`}
+            aria-label="Share by email"
+          >
+            <EmailIcon size={ICON_SIZE} round />
+            <span className="font-medium">Email</span>
+          </EmailShareButton>
 
-              <RedditShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                title={truncateRedditTitle(shareText)}
-                aria-label="Share on Reddit"
-              >
-                <RedditIcon size={ICON_SIZE} round />
-                <span className="font-medium">Reddit</span>
-              </RedditShareButton>
+          <RedditShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            title={truncateRedditTitle(shareText)}
+            aria-label="Share on Reddit"
+          >
+            <RedditIcon size={ICON_SIZE} round />
+            <span className="font-medium">Reddit</span>
+          </RedditShareButton>
 
-              <TelegramShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                title={shareText}
-                aria-label="Share on Telegram"
-              >
-                <TelegramIcon size={ICON_SIZE} round />
-                <span className="font-medium">Telegram</span>
-              </TelegramShareButton>
+          <TelegramShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            title={shareText}
+            aria-label="Share on Telegram"
+          >
+            <TelegramIcon size={ICON_SIZE} round />
+            <span className="font-medium">Telegram</span>
+          </TelegramShareButton>
 
-              <ThreadsShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                title={shareText}
-                aria-label="Share on Threads"
-              >
-                <ThreadsIcon size={ICON_SIZE} round />
-                <span className="font-medium">Threads</span>
-              </ThreadsShareButton>
+          <ThreadsShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            title={shareText}
+            aria-label="Share on Threads"
+          >
+            <ThreadsIcon size={ICON_SIZE} round />
+            <span className="font-medium">Threads</span>
+          </ThreadsShareButton>
 
-              <WhatsappShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                title={shareText}
-                aria-label="Share on WhatsApp"
-              >
-                <WhatsappIcon size={ICON_SIZE} round />
-                <span className="font-medium">WhatsApp</span>
-              </WhatsappShareButton>
+          <WhatsappShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            title={shareText}
+            aria-label="Share on WhatsApp"
+          >
+            <WhatsappIcon size={ICON_SIZE} round />
+            <span className="font-medium">WhatsApp</span>
+          </WhatsappShareButton>
 
-              <XShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                title={truncateForX(shareText, shareUrl)}
-                aria-label="Share on X"
-              >
-                <XIcon size={ICON_SIZE} round />
-                <span className="font-medium">X</span>
-              </XShareButton>
-            </nav>
-          </section>
+          <XShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            title={truncateForX(shareText, shareUrl)}
+            aria-label="Share on X"
+          >
+            <XIcon size={ICON_SIZE} round />
+            <span className="font-medium">X</span>
+          </XShareButton>
+        </nav>
+      </section>
 
-          <section aria-labelledby="share-no-prefill-heading">
-            <h3
-              id="share-no-prefill-heading"
-              className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-            >
-              Does not prefill post text
-            </h3>
-            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-              Facebook and LinkedIn open in a new tab with only your link. Your
-              session details and link are copied to the clipboard first—paste
-              into the post after the window opens.
-            </p>
-            <nav
-              className="flex flex-col gap-2"
-              aria-label="Share options without prefilled text"
-            >
-              <FacebookShareButton
-                resetButtonStyle={false}
-                className={ROW_CLASS}
-                url={shareUrl}
-                beforeOnClick={copyThenOpenFacebook}
-                aria-label="Share on Facebook"
-              >
-                <FacebookIcon size={ICON_SIZE} round />
-                <span className="font-medium">Facebook</span>
-              </FacebookShareButton>
+      <section aria-labelledby="share-no-prefill-heading">
+        <h3
+          id="share-no-prefill-heading"
+          className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          Does not prefill post text
+        </h3>
+        <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+          Facebook and LinkedIn open in a new tab with only your link. Your
+          session details and link are copied to the clipboard first—paste into
+          the post after the window opens.
+        </p>
+        <nav
+          className="flex flex-col gap-2"
+          aria-label="Share options without prefilled text"
+        >
+          <FacebookShareButton
+            resetButtonStyle={false}
+            className={ROW_CLASS}
+            url={shareUrl}
+            beforeOnClick={copyThenOpenFacebook}
+            aria-label="Share on Facebook"
+          >
+            <FacebookIcon size={ICON_SIZE} round />
+            <span className="font-medium">Facebook</span>
+          </FacebookShareButton>
 
-              <button
-                type="button"
-                className={ROW_CLASS}
-                onClick={() => void copyThenOpenLinkedIn()}
-                aria-label="Share on LinkedIn"
-              >
-                <LinkedinIcon size={ICON_SIZE} round />
-                <span className="font-medium">LinkedIn</span>
-              </button>
-            </nav>
-          </section>
+          <button
+            type="button"
+            className={ROW_CLASS}
+            onClick={() => void copyThenOpenLinkedIn()}
+            aria-label="Share on LinkedIn"
+          >
+            <LinkedinIcon size={ICON_SIZE} round />
+            <span className="font-medium">LinkedIn</span>
+          </button>
+        </nav>
+      </section>
 
-          <div className="border-t border-white/10 pt-4">
-            <button
-              type="button"
-              onClick={() => void copyToClipboard()}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
-              aria-label="Copy session details and link to clipboard"
-            >
-              {copied ? (
-                <>
-                  <Check className="size-4 text-primary" aria-hidden />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="size-4" aria-hidden />
-                  Copy details to clipboard
-                </>
-              )}
-            </button>
-          </div>
+      <div className="border-t border-white/10 pt-4">
+        <button
+          type="button"
+          onClick={() => void copyToClipboard()}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          aria-label="Copy session details and link to clipboard"
+        >
+          {copied ? (
+            <>
+              <Check className="size-4 text-primary" aria-hidden />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="size-4" aria-hidden />
+              Copy details to clipboard
+            </>
+          )}
+        </button>
+      </div>
     </BaseModal>
   );
 }

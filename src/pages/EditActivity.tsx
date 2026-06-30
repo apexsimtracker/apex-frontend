@@ -38,7 +38,9 @@ function EditPageShell({
               {title}
             </h1>
             {description ? (
-              <p className="mt-1.5 text-sm leading-relaxed text-white/60">{description}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/60">
+                {description}
+              </p>
             ) : null}
           </div>
         </div>
@@ -159,7 +161,9 @@ export default function EditActivity() {
       <>
         {editMeta}
         <EditPageShell title="Edit session" footer={backFooter}>
-          <p className="py-6 text-center text-sm text-white/60">Missing session ID.</p>
+          <p className="py-6 text-center text-sm text-white/60">
+            Missing session ID.
+          </p>
         </EditPageShell>
       </>
     );
@@ -212,7 +216,9 @@ export default function EditActivity() {
               </div>
             </div>
             <p className="text-lg font-medium text-white">Session updated</p>
-            <p className="mt-2 text-sm text-white/50">Redirecting to your session…</p>
+            <p className="mt-2 text-sm text-white/50">
+              Redirecting to your session…
+            </p>
           </div>
         ) : (
           <ManualActivityForm

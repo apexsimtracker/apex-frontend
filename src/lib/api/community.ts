@@ -8,7 +8,8 @@ export const DISCUSSION_CATEGORIES = [
   { value: "general", label: "General" },
 ] as const;
 
-export type DiscussionCategory = (typeof DISCUSSION_CATEGORIES)[number]["value"];
+export type DiscussionCategory =
+  (typeof DISCUSSION_CATEGORIES)[number]["value"];
 
 /** Label for a discussion category key (setup → Setups). Unknown keys pass through. */
 export function getDiscussionCategoryLabel(key: string): string {
@@ -77,11 +78,15 @@ export type DiscussionsPageResult = {
   total?: number;
 };
 
-function normalizeDiscussionListItem(item: Record<string, unknown>): Discussion {
+function normalizeDiscussionListItem(
+  item: Record<string, unknown>,
+): Discussion {
   const d = { ...item } as Discussion;
   const content = d.content ?? d.description;
   const withContent =
-    typeof content === "string" && d.description == null ? { ...d, description: content } : d;
+    typeof content === "string" && d.description == null
+      ? { ...d, description: content }
+      : d;
   const editedAt =
     typeof withContent.editedAt === "string" || withContent.editedAt === null
       ? withContent.editedAt
@@ -89,7 +94,9 @@ function normalizeDiscussionListItem(item: Record<string, unknown>): Discussion 
   const wasEdited =
     typeof withContent.wasEdited === "boolean"
       ? withContent.wasEdited
-      : Boolean(editedAt ?? withContent.originalTitle ?? withContent.originalBody);
+      : Boolean(
+          editedAt ?? withContent.originalTitle ?? withContent.originalBody,
+        );
   return { ...withContent, wasEdited };
 }
 
@@ -115,12 +122,15 @@ export async function getDiscussionsPage(params?: {
   const raw = await apiGet<DiscussionsPageResult>(path);
 
   const items = (Array.isArray(raw.items) ? raw.items : []).map((x) =>
-    normalizeDiscussionListItem(x as Record<string, unknown>)
+    normalizeDiscussionListItem(x as Record<string, unknown>),
   );
   return {
     items,
     page: typeof raw.page === "number" ? raw.page : 1,
-    limit: typeof raw.limit === "number" ? raw.limit : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+    limit:
+      typeof raw.limit === "number"
+        ? raw.limit
+        : DISCUSSIONS_PAGE_DEFAULT_LIMIT,
     hasMore: Boolean(raw.hasMore),
     total: typeof raw.total === "number" ? raw.total : undefined,
   };
@@ -133,13 +143,15 @@ export type CreateDiscussionBody = {
 };
 
 export async function createDiscussion(
-  body: CreateDiscussionBody
+  body: CreateDiscussionBody,
 ): Promise<Discussion> {
   return apiPost<Discussion>("/api/community/discussions", body);
 }
 
 export async function getDiscussion(id: string): Promise<Discussion> {
-  const raw = await apiGet<Record<string, unknown>>(`/api/community/discussions/${id}`);
+  const raw = await apiGet<Record<string, unknown>>(
+    `/api/community/discussions/${id}`,
+  );
   return normalizeDiscussionListItem(raw);
 }
 
@@ -150,11 +162,11 @@ export type UpdateDiscussionBody = {
 
 export async function updateDiscussion(
   id: string,
-  body: UpdateDiscussionBody
+  body: UpdateDiscussionBody,
 ): Promise<Discussion> {
   const raw = await apiPatch<Record<string, unknown>>(
     `/api/community/discussions/${encodeURIComponent(id)}`,
-    body
+    body,
   );
   return normalizeDiscussionListItem(raw);
 }
@@ -184,7 +196,7 @@ export type DiscussionCommentsPageResult = {
 /** Normalize GET /discussions/:id/comments — paginated JSON from API. */
 function normalizeDiscussionCommentsPage(
   raw: unknown,
-  fallbackLimit: number
+  fallbackLimit: number,
 ): DiscussionCommentsPageResult {
   if (!raw || typeof raw !== "object") {
     return {
@@ -198,15 +210,21 @@ function normalizeDiscussionCommentsPage(
   const o = raw as Record<string, unknown>;
   const items = Array.isArray(o.items) ? (o.items as DiscussionComment[]) : [];
   const limit =
-    typeof o.limit === "number" && Number.isFinite(o.limit) ? o.limit : fallbackLimit;
+    typeof o.limit === "number" && Number.isFinite(o.limit)
+      ? o.limit
+      : fallbackLimit;
   const page =
     typeof o.page === "number" && Number.isFinite(o.page) && o.page >= 1
       ? Math.floor(o.page)
       : 1;
   const total =
-    typeof o.total === "number" && Number.isFinite(o.total) ? o.total : items.length;
+    typeof o.total === "number" && Number.isFinite(o.total)
+      ? o.total
+      : items.length;
   const totalPages =
-    typeof o.totalPages === "number" && Number.isFinite(o.totalPages) && o.totalPages >= 1
+    typeof o.totalPages === "number" &&
+    Number.isFinite(o.totalPages) &&
+    o.totalPages >= 1
       ? Math.floor(o.totalPages)
       : total === 0
         ? 1
@@ -216,25 +234,25 @@ function normalizeDiscussionCommentsPage(
 
 export async function getDiscussionComments(
   id: string,
-  params?: { page?: number; limit?: number }
+  params?: { page?: number; limit?: number },
 ): Promise<DiscussionCommentsPageResult> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.limit != null) sp.set("limit", String(params.limit));
   const q = sp.toString();
   const raw = await apiGet<unknown>(
-    `/api/community/discussions/${encodeURIComponent(id)}/comments${q ? `?${q}` : ""}`
+    `/api/community/discussions/${encodeURIComponent(id)}/comments${q ? `?${q}` : ""}`,
   );
   return normalizeDiscussionCommentsPage(raw, DISCUSSION_COMMENTS_PAGE_SIZE);
 }
 
 export async function createDiscussionComment(
   id: string,
-  body: string
+  body: string,
 ): Promise<DiscussionComment> {
   return apiPost<DiscussionComment>(
     `/api/community/discussions/${id}/comments`,
-    { body: body.trim() }
+    { body: body.trim() },
   );
 }
 
@@ -243,12 +261,20 @@ export type DiscussionLikeResponse = {
   likedByMe: boolean;
 };
 
-export async function likeDiscussion(id: string): Promise<DiscussionLikeResponse> {
-  return apiPost<DiscussionLikeResponse>(`/api/community/discussions/${id}/like`);
+export async function likeDiscussion(
+  id: string,
+): Promise<DiscussionLikeResponse> {
+  return apiPost<DiscussionLikeResponse>(
+    `/api/community/discussions/${id}/like`,
+  );
 }
 
-export async function unlikeDiscussion(id: string): Promise<DiscussionLikeResponse> {
-  return apiDelete<DiscussionLikeResponse>(`/api/community/discussions/${id}/like`);
+export async function unlikeDiscussion(
+  id: string,
+): Promise<DiscussionLikeResponse> {
+  return apiDelete<DiscussionLikeResponse>(
+    `/api/community/discussions/${id}/like`,
+  );
 }
 
 /** POST /api/community/discussions/:id/view — idempotent per viewer; optional anonymousId when logged out. */
@@ -259,13 +285,19 @@ export type DiscussionViewResponse = {
 
 export async function recordDiscussionView(
   id: string,
-  options?: { anonymousId?: string }
+  options?: { anonymousId?: string },
 ): Promise<DiscussionViewResponse> {
   const anon = options?.anonymousId?.trim();
   if (anon) {
-    return apiPost<DiscussionViewResponse>(`/api/community/discussions/${id}/view`, {
-      anonymousId: anon,
-    });
+    return apiPost<DiscussionViewResponse>(
+      `/api/community/discussions/${id}/view`,
+      {
+        anonymousId: anon,
+      },
+    );
   }
-  return apiPost<DiscussionViewResponse>(`/api/community/discussions/${id}/view`, undefined);
+  return apiPost<DiscussionViewResponse>(
+    `/api/community/discussions/${id}/view`,
+    undefined,
+  );
 }

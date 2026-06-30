@@ -1,12 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiPost, getSessionCommentsPage, SESSION_COMMENTS_PAGE_DEFAULT_LIMIT } from "@/lib/api";
+import {
+  apiPost,
+  getSessionCommentsPage,
+  SESSION_COMMENTS_PAGE_DEFAULT_LIMIT,
+} from "@/lib/api";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type CommentItem = { id: string; body: string; createdAt?: string; userId?: string };
+type CommentItem = {
+  id: string;
+  body: string;
+  createdAt?: string;
+  userId?: string;
+};
 
 const COMMENTS_MODAL_LIMIT = SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
 
@@ -43,8 +52,15 @@ export function SessionCommentsModal({
     isError: commentsFailed,
     refetch,
   } = useQuery({
-    queryKey: ["sessions", sessionId, "modal-comments", page, COMMENTS_MODAL_LIMIT],
-    queryFn: () => getSessionCommentsPage(sessionId, { page, limit: COMMENTS_MODAL_LIMIT }),
+    queryKey: [
+      "sessions",
+      sessionId,
+      "modal-comments",
+      page,
+      COMMENTS_MODAL_LIMIT,
+    ],
+    queryFn: () =>
+      getSessionCommentsPage(sessionId, { page, limit: COMMENTS_MODAL_LIMIT }),
     enabled: isOpen && Boolean(sessionId),
   });
 
@@ -59,7 +75,9 @@ export function SessionCommentsModal({
           end: Math.min(page * COMMENTS_MODAL_LIMIT, total),
         };
 
-  const commentsError = commentsFailed ? "Can't load comments. Backend may be offline." : null;
+  const commentsError = commentsFailed
+    ? "Can't load comments. Backend may be offline."
+    : null;
 
   const postMutation = useMutation({
     mutationFn: (body: string) =>
@@ -75,7 +93,10 @@ export function SessionCommentsModal({
           page: 1,
           limit: COMMENTS_MODAL_LIMIT,
         });
-        const lastPage = Math.max(1, Math.ceil(freshTotal / COMMENTS_MODAL_LIMIT) || 1);
+        const lastPage = Math.max(
+          1,
+          Math.ceil(freshTotal / COMMENTS_MODAL_LIMIT) || 1,
+        );
         setPage(lastPage);
       } catch {
         setPage(1);
@@ -143,46 +164,50 @@ export function SessionCommentsModal({
         </>
       }
     >
-          {commentsLoading ? (
-            <p className="text-xs text-muted-foreground">Loading comments…</p>
-          ) : commentsError ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">{commentsError}</p>
-              <button type="button" onClick={() => loadComments()} className="text-xs text-primary underline hover:text-primary/80">
-                Retry
-              </button>
-            </div>
-          ) : comments.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No comments yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {comments.map((c) => (
-                <li key={c.id} className="text-sm text-foreground">
-                  <p>{c.body}</p>
-                  {c.createdAt && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString()}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
+      {commentsLoading ? (
+        <p className="text-xs text-muted-foreground">Loading comments…</p>
+      ) : commentsError ? (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">{commentsError}</p>
+          <button
+            type="button"
+            onClick={() => loadComments()}
+            className="text-xs text-primary underline hover:text-primary/80"
+          >
+            Retry
+          </button>
+        </div>
+      ) : comments.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No comments yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {comments.map((c) => (
+            <li key={c.id} className="text-sm text-foreground">
+              <p>{c.body}</p>
+              {c.createdAt && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {new Date(c.createdAt).toLocaleString()}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {total > 0 && !commentsLoading && !commentsError && (
+        <div className="space-y-3 border-t border-border pt-4">
+          {range && (
+            <p className="text-center text-xs text-muted-foreground">
+              Showing {range.start}–{range.end} of {total}
+            </p>
           )}
-        {total > 0 && !commentsLoading && !commentsError && (
-          <div className="space-y-3 border-t border-border pt-4">
-            {range && (
-              <p className="text-center text-xs text-muted-foreground">
-                Showing {range.start}–{range.end} of {total}
-              </p>
-            )}
-            <RaceHistoryPagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              disabled={commentsLoading}
-            />
-          </div>
-        )}
+          <RaceHistoryPagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            disabled={commentsLoading}
+          />
+        </div>
+      )}
     </BaseModal>
   );
 }

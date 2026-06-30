@@ -56,30 +56,27 @@ const DialogContent = React.forwardRef<
       closeClassName,
       ...props
     },
-    ref
+    ref,
   ) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        modalSurfaceVariants({ size, mobileVariant }),
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {showCloseButton ? (
-        <DialogPrimitive.Close
-          className={cn(modalCloseButtonClassName, closeClassName)}
-        >
-          <X className="size-4" />
-          <span className="sr-only">{closeLabel}</span>
-        </DialogPrimitive.Close>
-      ) : null}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-  )
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(modalSurfaceVariants({ size, mobileVariant }), className)}
+        {...props}
+      >
+        {children}
+        {showCloseButton ? (
+          <DialogPrimitive.Close
+            className={cn(modalCloseButtonClassName, closeClassName)}
+          >
+            <X className="size-4" />
+            <span className="sr-only">{closeLabel}</span>
+          </DialogPrimitive.Close>
+        ) : null}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  ),
 );
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
@@ -87,13 +84,7 @@ const DialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col gap-2 text-left",
-      className,
-    )}
-    {...props}
-  />
+  <div className={cn("flex flex-col gap-2 text-left", className)} {...props} />
 );
 DialogHeader.displayName = "DialogHeader";
 

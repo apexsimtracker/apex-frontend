@@ -41,7 +41,8 @@ function pickFirstString(...candidates: unknown[]): string | null {
 /** Finite lap times > 0 ms — matches backend `sanitizeLaps`. */
 export function sanitizeLapTimesForConsistency(lapTimes: number[]): number[] {
   return lapTimes.filter(
-    (ms): ms is number => typeof ms === "number" && Number.isFinite(ms) && ms > 0
+    (ms): ms is number =>
+      typeof ms === "number" && Number.isFinite(ms) && ms > 0,
   );
 }
 
@@ -77,7 +78,7 @@ export function calcConsistencyScore(lapTimes: number[]): number | null {
   const bestLapMs = Math.min(...laps);
   if (bestLapMs <= 0) return null;
   const scores = laps.map((lap) =>
-    lapConsistencyScore((lap - bestLapMs) / 1000)
+    lapConsistencyScore((lap - bestLapMs) / 1000),
   );
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   const clamped = Math.max(0, Math.min(100, avg));
@@ -106,7 +107,9 @@ export type SessionShareFields = {
 };
 
 /** Track/car/sim resolution for share text and session header (same rules as detail page). */
-export function resolveSessionFields(session: SessionShareFields & Record<string, unknown>): {
+export function resolveSessionFields(
+  session: SessionShareFields & Record<string, unknown>,
+): {
   track: string | null;
   sim: string | null;
   car: string | null;
@@ -118,7 +121,9 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
       ? (s0.session as Record<string, unknown>)
       : s0;
   const meta = (s0.meta ?? s.meta) as Record<string, unknown> | undefined;
-  const details = (s0.details ?? s.details) as Record<string, unknown> | undefined;
+  const details = (s0.details ?? s.details) as
+    | Record<string, unknown>
+    | undefined;
   const track = pickFirstString(
     session.track,
     session.trackName,
@@ -134,7 +139,7 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
     s.circuitName,
     s.circuit_name,
     s.trackDisplay,
-    s.track_display
+    s.track_display,
   );
   const sim = pickFirstString(
     session.sim,
@@ -143,7 +148,7 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
     s.gameName,
     s.simName,
     s.sim_name,
-    s.sourceSim
+    s.sourceSim,
   );
   const car = pickFirstString(
     session.vehicleDisplay,
@@ -164,7 +169,7 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
     details?.vehicle_name,
     s.vehicle,
     s.vehicleName,
-    s.vehicle_name
+    s.vehicle_name,
   );
   const carRawForFormat = pickFirstString(
     session.car,
@@ -178,7 +183,7 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
     details?.car_name,
     s.vehicle,
     s.vehicleName,
-    s.vehicle_name
+    s.vehicle_name,
   );
   return { track, sim, car, carRawForFormat };
 }
@@ -186,20 +191,25 @@ export function resolveSessionFields(session: SessionShareFields & Record<string
 /**
  * Same multi-line format as the session detail Share button (Apex — type @ track, car, best, laps, consistency).
  */
-export function buildSessionShareText(session: SessionShareFields & Record<string, unknown>): string {
+export function buildSessionShareText(
+  session: SessionShareFields & Record<string, unknown>,
+): string {
   const resolved = resolveSessionFields(session);
   const type = formatSessionKindLabel({
     sessionType: session?.sessionType,
-    manualSessionKind: (session as { manualSessionKind?: string | null }).manualSessionKind,
+    manualSessionKind: (session as { manualSessionKind?: string | null })
+      .manualSessionKind,
   });
   const track = formatTrackName(resolved.track);
   const car =
     resolved.car ??
-    (resolved.carRawForFormat ? formatCarName(resolved.carRawForFormat) : "Unknown Car");
+    (resolved.carRawForFormat
+      ? formatCarName(resolved.carRawForFormat)
+      : "Unknown Car");
   const laps = session?.lapCount ?? 0;
   const best = formatLapMs(session?.bestLapMs);
   const lapTimes = sanitizeLapTimesForConsistency(
-    (session?.laps ?? []).map((l) => l.timeMs ?? 0)
+    (session?.laps ?? []).map((l) => l.timeMs ?? 0),
   );
   let consistency = calcConsistencyScore(lapTimes);
   if (

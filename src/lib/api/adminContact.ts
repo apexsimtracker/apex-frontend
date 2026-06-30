@@ -69,7 +69,7 @@ export type AdminContactListParams = {
 };
 
 export async function fetchAdminContactList(
-  params?: AdminContactListParams
+  params?: AdminContactListParams,
 ): Promise<AdminContactListResponse> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -85,27 +85,29 @@ export async function fetchAdminContactList(
     "GET",
     `/api/admin/contact${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function fetchAdminContactDetail(id: string): Promise<AdminContactDetail> {
+export async function fetchAdminContactDetail(
+  id: string,
+): Promise<AdminContactDetail> {
   return fetchApi<AdminContactDetail>(
     "GET",
     `/api/admin/contact/${encodeURIComponent(id)}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function patchAdminContact(
   id: string,
-  body: { status?: ContactSubmissionStatus; internalNotes?: string | null }
+  body: { status?: ContactSubmissionStatus; internalNotes?: string | null },
 ): Promise<AdminContactDetail> {
   return fetchApi<AdminContactDetail>(
     "PATCH",
     `/api/admin/contact/${encodeURIComponent(id)}`,
     body,
-    false
+    false,
   );
 }

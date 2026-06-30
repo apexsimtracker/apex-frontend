@@ -30,7 +30,9 @@ function NavLinkDesktop({
   return (
     <Link
       to={item.to}
-      onMouseEnter={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
+      onMouseEnter={
+        item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined
+      }
       onFocus={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
       className={cn(
         "relative select-none text-sm font-medium transition-colors",
@@ -57,7 +59,9 @@ function NavLinkMobile({
   return (
     <Link
       to={item.to}
-      onMouseEnter={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
+      onMouseEnter={
+        item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined
+      }
       onFocus={item.prefetch === "ownProfile" ? prefetchOwnProfile : undefined}
       onClick={onNavigate}
       className={cn(

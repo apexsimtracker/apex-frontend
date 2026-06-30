@@ -24,7 +24,9 @@ export function getManualLapMaxForSim(sim: string): number {
 }
 
 /** Used when sim not chosen yet (allow UI to show add until sim selected). */
-export function getManualLapMaxForSimOrDefault(sim: string | undefined | null): number {
+export function getManualLapMaxForSimOrDefault(
+  sim: string | undefined | null,
+): number {
   if (!sim?.trim()) return MANUAL_LAPS_MAX_IRACING;
   return getManualLapMaxForSim(sim);
 }
@@ -35,7 +37,7 @@ export function getManualLapMaxForSimOrDefault(sim: string | undefined | null): 
  */
 export function effectiveManualLapMaxForForm(
   sim: string,
-  telemetryMinLapRows?: number | null
+  telemetryMinLapRows?: number | null,
 ): number {
   const base = getManualLapMaxForSimOrDefault(sim);
   if (telemetryMinLapRows != null && Number.isFinite(telemetryMinLapRows)) {
@@ -48,7 +50,9 @@ const lapRowSchema = z.object({
   lapTime: z.string(),
 });
 
-export function createManualActivityFormSchema(telemetryMinLapRows?: number | null) {
+export function createManualActivityFormSchema(
+  telemetryMinLapRows?: number | null,
+) {
   return z
     .object({
       sim: z.string(),
@@ -64,146 +68,163 @@ export function createManualActivityFormSchema(telemetryMinLapRows?: number | nu
       notes: z.string(),
     })
     .superRefine((data, ctx) => {
-    if (!data.sim?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please select a sim.",
-        path: ["sim"],
-      });
-    }
-    if (!data.trackId?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please select a track.",
-        path: ["trackId"],
-      });
-    }
-    if (!data.sim?.trim() || !data.trackId?.trim()) {
-      return;
-    }
-
-    const kind = data.manualSessionKind?.trim().toUpperCase();
-    if (kind !== "PRACTICE" && kind !== "QUALIFY" && kind !== "RACE") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Select Practice, Qualifying, or Race.",
-        path: ["manualSessionKind"],
-      });
-      return;
-    }
-
-    const positionNum = data.position?.trim() ? parseInt(data.position, 10) : undefined;
-    const totalDriversNum = data.totalDrivers?.trim()
-      ? parseInt(data.totalDrivers, 10)
-      : undefined;
-
-    if (data.position?.trim()) {
-      if (!Number.isInteger(positionNum) || Number.isNaN(positionNum as number)) {
+      if (!data.sim?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Position must be a whole number.",
-          path: ["position"],
-        });
-      } else if (
-        (positionNum as number) < MANUAL_ACTIVITY_POSITION_MIN ||
-        (positionNum as number) > MANUAL_ACTIVITY_POSITION_MAX
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Position must be between ${MANUAL_ACTIVITY_POSITION_MIN} and ${MANUAL_ACTIVITY_POSITION_MAX}.`,
-          path: ["position"],
+          message: "Please select a sim.",
+          path: ["sim"],
         });
       }
-    }
-
-    if (data.totalDrivers?.trim()) {
-      if (!Number.isInteger(totalDriversNum) || Number.isNaN(totalDriversNum as number)) {
+      if (!data.trackId?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Grid size must be a whole number.",
-          path: ["totalDrivers"],
-        });
-      } else if (
-        (totalDriversNum as number) < MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN ||
-        (totalDriversNum as number) > MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Grid size must be between ${MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN} and ${MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX} drivers.`,
-          path: ["totalDrivers"],
+          message: "Please select a track.",
+          path: ["trackId"],
         });
       }
-    }
-
-    const hasPosInput = Boolean(data.position?.trim());
-    const hasGridInput = Boolean(data.totalDrivers?.trim());
-
-    const posValid =
-      hasPosInput &&
-      Number.isInteger(positionNum) &&
-      !Number.isNaN(positionNum as number) &&
-      (positionNum as number) >= MANUAL_ACTIVITY_POSITION_MIN &&
-      (positionNum as number) <= MANUAL_ACTIVITY_POSITION_MAX;
-
-    const gridValid =
-      hasGridInput &&
-      Number.isInteger(totalDriversNum) &&
-      !Number.isNaN(totalDriversNum as number) &&
-      (totalDriversNum as number) >= MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN &&
-      (totalDriversNum as number) <= MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX;
-
-    if (kind !== "PRACTICE") {
-      const onlyPosFilled = posValid && !hasGridInput;
-      const onlyGridFilled = gridValid && !hasPosInput;
-      if (onlyPosFilled || onlyGridFilled) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Please enter both position and grid size, or leave both empty.",
-          path: ["position"],
-        });
+      if (!data.sim?.trim() || !data.trackId?.trim()) {
+        return;
       }
 
-      if (
-        posValid &&
-        gridValid &&
-        (positionNum as number) > (totalDriversNum as number)
-      ) {
+      const kind = data.manualSessionKind?.trim().toUpperCase();
+      if (kind !== "PRACTICE" && kind !== "QUALIFY" && kind !== "RACE") {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Position cannot be greater than the total number of drivers.",
-          path: ["position"],
+          message: "Select Practice, Qualifying, or Race.",
+          path: ["manualSessionKind"],
         });
+        return;
       }
-    }
 
-    if (kind === "RACE" && data.qualifyingPosition?.trim()) {
-      const qp = parseInt(data.qualifyingPosition.trim(), 10);
-      if (!Number.isInteger(qp) || Number.isNaN(qp)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Qualifying position must be a whole number.",
-          path: ["qualifyingPosition"],
-        });
-      } else if (qp < MANUAL_ACTIVITY_POSITION_MIN || qp > MANUAL_ACTIVITY_POSITION_MAX) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Qualifying position must be between ${MANUAL_ACTIVITY_POSITION_MIN} and ${MANUAL_ACTIVITY_POSITION_MAX}.`,
-          path: ["qualifyingPosition"],
-        });
-      } else if (
-        gridValid &&
-        totalDriversNum != null &&
-        qp > (totalDriversNum as number)
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Qualifying position cannot be greater than the total number of drivers.",
-          path: ["qualifyingPosition"],
-        });
+      const positionNum = data.position?.trim()
+        ? parseInt(data.position, 10)
+        : undefined;
+      const totalDriversNum = data.totalDrivers?.trim()
+        ? parseInt(data.totalDrivers, 10)
+        : undefined;
+
+      if (data.position?.trim()) {
+        if (
+          !Number.isInteger(positionNum) ||
+          Number.isNaN(positionNum as number)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Position must be a whole number.",
+            path: ["position"],
+          });
+        } else if (
+          (positionNum as number) < MANUAL_ACTIVITY_POSITION_MIN ||
+          (positionNum as number) > MANUAL_ACTIVITY_POSITION_MAX
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Position must be between ${MANUAL_ACTIVITY_POSITION_MIN} and ${MANUAL_ACTIVITY_POSITION_MAX}.`,
+            path: ["position"],
+          });
+        }
       }
-    }
 
-      const maxLaps = effectiveManualLapMaxForForm(data.sim, telemetryMinLapRows);
+      if (data.totalDrivers?.trim()) {
+        if (
+          !Number.isInteger(totalDriversNum) ||
+          Number.isNaN(totalDriversNum as number)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Grid size must be a whole number.",
+            path: ["totalDrivers"],
+          });
+        } else if (
+          (totalDriversNum as number) < MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN ||
+          (totalDriversNum as number) > MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Grid size must be between ${MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN} and ${MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX} drivers.`,
+            path: ["totalDrivers"],
+          });
+        }
+      }
+
+      const hasPosInput = Boolean(data.position?.trim());
+      const hasGridInput = Boolean(data.totalDrivers?.trim());
+
+      const posValid =
+        hasPosInput &&
+        Number.isInteger(positionNum) &&
+        !Number.isNaN(positionNum as number) &&
+        (positionNum as number) >= MANUAL_ACTIVITY_POSITION_MIN &&
+        (positionNum as number) <= MANUAL_ACTIVITY_POSITION_MAX;
+
+      const gridValid =
+        hasGridInput &&
+        Number.isInteger(totalDriversNum) &&
+        !Number.isNaN(totalDriversNum as number) &&
+        (totalDriversNum as number) >= MANUAL_ACTIVITY_TOTAL_DRIVERS_MIN &&
+        (totalDriversNum as number) <= MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX;
+
+      if (kind !== "PRACTICE") {
+        const onlyPosFilled = posValid && !hasGridInput;
+        const onlyGridFilled = gridValid && !hasPosInput;
+        if (onlyPosFilled || onlyGridFilled) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Please enter both position and grid size, or leave both empty.",
+            path: ["position"],
+          });
+        }
+
+        if (
+          posValid &&
+          gridValid &&
+          (positionNum as number) > (totalDriversNum as number)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Position cannot be greater than the total number of drivers.",
+            path: ["position"],
+          });
+        }
+      }
+
+      if (kind === "RACE" && data.qualifyingPosition?.trim()) {
+        const qp = parseInt(data.qualifyingPosition.trim(), 10);
+        if (!Number.isInteger(qp) || Number.isNaN(qp)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Qualifying position must be a whole number.",
+            path: ["qualifyingPosition"],
+          });
+        } else if (
+          qp < MANUAL_ACTIVITY_POSITION_MIN ||
+          qp > MANUAL_ACTIVITY_POSITION_MAX
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Qualifying position must be between ${MANUAL_ACTIVITY_POSITION_MIN} and ${MANUAL_ACTIVITY_POSITION_MAX}.`,
+            path: ["qualifyingPosition"],
+          });
+        } else if (
+          gridValid &&
+          totalDriversNum != null &&
+          qp > (totalDriversNum as number)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              "Qualifying position cannot be greater than the total number of drivers.",
+            path: ["qualifyingPosition"],
+          });
+        }
+      }
+
+      const maxLaps = effectiveManualLapMaxForForm(
+        data.sim,
+        telemetryMinLapRows,
+      );
       if (data.laps.length > maxLaps) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

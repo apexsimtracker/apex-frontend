@@ -20,9 +20,7 @@ import {
   type ProfileSummary,
   type AuthUser,
 } from "@/lib/api";
-import {
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -66,7 +64,11 @@ const emptyBuckets = {
 };
 
 /** Resolve display name for the current account (works for any account: displayName, name, or email). */
-function getAccountDisplayName(user: { displayName?: string; name?: string; email?: string }): string {
+function getAccountDisplayName(user: {
+  displayName?: string;
+  name?: string;
+  email?: string;
+}): string {
   const n = (user.displayName ?? user.name)?.trim();
   if (n && n.length > 0) return n;
   const e = user.email?.trim();
@@ -120,7 +122,9 @@ function stripQuery(url: string | null | undefined): string | undefined {
   return idx >= 0 ? url.slice(0, idx) : url;
 }
 
-async function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
+async function readImageDimensions(
+  file: File,
+): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
@@ -175,7 +179,9 @@ export default function Profile() {
     enabled: Boolean(followsUserId),
   });
 
-  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
+  const [openList, setOpenList] = useState<"followers" | "following" | null>(
+    null,
+  );
 
   const [editOpen, setEditOpen] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -193,8 +199,7 @@ export default function Profile() {
   });
 
   const profile =
-    profileSummary ??
-    (user ? profileSummaryFromMe({ user }) : null);
+    profileSummary ?? (user ? profileSummaryFromMe({ user }) : null);
 
   const openEditProfile = useCallback(() => {
     if (!user) return;
@@ -215,33 +220,36 @@ export default function Profile() {
     setEditOpen(true);
   }, [user, profile, profileEditForm]);
 
-  const handleAvatarFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setAvatarError(null);
-    if (avatarPreview) {
-      URL.revokeObjectURL(avatarPreview);
-      setAvatarPreview(null);
-    }
-    setAvatarFile(null);
-    if (!file) return;
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setAvatarError("Please choose a JPEG, PNG, or WebP image.");
-      return;
-    }
-    if (file.size > MAX_AVATAR_SIZE_BYTES) {
-      setAvatarError("Image must be 5 MB or smaller.");
-      return;
-    }
-    void (async () => {
-      try {
-        await readImageDimensions(file);
-        setAvatarFile(file);
-        setAvatarPreview(URL.createObjectURL(file));
-      } catch {
-        setAvatarError("Invalid image file.");
+  const handleAvatarFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      setAvatarError(null);
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview(null);
       }
-    })();
-  }, [avatarPreview]);
+      setAvatarFile(null);
+      if (!file) return;
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        setAvatarError("Please choose a JPEG, PNG, or WebP image.");
+        return;
+      }
+      if (file.size > MAX_AVATAR_SIZE_BYTES) {
+        setAvatarError("Image must be 5 MB or smaller.");
+        return;
+      }
+      void (async () => {
+        try {
+          await readImageDimensions(file);
+          setAvatarFile(file);
+          setAvatarPreview(URL.createObjectURL(file));
+        } catch {
+          setAvatarError("Invalid image file.");
+        }
+      })();
+    },
+    [avatarPreview],
+  );
 
   const clearAvatarSelection = useCallback(() => {
     if (avatarPreview) {
@@ -300,7 +308,8 @@ export default function Profile() {
 
       const u = updated as { tagline?: string; bio?: string };
       const savedBio =
-        (u.bio?.trim() ?? u.tagline?.trim() ?? values.tagline.trim()) || undefined;
+        (u.bio?.trim() ?? u.tagline?.trim() ?? values.tagline.trim()) ||
+        undefined;
 
       const userWithAvatar = {
         ...updated,
@@ -323,7 +332,7 @@ export default function Profile() {
                   bio: savedBio,
                 },
               }
-            : profileSummaryFromMe({ user: userWithAvatar })
+            : profileSummaryFromMe({ user: userWithAvatar }),
       );
 
       // Re-sync from backend only after upload/save has settled.
@@ -345,7 +354,7 @@ export default function Profile() {
                     uploadedAvatarForSession ??
                     withCacheBust(avatarUrlToSet, Date.now()),
                 }
-              : freshUser
+              : freshUser,
           );
         } catch {
           // Keep optimistic user state if refresh fails.
@@ -385,7 +394,12 @@ export default function Profile() {
   if (loading) {
     return (
       <>
-        <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} noindex />
+        <PageMeta
+          title={profileTitle}
+          description={profileDescription}
+          path={PROFILE_PATH}
+          noindex
+        />
         <AppLoadingScreen />
       </>
     );
@@ -393,19 +407,24 @@ export default function Profile() {
   if (!user) {
     return (
       <>
-        <PageMeta title={profileTitle} description={profileDescription} path={PROFILE_PATH} noindex />
+        <PageMeta
+          title={profileTitle}
+          description={profileDescription}
+          path={PROFILE_PATH}
+          noindex
+        />
         <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="max-w-md rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center sm:p-8">
-          <p className="mb-4 text-white/80">Not signed in.</p>
-          <Link
-            to="/login"
-            className="inline-block rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
-            Go to Login
-          </Link>
+          <div className="max-w-md rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center sm:p-8">
+            <p className="mb-4 text-white/80">Not signed in.</p>
+            <Link
+              to="/login"
+              className="inline-block rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "rgb(240, 28, 28)" }}
+            >
+              Go to Login
+            </Link>
+          </div>
         </div>
-      </div>
       </>
     );
   }
@@ -421,7 +440,9 @@ export default function Profile() {
     (() => {
       try {
         const d = new Date(user.createdAt);
-        return isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
+        return isNaN(d.getTime())
+          ? null
+          : d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
       } catch {
         return null;
       }
@@ -432,7 +453,9 @@ export default function Profile() {
     (user as AuthUser).bio?.trim() ??
     (user as AuthUser).tagline?.trim() ??
     (displayProfile.user as { bio?: string; tagline?: string }).bio?.trim() ??
-    (displayProfile.user as { bio?: string; tagline?: string }).tagline?.trim() ??
+    (
+      displayProfile.user as { bio?: string; tagline?: string }
+    ).tagline?.trim() ??
     undefined;
 
   const profileSeoTitle = `${accountName} | ${COMPANY_NAME}`;
@@ -451,89 +474,96 @@ export default function Profile() {
         noindex
       />
       <div className="flex min-h-screen flex-col bg-background">
-      <ProfileView
-        profile={displayProfile}
-        avatarUrl={avatarUrl || undefined}
-        bio={bioForDisplay}
-        followersCount={publicPreview?.followersCount ?? 0}
-        followingCount={publicPreview?.followingCount ?? 0}
-        isCurrentUser
-        isPro={user.hasPro === true}
-        challengeBadges={publicPreview?.challengeBadges}
-        onOpenFollowers={() => setOpenList("followers")}
-        onOpenFollowing={() => setOpenList("following")}
-        onPrefetchFollowers={() => prefetchFollowList(queryClient, followsUserId, "followers")}
-        onPrefetchFollowing={() => prefetchFollowList(queryClient, followsUserId, "following")}
-        onEditProfile={openEditProfile}
-        raceHistoryPagination={{
-          page: raceHistoryData?.page ?? raceHistoryPage,
-          limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
-          totalPages: raceHistoryData?.totalPages ?? 1,
-          total: raceHistoryData?.total ?? 0,
-          items: raceHistoryData?.items ?? [],
-          loading: raceHistoryLoading,
-          fetching: raceHistoryFetching,
-          onPageChange: setRaceHistoryPage,
-        }}
-      />
-      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-end gap-2">
-          {memberSince && (
-            <p className="text-sm text-white/50">Member since {memberSince}</p>
-          )}
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-      <FollowListDialog
-        key={`${followsUserId}-${openList ?? "closed"}`}
-        open={openList !== null}
-        onOpenChange={(open) => !open && setOpenList(null)}
-        userId={followsUserId}
-        listKind={openList}
-      />
-
-      {/* Edit Profile modal */}
-      <BaseModal
-        isOpen={editOpen}
-        onClose={() => {
-          clearAvatarSelection();
-          setEditOpen(false);
-        }}
-        title="Edit Profile"
-        description="Update your display name, bio, and profile picture."
-        size="sm"
-        footer={
-          <>
-            <Button
+        <ProfileView
+          profile={displayProfile}
+          avatarUrl={avatarUrl || undefined}
+          bio={bioForDisplay}
+          followersCount={publicPreview?.followersCount ?? 0}
+          followingCount={publicPreview?.followingCount ?? 0}
+          isCurrentUser
+          isPro={user.hasPro === true}
+          challengeBadges={publicPreview?.challengeBadges}
+          onOpenFollowers={() => setOpenList("followers")}
+          onOpenFollowing={() => setOpenList("following")}
+          onPrefetchFollowers={() =>
+            prefetchFollowList(queryClient, followsUserId, "followers")
+          }
+          onPrefetchFollowing={() =>
+            prefetchFollowList(queryClient, followsUserId, "following")
+          }
+          onEditProfile={openEditProfile}
+          raceHistoryPagination={{
+            page: raceHistoryData?.page ?? raceHistoryPage,
+            limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+            totalPages: raceHistoryData?.totalPages ?? 1,
+            total: raceHistoryData?.total ?? 0,
+            items: raceHistoryData?.items ?? [],
+            loading: raceHistoryLoading,
+            fetching: raceHistoryFetching,
+            onPageChange: setRaceHistoryPage,
+          }}
+        />
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-end gap-2">
+            {memberSince && (
+              <p className="text-sm text-white/50">
+                Member since {memberSince}
+              </p>
+            )}
+            <button
               type="button"
-              variant="outline"
-              onClick={() => {
-                clearAvatarSelection();
-                setEditOpen(false);
-              }}
-              disabled={editLoading}
+              onClick={handleSignOut}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "rgb(240, 28, 28)" }}
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="edit-profile-form"
-              disabled={
-                editLoading || profileEditForm.watch("displayName").trim().length < 2
-              }
-            >
-              {editLoading ? "Saving…" : "Save"}
-            </Button>
-          </>
-        }
-      >
+              Sign out
+            </button>
+          </div>
+        </div>
+        <FollowListDialog
+          key={`${followsUserId}-${openList ?? "closed"}`}
+          open={openList !== null}
+          onOpenChange={(open) => !open && setOpenList(null)}
+          userId={followsUserId}
+          listKind={openList}
+        />
+
+        {/* Edit Profile modal */}
+        <BaseModal
+          isOpen={editOpen}
+          onClose={() => {
+            clearAvatarSelection();
+            setEditOpen(false);
+          }}
+          title="Edit Profile"
+          description="Update your display name, bio, and profile picture."
+          size="sm"
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  clearAvatarSelection();
+                  setEditOpen(false);
+                }}
+                disabled={editLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="edit-profile-form"
+                disabled={
+                  editLoading ||
+                  profileEditForm.watch("displayName").trim().length < 2
+                }
+              >
+                {editLoading ? "Saving…" : "Save"}
+              </Button>
+            </>
+          }
+        >
           <Form {...profileEditForm}>
             <form
               id="edit-profile-form"
@@ -552,7 +582,9 @@ export default function Profile() {
                 name="displayName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="edit-displayName">Display name</FormLabel>
+                    <FormLabel htmlFor="edit-displayName">
+                      Display name
+                    </FormLabel>
                     <FormControl>
                       <Input
                         id="edit-displayName"
@@ -588,54 +620,58 @@ export default function Profile() {
                         {...field}
                       />
                     </FormControl>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{field.value.length}/160</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {field.value.length}/160
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
-                Profile picture
-              </label>
-              <p className="mb-2 text-xs text-muted-foreground">
-                Choose an image from your device (JPEG, PNG, or WebP, max 5 MB). Images are cropped to a square on upload.
-              </p>
-              <input
-                ref={avatarInputRef}
-                id="edit-avatar-file"
-                type="file"
-                accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                onChange={handleAvatarFileChange}
-                className="w-full text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-white/15"
-                disabled={editLoading}
-              />
-              {avatarError && (
-                <p className="mt-1.5 text-sm text-destructive">{avatarError}</p>
-              )}
-              {avatarPreview && (
-                <div className="mt-3 flex items-center gap-3">
-                  <img
-                    src={avatarPreview}
-                    alt="Preview"
-                    className="size-16 rounded-full border border-white/10 bg-muted object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={clearAvatarSelection}
-                    disabled={editLoading}
-                    className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-
+              <div>
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Profile picture
+                </label>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Choose an image from your device (JPEG, PNG, or WebP, max 5
+                  MB). Images are cropped to a square on upload.
+                </p>
+                <input
+                  ref={avatarInputRef}
+                  id="edit-avatar-file"
+                  type="file"
+                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                  onChange={handleAvatarFileChange}
+                  className="w-full text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-white/15"
+                  disabled={editLoading}
+                />
+                {avatarError && (
+                  <p className="mt-1.5 text-sm text-destructive">
+                    {avatarError}
+                  </p>
+                )}
+                {avatarPreview && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <img
+                      src={avatarPreview}
+                      alt="Preview"
+                      className="size-16 rounded-full border border-white/10 bg-muted object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearAvatarSelection}
+                      disabled={editLoading}
+                      className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
             </form>
           </Form>
-      </BaseModal>
-    </div>
+        </BaseModal>
+      </div>
     </>
   );
 }

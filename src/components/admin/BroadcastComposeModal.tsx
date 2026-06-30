@@ -16,13 +16,34 @@ import {
 } from "@/lib/api";
 import type { NotificationSeverity } from "@/lib/api";
 
-const SEVERITIES: { id: NotificationSeverity; label: string; tint: string }[] = [
-  { id: "INFO", label: "Info", tint: "bg-sky-500/15 border-sky-500/40 text-sky-300" },
-  { id: "SUCCESS", label: "Success", tint: "bg-emerald-500/15 border-emerald-500/40 text-emerald-300" },
-  { id: "WARNING", label: "Warning", tint: "bg-amber-500/15 border-amber-500/40 text-amber-300" },
-  { id: "CRITICAL", label: "Critical", tint: "bg-red-500/15 border-red-500/40 text-red-300" },
-  { id: "MAINTENANCE", label: "Maintenance", tint: "bg-violet-500/15 border-violet-500/40 text-violet-300" },
-];
+const SEVERITIES: { id: NotificationSeverity; label: string; tint: string }[] =
+  [
+    {
+      id: "INFO",
+      label: "Info",
+      tint: "bg-sky-500/15 border-sky-500/40 text-sky-300",
+    },
+    {
+      id: "SUCCESS",
+      label: "Success",
+      tint: "bg-emerald-500/15 border-emerald-500/40 text-emerald-300",
+    },
+    {
+      id: "WARNING",
+      label: "Warning",
+      tint: "bg-amber-500/15 border-amber-500/40 text-amber-300",
+    },
+    {
+      id: "CRITICAL",
+      label: "Critical",
+      tint: "bg-red-500/15 border-red-500/40 text-red-300",
+    },
+    {
+      id: "MAINTENANCE",
+      label: "Maintenance",
+      tint: "bg-violet-500/15 border-violet-500/40 text-violet-300",
+    },
+  ];
 
 interface Props {
   initial?: AdminBroadcastDetail | null;
@@ -49,15 +70,16 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [severity, setSeverity] = useState<NotificationSeverity>(
-    initial?.severity ?? "INFO"
+    initial?.severity ?? "INFO",
   );
   const [dismissible, setDismissible] = useState<boolean>(
-    initial?.dismissible ?? true
+    initial?.dismissible ?? true,
   );
   const [ctaLabel, setCtaLabel] = useState(initial?.ctaLabel ?? "");
   const [ctaUrl, setCtaUrl] = useState(initial?.ctaUrl ?? "");
   const [startsAt, setStartsAt] = useState(
-    localInputFromIso(initial?.startsAt) || localInputFromIso(new Date().toISOString())
+    localInputFromIso(initial?.startsAt) ||
+      localInputFromIso(new Date().toISOString()),
   );
   const [endsAt, setEndsAt] = useState(localInputFromIso(initial?.endsAt));
   type CreateStatus = "DRAFT" | "SCHEDULED" | "ACTIVE";
@@ -82,11 +104,17 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
     }
     const startsIso = isoFromLocalInput(startsAt) ?? new Date().toISOString();
     const endsIso = endsAt ? isoFromLocalInput(endsAt) : null;
-    if (endsIso && new Date(endsIso).getTime() <= new Date(startsIso).getTime()) {
+    if (
+      endsIso &&
+      new Date(endsIso).getTime() <= new Date(startsIso).getTime()
+    ) {
       setErr("End time must be after start time.");
       return;
     }
-    if (audience.audienceType === "USER_IDS" && (audience.audienceUserIds?.length ?? 0) === 0) {
+    if (
+      audience.audienceType === "USER_IDS" &&
+      (audience.audienceUserIds?.length ?? 0) === 0
+    ) {
       setErr("Select at least one user.");
       return;
     }
@@ -133,10 +161,20 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
       bodyClassName="min-h-0 space-y-4"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={pending}
+          >
             Cancel
           </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={pending}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={submit}
+            disabled={pending}
+          >
             {pending ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" /> Saving…
@@ -150,159 +188,173 @@ export function BroadcastComposeModal({ initial, onClose, onSaved }: Props) {
         </>
       }
     >
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              Title <span className="text-red-400">*</span>
-            </Label>
-            <Input
-              className="mt-1"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={140}
-            />
+      <div>
+        <Label className="text-xs text-muted-foreground">
+          Title <span className="text-red-400">*</span>
+        </Label>
+        <Input
+          className="mt-1"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={140}
+        />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">
+          Body <span className="text-red-400">*</span>
+        </Label>
+        <Textarea
+          className="mt-1 min-h-[100px]"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs text-muted-foreground">Severity</Label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {SEVERITIES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSeverity(s.id)}
+              className={`rounded-full border px-3 py-1 text-xs transition ${
+                severity === s.id
+                  ? s.tint
+                  : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">
+            CTA label (optional)
+          </Label>
+          <Input
+            className="mt-1"
+            value={ctaLabel}
+            onChange={(e) => setCtaLabel(e.target.value)}
+            placeholder="Learn more"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">
+            CTA URL (optional)
+          </Label>
+          <Input
+            className="mt-1"
+            value={ctaUrl}
+            onChange={(e) => setCtaUrl(e.target.value)}
+            placeholder="https://…"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">Starts at</Label>
+          <Input
+            type="datetime-local"
+            className="mt-1"
+            value={startsAt}
+            onChange={(e) => setStartsAt(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">
+            Ends at (optional)
+          </Label>
+          <Input
+            type="datetime-local"
+            className="mt-1"
+            value={endsAt ?? ""}
+            onChange={(e) => setEndsAt(e.target.value || null)}
+          />
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={dismissible}
+          onChange={(e) => setDismissible(e.target.checked)}
+        />
+        Allow users to dismiss this banner
+      </label>
+
+      <div className="border-t border-white/10 pt-4">
+        <Label className="text-sm font-semibold text-foreground">
+          Audience
+        </Label>
+        <div className="mt-2">
+          <AudiencePicker value={audience} onChange={setAudience} />
+        </div>
+      </div>
+
+      {!isEdit && (
+        <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
+          <Label className="text-xs text-muted-foreground">
+            When to publish
+          </Label>
+          <div className="mt-2 grid gap-2">
+            {(
+              [
+                {
+                  id: "DRAFT" as const,
+                  title: "Save as draft",
+                  desc: "Edit later and publish manually.",
+                },
+                {
+                  id: "SCHEDULED" as const,
+                  title: "Schedule",
+                  desc: "Auto-publish at the start time above.",
+                },
+                {
+                  id: "ACTIVE" as const,
+                  title: "Publish now",
+                  desc: "Show to eligible users immediately.",
+                },
+              ] satisfies { id: CreateStatus; title: string; desc: string }[]
+            ).map((opt) => (
+              <label
+                key={opt.id}
+                className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm transition ${
+                  createStatus === opt.id
+                    ? "border-primary/60 bg-primary/10 text-foreground"
+                    : "border-white/10 bg-transparent text-muted-foreground hover:bg-white/5"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="broadcast-create-status"
+                  className="mt-1"
+                  checked={createStatus === opt.id}
+                  onChange={() => setCreateStatus(opt.id)}
+                />
+                <span className="flex-1">
+                  <span className="block font-medium text-foreground">
+                    {opt.title}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {opt.desc}
+                  </span>
+                </span>
+              </label>
+            ))}
           </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              Body <span className="text-red-400">*</span>
-            </Label>
-            <Textarea
-              className="mt-1 min-h-[100px]"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-            />
-          </div>
+        </div>
+      )}
 
-          <div>
-            <Label className="text-xs text-muted-foreground">Severity</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {SEVERITIES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSeverity(s.id)}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${
-                    severity === s.id
-                      ? s.tint
-                      : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs text-muted-foreground">CTA label (optional)</Label>
-              <Input
-                className="mt-1"
-                value={ctaLabel}
-                onChange={(e) => setCtaLabel(e.target.value)}
-                placeholder="Learn more"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">CTA URL (optional)</Label>
-              <Input
-                className="mt-1"
-                value={ctaUrl}
-                onChange={(e) => setCtaUrl(e.target.value)}
-                placeholder="https://…"
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs text-muted-foreground">Starts at</Label>
-              <Input
-                type="datetime-local"
-                className="mt-1"
-                value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Ends at (optional)</Label>
-              <Input
-                type="datetime-local"
-                className="mt-1"
-                value={endsAt ?? ""}
-                onChange={(e) => setEndsAt(e.target.value || null)}
-              />
-            </div>
-          </div>
-
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={dismissible}
-              onChange={(e) => setDismissible(e.target.checked)}
-            />
-            Allow users to dismiss this banner
-          </label>
-
-          <div className="border-t border-white/10 pt-4">
-            <Label className="text-sm font-semibold text-foreground">Audience</Label>
-            <div className="mt-2">
-              <AudiencePicker value={audience} onChange={setAudience} />
-            </div>
-          </div>
-
-          {!isEdit && (
-            <div className="rounded-md border border-white/10 bg-white/[0.02] p-3">
-              <Label className="text-xs text-muted-foreground">When to publish</Label>
-              <div className="mt-2 grid gap-2">
-                {(
-                  [
-                    {
-                      id: "DRAFT" as const,
-                      title: "Save as draft",
-                      desc: "Edit later and publish manually.",
-                    },
-                    {
-                      id: "SCHEDULED" as const,
-                      title: "Schedule",
-                      desc: "Auto-publish at the start time above.",
-                    },
-                    {
-                      id: "ACTIVE" as const,
-                      title: "Publish now",
-                      desc: "Show to eligible users immediately.",
-                    },
-                  ] satisfies { id: CreateStatus; title: string; desc: string }[]
-                ).map((opt) => (
-                  <label
-                    key={opt.id}
-                    className={`flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-sm transition ${
-                      createStatus === opt.id
-                        ? "border-primary/60 bg-primary/10 text-foreground"
-                        : "border-white/10 bg-transparent text-muted-foreground hover:bg-white/5"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="broadcast-create-status"
-                      className="mt-1"
-                      checked={createStatus === opt.id}
-                      onChange={() => setCreateStatus(opt.id)}
-                    />
-                    <span className="flex-1">
-                      <span className="block font-medium text-foreground">{opt.title}</span>
-                      <span className="block text-xs text-muted-foreground">{opt.desc}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {err && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {err}
-            </div>
-          )}
+      {err && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {err}
+        </div>
+      )}
     </BaseModal>
   );
 }

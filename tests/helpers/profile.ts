@@ -36,21 +36,26 @@ export const DEFAULT_WEEKLY_GOALS = {
 export function isR2Configured(): boolean {
   return Boolean(
     process.env.R2_ACCESS_KEY_ID?.trim() &&
-      process.env.R2_SECRET_ACCESS_KEY?.trim() &&
-      process.env.R2_BUCKET?.trim()
+    process.env.R2_SECRET_ACCESS_KEY?.trim() &&
+    process.env.R2_BUCKET?.trim(),
   );
 }
 
 /** Best-effort R2 delete for E2E avatar teardown (requires R2 env vars). */
-export function deleteAvatarFromR2ByPublicUrl(publicUrl: string | null | undefined): void {
+export function deleteAvatarFromR2ByPublicUrl(
+  publicUrl: string | null | undefined,
+): void {
   const trimmed = publicUrl?.trim();
   if (!trimmed || !isR2Configured()) return;
   try {
-    execSync(`npx tsx scripts/e2e/delete-r2-avatar.ts ${JSON.stringify(trimmed)}`, {
-      cwd: APEX_ROOT,
-      env: process.env,
-      stdio: "pipe",
-    });
+    execSync(
+      `npx tsx scripts/e2e/delete-r2-avatar.ts ${JSON.stringify(trimmed)}`,
+      {
+        cwd: APEX_ROOT,
+        env: process.env,
+        stdio: "pipe",
+      },
+    );
   } catch {
     // best-effort teardown
   }
@@ -58,7 +63,7 @@ export function deleteAvatarFromR2ByPublicUrl(publicUrl: string | null | undefin
 
 export async function getMeViaApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<MeProfile> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(`${apiUrl}/api/auth/me`, {
@@ -73,7 +78,11 @@ export async function getMeViaApi(
 export async function patchMeViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  body: { displayName?: string; bio?: string | null; avatarUrl?: string | null }
+  body: {
+    displayName?: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+  },
 ): Promise<MeProfile> {
   const { apiUrl } = getE2eEnv();
   const res = await request.patch(`${apiUrl}/api/auth/me`, {
@@ -90,7 +99,7 @@ export async function patchMeViaApi(
 export async function patchPrivacyViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  body: Partial<PrivacySettings>
+  body: Partial<PrivacySettings>,
 ): Promise<PrivacySettings> {
   const { apiUrl } = getE2eEnv();
   const res = await request.patch(`${apiUrl}/api/settings/privacy`, {
@@ -99,7 +108,9 @@ export async function patchPrivacyViaApi(
   });
   if (!res.ok()) {
     const text = await res.text();
-    throw new Error(`PATCH /api/settings/privacy failed (${res.status()}): ${text}`);
+    throw new Error(
+      `PATCH /api/settings/privacy failed (${res.status()}): ${text}`,
+    );
   }
   return (await res.json()) as PrivacySettings;
 }
@@ -111,7 +122,7 @@ export async function patchWeeklyGoalsViaApi(
     weeklyRacesTarget?: number;
     weeklyPodiumsTarget?: number;
     weeklyLapsTarget?: number;
-  }
+  },
 ): Promise<{ ok?: boolean; weeklyGoals: WeeklyGoalsPayload }> {
   const { apiUrl } = getE2eEnv();
   const res = await request.patch(`${apiUrl}/api/profile/weekly-goals`, {
@@ -120,16 +131,21 @@ export async function patchWeeklyGoalsViaApi(
   });
   if (!res.ok()) {
     const text = await res.text();
-    throw new Error(`PATCH /api/profile/weekly-goals failed (${res.status()}): ${text}`);
+    throw new Error(
+      `PATCH /api/profile/weekly-goals failed (${res.status()}): ${text}`,
+    );
   }
-  return (await res.json()) as { ok?: boolean; weeklyGoals: WeeklyGoalsPayload };
+  return (await res.json()) as {
+    ok?: boolean;
+    weeklyGoals: WeeklyGoalsPayload;
+  };
 }
 
 export async function changePasswordViaApi(
   request: APIRequestContext,
   auth: AuthSession,
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/settings/change-password`, {
@@ -138,22 +154,27 @@ export async function changePasswordViaApi(
   });
   if (!res.ok()) {
     const text = await res.text();
-    throw new Error(`POST /api/settings/change-password failed (${res.status()}): ${text}`);
+    throw new Error(
+      `POST /api/settings/change-password failed (${res.status()}): ${text}`,
+    );
   }
 }
 
 export async function unfollowUserViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  userId: string
+  userId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.delete(`${apiUrl}/api/users/${encodeURIComponent(userId)}/follow`, {
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-      "X-Apex-Session": auth.sessionToken,
+  const res = await request.delete(
+    `${apiUrl}/api/users/${encodeURIComponent(userId)}/follow`,
+    {
+      headers: {
+        Authorization: `Bearer ${auth.token}`,
+        "X-Apex-Session": auth.sessionToken,
+      },
     },
-  });
+  );
   if (!res.ok() && res.status() !== 404) {
     const text = await res.text();
     throw new Error(`DELETE follow failed (${res.status()}): ${text}`);
@@ -163,12 +184,12 @@ export async function unfollowUserViaApi(
 export async function getFollowStatusViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  userId: string
+  userId: string,
 ): Promise<{ isFollowing: boolean }> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(
     `${apiUrl}/api/users/${encodeURIComponent(userId)}/follow-status`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
   if (!res.ok()) {
     const text = await res.text();
@@ -180,12 +201,12 @@ export async function getFollowStatusViaApi(
 export async function deleteSessionViaAdminApi(
   request: APIRequestContext,
   adminAuth: AuthSession,
-  sessionId: string
+  sessionId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.delete(
     `${apiUrl}/api/admin/sessions/${encodeURIComponent(sessionId)}`,
-    { headers: authHeaders(adminAuth.token, adminAuth.sessionToken) }
+    { headers: authHeaders(adminAuth.token, adminAuth.sessionToken) },
   );
   if (!res.ok() && res.status() !== 404) {
     const text = await res.text();
@@ -196,7 +217,7 @@ export async function deleteSessionViaAdminApi(
 export async function uploadAvatarViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  filePath: string
+  filePath: string,
 ): Promise<{ avatarUrl: string }> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/profile/avatar`, {
@@ -214,7 +235,9 @@ export async function uploadAvatarViaApi(
   });
   if (!res.ok()) {
     const text = await res.text();
-    throw new Error(`POST /api/profile/avatar failed (${res.status()}): ${text}`);
+    throw new Error(
+      `POST /api/profile/avatar failed (${res.status()}): ${text}`,
+    );
   }
   return (await res.json()) as { avatarUrl: string };
 }

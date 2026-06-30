@@ -51,7 +51,9 @@ export type AdminAuthSessionUsersListParams = {
   minRisk?: number;
 };
 
-export async function fetchAdminAuthSessionUsersList(params?: AdminAuthSessionUsersListParams): Promise<{
+export async function fetchAdminAuthSessionUsersList(
+  params?: AdminAuthSessionUsersListParams,
+): Promise<{
   items: AdminAuthSessionUserSummaryRow[];
   page: number;
   pageSize: number;
@@ -66,9 +68,15 @@ export async function fetchAdminAuthSessionUsersList(params?: AdminAuthSessionUs
   if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   if (params?.suspiciousOnly) sp.set("suspiciousOnly", "true");
-  if (params?.minRisk != null && params.minRisk >= 0) sp.set("minRisk", String(params.minRisk));
+  if (params?.minRisk != null && params.minRisk >= 0)
+    sp.set("minRisk", String(params.minRisk));
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/auth-sessions/users${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/auth-sessions/users${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export type FetchAdminAuthSessionsForUserParams = {
@@ -80,7 +88,7 @@ export type FetchAdminAuthSessionsForUserParams = {
 
 export async function fetchAdminAuthSessionsForUser(
   userId: string,
-  params?: FetchAdminAuthSessionsForUserParams
+  params?: FetchAdminAuthSessionsForUserParams,
 ): Promise<{
   user: AdminAuthSessionUser;
   scope: "active" | "all";
@@ -99,11 +107,13 @@ export async function fetchAdminAuthSessionsForUser(
     "GET",
     `/api/admin/auth-sessions/user/${encodeURIComponent(userId)}${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function postAdminAuthSessionsRecomputeRisk(userId: string): Promise<{
+export async function postAdminAuthSessionsRecomputeRisk(
+  userId: string,
+): Promise<{
   ok: boolean;
   updated: number;
 }> {
@@ -111,34 +121,36 @@ export async function postAdminAuthSessionsRecomputeRisk(userId: string): Promis
     "POST",
     `/api/admin/auth-sessions/user/${encodeURIComponent(userId)}/recompute-risk`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function postAdminAuthSessionsBulkDelete(
   userId: string,
-  sessionIds: string[]
+  sessionIds: string[],
 ): Promise<{ ok: boolean; deleted: number }> {
   return fetchApi(
     "POST",
     `/api/admin/auth-sessions/user/${encodeURIComponent(userId)}/bulk-delete`,
     { sessionIds },
-    false
+    false,
   );
 }
 
 export async function postRevokeAdminAuthSession(
-  sessionId: string
+  sessionId: string,
 ): Promise<{ ok: boolean; alreadyRevoked?: boolean }> {
   return fetchApi(
     "POST",
     `/api/admin/auth-sessions/${encodeURIComponent(sessionId)}/revoke`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function deleteAllAdminAuthSessionsForUser(userId: string): Promise<{
+export async function deleteAllAdminAuthSessionsForUser(
+  userId: string,
+): Promise<{
   ok: boolean;
   revokedCount: number;
 }> {
@@ -146,6 +158,6 @@ export async function deleteAllAdminAuthSessionsForUser(userId: string): Promise
     "DELETE",
     `/api/admin/auth-sessions/user/${encodeURIComponent(userId)}`,
     undefined,
-    false
+    false,
   );
 }

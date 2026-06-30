@@ -134,9 +134,7 @@ export function ApexLogoImage({
     : undefined;
 
   if (logoImgFailed) {
-    return (
-      <ApexLogo className={className} style={fixedDisplayStyle} />
-    );
+    return <ApexLogo className={className} style={fixedDisplayStyle} />;
   }
 
   return (

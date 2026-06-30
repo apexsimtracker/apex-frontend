@@ -26,19 +26,22 @@ export type CreateBroadcastInput = {
 export async function createBroadcastViaAdminApi(
   request: APIRequestContext,
   adminAuth: AuthSession,
-  input: CreateBroadcastInput
+  input: CreateBroadcastInput,
 ): Promise<string> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.post(`${apiUrl}/api/admin/notifications/broadcasts`, {
-    headers: authHeaders(adminAuth.token, adminAuth.sessionToken),
-    data: {
-      severity: "INFO",
-      dismissible: true,
-      audienceType: "ALL",
-      status: "DRAFT",
-      ...input,
+  const res = await request.post(
+    `${apiUrl}/api/admin/notifications/broadcasts`,
+    {
+      headers: authHeaders(adminAuth.token, adminAuth.sessionToken),
+      data: {
+        severity: "INFO",
+        dismissible: true,
+        audienceType: "ALL",
+        status: "DRAFT",
+        ...input,
+      },
     },
-  });
+  );
 
   if (!res.ok()) {
     const body = await res.text();
@@ -56,7 +59,7 @@ export async function createBroadcastViaAdminApi(
 export async function publishBroadcastViaAdminApi(
   request: APIRequestContext,
   adminAuth: AuthSession,
-  broadcastId: string
+  broadcastId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(
@@ -64,7 +67,7 @@ export async function publishBroadcastViaAdminApi(
     {
       headers: authHeaders(adminAuth.token, adminAuth.sessionToken),
       data: {},
-    }
+    },
   );
 
   if (!res.ok()) {
@@ -76,7 +79,7 @@ export async function publishBroadcastViaAdminApi(
 export async function archiveBroadcastViaAdminApi(
   request: APIRequestContext,
   adminAuth: AuthSession,
-  broadcastId: string
+  broadcastId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(
@@ -84,7 +87,7 @@ export async function archiveBroadcastViaAdminApi(
     {
       headers: authHeaders(adminAuth.token, adminAuth.sessionToken),
       data: {},
-    }
+    },
   );
 
   if (!res.ok() && res.status() !== 404) {
@@ -95,7 +98,7 @@ export async function archiveBroadcastViaAdminApi(
 
 export async function getActiveBroadcastsViaApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<{ id: string; title: string; body: string }[]> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(`${apiUrl}/api/broadcasts/active`, {
@@ -104,7 +107,9 @@ export async function getActiveBroadcastsViaApi(
 
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`GET /api/broadcasts/active failed (${res.status()}): ${body}`);
+    throw new Error(
+      `GET /api/broadcasts/active failed (${res.status()}): ${body}`,
+    );
   }
 
   const data = (await res.json()) as {
@@ -121,7 +126,7 @@ export async function getActiveBroadcastsViaApi(
 
 export async function getNotificationsViaApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<NotificationApi[]> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(`${apiUrl}/api/notifications`, {
@@ -139,7 +144,7 @@ export async function getNotificationsViaApi(
 
 export async function countUnreadNotificationsViaApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<number> {
   const notifications = await getNotificationsViaApi(request, auth);
   return notifications.filter((n) => !n.read).length;
@@ -148,7 +153,7 @@ export async function countUnreadNotificationsViaApi(
 export async function markNotificationsReadViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  ids?: string[]
+  ids?: string[],
 ): Promise<number> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/notifications/read`, {
@@ -158,7 +163,9 @@ export async function markNotificationsReadViaApi(
 
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`POST /api/notifications/read failed (${res.status()}): ${body}`);
+    throw new Error(
+      `POST /api/notifications/read failed (${res.status()}): ${body}`,
+    );
   }
 
   const data = (await res.json()) as { marked?: number };

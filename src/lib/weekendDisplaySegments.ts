@@ -1,8 +1,5 @@
 import type { SessionItem } from "./sessionTypes";
-import {
-  isPracticeKind,
-  isQualifyingKind,
-} from "./sessionKind";
+import { isPracticeKind, isQualifyingKind } from "./sessionKind";
 
 export type WeekendCarouselKind = "PRACTICE" | "QUALIFYING";
 
@@ -22,7 +19,7 @@ function resolveCarouselKind(session: SessionItem): WeekendCarouselKind | null {
  * Input sessions must already be sorted Race → Qualifying → Practice (server order).
  */
 export function segmentWeekendSessionsForDisplay(
-  sessions: SessionItem[]
+  sessions: SessionItem[],
 ): WeekendDisplaySegment[] {
   if (!sessions.length) return [];
 

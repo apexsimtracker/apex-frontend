@@ -88,26 +88,43 @@ function personaEmail(key: E2ePersonaKey): string {
 
 export function getE2eEnv(): E2eEnv {
   const personas = Object.fromEntries(
-    (Object.keys(PERSONA_ENV) as E2ePersonaKey[]).map((key) => [key, personaEmail(key)])
+    (Object.keys(PERSONA_ENV) as E2ePersonaKey[]).map((key) => [
+      key,
+      personaEmail(key),
+    ]),
   ) as Record<E2ePersonaKey, string>;
 
   return {
-    baseUrl: (process.env.E2E_BASE_URL ?? "http://localhost:8080").replace(/\/$/, ""),
-    apiUrl: (process.env.E2E_API_URL ?? "http://127.0.0.1:10000").replace(/\/$/, ""),
-    password: requireNonEmpty("E2E_USER_PASSWORD", process.env.E2E_USER_PASSWORD),
+    baseUrl: (process.env.E2E_BASE_URL ?? "http://localhost:8080").replace(
+      /\/$/,
+      "",
+    ),
+    apiUrl: (process.env.E2E_API_URL ?? "http://127.0.0.1:10000").replace(
+      /\/$/,
+      "",
+    ),
+    password: requireNonEmpty(
+      "E2E_USER_PASSWORD",
+      process.env.E2E_USER_PASSWORD,
+    ),
     checkoutUserEmail: requireNonEmpty(
       "E2E_CHECKOUT_USER_EMAIL",
-      process.env.E2E_CHECKOUT_USER_EMAIL
+      process.env.E2E_CHECKOUT_USER_EMAIL,
     ),
-    proUserEmail: requireNonEmpty("E2E_PRO_USER_EMAIL", process.env.E2E_PRO_USER_EMAIL),
+    proUserEmail: requireNonEmpty(
+      "E2E_PRO_USER_EMAIL",
+      process.env.E2E_PRO_USER_EMAIL,
+    ),
     webhookUserEmail:
       process.env.E2E_WEBHOOK_USER_EMAIL?.trim() || personaEmail("webhookFree"),
-    revenueCatWebhookSecret: process.env.REVENUECAT_WEBHOOK_SECRET?.trim() ?? "",
+    revenueCatWebhookSecret:
+      process.env.REVENUECAT_WEBHOOK_SECRET?.trim() ?? "",
     adminSecret: process.env.ADMIN_SECRET?.trim() ?? "",
     billingConfigured: process.env.E2E_BILLING_CONFIGURED === "1",
     challengeId:
       process.env.E2E_CHALLENGE_ID?.trim() || "e2e-challenge-road-atlanta-gt3",
-    unverifiedKnownCode: process.env.E2E_UNVERIFIED_KNOWN_CODE?.trim() || "12345678",
+    unverifiedKnownCode:
+      process.env.E2E_UNVERIFIED_KNOWN_CODE?.trim() || "12345678",
     personas,
   };
 }

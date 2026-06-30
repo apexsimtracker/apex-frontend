@@ -47,12 +47,15 @@ function buildRecentFromFeed(): Promise<RecentManualItem[]> {
     const out: RecentManualItem[] = [];
 
     for (const s of sessions) {
-      const sim = normalizeSim((s.simKey ?? s.sim) as string | null | undefined);
+      const sim = normalizeSim(
+        (s.simKey ?? s.sim) as string | null | undefined,
+      );
       if (!sim) continue;
       const trackId = (s.trackId ?? s.track ?? "").toString().trim();
       const trackName = (s.track ?? "").toString().trim() || trackId;
       const carId = (s.carId ?? s.car ?? "").toString().trim() || null;
-      const carName = (s.vehicleDisplay ?? s.car ?? "").toString().trim() || "—";
+      const carName =
+        (s.vehicleDisplay ?? s.car ?? "").toString().trim() || "—";
 
       const key = `${sim}|${trackId}|${carId ?? ""}`;
       if (seen.has(key)) continue;
@@ -80,7 +83,11 @@ export function useRecentManualSessions(): {
   loading: boolean;
   refetch: () => void;
 } {
-  const { data: recent = [], isPending: loading, refetch } = useQuery({
+  const {
+    data: recent = [],
+    isPending: loading,
+    refetch,
+  } = useQuery({
     queryKey: ["activity", "recent-manual"],
     queryFn: buildRecentFromFeed,
   });

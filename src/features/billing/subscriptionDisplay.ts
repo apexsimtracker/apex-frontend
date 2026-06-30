@@ -11,7 +11,7 @@ type SubscriptionDisplayFields = {
 
 function priceLabelForInterval(
   interval: BillingInterval | null | undefined,
-  plans: BillingPlans | undefined
+  plans: BillingPlans | undefined,
 ): string | null {
   if (interval === "MONTHLY") return plans?.pro.monthly.priceLabel ?? null;
   if (interval === "ANNUAL") return plans?.pro.annual.priceLabel ?? null;
@@ -20,7 +20,7 @@ function priceLabelForInterval(
 
 function planNameForInterval(
   interval: BillingInterval | null | undefined,
-  plans: BillingPlans | undefined
+  plans: BillingPlans | undefined,
 ): string | null {
   if (interval === "MONTHLY") return plans?.pro.monthly.name ?? null;
   if (interval === "ANNUAL") return plans?.pro.annual.name ?? null;
@@ -30,7 +30,7 @@ function planNameForInterval(
 /** Human-readable current subscription line for pricing / settings. */
 export function formatCurrentSubscriptionLabel(
   subscription: SubscriptionDisplayFields | undefined,
-  plans: BillingPlans | undefined
+  plans: BillingPlans | undefined,
 ): string | null {
   if (!subscription || subscription.effectivePlan !== "PRO") return null;
 

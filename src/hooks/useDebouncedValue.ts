@@ -10,7 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 export function useDebouncedValue<T>(
   value: T,
   delayMs: number,
-  flushWhenKey?: unknown
+  flushWhenKey?: unknown,
 ): T {
   const [debounced, setDebounced] = useState(value);
   const prevFlushKey = useRef(flushWhenKey);

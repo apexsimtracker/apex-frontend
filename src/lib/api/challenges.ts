@@ -58,14 +58,14 @@ export type ChallengeSocialPreviewResponse = {
 };
 
 export async function getChallengesSocialPreview(
-  challengeIds: string[]
+  challengeIds: string[],
 ): Promise<ChallengeSocialPreviewResponse> {
   if (challengeIds.length === 0) {
     return { previews: {} };
   }
   const sp = new URLSearchParams({ ids: challengeIds.join(",") });
   return apiGet<ChallengeSocialPreviewResponse>(
-    `/api/challenges/social-preview?${sp}`
+    `/api/challenges/social-preview?${sp}`,
   );
 }
 
@@ -136,7 +136,7 @@ export type ChallengeListParams = {
 };
 
 export async function getChallengeList(
-  params?: ChallengeListParams
+  params?: ChallengeListParams,
 ): Promise<ChallengeListResponse> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -152,22 +152,28 @@ export async function getChallengeList(
   return apiGet<ChallengeListResponse>(path);
 }
 
-export async function getChallenge(id: string): Promise<ChallengeDetail | null> {
+export async function getChallenge(
+  id: string,
+): Promise<ChallengeDetail | null> {
   try {
     const data = await apiGet<ChallengeDetail>(
-      `/api/challenges/${encodeURIComponent(id)}`
+      `/api/challenges/${encodeURIComponent(id)}`,
     );
     if (!data || typeof data !== "object") return null;
-    return normalizeChallengeSummaryRow(data as ChallengeSummary) as ChallengeDetail;
+    return normalizeChallengeSummaryRow(
+      data as ChallengeSummary,
+    ) as ChallengeDetail;
   } catch {
     return null;
   }
 }
 
-export async function joinChallenge(id: string): Promise<{ ok: boolean; challengeId: string }> {
+export async function joinChallenge(
+  id: string,
+): Promise<{ ok: boolean; challengeId: string }> {
   return apiPost<{ ok: boolean; challengeId: string }>(
     `/api/challenges/${encodeURIComponent(id)}/join`,
-    {}
+    {},
   );
 }
 
@@ -180,7 +186,7 @@ export async function leaveChallenge(id: string): Promise<{ ok: true }> {
     "DELETE",
     `/api/challenges/${encodeURIComponent(id)}/leave`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -201,7 +207,7 @@ export type ChallengeLeaderboardRow = {
 export async function getChallengeLeaderboard(
   challengeId: string,
   page = 1,
-  pageSize = 50
+  pageSize = 50,
 ): Promise<{
   items: ChallengeLeaderboardRow[];
   page: number;
@@ -213,7 +219,9 @@ export async function getChallengeLeaderboard(
     page: String(page),
     pageSize: String(pageSize),
   });
-  return apiGet(`/api/challenges/${encodeURIComponent(challengeId)}/leaderboard?${sp}`);
+  return apiGet(
+    `/api/challenges/${encodeURIComponent(challengeId)}/leaderboard?${sp}`,
+  );
 }
 
 export type EntrantSessionRow = {
@@ -227,7 +235,7 @@ export type EntrantSessionRow = {
 export async function getChallengeEntrantSessions(
   challengeId: string,
   page = 1,
-  pageSize = 50
+  pageSize = 50,
 ): Promise<{
   items: EntrantSessionRow[];
   page: number;
@@ -240,7 +248,7 @@ export async function getChallengeEntrantSessions(
     pageSize: String(pageSize),
   });
   return apiGet(
-    `/api/challenges/${encodeURIComponent(challengeId)}/entrant-sessions?${sp}`
+    `/api/challenges/${encodeURIComponent(challengeId)}/entrant-sessions?${sp}`,
   );
 }
 
@@ -259,7 +267,9 @@ export type AdminChallengeRow = {
   createdByDisplayName: string | null;
 };
 
-export async function fetchAdminChallengeList(params?: ChallengeListParams): Promise<{
+export async function fetchAdminChallengeList(
+  params?: ChallengeListParams,
+): Promise<{
   items: AdminChallengeRow[];
   page: number;
   pageSize: number;
@@ -278,12 +288,17 @@ export async function fetchAdminChallengeList(params?: ChallengeListParams): Pro
     "GET",
     `/api/admin/challenges${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function fetchAdminChallengeDetail(id: string): Promise<unknown> {
-  return fetchApi("GET", `/api/admin/challenges/${encodeURIComponent(id)}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/challenges/${encodeURIComponent(id)}`,
+    undefined,
+    false,
+  );
 }
 
 export async function createAdminChallenge(body: {
@@ -300,25 +315,25 @@ export async function createAdminChallenge(body: {
 
 export async function patchAdminChallenge(
   id: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ): Promise<unknown> {
   return fetchApi(
     "PATCH",
     `/api/admin/challenges/${encodeURIComponent(id)}`,
     body,
-    false
+    false,
   );
 }
 
 export async function deleteAdminChallenge(
   id: string,
-  confirmation: string
+  confirmation: string,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/challenges/${encodeURIComponent(id)}`,
     { confirmation },
-    false
+    false,
   );
 }
 
@@ -342,7 +357,7 @@ export type AdminChallengeLeaderboardRow = {
 export async function fetchAdminChallengeLeaderboard(
   challengeId: string,
   page = 1,
-  pageSize = 20
+  pageSize = 20,
 ): Promise<{
   items: AdminChallengeLeaderboardRow[];
   page: number;
@@ -358,7 +373,7 @@ export async function fetchAdminChallengeLeaderboard(
     "GET",
     `/api/admin/challenges/${encodeURIComponent(challengeId)}/leaderboard?${sp}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -371,7 +386,7 @@ export type AdminChallengeParticipantRow = {
 
 export async function fetchAdminChallengeParticipants(
   challengeId: string,
-  params: { page?: number; pageSize?: number; q?: string } = {}
+  params: { page?: number; pageSize?: number; q?: string } = {},
 ): Promise<{
   items: AdminChallengeParticipantRow[];
   page: number;
@@ -387,22 +402,22 @@ export async function fetchAdminChallengeParticipants(
     "GET",
     `/api/admin/challenges/${encodeURIComponent(challengeId)}/participants?${sp}`,
     undefined,
-    false
+    false,
   );
 }
 
 /** Remove a participant: clean wipe (user can rejoin freely). */
 export async function removeAdminChallengeParticipant(
   challengeId: string,
-  userId: string
+  userId: string,
 ): Promise<{ ok: true }> {
   return fetchApi(
     "DELETE",
     `/api/admin/challenges/${encodeURIComponent(
-      challengeId
+      challengeId,
     )}/participants/${encodeURIComponent(userId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -419,7 +434,7 @@ export type AdminBanResponse = {
 export async function banAdminChallengeParticipant(
   challengeId: string,
   userId: string,
-  reason?: string | null
+  reason?: string | null,
 ): Promise<AdminBanResponse> {
   const body: Record<string, unknown> = { userId };
   if (typeof reason === "string") {
@@ -430,36 +445,36 @@ export async function banAdminChallengeParticipant(
     "POST",
     `/api/admin/challenges/${encodeURIComponent(challengeId)}/bans`,
     body,
-    false
+    false,
   );
 }
 
 export async function updateAdminChallengeBan(
   challengeId: string,
   userId: string,
-  reason: string | null
+  reason: string | null,
 ): Promise<AdminBanResponse> {
   const trimmed = typeof reason === "string" ? reason.trim() : null;
   return fetchApi(
     "PATCH",
     `/api/admin/challenges/${encodeURIComponent(
-      challengeId
+      challengeId,
     )}/bans/${encodeURIComponent(userId)}`,
     { reason: trimmed && trimmed.length > 0 ? trimmed : null },
-    false
+    false,
   );
 }
 
 export async function unbanAdminChallengeParticipant(
   challengeId: string,
-  userId: string
+  userId: string,
 ): Promise<{ ok: true }> {
   return fetchApi(
     "DELETE",
     `/api/admin/challenges/${encodeURIComponent(
-      challengeId
+      challengeId,
     )}/bans/${encodeURIComponent(userId)}`,
     undefined,
-    false
+    false,
   );
 }

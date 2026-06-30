@@ -2,7 +2,8 @@
 
 export const ADMIN_PAGE = "mx-auto min-w-0 max-w-6xl";
 
-export const ADMIN_TABLE_CARD = "min-w-0 overflow-hidden rounded-xl border border-white/10";
+export const ADMIN_TABLE_CARD =
+  "min-w-0 overflow-hidden rounded-xl border border-white/10";
 
 export const ADMIN_TABLE_SCROLL = "overflow-x-auto overscroll-x-contain";
 

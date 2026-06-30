@@ -24,10 +24,11 @@ export function TelemetryAnalysisSection({
   const isPro = useIsProUser();
   const manualIngest = isManualIngest(ingestPath);
 
-  const { data: summary, isLoading, isError } = useTelemetrySummary(
-    sessionId,
-    isPro && !manualIngest
-  );
+  const {
+    data: summary,
+    isLoading,
+    isError,
+  } = useTelemetrySummary(sessionId, isPro && !manualIngest);
 
   const [tab, setTab] = useState<TabId>("driving");
   const [selectedLap, setSelectedLap] = useState<number | null>(null);
@@ -41,17 +42,17 @@ export function TelemetryAnalysisSection({
 
   const canLoadTraces = Boolean(
     isPro &&
-      summary?.eligible &&
-      summary.hasProAccess &&
-      selectedLap != null &&
-      summary.laps.some((l) => l.lapNumber === selectedLap && l.hasTraces)
+    summary?.eligible &&
+    summary.hasProAccess &&
+    selectedLap != null &&
+    summary.laps.some((l) => l.lapNumber === selectedLap && l.hasTraces),
   );
 
   const { data: traces, isLoading: tracesLoading } = useTelemetryTraces(
     sessionId,
     selectedLap,
     compareLap,
-    canLoadTraces && tab === "driving"
+    canLoadTraces && tab === "driving",
   );
 
   const hasFuel = (summary?.fuel?.perLap.length ?? 0) > 0;
@@ -59,15 +60,18 @@ export function TelemetryAnalysisSection({
   const hasAnyData = useMemo(
     () =>
       Boolean(
-        summary?.laps.some((l) => l.hasTraces || l.hasFuel || l.hasTyres)
+        summary?.laps.some((l) => l.hasTraces || l.hasFuel || l.hasTyres),
       ),
-    [summary?.laps]
+    [summary?.laps],
   );
 
   if (!isPro) {
     return (
       <div className="relative mt-8 overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-60"
+        >
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
         </div>
         <div className="relative">
@@ -78,9 +82,13 @@ export function TelemetryAnalysisSection({
             Telemetry Analysis is available with Apex Pro
           </p>
           <p className="mt-1 text-sm text-white/60">
-            Unlock driving traces, fuel strategy, and tyre insights for agent-uploaded sessions
+            Unlock driving traces, fuel strategy, and tyre insights for
+            agent-uploaded sessions
           </p>
-          <Button asChild className="mt-5 bg-amber-500 text-black hover:bg-amber-400">
+          <Button
+            asChild
+            className="mt-5 bg-amber-500 text-black hover:bg-amber-400"
+          >
             <Link to="/pricing">Upgrade to Pro</Link>
           </Button>
         </div>
@@ -98,10 +106,14 @@ export function TelemetryAnalysisSection({
           Upload with the Apex Agent for full telemetry analysis
         </p>
         <p className="mt-1 text-sm text-white/60">
-          Manual and web uploads store lap times only. Install the desktop agent to capture driving
-          traces, fuel, and tyre data automatically.
+          Manual and web uploads store lap times only. Install the desktop agent
+          to capture driving traces, fuel, and tyre data automatically.
         </p>
-        <Button asChild variant="outline" className="mt-5 border-white/15 text-white">
+        <Button
+          asChild
+          variant="outline"
+          className="mt-5 border-white/15 text-white"
+        >
           <Link to="/agent">Get Apex Agent</Link>
         </Button>
       </div>
@@ -123,7 +135,9 @@ export function TelemetryAnalysisSection({
         <div className="text-xs uppercase tracking-wider text-white/50">
           Telemetry Analysis
         </div>
-        <p className="mt-2 text-sm text-white/60">Unable to load telemetry for this session.</p>
+        <p className="mt-2 text-sm text-white/60">
+          Unable to load telemetry for this session.
+        </p>
       </div>
     );
   }
@@ -151,8 +165,9 @@ export function TelemetryAnalysisSection({
           Agent session · {summary.simKey.replace(/_/g, " ")}
         </p>
         <p className="mt-4 text-sm text-white/60">
-          Lap times are stored, but driving traces, fuel, and tyre data were not captured for this
-          session. Re-upload via a current Apex Agent build after driving at least one complete lap.
+          Lap times are stored, but driving traces, fuel, and tyre data were not
+          captured for this session. Re-upload via a current Apex Agent build
+          after driving at least one complete lap.
         </p>
         {summary.laps.length > 0 && (
           <div className="mt-6">
@@ -235,9 +250,13 @@ export function TelemetryAnalysisSection({
         </div>
       )}
 
-      {activeTab === "fuel" && summary.fuel && <FuelAnalysisChart fuel={summary.fuel} />}
+      {activeTab === "fuel" && summary.fuel && (
+        <FuelAnalysisChart fuel={summary.fuel} />
+      )}
 
-      {activeTab === "tyres" && summary.tyres && <TyreAnalysisChart tyres={summary.tyres} />}
+      {activeTab === "tyres" && summary.tyres && (
+        <TyreAnalysisChart tyres={summary.tyres} />
+      )}
     </div>
   );
 }

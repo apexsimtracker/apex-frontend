@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+.v2-theme {
+  /* Brand — from loveable-ui-architecture/01-design-tokens.md §B.1 */
+  --v2-primary: 0 90% 47%; /* #E10600 */
+  --v2-primary-fixed: 6 100% 69%; /* #ff7763 */
+  --v2-on-surface: 0 0% 100%;
+  --v2-on-surface-variant: 0 0% 68%; /* #adaaaa */
+  --v2-background: 0 0% 5.5%; /* #0e0e0e */
+  --v2-surface: 0 0% 5.5%;
+  --v2-surface-container-low: 0 0% 7.5%; /* #131313 */
+  --v2-surface-container: 0 0% 10%; /* #1a1919 */
+  --v2-surface-container-high: 0 0% 12%; /* #201f1f */
+  --v2-surface-container-highest: 0 0% 15%; /* #262626 */
+  --v2-outline-variant: 0 0% 28%; /* #484847 */
+  --v2-error: 351 100% 73%; /* #ff6e84 */
+  --v2-success: 142 76% 36%; /* green-500 equivalent */
+  --v2-radius: 0.125rem; /* Loveable DEFAULT 2px */
+}
+
+.v2-theme .v2-kinetic-glass {
+  background: rgba(38, 38, 38, 0.6);
+  backdrop-filter: blur(16px);
+}
+
+.v2-theme .v2-primary-gradient {
+  background: linear-gradient(135deg, #ff8e7d 0%, #ff7763 100%);
+}
+
+.v2-theme .v2-red-accent-border {
+  border-left: 3px solid #eb0000;
+}

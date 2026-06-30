@@ -10,7 +10,9 @@ const SOURCE_LABELS: Record<string, string> = {
   AGENT: "Agent",
 };
 
-export function formatActivitySource(source: string | null | undefined): string {
+export function formatActivitySource(
+  source: string | null | undefined,
+): string {
   const raw = (source ?? "").toString().trim();
   if (!raw) return "—";
   const key = raw.toUpperCase();
@@ -32,4 +34,3 @@ export function titleizeEnum(value: string): string {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 }
-

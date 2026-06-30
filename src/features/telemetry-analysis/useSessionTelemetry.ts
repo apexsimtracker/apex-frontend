@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchTelemetrySummary, fetchTelemetryTraces } from "./telemetryAnalysisApi";
+import {
+  fetchTelemetrySummary,
+  fetchTelemetryTraces,
+} from "./telemetryAnalysisApi";
 
-export function useTelemetrySummary(sessionId: string | undefined, enabled: boolean) {
+export function useTelemetrySummary(
+  sessionId: string | undefined,
+  enabled: boolean,
+) {
   return useQuery({
     queryKey: ["sessions", "telemetry", "summary", sessionId ?? ""],
     queryFn: () => fetchTelemetrySummary(sessionId!),
@@ -14,7 +20,7 @@ export function useTelemetryTraces(
   sessionId: string | undefined,
   lapNumber: number | null,
   compareLapNumber: number | null,
-  enabled: boolean
+  enabled: boolean,
 ) {
   return useQuery({
     queryKey: [
@@ -27,7 +33,8 @@ export function useTelemetryTraces(
     ],
     queryFn: () =>
       fetchTelemetryTraces(sessionId!, lapNumber!, compareLapNumber),
-    enabled: Boolean(sessionId) && enabled && lapNumber != null && lapNumber > 0,
+    enabled:
+      Boolean(sessionId) && enabled && lapNumber != null && lapNumber > 0,
     staleTime: 120_000,
   });
 }

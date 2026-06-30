@@ -11,14 +11,18 @@ import {
 } from "@/lib/validation/settingsForms";
 import { DELETE_CONFIRM_PHRASE } from "../constants";
 
-export function useSettingsForms(confirmPhrase: string = DELETE_CONFIRM_PHRASE) {
+export function useSettingsForms(
+  confirmPhrase: string = DELETE_CONFIRM_PHRASE,
+) {
   const displayNameForm = useForm<WithRootError<SettingsDisplayNameValues>>({
     resolver: zodResolver(settingsDisplayNameSchema),
     defaultValues: { displayName: "" },
     mode: "onChange",
   });
 
-  const changePasswordForm = useForm<WithRootError<SettingsChangePasswordValues>>({
+  const changePasswordForm = useForm<
+    WithRootError<SettingsChangePasswordValues>
+  >({
     resolver: zodResolver(settingsChangePasswordSchema),
     defaultValues: { currentPassword: "", newPassword: "" },
   });

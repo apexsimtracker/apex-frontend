@@ -2,8 +2,16 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { formatLapDelta, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
-import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
+import {
+  formatLapDelta,
+  formatCarName,
+  formatLapMs,
+  formatTrackName,
+} from "@/lib/utils";
+import {
+  formatChallengeDateTime,
+  formatChallengeTimeRemaining,
+} from "@/lib/datetime";
 import {
   getChallenge,
   getChallengeLeaderboard,
@@ -23,7 +31,9 @@ import { Button } from "@/components/ui/button";
 const LEADERBOARD_PAGE_SIZE = 20;
 const SESSIONS_PAGE_SIZE = 20;
 
-function statusLabel(status: ChallengeApiStatus): "Live" | "Upcoming" | "Finished" {
+function statusLabel(
+  status: ChallengeApiStatus,
+): "Live" | "Upcoming" | "Finished" {
   switch (status) {
     case "ACTIVE":
       return "Live";
@@ -81,7 +91,8 @@ export default function ChallengeDetail() {
 
   const { data: leaderboardData, isPending: leaderboardLoading } = useQuery({
     queryKey: ["challenges", "leaderboard", id, leaderboardPage],
-    queryFn: () => getChallengeLeaderboard(id!, leaderboardPage, LEADERBOARD_PAGE_SIZE),
+    queryFn: () =>
+      getChallengeLeaderboard(id!, leaderboardPage, LEADERBOARD_PAGE_SIZE),
     enabled: Boolean(id) && tab === "leaderboard",
   });
 
@@ -96,8 +107,12 @@ export default function ChallengeDetail() {
     mutationFn: () => joinChallenge(id!),
     onSuccess: () => {
       setJoinBanMessage(null);
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "detail", id] });
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "summary"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "detail", id],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "summary"],
+      });
     },
     onError: (e) => {
       /**
@@ -113,7 +128,7 @@ export default function ChallengeDetail() {
         setJoinBanMessage(
           e.message && e.message !== "banned"
             ? e.message
-            : "You are banned from this challenge"
+            : "You are banned from this challenge",
         );
       }
     },
@@ -124,8 +139,12 @@ export default function ChallengeDetail() {
     onSuccess: () => {
       setLeaveError(null);
       setConfirmingLeave(false);
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "detail", id] });
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "summary"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "detail", id],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "summary"],
+      });
       void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
     },
     onError: (e) => {
@@ -141,7 +160,7 @@ export default function ChallengeDetail() {
         setLeaveError(
           e.message && e.message !== "has_posts"
             ? e.message
-            : "You have already posted to this challenge — leaving is no longer allowed."
+            : "You have already posted to this challenge — leaving is no longer allowed.",
         );
       } else if (e instanceof Error) {
         setLeaveError(e.message || "Failed to leave challenge");
@@ -219,7 +238,9 @@ export default function ChallengeDetail() {
             <ArrowLeft className="size-4" />
             Return
           </button>
-          <p className="py-8 text-muted-foreground">{error ?? "Challenge not found."}</p>
+          <p className="py-8 text-muted-foreground">
+            {error ?? "Challenge not found."}
+          </p>
         </div>
       </div>
     );
@@ -282,7 +303,7 @@ export default function ChallengeDetail() {
 
   const canLeave = Boolean(user && challenge.joined && challenge.canLeave);
   const showLeaveLockedHint = Boolean(
-    user && challenge.joined && challenge.canLeave === false
+    user && challenge.joined && challenge.canLeave === false,
   );
 
   const followPreview = challenge.followedWhoJoined ?? [];
@@ -317,8 +338,12 @@ export default function ChallengeDetail() {
             >
               {status}
             </div>
-            <h1 className="mb-3 text-3xl font-bold text-foreground sm:text-4xl">{challenge.title}</h1>
-            <p className="text-sm text-muted-foreground/70">{challenge.description ?? "No description."}</p>
+            <h1 className="mb-3 text-3xl font-bold text-foreground sm:text-4xl">
+              {challenge.title}
+            </h1>
+            <p className="text-sm text-muted-foreground/70">
+              {challenge.description ?? "No description."}
+            </p>
           </div>
           {canJoin && (
             <div className="flex shrink-0 flex-col items-end gap-2">
@@ -356,7 +381,9 @@ export default function ChallengeDetail() {
               )}
               {canLeave && confirmingLeave && (
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  <span className="text-xs text-muted-foreground">Leave this challenge?</span>
+                  <span className="text-xs text-muted-foreground">
+                    Leave this challenge?
+                  </span>
                   <Button
                     type="button"
                     variant="destructive"
@@ -408,7 +435,8 @@ export default function ChallengeDetail() {
             <span className="text-foreground">
               {followPreview.map((f) => f.displayName).join(", ")}
             </span>{" "}
-            {followPreview.length === 1 ? "has" : "have"} joined — compete with people you follow.
+            {followPreview.length === 1 ? "has" : "have"} joined — compete with
+            people you follow.
           </div>
         )}
 
@@ -419,7 +447,9 @@ export default function ChallengeDetail() {
               type="button"
               onClick={() => setTab(t)}
               className={`text-sm font-medium capitalize ${
-                tab === t ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
+                tab === t
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground/80"
               }`}
             >
               {t === "sessions" ? "Session links" : t}
@@ -438,33 +468,49 @@ export default function ChallengeDetail() {
 
                   <div className="mb-8 grid grid-cols-2 gap-6">
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Sim</p>
-                      <p className="text-base font-medium text-white">{formatSimEnum(challenge.sim)}</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Sim
+                      </p>
+                      <p className="text-base font-medium text-white">
+                        {formatSimEnum(challenge.sim)}
+                      </p>
                     </div>
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Track</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Track
+                      </p>
                       <p className="text-base font-medium text-white">
                         {formatTrackName(challenge.track)}
                       </p>
                     </div>
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Car class</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Car class
+                      </p>
                       <p className="text-base font-medium text-white">
                         {formatCarName(challenge.carClass ?? challenge.vehicle)}
                       </p>
                     </div>
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Drivers</p>
-                      <p className="text-base font-medium text-white">{challenge.participants}</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Drivers
+                      </p>
+                      <p className="text-base font-medium text-white">
+                        {challenge.participants}
+                      </p>
                     </div>
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Starts</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Starts
+                      </p>
                       <p className="text-base font-medium text-white">
                         {formatChallengeDateTime(challenge.startsAt)}
                       </p>
                     </div>
                     <div>
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Ends</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Ends
+                      </p>
                       <p className="text-base font-medium text-white">
                         {formatChallengeDateTime(challenge.endsAt)}
                       </p>
@@ -479,7 +525,11 @@ export default function ChallengeDetail() {
                         </Link>
                       </Button>
                       <Button asChild variant="secondary" size="sm">
-                        <Link to={`/upload?challenge=${encodeURIComponent(id)}`}>Upload .ibt</Link>
+                        <Link
+                          to={`/upload?challenge=${encodeURIComponent(id)}`}
+                        >
+                          Upload .ibt
+                        </Link>
                       </Button>
                     </div>
                   )}
@@ -495,36 +545,62 @@ export default function ChallengeDetail() {
                   <div className="space-y-6">
                     {challenge.yourPosition != null ? (
                       <div className="bg-white/3 rounded-lg p-4">
-                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Position</p>
-                        <p className="text-3xl font-bold" style={{ color: "rgb(240, 28, 28)" }}>
+                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                          Position
+                        </p>
+                        <p
+                          className="text-3xl font-bold"
+                          style={{ color: "rgb(240, 28, 28)" }}
+                        >
                           #{challenge.yourPosition}
                         </p>
-                        <p className="mt-2 text-xs text-white/60">of {challenge.participants} drivers</p>
+                        <p className="mt-2 text-xs text-white/60">
+                          of {challenge.participants} drivers
+                        </p>
                       </div>
                     ) : (
                       <div className="bg-white/3 rounded-lg p-4">
-                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Status</p>
-                        <p className="text-sm font-medium text-white">{status}</p>
+                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                          Status
+                        </p>
+                        <p className="text-sm font-medium text-white">
+                          {status}
+                        </p>
                         {activeTimeRemainingSec != null && (
                           <p className="mt-2 text-xs text-white/60">
-                            {formatChallengeTimeRemaining(activeTimeRemainingSec)} remaining
+                            {formatChallengeTimeRemaining(
+                              activeTimeRemainingSec,
+                            )}{" "}
+                            remaining
                           </p>
                         )}
-                        {activeTimeRemainingSec == null && upcomingScheduleText && (
-                          <p className="mt-2 text-xs text-white/60">{upcomingScheduleText}</p>
-                        )}
+                        {activeTimeRemainingSec == null &&
+                          upcomingScheduleText && (
+                            <p className="mt-2 text-xs text-white/60">
+                              {upcomingScheduleText}
+                            </p>
+                          )}
                       </div>
                     )}
 
                     {challenge.yourBestLapMs != null && (
                       <div className="bg-white/3 rounded-lg p-4">
-                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Your best</p>
+                        <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                          Your best
+                        </p>
                         <div className="mb-3">
-                          <p className="text-2xl font-bold text-white">{formatLapMs(challenge.yourBestLapMs)}</p>
+                          <p className="text-2xl font-bold text-white">
+                            {formatLapMs(challenge.yourBestLapMs)}
+                          </p>
                           {challenge.fastestLapMs != null &&
-                            challenge.yourBestLapMs - challenge.fastestLapMs > 0 && (
+                            challenge.yourBestLapMs - challenge.fastestLapMs >
+                              0 && (
                               <p className="mt-1 text-xs text-white/60">
-                                + {formatLapDelta(challenge.yourBestLapMs - challenge.fastestLapMs)}
+                                +{" "}
+                                {formatLapDelta(
+                                  challenge.yourBestLapMs -
+                                    challenge.fastestLapMs,
+                                )}
                               </p>
                             )}
                         </div>
@@ -532,9 +608,13 @@ export default function ChallengeDetail() {
                     )}
 
                     <div className="bg-white/3 rounded-lg p-4">
-                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">Fastest</p>
+                      <p className="mb-2 text-xs uppercase tracking-widest text-white/50">
+                        Fastest
+                      </p>
                       <p className="text-2xl font-bold text-white">
-                        {challenge.fastestLapMs != null ? formatLapMs(challenge.fastestLapMs) : "—"}
+                        {challenge.fastestLapMs != null
+                          ? formatLapMs(challenge.fastestLapMs)
+                          : "—"}
                       </p>
                     </div>
                   </div>
@@ -564,7 +644,9 @@ export default function ChallengeDetail() {
             {leaderboardLoading ? (
               <p className="py-4 text-sm text-muted-foreground">Loading…</p>
             ) : !leaderboardData?.items?.length ? (
-              <p className="py-4 text-sm text-muted-foreground">No laps recorded yet.</p>
+              <p className="py-4 text-sm text-muted-foreground">
+                No laps recorded yet.
+              </p>
             ) : (
               <>
                 <div className="overflow-x-auto">
@@ -596,7 +678,9 @@ export default function ChallengeDetail() {
                               )}
                             </span>
                           </td>
-                          <td className="py-2 pr-4 font-mono">{formatLapMs(row.bestLapMs)}</td>
+                          <td className="py-2 pr-4 font-mono">
+                            {formatLapMs(row.bestLapMs)}
+                          </td>
                           <td className="py-2 pr-4 text-muted-foreground">
                             {formatChallengeDateTime(row.bestLapAt)}
                           </td>
@@ -620,7 +704,9 @@ export default function ChallengeDetail() {
                       variant="outline"
                       size="sm"
                       disabled={leaderboardPage <= 1}
-                      onClick={() => setLeaderboardPage((p) => Math.max(1, p - 1))}
+                      onClick={() =>
+                        setLeaderboardPage((p) => Math.max(1, p - 1))
+                      }
                     >
                       Previous
                     </Button>
@@ -631,7 +717,7 @@ export default function ChallengeDetail() {
                       disabled={leaderboardPage >= leaderboardData.totalPages}
                       onClick={() =>
                         setLeaderboardPage((p) =>
-                          Math.min(leaderboardData.totalPages, p + 1)
+                          Math.min(leaderboardData.totalPages, p + 1),
                         )
                       }
                     >
@@ -662,11 +748,15 @@ export default function ChallengeDetail() {
               )}
             </div>
             {!user ? (
-              <p className="py-4 text-sm text-muted-foreground">Sign in to browse entrants&apos; sessions.</p>
+              <p className="py-4 text-sm text-muted-foreground">
+                Sign in to browse entrants&apos; sessions.
+              </p>
             ) : sessionsLoading ? (
               <p className="py-4 text-sm text-muted-foreground">Loading…</p>
             ) : !sessionsData?.items?.length ? (
-              <p className="py-4 text-sm text-muted-foreground">No linked sessions yet.</p>
+              <p className="py-4 text-sm text-muted-foreground">
+                No linked sessions yet.
+              </p>
             ) : (
               <>
                 <ul className="space-y-3 text-sm">
@@ -676,7 +766,9 @@ export default function ChallengeDetail() {
                       className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 py-2"
                     >
                       <span>{row.username}</span>
-                      <span className="font-mono text-muted-foreground">{formatLapMs(row.bestLapMs)}</span>
+                      <span className="font-mono text-muted-foreground">
+                        {formatLapMs(row.bestLapMs)}
+                      </span>
                       {row.sessionId ? (
                         <Link
                           to={`/sessions/${row.sessionId}`}
@@ -708,7 +800,7 @@ export default function ChallengeDetail() {
                       disabled={sessionsPage >= sessionsData.totalPages}
                       onClick={() =>
                         setSessionsPage((p) =>
-                          Math.min(sessionsData.totalPages, p + 1)
+                          Math.min(sessionsData.totalPages, p + 1),
                         )
                       }
                     >

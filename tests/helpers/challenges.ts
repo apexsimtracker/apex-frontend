@@ -33,7 +33,7 @@ export type ChallengeLeaderboardApi = {
 export async function joinChallengeViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  challengeId: string
+  challengeId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(
@@ -41,7 +41,7 @@ export async function joinChallengeViaApi(
     {
       headers: authHeaders(auth.token, auth.sessionToken),
       data: {},
-    }
+    },
   );
 
   if (!res.ok()) {
@@ -53,7 +53,7 @@ export async function joinChallengeViaApi(
 export async function leaveChallengeViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  challengeId: string
+  challengeId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.delete(
@@ -63,7 +63,7 @@ export async function leaveChallengeViaApi(
         Authorization: `Bearer ${auth.token}`,
         "X-Apex-Session": auth.sessionToken,
       },
-    }
+    },
   );
 
   if (!res.ok() && res.status() !== 404) {
@@ -75,12 +75,12 @@ export async function leaveChallengeViaApi(
 export async function getChallengeDetailViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  challengeId: string
+  challengeId: string,
 ): Promise<ChallengeDetailApi> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(
     `${apiUrl}/api/challenges/${encodeURIComponent(challengeId)}`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
 
   if (!res.ok()) {
@@ -96,17 +96,19 @@ export async function getChallengeLeaderboardViaApi(
   auth: AuthSession,
   challengeId: string,
   page = 1,
-  pageSize = 50
+  pageSize = 50,
 ): Promise<ChallengeLeaderboardApi> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(
     `${apiUrl}/api/challenges/${encodeURIComponent(challengeId)}/leaderboard?page=${page}&pageSize=${pageSize}`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
 
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`getChallengeLeaderboard failed (${res.status()}): ${body}`);
+    throw new Error(
+      `getChallengeLeaderboard failed (${res.status()}): ${body}`,
+    );
   }
 
   return (await res.json()) as ChallengeLeaderboardApi;
@@ -115,7 +117,7 @@ export async function getChallengeLeaderboardViaApi(
 export async function isChallengeParticipantViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  challengeId: string
+  challengeId: string,
 ): Promise<boolean> {
   const detail = await getChallengeDetailViaApi(request, auth, challengeId);
   return Boolean(detail.joined);
@@ -123,7 +125,7 @@ export async function isChallengeParticipantViaApi(
 
 export function findLeaderboardRowForUser(
   leaderboard: ChallengeLeaderboardApi,
-  userId: string
+  userId: string,
 ): ChallengeLeaderboardRowApi | undefined {
   return leaderboard.items.find((row) => row.userId === userId);
 }

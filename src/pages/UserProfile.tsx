@@ -68,9 +68,13 @@ export default function UserProfile() {
   const id = userId?.trim() ?? "";
 
   const [raceHistoryPage, setRaceHistoryPage] = useState(1);
-  const [openList, setOpenList] = useState<"followers" | "following" | null>(null);
+  const [openList, setOpenList] = useState<"followers" | "following" | null>(
+    null,
+  );
   const [followLoading, setFollowLoading] = useState(false);
-  const [followActionError, setFollowActionError] = useState<string | null>(null);
+  const [followActionError, setFollowActionError] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     setRaceHistoryPage(1);
@@ -130,7 +134,10 @@ export default function UserProfile() {
   const loadError =
     previewQuery.isError &&
     previewQuery.error &&
-    !(previewQuery.error instanceof ApiError && previewQuery.error.status === 404)
+    !(
+      previewQuery.error instanceof ApiError &&
+      previewQuery.error.status === 404
+    )
       ? previewQuery.error instanceof Error
         ? previewQuery.error.message
         : "Failed to load profile."
@@ -169,12 +176,20 @@ export default function UserProfile() {
       });
     } catch (e) {
       setFollowActionError(
-        e instanceof Error ? e.message : "Could not update follow status."
+        e instanceof Error ? e.message : "Could not update follow status.",
       );
     } finally {
       setFollowLoading(false);
     }
-  }, [currentUser, id, preview, queryClient, raceHistoryPage, setFollowLoading, setFollowActionError]);
+  }, [
+    currentUser,
+    id,
+    preview,
+    queryClient,
+    raceHistoryPage,
+    setFollowLoading,
+    setFollowActionError,
+  ]);
 
   if (!id) {
     return (
@@ -186,7 +201,9 @@ export default function UserProfile() {
           noindex
         />
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-center text-lg text-foreground">Invalid profile link.</p>
+          <p className="text-center text-lg text-foreground">
+            Invalid profile link.
+          </p>
         </div>
       </div>
     );
@@ -257,7 +274,9 @@ export default function UserProfile() {
             <span className="font-medium">Back</span>
           </button>
           <div className="mx-auto max-w-md text-center">
-            <p className="mb-4 text-sm text-destructive">{combinedError ?? "Something went wrong."}</p>
+            <p className="mb-4 text-sm text-destructive">
+              {combinedError ?? "Something went wrong."}
+            </p>
             <Link
               to="/community"
               className="text-sm text-primary underline underline-offset-2"
@@ -274,10 +293,7 @@ export default function UserProfile() {
   const profileData: ProfileSummary =
     viewerHasAccess && summaryQuery.data
       ? summaryQuery.data
-      : emptyProfileSummary(
-          id,
-          preview.displayName?.trim() || "Driver"
-        );
+      : emptyProfileSummary(id, preview.displayName?.trim() || "Driver");
 
   const avatarUrl = resolveApiUrl(preview.avatarUrl) ?? undefined;
   const bio =
@@ -297,7 +313,9 @@ export default function UserProfile() {
   const showFollowUi = Boolean(currentUser && currentUser.id !== id);
 
   const displayName =
-    preview.displayName?.trim() || profileData.user.displayName?.trim() || "Driver";
+    preview.displayName?.trim() ||
+    profileData.user.displayName?.trim() ||
+    "Driver";
   const userSeoDescription = (() => {
     const t = bio?.trim() ?? "";
     if (t.length > 0) {

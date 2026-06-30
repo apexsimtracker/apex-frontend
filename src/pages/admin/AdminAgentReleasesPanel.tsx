@@ -41,7 +41,10 @@ function formatBytes(n: number | null): string {
 
 function formatTs(iso: string): string {
   try {
-    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   } catch {
     return iso;
   }
@@ -87,7 +90,9 @@ export function AdminAgentReleasesPanel() {
     return map;
   }, [summaryQuery.data]);
 
-  function latestVersionLabel(row: AdminAgentReleaseSummaryItem | undefined): string {
+  function latestVersionLabel(
+    row: AdminAgentReleaseSummaryItem | undefined,
+  ): string {
     if (row?.activeRelease?.version) return row.activeRelease.version;
     if (row?.r2ObjectExists) return "On R2 (no version registered)";
     return "No release";
@@ -171,7 +176,13 @@ export function AdminAgentReleasesPanel() {
     onError: (e: unknown) => {
       setUploadPercent(0);
       setUploadPhase("idle");
-      toast.error(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Upload failed.");
+      toast.error(
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Upload failed.",
+      );
     },
   });
 
@@ -199,7 +210,10 @@ export function AdminAgentReleasesPanel() {
           const row = summaryByOs.get(os);
           const notes = row?.activeRelease?.notes?.trim();
           return (
-            <div key={os} className="rounded-xl border border-white/10 bg-card/30 p-4">
+            <div
+              key={os}
+              className="rounded-xl border border-white/10 bg-card/30 p-4"
+            >
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {OS_LABELS[os]} · latest
               </p>
@@ -207,7 +221,8 @@ export function AdminAgentReleasesPanel() {
                 {latestVersionLabel(row)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                R2: {row?.r2ObjectExists ? "present" : "missing"} · {formatBytes(row?.contentLength ?? null)}
+                R2: {row?.r2ObjectExists ? "present" : "missing"} ·{" "}
+                {formatBytes(row?.contentLength ?? null)}
               </p>
               {row?.r2ObjectKey ? (
                 <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
@@ -233,11 +248,16 @@ export function AdminAgentReleasesPanel() {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-card/30 p-4 sm:p-6">
-        <h2 className="text-sm font-semibold text-foreground">Upload release</h2>
+        <h2 className="text-sm font-semibold text-foreground">
+          Upload release
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Uploads go to{" "}
-          <span className="font-mono text-xs">agents/latest/ApexAgent-&#123;mac|windows|linux&#125;.*</span>{" "}
-          in the apex-images bucket and become the active latest release automatically.
+          <span className="font-mono text-xs">
+            agents/latest/ApexAgent-&#123;mac|windows|linux&#125;.*
+          </span>{" "}
+          in the apex-images bucket and become the active latest release
+          automatically.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <select
@@ -275,13 +295,15 @@ export function AdminAgentReleasesPanel() {
         {isUploading ? (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground">
-              {uploadPhase === "bytes" ? "Uploading installer…" : "Finalizing release…"}
+              {uploadPhase === "bytes"
+                ? "Uploading installer…"
+                : "Finalizing release…"}
             </p>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
               <div
                 className={cn(
                   "h-full rounded-full bg-primary transition-[width] duration-150 ease-out",
-                  uploadPhase === "processing" && "animate-pulse"
+                  uploadPhase === "processing" && "animate-pulse",
                 )}
                 style={{
                   width:
@@ -299,7 +321,11 @@ export function AdminAgentReleasesPanel() {
           <Button
             type="button"
             className="mt-4"
-            disabled={publishMutation.isPending || !selectedFile || !uploadVersion.trim()}
+            disabled={
+              publishMutation.isPending ||
+              !selectedFile ||
+              !uploadVersion.trim()
+            }
             onClick={() => publishMutation.mutate()}
           >
             {publishMutation.isPending ? (
@@ -314,15 +340,21 @@ export function AdminAgentReleasesPanel() {
 
       <div className={ADMIN_TABLE_CARD}>
         <div className="border-b border-white/10 px-4 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Release history</h2>
-          <p className="text-xs text-muted-foreground">Recent uploads across all platforms.</p>
+          <h2 className="text-sm font-semibold text-foreground">
+            Release history
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Recent uploads across all platforms.
+          </p>
         </div>
         {historyQuery.isPending ? (
           <div className="flex justify-center py-10">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (historyQuery.data?.items.length ?? 0) === 0 ? (
-          <p className="px-4 py-8 text-sm text-muted-foreground">No releases recorded yet.</p>
+          <p className="px-4 py-8 text-sm text-muted-foreground">
+            No releases recorded yet.
+          </p>
         ) : (
           <div className={ADMIN_TABLE_SCROLL}>
             <table className={adminTable("min-w-[56rem]")}>
@@ -339,12 +371,16 @@ export function AdminAgentReleasesPanel() {
               <tbody>
                 {historyQuery.data?.items.map((row) => (
                   <tr key={row.id} className="border-b border-white/5">
-                    <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                    <td
+                      className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                    >
                       {formatTs(row.publishedAt)}
                     </td>
                     <td className={ADMIN_TD}>{OS_LABELS[row.os]}</td>
                     <td className={ADMIN_TD}>{row.version}</td>
-                    <td className={`${ADMIN_TD} max-w-xs whitespace-normal text-muted-foreground`}>
+                    <td
+                      className={`${ADMIN_TD} max-w-xs whitespace-normal text-muted-foreground`}
+                    >
                       {row.notes?.trim() || "—"}
                     </td>
                     <td className={ADMIN_TD}>{row.isActive ? "Yes" : "No"}</td>
@@ -361,15 +397,21 @@ export function AdminAgentReleasesPanel() {
 
       <div className={ADMIN_TABLE_CARD}>
         <div className="border-b border-white/10 px-4 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Recent downloads</h2>
-          <p className="text-xs text-muted-foreground">Last 50 agent download attempts (audit log).</p>
+          <h2 className="text-sm font-semibold text-foreground">
+            Recent downloads
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Last 50 agent download attempts (audit log).
+          </p>
         </div>
         {downloadsQuery.isPending ? (
           <div className="flex justify-center py-10">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (downloadsQuery.data?.items.length ?? 0) === 0 ? (
-          <p className="px-4 py-8 text-sm text-muted-foreground">No download events yet.</p>
+          <p className="px-4 py-8 text-sm text-muted-foreground">
+            No download events yet.
+          </p>
         ) : (
           <div className={ADMIN_TABLE_SCROLL}>
             <table className={adminTable("min-w-[44rem]")}>
@@ -385,15 +427,17 @@ export function AdminAgentReleasesPanel() {
               <tbody>
                 {downloadsQuery.data?.items.map((row) => (
                   <tr key={row.id} className="border-b border-white/5">
-                    <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                    <td
+                      className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                    >
                       {formatTs(row.createdAt)}
                     </td>
-                    <td className={ADMIN_TD}>
-                      {row.user?.email ?? "—"}
-                    </td>
+                    <td className={ADMIN_TD}>{row.user?.email ?? "—"}</td>
                     <td className={ADMIN_TD}>{OS_LABELS[row.os]}</td>
                     <td className={ADMIN_TD}>{row.outcome}</td>
-                    <td className={`${ADMIN_TD} text-muted-foreground`}>{row.version ?? "—"}</td>
+                    <td className={`${ADMIN_TD} text-muted-foreground`}>
+                      {row.version ?? "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>

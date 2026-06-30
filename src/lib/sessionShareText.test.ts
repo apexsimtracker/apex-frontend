@@ -32,7 +32,7 @@ function backendConsistencyPct(lapTimes: number[]): number | null {
   const bestLapMs = Math.min(...laps);
   if (bestLapMs <= 0) return null;
   const scores = laps.map((lap) =>
-    lapConsistencyScore((lap - bestLapMs) / 1000)
+    lapConsistencyScore((lap - bestLapMs) / 1000),
   );
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   return Math.max(0, Math.min(100, avg));
@@ -65,10 +65,9 @@ describe("calcConsistencyScore", () => {
   });
 
   it("sanitizeLapTimesForConsistency drops invalid times", () => {
-    expect(sanitizeLapTimesForConsistency([100_000, 0, -5, NaN, 100_100])).toEqual([
-      100_000,
-      100_100,
-    ]);
+    expect(
+      sanitizeLapTimesForConsistency([100_000, 0, -5, NaN, 100_100]),
+    ).toEqual([100_000, 100_100]);
   });
 });
 

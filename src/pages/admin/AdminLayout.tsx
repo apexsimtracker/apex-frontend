@@ -33,7 +33,11 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_COLLAPSED_KEY = "apex_admin_sidebar_collapsed";
@@ -65,23 +69,86 @@ type NavItem = {
 const navGroups: { title: string; items: NavItem[] }[] = [
   {
     title: "Main",
-    items: [{ key: "overview", label: "Overview", icon: LayoutDashboard, to: "/admin", end: true }],
+    items: [
+      {
+        key: "overview",
+        label: "Overview",
+        icon: LayoutDashboard,
+        to: "/admin",
+        end: true,
+      },
+    ],
   },
   {
     title: "Management",
     items: [
       { key: "users", label: "Users", icon: Users, to: "/admin/users" },
-      { key: "subscriptions", label: "Subscriptions", icon: CreditCard, to: "/admin/subscriptions" },
-      { key: "sessions", label: "Sessions & laps", icon: Activity, to: "/admin/sessions" },
-      { key: "tracks", label: "Tracks & catalogs", icon: Car, to: "/admin/tracks" },
-      { key: "challenges", label: "Challenges", icon: Trophy, to: "/admin/challenges" },
-      { key: "community", label: "Community & discussions", icon: MessageSquare, to: "/admin/community" },
-      { key: "leaderboards", label: "Leaderboards", icon: ListOrdered, to: "/admin/leaderboards" },
-      { key: "notifications", label: "Notifications", icon: Bell, to: "/admin/notifications" },
-      { key: "follows", label: "Follow graph", icon: UserCog, to: "/admin/follows" },
-      { key: "contact", label: "Contact inbox", icon: Inbox, to: "/admin/contact" },
-      { key: "devices", label: "Agent releases", icon: Server, to: "/admin/devices" },
-      { key: "email-auth", label: "Email & auth ops", icon: Mail, to: "/admin/email-auth" },
+      {
+        key: "subscriptions",
+        label: "Subscriptions",
+        icon: CreditCard,
+        to: "/admin/subscriptions",
+      },
+      {
+        key: "sessions",
+        label: "Sessions & laps",
+        icon: Activity,
+        to: "/admin/sessions",
+      },
+      {
+        key: "tracks",
+        label: "Tracks & catalogs",
+        icon: Car,
+        to: "/admin/tracks",
+      },
+      {
+        key: "challenges",
+        label: "Challenges",
+        icon: Trophy,
+        to: "/admin/challenges",
+      },
+      {
+        key: "community",
+        label: "Community & discussions",
+        icon: MessageSquare,
+        to: "/admin/community",
+      },
+      {
+        key: "leaderboards",
+        label: "Leaderboards",
+        icon: ListOrdered,
+        to: "/admin/leaderboards",
+      },
+      {
+        key: "notifications",
+        label: "Notifications",
+        icon: Bell,
+        to: "/admin/notifications",
+      },
+      {
+        key: "follows",
+        label: "Follow graph",
+        icon: UserCog,
+        to: "/admin/follows",
+      },
+      {
+        key: "contact",
+        label: "Contact inbox",
+        icon: Inbox,
+        to: "/admin/contact",
+      },
+      {
+        key: "devices",
+        label: "Agent releases",
+        icon: Server,
+        to: "/admin/devices",
+      },
+      {
+        key: "email-auth",
+        label: "Email & auth ops",
+        icon: Mail,
+        to: "/admin/email-auth",
+      },
       { key: "system", label: "System", icon: Wrench, to: "/admin/system" },
     ],
   },
@@ -104,12 +171,14 @@ function NavItemLink({
             "mx-auto grid size-10 shrink-0 place-items-center rounded-lg p-0 leading-none",
             isActive
               ? "bg-secondary/80 text-white shadow-sm"
-              : "text-foreground/75 hover:bg-secondary/70 hover:text-foreground"
+              : "text-foreground/75 hover:bg-secondary/70 hover:text-foreground",
           )
         : cn(
             "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
-            isActive ? "bg-secondary/80 text-white" : "text-foreground/70 hover:bg-secondary/50 hover:text-foreground"
-          )
+            isActive
+              ? "bg-secondary/80 text-white"
+              : "text-foreground/70 hover:bg-secondary/50 hover:text-foreground",
+          ),
     );
 
   const inner = (
@@ -117,7 +186,7 @@ function NavItemLink({
       <Icon
         className={cn(
           "shrink-0 opacity-90",
-          collapsed ? "block size-[1.125rem]" : "size-4"
+          collapsed ? "block size-[1.125rem]" : "size-4",
         )}
         aria-hidden
       />
@@ -178,7 +247,7 @@ export default function AdminLayout() {
         "flex min-h-0 flex-1 flex-col border-t border-white/10 bg-background",
         /* Mobile: bounded below header + admin toolbar; desktop: fixed shell below header */
         "max-lg:max-h-[calc(100dvh-4rem)] max-lg:overflow-hidden",
-        "lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:z-0 lg:overflow-hidden"
+        "lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:z-0 lg:overflow-hidden",
       )}
     >
       {/* Mobile: pinned directly under site header (not in scroll flow) */}
@@ -193,7 +262,9 @@ export default function AdminLayout() {
           <Menu className="size-5" aria-hidden />
           <span className="sr-only">Open admin menu</span>
         </button>
-        <span className="truncate text-sm font-medium text-muted-foreground">Admin menu</span>
+        <span className="truncate text-sm font-medium text-muted-foreground">
+          Admin menu
+        </span>
       </div>
 
       {/* Mobile backdrop */}
@@ -214,7 +285,7 @@ export default function AdminLayout() {
           "top-28 h-[calc(100dvh-7rem)] lg:top-16 lg:h-[calc(100vh-4rem)]",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           "lg:z-30 lg:translate-x-0 lg:shadow-[4px_0_24px_rgba(0,0,0,0.2)]",
-          navCollapsed ? "lg:w-16" : "lg:w-60"
+          navCollapsed ? "lg:w-16" : "lg:w-60",
         )}
       >
         <div className="flex shrink-0 items-center justify-end gap-1 border-b border-white/10 p-2 lg:border-b-0 lg:px-1 lg:pt-2">
@@ -231,7 +302,7 @@ export default function AdminLayout() {
             onClick={toggleCollapsed}
             className={cn(
               "hidden size-10 items-center justify-center rounded-lg text-foreground/80 transition-colors hover:bg-secondary/60 lg:inline-flex",
-              navCollapsed && "mx-auto"
+              navCollapsed && "mx-auto",
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -247,7 +318,7 @@ export default function AdminLayout() {
           className={cn(
             "flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 pb-6 pt-2 lg:py-0",
             "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            navCollapsed ? "lg:px-1.5" : "lg:px-3"
+            navCollapsed ? "lg:px-1.5" : "lg:px-3",
           )}
         >
           {navGroups.map((group) => (
@@ -255,16 +326,13 @@ export default function AdminLayout() {
               <p
                 className={cn(
                   "mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                  navCollapsed && "lg:sr-only"
+                  navCollapsed && "lg:sr-only",
                 )}
               >
                 {group.title}
               </p>
               <ul
-                className={cn(
-                  "space-y-0.5",
-                  navCollapsed && "lg:space-y-1.5"
-                )}
+                className={cn("space-y-0.5", navCollapsed && "lg:space-y-1.5")}
               >
                 {group.items.map((item) => (
                   <li
@@ -286,7 +354,7 @@ export default function AdminLayout() {
           "max-lg:pt-14",
           "transition-[padding] duration-200 ease-out",
           /* sidebar width (w-60 | w-16) + lg horizontal padding (px-10 → 2.5rem) */
-          navCollapsed ? "lg:pl-[6.5rem]" : "lg:pl-[17.5rem]"
+          navCollapsed ? "lg:pl-[6.5rem]" : "lg:pl-[17.5rem]",
         )}
       >
         <Outlet />

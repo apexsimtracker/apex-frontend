@@ -22,7 +22,10 @@ const PAGE_SIZE = 20;
 function formatTs(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   } catch {
     return iso;
   }
@@ -30,7 +33,9 @@ function formatTs(iso: string | null): string {
 
 function deviceLabel(s: AdminAuthSessionDetailRow): string {
   if (s.clientDeviceId) {
-    return s.clientDeviceId.length > 16 ? `${s.clientDeviceId.slice(0, 12)}…` : s.clientDeviceId;
+    return s.clientDeviceId.length > 16
+      ? `${s.clientDeviceId.slice(0, 12)}…`
+      : s.clientDeviceId;
   }
   return s.userAgentSummary ?? "—";
 }
@@ -54,9 +59,8 @@ export function AdminUserWebSessionsSection({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [revokeSessionOpen, setRevokeSessionOpen] = useState(false);
-  const [revokeSessionTarget, setRevokeSessionTarget] = useState<AdminAuthSessionDetailRow | null>(
-    null
-  );
+  const [revokeSessionTarget, setRevokeSessionTarget] =
+    useState<AdminAuthSessionDetailRow | null>(null);
   const [revokeSessionConfirm, setRevokeSessionConfirm] = useState("");
 
   const [revokeAllOpen, setRevokeAllOpen] = useState(false);
@@ -74,7 +78,15 @@ export function AdminUserWebSessionsSection({
   }, [userId, page, sessionScope]);
 
   const detailQuery = useQuery({
-    queryKey: ["admin", "auth-sessions", "user", userId, page, PAGE_SIZE, sessionScope],
+    queryKey: [
+      "admin",
+      "auth-sessions",
+      "user",
+      userId,
+      page,
+      PAGE_SIZE,
+      sessionScope,
+    ],
     queryFn: () =>
       fetchAdminAuthSessionsForUser(userId, {
         page,
@@ -84,7 +96,10 @@ export function AdminUserWebSessionsSection({
     enabled: Boolean(userId),
   });
 
-  const items = useMemo(() => detailQuery.data?.items ?? [], [detailQuery.data?.items]);
+  const items = useMemo(
+    () => detailQuery.data?.items ?? [],
+    [detailQuery.data?.items],
+  );
   const detailUser = detailQuery.data?.user;
   const totalPages = detailQuery.data?.totalPages ?? 1;
 
@@ -103,17 +118,23 @@ export function AdminUserWebSessionsSection({
       if (result.kind === "deleted") {
         toast.success("Session record removed from the database.");
       } else {
-        toast.success("Session revoked. The record stays in the database for analysis.");
+        toast.success(
+          "Session revoked. The record stays in the database for analysis.",
+        );
       }
       setRevokeSessionOpen(false);
       setRevokeSessionConfirm("");
       setSelectedIds((prev) => prev.filter((x) => x !== target.id));
       await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
       await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions", "user", userId] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "auth-sessions", "user", userId],
+      });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not complete action.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Could not complete action.",
+      );
     },
   });
 
@@ -128,28 +149,37 @@ export function AdminUserWebSessionsSection({
       onCloseModal?.();
       await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
       await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions", "user", userId] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "auth-sessions", "user", userId],
+      });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not revoke sessions.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Could not revoke sessions.",
+      );
     },
   });
 
   const bulkDeleteSessionsMutation = useMutation({
-    mutationFn: (sessionIds: string[]) => postAdminAuthSessionsBulkDelete(userId, sessionIds),
+    mutationFn: (sessionIds: string[]) =>
+      postAdminAuthSessionsBulkDelete(userId, sessionIds),
     onSuccess: async (res) => {
       toast.success(
-        `Deleted ${res.deleted} session record${res.deleted === 1 ? "" : "s"} from the database.`
+        `Deleted ${res.deleted} session record${res.deleted === 1 ? "" : "s"} from the database.`,
       );
       setDeleteBulkOpen(false);
       setDeleteBulkConfirm("");
       setSelectedIds([]);
       await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
       await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions", "user", userId] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "auth-sessions", "user", userId],
+      });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not delete sessions.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Could not delete sessions.",
+      );
     },
   });
 
@@ -157,14 +187,18 @@ export function AdminUserWebSessionsSection({
     mutationFn: async () => postAdminAuthSessionsRecomputeRisk(userId),
     onSuccess: async (res) => {
       toast.success(
-        `Risk recomputed (${res.updated} session${res.updated === 1 ? "" : "s"} updated).`
+        `Risk recomputed (${res.updated} session${res.updated === 1 ? "" : "s"} updated).`,
       );
       await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
       await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions", "user", userId] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "auth-sessions", "user", userId],
+      });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not recompute risk.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Could not recompute risk.",
+      );
     },
   });
 
@@ -177,7 +211,9 @@ export function AdminUserWebSessionsSection({
   };
 
   const toggleRow = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   const openRevokeSession = (s: AdminAuthSessionDetailRow) => {
@@ -188,7 +224,9 @@ export function AdminUserWebSessionsSection({
 
   const scopeToggle = (
     <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
-      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">View</span>
+      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        View
+      </span>
       <div className="inline-flex rounded-lg border border-white/10 p-0.5">
         <button
           type="button"
@@ -196,7 +234,7 @@ export function AdminUserWebSessionsSection({
             "rounded-md px-3 py-1.5 text-sm transition-colors",
             sessionScope === "active"
               ? "bg-white/10 text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
           onClick={() => setSessionScope("active")}
         >
@@ -208,7 +246,7 @@ export function AdminUserWebSessionsSection({
             "rounded-md px-3 py-1.5 text-sm transition-colors",
             sessionScope === "all"
               ? "bg-white/10 text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
           onClick={() => setSessionScope("all")}
         >
@@ -233,7 +271,9 @@ export function AdminUserWebSessionsSection({
         type="button"
         variant="outline"
         size="sm"
-        disabled={selectedIds.length === 0 || bulkDeleteSessionsMutation.isPending}
+        disabled={
+          selectedIds.length === 0 || bulkDeleteSessionsMutation.isPending
+        }
         onClick={() => {
           setDeleteBulkConfirm("");
           setDeleteBulkOpen(true);
@@ -267,7 +307,9 @@ export function AdminUserWebSessionsSection({
             : undefined
         }
       >
-        {recomputeRiskMutation.isPending ? "Analyzing…" : "Re-run risk analysis"}
+        {recomputeRiskMutation.isPending
+          ? "Analyzing…"
+          : "Re-run risk analysis"}
       </Button>
     </div>
   );
@@ -297,7 +339,8 @@ export function AdminUserWebSessionsSection({
           Page {page} / {totalPages}
           {typeof detailQuery.data?.total === "number" ? (
             <span className="ml-2 tabular-nums">
-              ({detailQuery.data.total} session{detailQuery.data.total === 1 ? "" : "s"})
+              ({detailQuery.data.total} session
+              {detailQuery.data.total === 1 ? "" : "s"})
             </span>
           ) : null}
         </span>
@@ -345,17 +388,24 @@ export function AdminUserWebSessionsSection({
                   </span>
                 )}
               </td>
-              <td className="p-2 tabular-nums text-muted-foreground">{formatTs(s.lastSeenAt)}</td>
+              <td className="p-2 tabular-nums text-muted-foreground">
+                {formatTs(s.lastSeenAt)}
+              </td>
               <td className="p-2 text-right tabular-nums">
                 <span
                   className={
-                    s.riskScore >= 50 ? "font-medium text-amber-400" : "text-muted-foreground"
+                    s.riskScore >= 50
+                      ? "font-medium text-amber-400"
+                      : "text-muted-foreground"
                   }
                 >
                   {s.riskScore}
                 </span>
               </td>
-              <td className="p-2 text-xs text-muted-foreground" title={s.geoLabel ?? ""}>
+              <td
+                className="p-2 text-xs text-muted-foreground"
+                title={s.geoLabel ?? ""}
+              >
                 {s.geoLabel ?? "—"}
               </td>
               <td className="p-2 text-xs text-muted-foreground">
@@ -363,7 +413,11 @@ export function AdminUserWebSessionsSection({
               </td>
               <td
                 className="max-w-[14rem] truncate p-2 text-xs text-muted-foreground"
-                title={[s.clientDeviceId, s.userAgentSummary].filter(Boolean).join(" · ") || undefined}
+                title={
+                  [s.clientDeviceId, s.userAgentSummary]
+                    .filter(Boolean)
+                    .join(" · ") || undefined
+                }
               >
                 {deviceLabel(s)}
               </td>
@@ -416,7 +470,9 @@ export function AdminUserWebSessionsSection({
                 onChange={() => toggleRow(s.id)}
                 className="rounded border-white/20"
               />
-              <span className="text-xs uppercase tracking-wide text-white/45">Include</span>
+              <span className="text-xs uppercase tracking-wide text-white/45">
+                Include
+              </span>
             </label>
             <div className="flex shrink-0 flex-col items-end gap-1">
               {s.expired ? (
@@ -460,13 +516,17 @@ export function AdminUserWebSessionsSection({
           <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
             <div>
               <dt className="text-white/45">Last active</dt>
-              <dd className="mt-0.5 tabular-nums text-muted-foreground">{formatTs(s.lastSeenAt)}</dd>
+              <dd className="mt-0.5 tabular-nums text-muted-foreground">
+                {formatTs(s.lastSeenAt)}
+              </dd>
             </div>
             <div>
               <dt className="text-white/45">Risk</dt>
               <dd
                 className={
-                  s.riskScore >= 50 ? "mt-0.5 font-medium tabular-nums text-amber-400" : "mt-0.5 tabular-nums text-muted-foreground"
+                  s.riskScore >= 50
+                    ? "mt-0.5 font-medium tabular-nums text-amber-400"
+                    : "mt-0.5 tabular-nums text-muted-foreground"
                 }
               >
                 {s.riskScore}
@@ -474,7 +534,9 @@ export function AdminUserWebSessionsSection({
             </div>
             <div className="sm:col-span-2">
               <dt className="text-white/45">Location</dt>
-              <dd className="mt-0.5 text-muted-foreground">{s.geoLabel ?? "—"}</dd>
+              <dd className="mt-0.5 text-muted-foreground">
+                {s.geoLabel ?? "—"}
+              </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-white/45">Flags</dt>
@@ -484,7 +546,9 @@ export function AdminUserWebSessionsSection({
             </div>
             <div className="sm:col-span-2">
               <dt className="text-white/45">Device / UA</dt>
-              <dd className="mt-0.5 break-all text-muted-foreground">{deviceLabel(s)}</dd>
+              <dd className="mt-0.5 break-all text-muted-foreground">
+                {deviceLabel(s)}
+              </dd>
             </div>
           </dl>
         </div>
@@ -492,36 +556,38 @@ export function AdminUserWebSessionsSection({
     </div>
   );
 
-  const body =
-    detailQuery.isPending ? (
-      <div className="flex justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
-    ) : detailQuery.isError ? (
-      <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-        {detailQuery.error instanceof ApiError
-          ? detailQuery.error.message
-          : "Could not load sessions."}
-      </div>
-    ) : (
-      <>
-        {scopeToggle}
-        {toolbar}
-        {items.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            {sessionScope === "active"
-              ? "No active sessions for this user."
-              : "No session records found for this user."}
-          </p>
-        ) : (
-          <>
-            {sessionTable}
-            {sessionCards}
-          </>
-        )}
-        {pagination}
-      </>
-    );
+  const body = detailQuery.isPending ? (
+    <div className="flex justify-center py-12">
+      <Loader2
+        className="size-6 animate-spin text-muted-foreground"
+        aria-hidden
+      />
+    </div>
+  ) : detailQuery.isError ? (
+    <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      {detailQuery.error instanceof ApiError
+        ? detailQuery.error.message
+        : "Could not load sessions."}
+    </div>
+  ) : (
+    <>
+      {scopeToggle}
+      {toolbar}
+      {items.length === 0 ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          {sessionScope === "active"
+            ? "No active sessions for this user."
+            : "No session records found for this user."}
+        </p>
+      ) : (
+        <>
+          {sessionTable}
+          {sessionCards}
+        </>
+      )}
+      {pagination}
+    </>
+  );
 
   const modalHeader =
     variant === "modal" ? (
@@ -532,7 +598,9 @@ export function AdminUserWebSessionsSection({
           </h2>
           {detailUser && (
             <>
-              <p className="mt-1 text-sm text-muted-foreground">{detailUser.email}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {detailUser.email}
+              </p>
               <Link
                 className="mt-2 inline-block text-sm text-primary underline-offset-4 hover:underline"
                 to={`/admin/users/${detailUser.id}`}
@@ -542,7 +610,12 @@ export function AdminUserWebSessionsSection({
             </>
           )}
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => onCloseModal?.()}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onCloseModal?.()}
+        >
           Close
         </Button>
       </div>
@@ -552,11 +625,14 @@ export function AdminUserWebSessionsSection({
     variant === "page" ? (
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground">Web sign-ins</h2>
+          <h2 className="text-sm font-semibold text-foreground">
+            Web sign-ins
+          </h2>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-            Browser auth session rows for this account (active and historical). Revoke ends sign-in for
-            that session but keeps the row; delete permanently removes selected rows from the database.
-            Actions are audited.
+            Browser auth session rows for this account (active and historical).
+            Revoke ends sign-in for that session but keeps the row; delete
+            permanently removes selected rows from the database. Actions are
+            audited.
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" asChild>
@@ -581,7 +657,9 @@ export function AdminUserWebSessionsSection({
   return (
     <>
       {variant === "page" ? (
-        <div className="mb-8 rounded-xl border border-white/10 p-4">{inner}</div>
+        <div className="mb-8 rounded-xl border border-white/10 p-4">
+          {inner}
+        </div>
       ) : (
         inner
       )}
@@ -594,35 +672,48 @@ export function AdminUserWebSessionsSection({
           description={
             <>
               Invalidates every usable browser session for{" "}
-              <span className="font-medium text-foreground">{detailUser.displayName}</span>. API
-              access stops immediately because sessions are revoked server-side. Session rows are
-              kept for analysis unless you delete them. Type{" "}
-              <span className="font-mono text-foreground">revoke all</span> to confirm.
+              <span className="font-medium text-foreground">
+                {detailUser.displayName}
+              </span>
+              . API access stops immediately because sessions are revoked
+              server-side. Session rows are kept for analysis unless you delete
+              them. Type{" "}
+              <span className="font-mono text-foreground">revoke all</span> to
+              confirm.
             </>
           }
           size="sm"
           footer={
             <>
-              <Button type="button" variant="outline" onClick={() => setRevokeAllOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRevokeAllOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 type="button"
                 variant="destructive"
-                disabled={revokeAllConfirm !== "revoke all" || revokeAllUserSessionsMutation.isPending}
+                disabled={
+                  revokeAllConfirm !== "revoke all" ||
+                  revokeAllUserSessionsMutation.isPending
+                }
                 onClick={() => revokeAllUserSessionsMutation.mutate(userId)}
               >
-                {revokeAllUserSessionsMutation.isPending ? "Revoking…" : "Revoke all"}
+                {revokeAllUserSessionsMutation.isPending
+                  ? "Revoking…"
+                  : "Revoke all"}
               </Button>
             </>
           }
         >
-            <Input
-              value={revokeAllConfirm}
-              onChange={(e) => setRevokeAllConfirm(e.target.value)}
-              placeholder="revoke all"
-              autoComplete="off"
-            />
+          <Input
+            value={revokeAllConfirm}
+            onChange={(e) => setRevokeAllConfirm(e.target.value)}
+            placeholder="revoke all"
+            autoComplete="off"
+          />
         </BaseAlertDialog>
       )}
 
@@ -634,14 +725,20 @@ export function AdminUserWebSessionsSection({
           description={
             <>
               Permanently remove {selectedIds.length} session record
-              {selectedIds.length === 1 ? "" : "s"} from the database (including expired history).
-              Type <span className="font-mono text-foreground">delete</span> to confirm.
+              {selectedIds.length === 1 ? "" : "s"} from the database (including
+              expired history). Type{" "}
+              <span className="font-mono text-foreground">delete</span> to
+              confirm.
             </>
           }
           size="sm"
           footer={
             <>
-              <Button type="button" variant="outline" onClick={() => setDeleteBulkOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteBulkOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -654,17 +751,19 @@ export function AdminUserWebSessionsSection({
                 }
                 onClick={() => bulkDeleteSessionsMutation.mutate(selectedIds)}
               >
-                {bulkDeleteSessionsMutation.isPending ? "Deleting…" : "Delete permanently"}
+                {bulkDeleteSessionsMutation.isPending
+                  ? "Deleting…"
+                  : "Delete permanently"}
               </Button>
             </>
           }
         >
-            <Input
-              value={deleteBulkConfirm}
-              onChange={(e) => setDeleteBulkConfirm(e.target.value)}
-              placeholder="delete"
-              autoComplete="off"
-            />
+          <Input
+            value={deleteBulkConfirm}
+            onChange={(e) => setDeleteBulkConfirm(e.target.value)}
+            placeholder="delete"
+            autoComplete="off"
+          />
         </BaseAlertDialog>
       )}
 
@@ -672,24 +771,35 @@ export function AdminUserWebSessionsSection({
         <BaseAlertDialog
           isOpen={revokeSessionOpen}
           onClose={() => setRevokeSessionOpen(false)}
-          title={revokeSessionTarget.expired ? "Delete session record" : "Revoke web session"}
+          title={
+            revokeSessionTarget.expired
+              ? "Delete session record"
+              : "Revoke web session"
+          }
           description={
             revokeSessionTarget.expired ? (
               <>
                 Remove this expired session row from the database. Type{" "}
-                <span className="font-mono text-foreground">delete</span> to confirm.
+                <span className="font-mono text-foreground">delete</span> to
+                confirm.
               </>
             ) : (
               <>
-                Sign-in on that browser stops immediately; the session row is retained for analysis.
-                Type <span className="font-mono text-foreground">revoke</span> to confirm.
+                Sign-in on that browser stops immediately; the session row is
+                retained for analysis. Type{" "}
+                <span className="font-mono text-foreground">revoke</span> to
+                confirm.
               </>
             )
           }
           size="sm"
           footer={
             <>
-              <Button type="button" variant="outline" onClick={() => setRevokeSessionOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRevokeSessionOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -698,10 +808,12 @@ export function AdminUserWebSessionsSection({
                 disabled={
                   (revokeSessionTarget.expired
                     ? revokeSessionConfirm !== "delete"
-                    : revokeSessionConfirm !== "revoke") || sessionRowActionMutation.isPending
+                    : revokeSessionConfirm !== "revoke") ||
+                  sessionRowActionMutation.isPending
                 }
                 onClick={() =>
-                  revokeSessionTarget && sessionRowActionMutation.mutate(revokeSessionTarget)
+                  revokeSessionTarget &&
+                  sessionRowActionMutation.mutate(revokeSessionTarget)
                 }
               >
                 {sessionRowActionMutation.isPending
@@ -715,12 +827,12 @@ export function AdminUserWebSessionsSection({
             </>
           }
         >
-            <Input
-              value={revokeSessionConfirm}
-              onChange={(e) => setRevokeSessionConfirm(e.target.value)}
-              placeholder={revokeSessionTarget.expired ? "delete" : "revoke"}
-              autoComplete="off"
-            />
+          <Input
+            value={revokeSessionConfirm}
+            onChange={(e) => setRevokeSessionConfirm(e.target.value)}
+            placeholder={revokeSessionTarget.expired ? "delete" : "revoke"}
+            autoComplete="off"
+          />
         </BaseAlertDialog>
       )}
     </>

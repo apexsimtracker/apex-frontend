@@ -33,4 +33,3 @@ export function formatTrackName(raw: string | null | undefined): string {
   // As a last resort, return the original string.
   return trimmed;
 }
-

@@ -1,7 +1,6 @@
 import { apiGet, apiPost } from "./httpVerbs";
 import { resolveApiUrl } from "./config";
 
-
 export type SessionsFilterType = "all" | "telemetry" | "manual";
 
 /** Default page size for GET /api/activity (must match server default). */
@@ -32,7 +31,9 @@ export function normalizeFeedSession(item: unknown): unknown {
   if (!item || typeof item !== "object") return item;
   const outer = item as Record<string, unknown>;
   const inner =
-    outer.session && typeof outer.session === "object" ? (outer.session as Record<string, unknown>) : null;
+    outer.session && typeof outer.session === "object"
+      ? (outer.session as Record<string, unknown>)
+      : null;
 
   const merged: Record<string, unknown> = {
     ...(outer ?? {}),
@@ -48,14 +49,16 @@ export function normalizeFeedSession(item: unknown): unknown {
     feedToNumber(merged.fastestLapMs) ??
     feedToNumber(merged.fastest_lap_ms) ??
     (merged.bestLap && typeof merged.bestLap === "object"
-      ? feedToNumber((merged.bestLap as { lapTimeMs?: unknown }).lapTimeMs) ??
-        feedToNumber((merged.bestLap as { timeMs?: unknown }).timeMs)
+      ? (feedToNumber((merged.bestLap as { lapTimeMs?: unknown }).lapTimeMs) ??
+        feedToNumber((merged.bestLap as { timeMs?: unknown }).timeMs))
       : null);
 
   if (bestLapMs != null) merged.bestLapMs = bestLapMs;
 
   const rawAvatar =
-    typeof merged.authorAvatarUrl === "string" ? merged.authorAvatarUrl.trim() : "";
+    typeof merged.authorAvatarUrl === "string"
+      ? merged.authorAvatarUrl.trim()
+      : "";
   if (rawAvatar) {
     merged.authorAvatarUrl = resolveApiUrl(rawAvatar) ?? rawAvatar;
   }
@@ -106,7 +109,9 @@ export type ActivityFeedItem =
   | { type: "standalone"; session: unknown };
 
 /** Normalize one activity feed item (weekend group or standalone session). */
-export function normalizeActivityFeedItem(item: unknown): ActivityFeedItem | unknown {
+export function normalizeActivityFeedItem(
+  item: unknown,
+): ActivityFeedItem | unknown {
   if (!item || typeof item !== "object") return item;
   const rec = item as Record<string, unknown>;
 
@@ -203,7 +208,9 @@ export async function getActivityHomeFeedPage(options: {
     limit: typeof raw?.limit === "number" ? raw.limit : limit,
     hasMore: Boolean(raw?.hasMore),
     nextGroupOffset:
-      typeof raw?.nextGroupOffset === "number" ? raw.nextGroupOffset : undefined,
+      typeof raw?.nextGroupOffset === "number"
+        ? raw.nextGroupOffset
+        : undefined,
   };
 }
 
@@ -230,7 +237,7 @@ export type SessionCommentsPageResult = {
  */
 export async function getSessionCommentsPage(
   sessionId: string,
-  options: { page?: number; limit?: number } = {}
+  options: { page?: number; limit?: number } = {},
 ): Promise<SessionCommentsPageResult> {
   const page = options.page ?? 1;
   const limit = options.limit ?? SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
@@ -345,7 +352,9 @@ export type PersonalBestRow = {
   updatedAt: string;
 };
 
-export async function getPersonalBests(): Promise<{ personalBests: PersonalBestRow[] }> {
+export async function getPersonalBests(): Promise<{
+  personalBests: PersonalBestRow[];
+}> {
   return apiGet<{ personalBests: PersonalBestRow[] }>("/api/personal-bests");
 }
 

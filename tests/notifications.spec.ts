@@ -42,7 +42,10 @@ test.describe("@notifications", () => {
       });
       await publishBroadcastViaAdminApi(request, adminAuth, broadcastId);
 
-      const activeBefore = await getActiveBroadcastsViaApi(request, standardAuth);
+      const activeBefore = await getActiveBroadcastsViaApi(
+        request,
+        standardAuth,
+      );
       expect(activeBefore.some((b) => b.id === broadcastId)).toBe(true);
 
       await gotoAuthenticated(page, standardAuth, "/");
@@ -59,14 +62,17 @@ test.describe("@notifications", () => {
         (res) =>
           res.url().includes(`/api/broadcasts/${broadcastId}/dismiss`) &&
           res.request().method() === "POST" &&
-          res.ok()
+          res.ok(),
       );
       await banner.getByRole("button", { name: "Dismiss" }).click();
       await dismissPost;
 
       await expect(page.getByText(title)).toBeHidden({ timeout: 15_000 });
 
-      const activeAfterDismiss = await getActiveBroadcastsViaApi(request, standardAuth);
+      const activeAfterDismiss = await getActiveBroadcastsViaApi(
+        request,
+        standardAuth,
+      );
       expect(activeAfterDismiss.some((b) => b.id === broadcastId)).toBe(false);
 
       await page.reload();
@@ -74,9 +80,11 @@ test.describe("@notifications", () => {
       await expect(page.getByText(title)).toHaveCount(0);
     } finally {
       if (broadcastId) {
-        await archiveBroadcastViaAdminApi(request, adminAuth, broadcastId).catch(
-          () => undefined
-        );
+        await archiveBroadcastViaAdminApi(
+          request,
+          adminAuth,
+          broadcastId,
+        ).catch(() => undefined);
       }
     }
   });
@@ -94,9 +102,12 @@ test.describe("@notifications", () => {
       await followUserViaApi(request, socialBAuth, privateAuth.userId);
 
       await expect
-        .poll(async () => countUnreadNotificationsViaApi(request, privateAuth), {
-          timeout: 30_000,
-        })
+        .poll(
+          async () => countUnreadNotificationsViaApi(request, privateAuth),
+          {
+            timeout: 30_000,
+          },
+        )
         .toBeGreaterThan(0);
 
       await gotoAuthenticated(page, privateAuth, "/");
@@ -104,7 +115,9 @@ test.describe("@notifications", () => {
 
       await bell.click();
       const dialog = page.getByRole("dialog");
-      await expect(dialog.getByRole("heading", { name: "Notifications" })).toBeVisible();
+      await expect(
+        dialog.getByRole("heading", { name: "Notifications" }),
+      ).toBeVisible();
       await expect(dialog.getByText(/E2E Social B/i)).toBeVisible();
       await expect(dialog.getByText(/requested to follow you/i)).toBeVisible();
 
@@ -112,15 +125,19 @@ test.describe("@notifications", () => {
         (res) =>
           res.url().includes("/api/notifications/read") &&
           res.request().method() === "POST" &&
-          res.ok()
+          res.ok(),
       );
       await dialog.getByRole("button", { name: "Mark all as viewed" }).click();
       await markReadPost;
 
       await expect(bell.locator("span")).toHaveCount(0, { timeout: 15_000 });
-      expect(await countUnreadNotificationsViaApi(request, privateAuth)).toBe(0);
+      expect(await countUnreadNotificationsViaApi(request, privateAuth)).toBe(
+        0,
+      );
     } finally {
-      await unfollowUserViaApi(request, socialBAuth, privateAuth.userId).catch(() => undefined);
+      await unfollowUserViaApi(request, socialBAuth, privateAuth.userId).catch(
+        () => undefined,
+      );
     }
   });
 });

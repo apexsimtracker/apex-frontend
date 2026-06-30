@@ -76,12 +76,10 @@ function GoalItem({ goal }: { goal: Goal }) {
       <div className="relative">
         <CircularProgress current={goal.current} target={goal.target} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-white/50">
-            {goal.icon}
-          </div>
+          <div className="text-white/50">{goal.icon}</div>
         </div>
       </div>
-      
+
       {/* Value */}
       <div className="text-center">
         <div className="text-sm font-semibold">
@@ -106,13 +104,33 @@ export default function GoalsBar({
   if (loading) {
     return (
       <div className="border-white/6 mt-6 rounded-lg border bg-card/20 px-4 py-3 backdrop-blur-lg">
-        <SkeletonBlock height={14} width={112} className="mb-3 bg-white/10" rounded="sm" />
+        <SkeletonBlock
+          height={14}
+          width={112}
+          className="mb-3 bg-white/10"
+          rounded="sm"
+        />
         <div className="flex items-center justify-around">
           {([0, 1, 2] as const).map((i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <SkeletonBlock height={56} width={56} rounded="full" className="bg-white/10" />
-              <SkeletonBlock height={14} width={48} className="bg-white/10" rounded="sm" />
-              <SkeletonBlock height={10} width={56} className="bg-white/10" rounded="sm" />
+              <SkeletonBlock
+                height={56}
+                width={56}
+                rounded="full"
+                className="bg-white/10"
+              />
+              <SkeletonBlock
+                height={14}
+                width={48}
+                className="bg-white/10"
+                rounded="sm"
+              />
+              <SkeletonBlock
+                height={10}
+                width={56}
+                className="bg-white/10"
+                rounded="sm"
+              />
             </div>
           ))}
         </div>
@@ -147,9 +165,11 @@ export default function GoalsBar({
   return (
     <div className="border-white/6 mt-6 rounded-lg border bg-card/20 px-4 py-3 backdrop-blur-lg">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-white">Weekly Goals</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-white">
+          Weekly Goals
+        </h2>
       </div>
-      
+
       <div className="flex items-center justify-around">
         {goals.map((goal) => (
           <GoalItem key={goal.id} goal={goal} />

@@ -50,11 +50,13 @@ function getProfileOwnerId(session: ActivityFeedSession): string | null {
 
 function getActivityHeaderFromOwner(
   session: ActivityFeedSession,
-  currentUser?: { id: string; avatarUrl?: string | null } | null
+  currentUser?: { id: string; avatarUrl?: string | null } | null,
 ): { name: string; avatar: string | null } {
   const sessionOwnerId = getProfileOwnerId(session);
   const isCurrentUsersSession =
-    Boolean(currentUser?.id) && Boolean(sessionOwnerId) && currentUser!.id === sessionOwnerId;
+    Boolean(currentUser?.id) &&
+    Boolean(sessionOwnerId) &&
+    currentUser!.id === sessionOwnerId;
   const name =
     session.authorName?.trim() ||
     session.owner?.displayName?.trim() ||
@@ -82,7 +84,7 @@ function renderActivityCard(
     onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
     linkCards: boolean;
     currentUser?: { id: string; avatarUrl?: string | null } | null;
-  }
+  },
 ) {
   const header = getActivityHeaderFromOwner(session, options.currentUser);
   const profileOwnerId = getProfileOwnerId(session);
@@ -175,32 +177,32 @@ export default function ActivityFeedList({
               className="border-white/8 mb-0 rounded-none border-0 border-b bg-transparent"
             />
             <div className="flex flex-col gap-6 p-3 sm:p-4">
-              {segmentWeekendSessionsForDisplay(item.group.sessions as SessionItem[]).map(
-                (segment) => {
-                  if (segment.type === "single") {
-                    const s = segment.session as ActivityFeedSession;
-                    return (
-                      <div key={s.id}>
-                        {renderActivityCard(s, {
-                          onSessionPatch,
-                          linkCards,
-                          currentUser,
-                        })}
-                      </div>
-                    );
-                  }
-
-                  const carouselKey = `${segment.kind}-${segment.sessions.map((s) => s.id).join("-")}`;
+              {segmentWeekendSessionsForDisplay(
+                item.group.sessions as SessionItem[],
+              ).map((segment) => {
+                if (segment.type === "single") {
+                  const s = segment.session as ActivityFeedSession;
                   return (
-                    <BundledActivityCard
-                      key={carouselKey}
-                      sessions={segment.sessions}
-                      overflowCount={0}
-                      onSessionPatch={onSessionPatch}
-                    />
+                    <div key={s.id}>
+                      {renderActivityCard(s, {
+                        onSessionPatch,
+                        linkCards,
+                        currentUser,
+                      })}
+                    </div>
                   );
                 }
-              )}
+
+                const carouselKey = `${segment.kind}-${segment.sessions.map((s) => s.id).join("-")}`;
+                return (
+                  <BundledActivityCard
+                    key={carouselKey}
+                    sessions={segment.sessions}
+                    overflowCount={0}
+                    onSessionPatch={onSessionPatch}
+                  />
+                );
+              })}
             </div>
           </div>
         );

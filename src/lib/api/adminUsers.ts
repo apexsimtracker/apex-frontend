@@ -70,10 +70,17 @@ export type AdminDisposableEmailScanResponse =
 export async function postAdminDisposableEmailScan(body: {
   dryRun: boolean;
 }): Promise<AdminDisposableEmailScanResponse> {
-  return fetchApi("POST", "/api/admin/users/scan-disposable-emails", body, false);
+  return fetchApi(
+    "POST",
+    "/api/admin/users/scan-disposable-emails",
+    body,
+    false,
+  );
 }
 
-export async function fetchAdminUserList(params?: AdminUserListParams): Promise<{
+export async function fetchAdminUserList(
+  params?: AdminUserListParams,
+): Promise<{
   items: AdminUserListRow[];
   page: number;
   pageSize: number;
@@ -88,10 +95,17 @@ export async function fetchAdminUserList(params?: AdminUserListParams): Promise<
   if (params?.status) sp.set("status", params.status);
   if (params?.suspiciousOnly === true) sp.set("suspiciousOnly", "true");
   if (params?.plan) sp.set("plan", params.plan);
-  if (params?.subscriptionStatus) sp.set("subscriptionStatus", params.subscriptionStatus);
-  if (params?.billingInterval) sp.set("billingInterval", params.billingInterval);
+  if (params?.subscriptionStatus)
+    sp.set("subscriptionStatus", params.subscriptionStatus);
+  if (params?.billingInterval)
+    sp.set("billingInterval", params.billingInterval);
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/users${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/users${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export type AdminUserProfilePatchResult = {
@@ -165,67 +179,74 @@ export type AdminUserDetailResponse = {
   }[];
 };
 
-export async function fetchAdminUserDetail(userId: string): Promise<AdminUserDetailResponse> {
-  return fetchApi("GET", `/api/admin/users/${encodeURIComponent(userId)}`, undefined, false);
+export async function fetchAdminUserDetail(
+  userId: string,
+): Promise<AdminUserDetailResponse> {
+  return fetchApi(
+    "GET",
+    `/api/admin/users/${encodeURIComponent(userId)}`,
+    undefined,
+    false,
+  );
 }
 
 export async function patchAdminUserRole(
   userId: string,
-  body: { role: "USER" | "ADMIN" }
+  body: { role: "USER" | "ADMIN" },
 ): Promise<{ id: string; role: "USER" | "ADMIN" }> {
   return fetchApi(
     "PATCH",
     `/api/admin/users/${encodeURIComponent(userId)}/role`,
     body,
-    false
+    false,
   );
 }
 
 export async function patchAdminUserStatus(
   userId: string,
-  body: { suspended: boolean; reason?: string }
+  body: { suspended: boolean; reason?: string },
 ): Promise<{ suspendedAt: string | null; suspensionReason: string | null }> {
   return fetchApi(
     "PATCH",
     `/api/admin/users/${encodeURIComponent(userId)}/status`,
     body,
-    false
+    false,
   );
 }
 
 export async function patchAdminUserProfile(
   userId: string,
-  body: { name?: string; email?: string; avatarUrl?: string | null }
+  body: { name?: string; email?: string; avatarUrl?: string | null },
 ): Promise<AdminUserProfilePatchResult> {
   return fetchApi(
     "PATCH",
     `/api/admin/users/${encodeURIComponent(userId)}/profile`,
     body,
-    false
+    false,
   );
 }
 
 export async function postAdminUserSetPassword(
   userId: string,
-  body: { password: string }
+  body: { password: string },
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "POST",
     `/api/admin/users/${encodeURIComponent(userId)}/password`,
     body,
-    false
+    false,
   );
 }
 
 export async function deleteAdminUser(
   userId: string,
-  body: { confirmationEmail: string }
+  body: { confirmationEmail: string },
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/users/${encodeURIComponent(userId)}`,
     body,
-    false
+    false,
   );
 }
 
@@ -239,7 +260,7 @@ export async function postAdminUserImpersonate(userId: string): Promise<{
     "POST",
     `/api/admin/users/${encodeURIComponent(userId)}/impersonate`,
     {},
-    false
+    false,
   );
 }
 
@@ -264,7 +285,7 @@ export async function postAdminUserReverify(userId: string): Promise<{
     "POST",
     `/api/admin/users/reverify/${encodeURIComponent(userId)}`,
     {},
-    false
+    false,
   );
 }
 
@@ -293,7 +314,7 @@ export type AdminUserDiscussionsPaginated<T> = {
 
 export async function fetchAdminUserDiscussionsStarted(
   userId: string,
-  params?: { page?: number; pageSize?: number }
+  params?: { page?: number; pageSize?: number },
 ): Promise<AdminUserDiscussionsPaginated<AdminDiscussionsStartedRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -303,13 +324,13 @@ export async function fetchAdminUserDiscussionsStarted(
     "GET",
     `/api/admin/users/${encodeURIComponent(userId)}/discussions-started${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function fetchAdminUserDiscussionsCommented(
   userId: string,
-  params?: { page?: number; pageSize?: number }
+  params?: { page?: number; pageSize?: number },
 ): Promise<AdminUserDiscussionsPaginated<AdminDiscussionsCommentedRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -319,6 +340,6 @@ export async function fetchAdminUserDiscussionsCommented(
     "GET",
     `/api/admin/users/${encodeURIComponent(userId)}/discussions-commented${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }

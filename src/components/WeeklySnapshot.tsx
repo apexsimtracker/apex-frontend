@@ -64,14 +64,34 @@ export default function WeeklySnapshot({
     return (
       <div className="border-white/6 rounded-lg border bg-card/20 p-4 backdrop-blur-lg">
         <div className="flex items-center justify-between">
-          <SkeletonBlock height={20} width={180} className="bg-white/10" rounded="md" />
+          <SkeletonBlock
+            height={20}
+            width={180}
+            className="bg-white/10"
+            rounded="md"
+          />
         </div>
         <div className={METRICS_GRID_CLASS}>
           {([0, 1, 2] as const).map((i) => (
             <div key={i} className={metricCellClass(i)}>
-              <SkeletonBlock height={12} width={64} className="mx-auto mb-2 bg-white/10 sm:mx-0" rounded="sm" />
-              <SkeletonBlock height={32} width={48} className="mx-auto bg-white/10 sm:mx-0" rounded="md" />
-              <SkeletonBlock height={14} width={40} className="mx-auto mt-2 bg-white/10 sm:mx-0" rounded="sm" />
+              <SkeletonBlock
+                height={12}
+                width={64}
+                className="mx-auto mb-2 bg-white/10 sm:mx-0"
+                rounded="sm"
+              />
+              <SkeletonBlock
+                height={32}
+                width={48}
+                className="mx-auto bg-white/10 sm:mx-0"
+                rounded="md"
+              />
+              <SkeletonBlock
+                height={14}
+                width={40}
+                className="mx-auto mt-2 bg-white/10 sm:mx-0"
+                rounded="sm"
+              />
             </div>
           ))}
         </div>
@@ -79,17 +99,19 @@ export default function WeeklySnapshot({
     );
   }
 
-  const sessionImprovement =
-    sessionDelta === 0 ? null : sessionDelta > 0;
+  const sessionImprovement = sessionDelta === 0 ? null : sessionDelta > 0;
   const sessionDisplay =
-    sessionDelta === 0 ? "—" : sessionDelta > 0 ? `+${sessionDelta}` : `${sessionDelta}`;
+    sessionDelta === 0
+      ? "—"
+      : sessionDelta > 0
+        ? `+${sessionDelta}`
+        : `${sessionDelta}`;
 
   const lapsImprovement = lapsDelta === 0 ? null : lapsDelta > 0;
   const lapsDisplay =
     lapsDelta === 0 ? "—" : lapsDelta > 0 ? `+${lapsDelta}` : `${lapsDelta}`;
 
-  const trackTimeImprovement =
-    trackTimeDelta === 0 ? null : trackTimeDelta > 0;
+  const trackTimeImprovement = trackTimeDelta === 0 ? null : trackTimeDelta > 0;
   const trackTimeDisplay =
     trackTimeDelta === 0
       ? "—"
@@ -107,7 +129,10 @@ export default function WeeklySnapshot({
 
       <div className={METRICS_GRID_CLASS}>
         <div className={metricCellClass(0)}>
-          <div className="sm:0 mb-1 text-[11px] uppercase tracking-wider text-white/50" title="All session types — practice, qualifying, and race">
+          <div
+            className="sm:0 mb-1 text-[11px] uppercase tracking-wider text-white/50"
+            title="All session types — practice, qualifying, and race"
+          >
             Sessions
           </div>
           <div className="text-xl font-semibold tabular-nums text-white sm:text-2xl">

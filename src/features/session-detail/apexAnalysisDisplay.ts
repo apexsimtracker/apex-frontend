@@ -10,7 +10,7 @@ export type ApexAnalysisDisplay = {
 };
 
 export function parseApexAnalysisDisplay(
-  payload: ApexAnalysisPayload | undefined | null
+  payload: ApexAnalysisPayload | undefined | null,
 ): ApexAnalysisDisplay {
   if (payload == null) {
     return { locked: false, insights: [] };

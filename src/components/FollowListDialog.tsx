@@ -37,7 +37,13 @@ function FollowRowSkeleton() {
   );
 }
 
-function FollowRow({ f, onNavigate }: { f: FollowUser; onNavigate: () => void }) {
+function FollowRow({
+  f,
+  onNavigate,
+}: {
+  f: FollowUser;
+  onNavigate: () => void;
+}) {
   const name = f.displayName?.trim() || "—";
   const initials =
     name && name.length >= 2
@@ -84,7 +90,7 @@ export function FollowListDialog({
   const debouncedSearch = useDebouncedValue(
     searchInput,
     SEARCH_DEBOUNCE_MS,
-    open && listKind ? `${userId}:${listKind}` : undefined
+    open && listKind ? `${userId}:${listKind}` : undefined,
   );
 
   useEffect(() => {
@@ -152,65 +158,69 @@ export function FollowListDialog({
       size="sm"
       bodyClassName="flex min-h-0 flex-1 flex-col gap-4"
     >
-        {enabled && (
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by name or email…"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9"
-              autoComplete="off"
-            />
-          </div>
+      {enabled && (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search by name or email…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="pl-9"
+            autoComplete="off"
+          />
+        </div>
+      )}
+      <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+        {!enabled ? null : isPending && !data ? (
+          <ul
+            className="space-y-2"
+            aria-busy="true"
+            aria-label="Loading follow list"
+          >
+            {Array.from({ length: FOLLOW_LIST_PAGE_SIZE }, (_, i) => (
+              <FollowRowSkeleton key={i} />
+            ))}
+          </ul>
+        ) : errMsg ? (
+          <p className="py-4 text-sm text-destructive">{errMsg}</p>
+        ) : items.length === 0 ? (
+          <p className="py-4 text-sm text-muted-foreground">
+            {debouncedSearch.trim()
+              ? listKind === "followers"
+                ? "No followers match your search."
+                : "No users match your search."
+              : listKind === "followers"
+                ? "No followers yet."
+                : "Not following anyone yet."}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {items.map((f) => (
+              <FollowRow
+                key={f.id}
+                f={f}
+                onNavigate={() => onOpenChange(false)}
+              />
+            ))}
+          </ul>
         )}
-        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-          {!enabled ? null : isPending && !data ? (
-            <ul className="space-y-2" aria-busy="true" aria-label="Loading follow list">
-              {Array.from({ length: FOLLOW_LIST_PAGE_SIZE }, (_, i) => (
-                <FollowRowSkeleton key={i} />
-              ))}
-            </ul>
-          ) : errMsg ? (
-            <p className="py-4 text-sm text-destructive">{errMsg}</p>
-          ) : items.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">
-              {debouncedSearch.trim()
-                ? listKind === "followers"
-                  ? "No followers match your search."
-                  : "No users match your search."
-                : listKind === "followers"
-                  ? "No followers yet."
-                  : "Not following anyone yet."}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {items.map((f) => (
-                <FollowRow
-                  key={f.id}
-                  f={f}
-                  onNavigate={() => onOpenChange(false)}
-                />
-              ))}
-            </ul>
+      </div>
+      {enabled && !errMsg && total > 0 && (data || !isPending) && (
+        <div className="shrink-0 space-y-3 border-t border-border pt-4">
+          <p className="text-center text-xs text-muted-foreground">
+            Showing {rangeStart}–{rangeEnd} of {total}
+          </p>
+          {totalPages > 1 && (
+            <RaceHistoryPagination
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              disabled={isFetching}
+            />
           )}
         </div>
-        {enabled && !errMsg && total > 0 && (data || !isPending) && (
-          <div className="shrink-0 space-y-3 border-t border-border pt-4">
-            <p className="text-center text-xs text-muted-foreground">
-              Showing {rangeStart}–{rangeEnd} of {total}
-            </p>
-            {totalPages > 1 && (
-              <RaceHistoryPagination
-                page={currentPage}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                disabled={isFetching}
-              />
-            )}
-          </div>
-        )}
+      )}
     </BaseModal>
   );
 }

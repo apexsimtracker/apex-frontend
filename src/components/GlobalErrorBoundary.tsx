@@ -33,7 +33,9 @@ export default class GlobalErrorBoundary extends Component<
     };
   }
 
-  static getDerivedStateFromError(error: unknown): Partial<GlobalErrorBoundaryState> {
+  static getDerivedStateFromError(
+    error: unknown,
+  ): Partial<GlobalErrorBoundaryState> {
     return { hasError: true, error: toError(error) };
   }
 

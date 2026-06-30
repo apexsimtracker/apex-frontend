@@ -4,19 +4,19 @@ Apex is a **sim racing web app** (sessions, leaderboards, challenges, community,
 
 ## Tech stack
 
-| Layer | Choice |
-|-------|--------|
-| Runtime | React 18, TypeScript |
-| Routing | React Router 7 (SPA, `BrowserRouter`) |
-| Build | Vite 7 |
-| Styling | Tailwind CSS 3, CSS variables in `src/global.css` |
-| UI primitives | Radix UI + shadcn-style components in `src/components/ui/` |
-| Data fetching | TanStack Query v5 |
-| Forms / validation | react-hook-form + Zod 4 |
-| Icons | lucide-react |
-| Toasts | sonner |
-| Tests | Vitest (`src/**/*.test.ts`, `src/**/*.spec.ts`) |
-| Package manager | **pnpm** (see `packageManager` in `package.json`) |
+| Layer              | Choice                                                     |
+| ------------------ | ---------------------------------------------------------- |
+| Runtime            | React 18, TypeScript                                       |
+| Routing            | React Router 7 (SPA, `BrowserRouter`)                      |
+| Build              | Vite 7                                                     |
+| Styling            | Tailwind CSS 3, CSS variables in `src/global.css`          |
+| UI primitives      | Radix UI + shadcn-style components in `src/components/ui/` |
+| Data fetching      | TanStack Query v5                                          |
+| Forms / validation | react-hook-form + Zod 4                                    |
+| Icons              | lucide-react                                               |
+| Toasts             | sonner                                                     |
+| Tests              | Vitest (`src/**/*.test.ts`, `src/**/*.spec.ts`)            |
+| Package manager    | **pnpm** (see `packageManager` in `package.json`)          |
 
 ## Repository layout
 
@@ -119,13 +119,13 @@ pnpm format.fix   # prettier --write .
 
 Copy `.env.example` → `.env`. Only **`VITE_*`** variables are read by this app (Vite embeds them at build time).
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_API_URL` | Prod recommended | Fastify API base URL, no trailing slash (e.g. `https://your-api.onrender.com`) |
-| `VITE_APEX_API_BASE_URL` | No | Alias for API base (legacy name) |
-| `VITE_DEV_API_PROXY_TARGET` | No | Dev proxy target for `/api` (default `http://127.0.0.1:10000`) |
-| `VITE_SUPPORT_EMAIL` | No | Footer mailto (default `support@apexsimtracker.com`) |
-| `VITE_PUBLIC_BUILDER_KEY` | No | Builder.io CMS key if used |
+| Variable                    | Required         | Description                                                                    |
+| --------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `VITE_API_URL`              | Prod recommended | Fastify API base URL, no trailing slash (e.g. `https://your-api.onrender.com`) |
+| `VITE_APEX_API_BASE_URL`    | No               | Alias for API base (legacy name)                                               |
+| `VITE_DEV_API_PROXY_TARGET` | No               | Dev proxy target for `/api` (default `http://127.0.0.1:10000`)                 |
+| `VITE_SUPPORT_EMAIL`        | No               | Footer mailto (default `support@apexsimtracker.com`)                           |
+| `VITE_PUBLIC_BUILDER_KEY`   | No               | Builder.io CMS key if used                                                     |
 
 **Local dev:** run the **apex backend** on port 10000 (or set `VITE_API_URL` / proxy target). Pointing `VITE_API_URL` at the Vercel SPA host will break API calls.
 

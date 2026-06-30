@@ -28,10 +28,12 @@ export const modalSurfaceVariants = cva(
       size: "md",
       mobileVariant: "centered",
     },
-  }
+  },
 );
 
-export type ModalSurfaceVariantProps = VariantProps<typeof modalSurfaceVariants>;
+export type ModalSurfaceVariantProps = VariantProps<
+  typeof modalSurfaceVariants
+>;
 export type ModalSize = NonNullable<ModalSurfaceVariantProps["size"]>;
 export type ModalMobileVariant = NonNullable<
   ModalSurfaceVariantProps["mobileVariant"]

@@ -7,10 +7,14 @@ export function detectAgentOs(): AgentOs {
   const platform = (
     navigator as Navigator & { userAgentData?: { platform?: string } }
   ).userAgentData?.platform?.toLowerCase();
-  if (platform?.includes("mac") || /Mac OS X|Macintosh/i.test(ua)) return "macos";
+  if (platform?.includes("mac") || /Mac OS X|Macintosh/i.test(ua))
+    return "macos";
   if (platform?.includes("win") || /Windows/i.test(ua)) return "windows";
   if (platform?.includes("android") || /Android/i.test(ua)) return "windows";
-  if (platform?.includes("linux") || ((/Linux|X11/i.test(ua)) && !/Android/i.test(ua))) {
+  if (
+    platform?.includes("linux") ||
+    (/Linux|X11/i.test(ua) && !/Android/i.test(ua))
+  ) {
     return "linux";
   }
   return "windows";

@@ -50,7 +50,9 @@ function UserCard({
         </div>
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-muted-foreground">Verified</dt>
-          <dd className="text-foreground">{user.emailVerified ? "Yes" : "No"}</dd>
+          <dd className="text-foreground">
+            {user.emailVerified ? "Yes" : "No"}
+          </dd>
         </div>
         {(user.suspendedAt || user.isDeleted) && (
           <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive">
@@ -60,7 +62,9 @@ function UserCard({
       </dl>
       <div className="mt-4">
         <Button variant="outline" size="sm" asChild>
-          <Link to={`/admin/users/${encodeURIComponent(user.id)}`}>View user in admin</Link>
+          <Link to={`/admin/users/${encodeURIComponent(user.id)}`}>
+            View user in admin
+          </Link>
         </Button>
       </div>
     </div>
@@ -70,7 +74,9 @@ function UserCard({
 export default function AdminContactDetail() {
   const { contactId } = useParams<{ contactId: string }>();
   const qc = useQueryClient();
-  const [statusDraft, setStatusDraft] = useState<ContactSubmissionStatus | "">("");
+  const [statusDraft, setStatusDraft] = useState<ContactSubmissionStatus | "">(
+    "",
+  );
   const [notesDraft, setNotesDraft] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -105,7 +111,9 @@ export default function AdminContactDetail() {
 
   if (!contactId?.trim()) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8 text-sm text-muted-foreground">Invalid id.</div>
+      <div className="mx-auto max-w-3xl px-4 py-8 text-sm text-muted-foreground">
+        Invalid id.
+      </div>
     );
   }
 
@@ -114,7 +122,12 @@ export default function AdminContactDetail() {
 
   return (
     <>
-      <PageMeta path={`/admin/contact/${contactId}`} title={metaTitle} description="Contact submission." noindex />
+      <PageMeta
+        path={`/admin/contact/${contactId}`}
+        title={metaTitle}
+        description="Contact submission."
+        noindex
+      />
       <div className="mx-auto max-w-4xl">
         <div className="mb-6">
           <Link
@@ -128,20 +141,27 @@ export default function AdminContactDetail() {
 
         {isError && (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load submission."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load submission."}
           </div>
         )}
 
         {isPending && (
           <div className="flex justify-center py-16">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+            <Loader2
+              className="size-6 animate-spin text-muted-foreground"
+              aria-hidden
+            />
           </div>
         )}
 
         {!isPending && data && (
           <>
             <header className="mb-8">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Contact message</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Contact message
+              </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Received{" "}
                 {new Date(data.createdAt).toLocaleString(undefined, {
@@ -153,8 +173,8 @@ export default function AdminContactDetail() {
 
             {data.submitterEmailMismatch && (
               <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                Session email differs from the address typed in the form — the signed-in account may not
-                match the sender email below.
+                Session email differs from the address typed in the form — the
+                signed-in account may not match the sender email below.
               </div>
             )}
 
@@ -169,7 +189,9 @@ export default function AdminContactDetail() {
               </div>
 
               <div className="rounded-xl border border-white/10 p-5">
-                <h2 className="text-sm font-semibold text-foreground">Form details</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Form details
+                </h2>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div>
                     <dt className="text-muted-foreground">Name</dt>
@@ -181,29 +203,42 @@ export default function AdminContactDetail() {
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Subject</dt>
-                    <dd className="text-foreground">{data.subject?.trim() ? data.subject : "—"}</dd>
+                    <dd className="text-foreground">
+                      {data.subject?.trim() ? data.subject : "—"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">Request ID</dt>
-                    <dd className="font-mono text-xs text-muted-foreground">{data.requestId}</dd>
+                    <dd className="font-mono text-xs text-muted-foreground">
+                      {data.requestId}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">IP</dt>
-                    <dd className="font-mono text-xs text-muted-foreground">{data.ip ?? "—"}</dd>
+                    <dd className="font-mono text-xs text-muted-foreground">
+                      {data.ip ?? "—"}
+                    </dd>
                   </div>
                 </dl>
               </div>
 
               <div className="rounded-xl border border-white/10 p-5">
-                <h2 className="text-sm font-semibold text-foreground">Triage</h2>
-                <label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor="contact-status">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Triage
+                </h2>
+                <label
+                  className="mt-3 block text-xs font-medium text-muted-foreground"
+                  htmlFor="contact-status"
+                >
                   Status
                 </label>
                 <select
                   id="contact-status"
                   className="mt-1 w-full rounded-md border border-white/10 bg-card px-3 py-2 text-sm"
                   value={statusDraft}
-                  onChange={(e) => setStatusDraft(e.target.value as ContactSubmissionStatus)}
+                  onChange={(e) =>
+                    setStatusDraft(e.target.value as ContactSubmissionStatus)
+                  }
                 >
                   <option value="NEW">New</option>
                   <option value="IN_PROGRESS">In progress</option>
@@ -211,7 +246,10 @@ export default function AdminContactDetail() {
                   <option value="ARCHIVED">Archived</option>
                   <option value="SPAM">Spam</option>
                 </select>
-                <label className="mt-4 block text-xs font-medium text-muted-foreground" htmlFor="contact-notes">
+                <label
+                  className="mt-4 block text-xs font-medium text-muted-foreground"
+                  htmlFor="contact-notes"
+                >
                   Internal notes
                 </label>
                 <Textarea
@@ -234,7 +272,10 @@ export default function AdminContactDetail() {
                 >
                   {saveMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                      <Loader2
+                        className="mr-2 size-4 animate-spin"
+                        aria-hidden
+                      />
                       Saving…
                     </>
                   ) : (
@@ -257,10 +298,16 @@ export default function AdminContactDetail() {
               </div>
 
               {data.submitterUser && (
-                <UserCard title="Signed-in submitter" user={data.submitterUser} />
+                <UserCard
+                  title="Signed-in submitter"
+                  user={data.submitterUser}
+                />
               )}
               {data.linkedUser && (
-                <UserCard title="Account matching form email" user={data.linkedUser} />
+                <UserCard
+                  title="Account matching form email"
+                  user={data.linkedUser}
+                />
               )}
             </div>
           </>

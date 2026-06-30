@@ -10,7 +10,10 @@ if (existsSync(APEX_ENV)) {
   loadEnv({ path: APEX_ENV, quiet: true });
 }
 
-const apiUrl = (process.env.E2E_API_URL ?? "http://127.0.0.1:10000").replace(/\/$/, "");
+const apiUrl = (process.env.E2E_API_URL ?? "http://127.0.0.1:10000").replace(
+  /\/$/,
+  "",
+);
 
 export type BillingPreflight = {
   configured: boolean;
@@ -38,7 +41,7 @@ async function globalSetup(): Promise<void> {
   if (!configured) {
     console.warn(
       "[e2e] Billing preflight failed: GET /api/billing/config must return enabled=true and mode=sandbox. " +
-        "Ensure apex backend is running with sandbox billing env vars set."
+        "Ensure apex backend is running with sandbox billing env vars set.",
     );
   }
 }

@@ -107,7 +107,10 @@ export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
 }
 
-export type ProfileHomeWeekly = Pick<ProfileSummary, "weeklySnapshot" | "weeklyGoals">;
+export type ProfileHomeWeekly = Pick<
+  ProfileSummary,
+  "weeklySnapshot" | "weeklyGoals"
+>;
 
 export async function getProfileHomeWeekly(): Promise<ProfileHomeWeekly> {
   return apiGet<ProfileHomeWeekly>("/api/profile/home-weekly");
@@ -122,14 +125,11 @@ export async function getProfileTrendInsight(): Promise<ProfileTrendInsight> {
 /** GET /api/profile/summary/:userId — same shape as getProfileSummary; public. */
 export async function getProfileSummaryForUser(
   userId: string,
-  type?: "all" | "telemetry" | "manual"
+  type?: "all" | "telemetry" | "manual",
 ): Promise<ProfileSummary> {
-  const q =
-    type && type !== "all"
-      ? `?type=${encodeURIComponent(type)}`
-      : "";
+  const q = type && type !== "all" ? `?type=${encodeURIComponent(type)}` : "";
   return apiGet<ProfileSummary>(
-    `/api/profile/summary/${encodeURIComponent(userId)}${q}`
+    `/api/profile/summary/${encodeURIComponent(userId)}${q}`,
   );
 }
 
@@ -155,7 +155,7 @@ export async function getProfileRaceHistory(params?: {
   if (params?.type && params.type !== "all") sp.set("type", params.type);
   const q = sp.toString();
   return apiGet<RaceHistoryPageResult>(
-    `/api/profile/race-history${q ? `?${q}` : ""}`
+    `/api/profile/race-history${q ? `?${q}` : ""}`,
   );
 }
 
@@ -165,7 +165,7 @@ export async function getProfileRaceHistoryForUser(
     page?: number;
     limit?: number;
     type?: "all" | "telemetry" | "manual";
-  }
+  },
 ): Promise<RaceHistoryPageResult> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -173,7 +173,7 @@ export async function getProfileRaceHistoryForUser(
   if (params?.type && params.type !== "all") sp.set("type", params.type);
   const q = sp.toString();
   return apiGet<RaceHistoryPageResult>(
-    `/api/profile/${encodeURIComponent(userId)}/race-history${q ? `?${q}` : ""}`
+    `/api/profile/${encodeURIComponent(userId)}/race-history${q ? `?${q}` : ""}`,
   );
 }
 
@@ -211,7 +211,9 @@ export type UserPublicProfile = {
 /** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
 export type FollowUser = UserPublicProfile;
 
-export async function getUserPublicProfile(userId: string): Promise<UserPublicProfile> {
+export async function getUserPublicProfile(
+  userId: string,
+): Promise<UserPublicProfile> {
   return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
 }
 
@@ -223,9 +225,13 @@ export type PrivacySettingsPayload = {
 };
 
 export async function patchPrivacySettings(
-  body: Partial<PrivacySettingsPayload>
+  body: Partial<PrivacySettingsPayload>,
 ): Promise<PrivacySettingsPayload> {
-  return fetchApi<PrivacySettingsPayload>("PATCH", "/api/settings/privacy", body);
+  return fetchApi<PrivacySettingsPayload>(
+    "PATCH",
+    "/api/settings/privacy",
+    body,
+  );
 }
 
 /** PATCH /api/settings/notifications — Bearer session */
@@ -235,9 +241,13 @@ export type NotificationSettingsPayload = {
 };
 
 export async function patchNotificationSettings(
-  body: Partial<NotificationSettingsPayload>
+  body: Partial<NotificationSettingsPayload>,
 ): Promise<NotificationSettingsPayload> {
-  return fetchApi<NotificationSettingsPayload>("PATCH", "/api/settings/notifications", body);
+  return fetchApi<NotificationSettingsPayload>(
+    "PATCH",
+    "/api/settings/notifications",
+    body,
+  );
 }
 
 /** GET /api/notifications */
@@ -273,15 +283,19 @@ export type NotificationItem = {
   } | null;
 };
 
-export async function getNotifications(): Promise<{ notifications: NotificationItem[] }> {
+export async function getNotifications(): Promise<{
+  notifications: NotificationItem[];
+}> {
   return apiGet<{ notifications: NotificationItem[] }>("/api/notifications");
 }
 
-export async function markNotificationsRead(ids?: string[]): Promise<{ marked: number }> {
+export async function markNotificationsRead(
+  ids?: string[],
+): Promise<{ marked: number }> {
   return fetchApi<{ marked: number }>(
     "POST",
     "/api/notifications/read",
-    ids && ids.length > 0 ? { ids } : {}
+    ids && ids.length > 0 ? { ids } : {},
   );
 }
 
@@ -301,23 +315,31 @@ export type FollowRequestListItem = {
   };
 };
 
-export async function listFollowRequests(): Promise<{ requests: FollowRequestListItem[] }> {
-  return apiGet<{ requests: FollowRequestListItem[] }>("/api/me/follow-requests");
-}
-
-export async function acceptFollowRequest(requestId: string): Promise<{ ok: boolean }> {
-  return fetchApi<{ ok: boolean }>(
-    "POST",
-    `/api/me/follow-requests/${encodeURIComponent(requestId)}/accept`,
-    {}
+export async function listFollowRequests(): Promise<{
+  requests: FollowRequestListItem[];
+}> {
+  return apiGet<{ requests: FollowRequestListItem[] }>(
+    "/api/me/follow-requests",
   );
 }
 
-export async function declineFollowRequest(requestId: string): Promise<{ ok: boolean }> {
+export async function acceptFollowRequest(
+  requestId: string,
+): Promise<{ ok: boolean }> {
+  return fetchApi<{ ok: boolean }>(
+    "POST",
+    `/api/me/follow-requests/${encodeURIComponent(requestId)}/accept`,
+    {},
+  );
+}
+
+export async function declineFollowRequest(
+  requestId: string,
+): Promise<{ ok: boolean }> {
   return fetchApi<{ ok: boolean }>(
     "POST",
     `/api/me/follow-requests/${encodeURIComponent(requestId)}/decline`,
-    {}
+    {},
   );
 }
 

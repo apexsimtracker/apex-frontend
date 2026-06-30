@@ -14,13 +14,34 @@ import {
   type NotificationSeverity,
 } from "@/lib/api";
 
-const SEVERITIES: { id: NotificationSeverity; label: string; tint: string }[] = [
-  { id: "INFO", label: "Info", tint: "bg-sky-500/15 border-sky-500/40 text-sky-300" },
-  { id: "SUCCESS", label: "Success", tint: "bg-emerald-500/15 border-emerald-500/40 text-emerald-300" },
-  { id: "WARNING", label: "Warning", tint: "bg-amber-500/15 border-amber-500/40 text-amber-300" },
-  { id: "CRITICAL", label: "Critical", tint: "bg-red-500/15 border-red-500/40 text-red-300" },
-  { id: "MAINTENANCE", label: "Maintenance", tint: "bg-violet-500/15 border-violet-500/40 text-violet-300" },
-];
+const SEVERITIES: { id: NotificationSeverity; label: string; tint: string }[] =
+  [
+    {
+      id: "INFO",
+      label: "Info",
+      tint: "bg-sky-500/15 border-sky-500/40 text-sky-300",
+    },
+    {
+      id: "SUCCESS",
+      label: "Success",
+      tint: "bg-emerald-500/15 border-emerald-500/40 text-emerald-300",
+    },
+    {
+      id: "WARNING",
+      label: "Warning",
+      tint: "bg-amber-500/15 border-amber-500/40 text-amber-300",
+    },
+    {
+      id: "CRITICAL",
+      label: "Critical",
+      tint: "bg-red-500/15 border-red-500/40 text-red-300",
+    },
+    {
+      id: "MAINTENANCE",
+      label: "Maintenance",
+      tint: "bg-violet-500/15 border-violet-500/40 text-violet-300",
+    },
+  ];
 
 interface Props {
   onClose: () => void;
@@ -56,7 +77,10 @@ export function CampaignComposeModal({ onClose, onSent }: Props) {
       setErr("Select at least one channel.");
       return;
     }
-    if (audience.audienceType === "USER_IDS" && (audience.audienceUserIds?.length ?? 0) === 0) {
+    if (
+      audience.audienceType === "USER_IDS" &&
+      (audience.audienceUserIds?.length ?? 0) === 0
+    ) {
       setErr("Select at least one user.");
       return;
     }
@@ -89,10 +113,20 @@ export function CampaignComposeModal({ onClose, onSent }: Props) {
       bodyClassName="min-h-0 space-y-4"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={pending}
+          >
             Cancel
           </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={pending}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={submit}
+            disabled={pending}
+          >
             {pending ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" /> Sending…
@@ -104,113 +138,117 @@ export function CampaignComposeModal({ onClose, onSent }: Props) {
         </>
       }
     >
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              Title <span className="text-red-400">*</span>
-            </Label>
-            <Input
-              className="mt-1"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={140}
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              Body <span className="text-red-400">*</span>
-            </Label>
-            <Textarea
-              className="mt-1 min-h-[100px]"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Link URL (optional)</Label>
-            <Input
-              className="mt-1"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://…"
-            />
-          </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">
+          Title <span className="text-red-400">*</span>
+        </Label>
+        <Input
+          className="mt-1"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={140}
+        />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">
+          Body <span className="text-red-400">*</span>
+        </Label>
+        <Textarea
+          className="mt-1 min-h-[100px]"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        />
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">
+          Link URL (optional)
+        </Label>
+        <Input
+          className="mt-1"
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          placeholder="https://…"
+        />
+      </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground">Severity</Label>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {SEVERITIES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSeverity(s.id)}
-                  className={`rounded-full border px-3 py-1 text-xs transition ${
-                    severity === s.id
-                      ? s.tint
-                      : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div>
+        <Label className="text-xs text-muted-foreground">Severity</Label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {SEVERITIES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSeverity(s.id)}
+              className={`rounded-full border px-3 py-1 text-xs transition ${
+                severity === s.id
+                  ? s.tint
+                  : "border-white/10 bg-white/[0.02] text-muted-foreground hover:bg-white/5"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground">Channels</Label>
-            <div className="mt-1 flex flex-wrap gap-3 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={inApp}
-                  onChange={(e) => setInApp(e.target.checked)}
-                />
-                In-app (notification bell)
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={emailOn}
-                  onChange={(e) => setEmailOn(e.target.checked)}
-                />
-                Email (Resend)
-              </label>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Email respects the recipient&apos;s notification preference and only sends to addresses
-              flagged as VALID.
-            </p>
-          </div>
-
-          <label className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+      <div>
+        <Label className="text-xs text-muted-foreground">Channels</Label>
+        <div className="mt-1 flex flex-wrap gap-3 text-sm">
+          <label className="flex items-center gap-2">
             <input
               type="checkbox"
-              className="mt-1"
-              checked={bypassPrefs}
-              onChange={(e) => setBypassPrefs(e.target.checked)}
+              checked={inApp}
+              onChange={(e) => setInApp(e.target.checked)}
             />
-            <span>
-              <span className="block font-medium text-amber-200">
-                Send to users who disabled notifications
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                Use only for emergency, security, or billing notices. Invalid or bouncing email
-                addresses are still skipped.
-              </span>
-            </span>
+            In-app (notification bell)
           </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={emailOn}
+              onChange={(e) => setEmailOn(e.target.checked)}
+            />
+            Email (Resend)
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Email respects the recipient&apos;s notification preference and only
+          sends to addresses flagged as VALID.
+        </p>
+      </div>
 
-          <div className="border-t border-white/10 pt-4">
-            <Label className="text-sm font-semibold text-foreground">Audience</Label>
-            <div className="mt-2">
-              <AudiencePicker value={audience} onChange={setAudience} />
-            </div>
-          </div>
+      <label className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={bypassPrefs}
+          onChange={(e) => setBypassPrefs(e.target.checked)}
+        />
+        <span>
+          <span className="block font-medium text-amber-200">
+            Send to users who disabled notifications
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            Use only for emergency, security, or billing notices. Invalid or
+            bouncing email addresses are still skipped.
+          </span>
+        </span>
+      </label>
 
-          {err && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {err}
-            </div>
-          )}
+      <div className="border-t border-white/10 pt-4">
+        <Label className="text-sm font-semibold text-foreground">
+          Audience
+        </Label>
+        <div className="mt-2">
+          <AudiencePicker value={audience} onChange={setAudience} />
+        </div>
+      </div>
+
+      {err && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {err}
+        </div>
+      )}
     </BaseModal>
   );
 }

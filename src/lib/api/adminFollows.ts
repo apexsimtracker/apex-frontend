@@ -59,22 +59,25 @@ export type AdminFollowEdgesParams = {
 };
 
 export async function fetchAdminFollowEdges(
-  params?: AdminFollowEdgesParams
+  params?: AdminFollowEdgesParams,
 ): Promise<AdminPaginated<AdminFollowEdgeRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
   if (params?.q?.trim()) sp.set("q", params.q.trim());
-  if (params?.followerId?.trim()) sp.set("followerId", params.followerId.trim());
-  if (params?.followingId?.trim()) sp.set("followingId", params.followingId.trim());
-  if (params?.createdSince?.trim()) sp.set("createdSince", params.createdSince.trim());
+  if (params?.followerId?.trim())
+    sp.set("followerId", params.followerId.trim());
+  if (params?.followingId?.trim())
+    sp.set("followingId", params.followingId.trim());
+  if (params?.createdSince?.trim())
+    sp.set("createdSince", params.createdSince.trim());
   if (params?.sort) sp.set("sort", params.sort);
   const qs = sp.toString();
   return fetchApi(
     "GET",
     `/api/admin/follows/edges${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -90,22 +93,25 @@ export type AdminFollowRequestsParams = {
 };
 
 export async function fetchAdminFollowRequests(
-  params?: AdminFollowRequestsParams
+  params?: AdminFollowRequestsParams,
 ): Promise<AdminPaginated<AdminFollowRequestRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
   if (params?.q?.trim()) sp.set("q", params.q.trim());
-  if (params?.followerId?.trim()) sp.set("followerId", params.followerId.trim());
-  if (params?.followingId?.trim()) sp.set("followingId", params.followingId.trim());
-  if (params?.ageMinDays != null) sp.set("ageMinDays", String(params.ageMinDays));
+  if (params?.followerId?.trim())
+    sp.set("followerId", params.followerId.trim());
+  if (params?.followingId?.trim())
+    sp.set("followingId", params.followingId.trim());
+  if (params?.ageMinDays != null)
+    sp.set("ageMinDays", String(params.ageMinDays));
   if (params?.sort) sp.set("sort", params.sort);
   const qs = sp.toString();
   return fetchApi(
     "GET",
     `/api/admin/follows/requests${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -188,13 +194,13 @@ export type AdminUserSocialGraph = {
 };
 
 export async function fetchAdminUserSocialGraph(
-  userId: string
+  userId: string,
 ): Promise<AdminUserSocialGraph> {
   return fetchApi(
     "GET",
     `/api/admin/follows/users/${encodeURIComponent(userId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -213,7 +219,7 @@ export type AdminUserFollowListKind =
 export async function fetchAdminUserFollowList(
   userId: string,
   kind: AdminUserFollowListKind,
-  params?: { page?: number; pageSize?: number; q?: string }
+  params?: { page?: number; pageSize?: number; q?: string },
 ): Promise<AdminPaginated<AdminUserFollowListRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -224,30 +230,30 @@ export async function fetchAdminUserFollowList(
     "GET",
     `/api/admin/follows/users/${encodeURIComponent(userId)}/${kind}${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function removeAdminFollow(
   followId: string,
-  reason: string | null
+  reason: string | null,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/follows/${encodeURIComponent(followId)}`,
     { reason: reason ?? "" },
-    false
+    false,
   );
 }
 
 export async function removeAdminFollowRequest(
   requestId: string,
-  reason: string | null
+  reason: string | null,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/follows/requests/${encodeURIComponent(requestId)}`,
     { reason: reason ?? "" },
-    false
+    false,
   );
 }

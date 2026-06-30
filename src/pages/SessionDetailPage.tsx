@@ -1,7 +1,15 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Share2, PenLine, Pencil, Trash2, Repeat, Timer, Flag } from "lucide-react";
+import {
+  Share2,
+  PenLine,
+  Pencil,
+  Trash2,
+  Repeat,
+  Timer,
+  Flag,
+} from "lucide-react";
 import { apiGet, deleteManualActivity, ApiError } from "@/lib/api";
 import { formatLapMs, formatLapDelta, formatCarName } from "@/lib/utils";
 import { formatTrackName } from "@/lib/tracks";
@@ -22,7 +30,10 @@ import {
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
-import { getDisplayPosition, shouldShowSessionPosition } from "@/lib/sessionKind";
+import {
+  getDisplayPosition,
+  shouldShowSessionPosition,
+} from "@/lib/sessionKind";
 import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   buildHighlightMapFromLaps,
@@ -92,7 +103,10 @@ type BackendLapLite = {
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
 
-function attachNormalizedLaps(session: SessionDetail, lapsPayload: unknown[] | null): SessionDetail {
+function attachNormalizedLaps(
+  session: SessionDetail,
+  lapsPayload: unknown[] | null,
+): SessionDetail {
   if (!lapsPayload || lapsPayload.length === 0) return session;
   return { ...session, laps: coerceSessionDetailLaps(lapsPayload) };
 }
@@ -100,15 +114,15 @@ function attachNormalizedLaps(session: SessionDetail, lapsPayload: unknown[] | n
 type SessionDetailResponse =
   | SessionDetail
   | {
-    session: SessionDetail;
-    laps?: BackendLapLite[];
-    trackName?: string | null;
-    carName?: string | null;
-    game?: string | null;
-    sim?: string | null;
-    proFeaturesLocked?: boolean;
-    ingestPath?: string | null;
-  };
+      session: SessionDetail;
+      laps?: BackendLapLite[];
+      trackName?: string | null;
+      carName?: string | null;
+      game?: string | null;
+      sim?: string | null;
+      proFeaturesLocked?: boolean;
+      ingestPath?: string | null;
+    };
 
 function parseSessionDetailApiResponse(data: SessionDetailResponse): {
   session: SessionDetail;
@@ -118,16 +132,26 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
   if (data && typeof data === "object" && "session" in (data as object)) {
     const d = data as Exclude<SessionDetailResponse, SessionDetail>;
     const base =
-      (d.session as any)?.session && typeof (d.session as any).session === "object"
+      (d.session as any)?.session &&
+      typeof (d.session as any).session === "object"
         ? ((d.session as any).session as SessionDetail)
         : d.session;
     const outer = d.session as any;
     const mergedSession: SessionDetail = {
       ...(outer && typeof outer === "object" ? outer : {}),
       ...(base && typeof base === "object" ? base : {}),
-      trackName: (base as any)?.trackName ?? (outer as any)?.trackName ?? (d as any).trackName ?? null,
-      carName: (base as any)?.carName ?? (outer as any)?.carName ?? (d as any).carName ?? null,
-      game: (base as any)?.game ?? (outer as any)?.game ?? (d as any).game ?? null,
+      trackName:
+        (base as any)?.trackName ??
+        (outer as any)?.trackName ??
+        (d as any).trackName ??
+        null,
+      carName:
+        (base as any)?.carName ??
+        (outer as any)?.carName ??
+        (d as any).carName ??
+        null,
+      game:
+        (base as any)?.game ?? (outer as any)?.game ?? (d as any).game ?? null,
       sim: (base as any)?.sim ?? (outer as any)?.sim ?? (d as any).sim ?? null,
       ingestPath:
         (base as any)?.ingestPath ??
@@ -137,17 +161,25 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
     };
     const lapsPayload =
       (Array.isArray(d.laps) ? d.laps : null) ??
-      (Array.isArray((d as any).laps) ? ((d as any).laps as unknown[]) : null) ??
-      (Array.isArray((outer as any)?.laps) ? ((outer as any).laps as unknown[]) : null) ??
-      (Array.isArray((base as any)?.laps) ? ((base as any).laps as unknown[]) : null);
+      (Array.isArray((d as any).laps)
+        ? ((d as any).laps as unknown[])
+        : null) ??
+      (Array.isArray((outer as any)?.laps)
+        ? ((outer as any).laps as unknown[])
+        : null) ??
+      (Array.isArray((base as any)?.laps)
+        ? ((base as any).laps as unknown[])
+        : null);
 
     const apexRaw = normalizeApexAnalysisPayload(
       (d as { apexAnalysis?: unknown }).apexAnalysis ??
-        (mergedSession as { apexAnalysis?: unknown }).apexAnalysis
+        (mergedSession as { apexAnalysis?: unknown }).apexAnalysis,
     );
     return {
       session: attachNormalizedLaps(mergedSession, lapsPayload),
-      proFeaturesLocked: Boolean((d as { proFeaturesLocked?: boolean }).proFeaturesLocked),
+      proFeaturesLocked: Boolean(
+        (d as { proFeaturesLocked?: boolean }).proFeaturesLocked,
+      ),
       apexAnalysis: apexRaw,
     };
   }
@@ -167,7 +199,12 @@ function parseSessionDetailApiResponse(data: SessionDetailResponse): {
 }
 
 function normalizeApexAnalysisPayload(raw: unknown): ApexAnalysisPayload {
-  if (raw && typeof raw === "object" && !Array.isArray(raw) && "locked" in raw) {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    !Array.isArray(raw) &&
+    "locked" in raw
+  ) {
     return raw as ApexAnalysisPayload;
   }
   return { locked: false, insights: [] };
@@ -178,17 +215,17 @@ export type SessionSource = "TELEMETRY" | "MANUAL_ACTIVITY" | "AGENT" | string;
 export type SessionDetail = {
   id: string;
   sessionType?:
-  | "PRACTICE"
-  | "RACE"
-  | "SPRINT"
-  | "QUALIFY"
-  | "QUALIFYING"
-  | "MANUAL_ACTIVITY"
-  | "WARMUP"
-  | "TIME_TRIAL"
-  | "UNKNOWN"
-  | string
-  | null;
+    | "PRACTICE"
+    | "RACE"
+    | "SPRINT"
+    | "QUALIFY"
+    | "QUALIFYING"
+    | "MANUAL_ACTIVITY"
+    | "WARMUP"
+    | "TIME_TRIAL"
+    | "UNKNOWN"
+    | string
+    | null;
   sim?: string | null;
   game?: string | null;
   track: string | null;
@@ -268,7 +305,8 @@ export default function SessionDetailPage() {
   const shareUrl = useMemo(() => (id ? publicSessionUrl(id) : ""), [id]);
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked === true;
   const apexAnalysis =
-    sessionPayload?.apexAnalysis ?? ({ locked: false, insights: [] } as ApexAnalysisPayload);
+    sessionPayload?.apexAnalysis ??
+    ({ locked: false, insights: [] } as ApexAnalysisPayload);
 
   const laps = useMemo(() => {
     if (!session) return [] as NormalizedLap[];
@@ -279,7 +317,7 @@ export default function SessionDetailPage() {
 
   const sessionMinima = useMemo(
     () => session?.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA,
-    [session?.sessionTimingMinima]
+    [session?.sessionTimingMinima],
   );
 
   const lapHighlights = useMemo(() => {
@@ -292,8 +330,9 @@ export default function SessionDetailPage() {
   }, [laps]);
 
   const idealLapMs = useMemo(() => {
-    const fromApi = (session as { idealLap?: { lapTimeMs?: number | null } | null })?.idealLap
-      ?.lapTimeMs;
+    const fromApi = (
+      session as { idealLap?: { lapTimeMs?: number | null } | null }
+    )?.idealLap?.lapTimeMs;
     if (fromApi != null && Number.isFinite(fromApi)) return fromApi;
     if (
       sessionMinima.s1Ms != null &&
@@ -321,8 +360,10 @@ export default function SessionDetailPage() {
   })();
 
   const error = isError
-    ? sessionDetailDeniedMessage ??
-    (queryError instanceof Error ? queryError.message : "Failed to load session")
+    ? (sessionDetailDeniedMessage ??
+      (queryError instanceof Error
+        ? queryError.message
+        : "Failed to load session"))
     : null;
 
   if (!id) {
@@ -341,7 +382,12 @@ export default function SessionDetailPage() {
               <SkeletonBlock height={12} width={72} />
               <SkeletonBlock height={24} width={64} rounded="lg" />
             </div>
-            <SkeletonBlock height={32} width={280} className="mt-1" rounded="lg" />
+            <SkeletonBlock
+              height={32}
+              width={280}
+              className="mt-1"
+              rounded="lg"
+            />
           </div>
           <div className="flex shrink-0 gap-2">
             <SkeletonBlock height={40} width={88} rounded="lg" />
@@ -364,8 +410,14 @@ export default function SessionDetailPage() {
           className="mb-8 w-full rounded-lg border border-white/10"
         />
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SkeletonBlock height={200} className="rounded-lg border border-white/10" />
-          <SkeletonBlock height={200} className="rounded-lg border border-white/10" />
+          <SkeletonBlock
+            height={200}
+            className="rounded-lg border border-white/10"
+          />
+          <SkeletonBlock
+            height={200}
+            className="rounded-lg border border-white/10"
+          />
         </div>
       </div>
     );
@@ -429,14 +481,14 @@ export default function SessionDetailPage() {
   const canShowMoreLaps = !showAllLaps && laps.length > 6;
   const lapTimes = sanitizeLapTimesForConsistency(laps.map((l) => l.timeMs));
   const consistency =
-    session.consistencyScore != null && Number.isFinite(session.consistencyScore)
+    session.consistencyScore != null &&
+    Number.isFinite(session.consistencyScore)
       ? Math.round(session.consistencyScore)
       : calcConsistencyScore(lapTimes);
   const lapTimesForTrend = laps.map((l) => l.timeMs);
   const trendBestLapMs =
     lapTimesForTrend.length > 0 ? Math.min(...lapTimesForTrend) : null;
-  const firstLapMs =
-    lapTimesForTrend.length > 0 ? lapTimesForTrend[0] : null;
+  const firstLapMs = lapTimesForTrend.length > 0 ? lapTimesForTrend[0] : null;
   const improvementMs =
     firstLapMs != null && trendBestLapMs != null
       ? firstLapMs - trendBestLapMs
@@ -516,7 +568,7 @@ export default function SessionDetailPage() {
                   navigate("/manual", {
                     state: {
                       logAgain: {
-                        sim: (resolved.sim ?? session.sim) ?? undefined,
+                        sim: resolved.sim ?? session.sim ?? undefined,
                         trackId: session.trackId ?? undefined,
                         carId: session.carId ?? undefined,
                       },
@@ -562,12 +614,13 @@ export default function SessionDetailPage() {
       </div>
 
       <div
-        className={`mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${showPosition && showQualiGrid
+        className={`mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${
+          showPosition && showQualiGrid
             ? "lg:grid-cols-5"
             : showPosition || showQualiGrid
               ? "lg:grid-cols-4"
               : "lg:grid-cols-3"
-          }`}
+        }`}
       >
         {showPosition && (
           <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
@@ -588,8 +641,9 @@ export default function SessionDetailPage() {
           </div>
         )}
         <div
-          className={`rounded-lg border border-white/10 bg-white/[0.03] p-4 ${!hasNoLaps ? "sm:col-span-2 lg:col-span-1" : ""
-            }`}
+          className={`rounded-lg border border-white/10 bg-white/[0.03] p-4 ${
+            !hasNoLaps ? "sm:col-span-2 lg:col-span-1" : ""
+          }`}
         >
           <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
             Best Lap
@@ -602,21 +656,29 @@ export default function SessionDetailPage() {
               {isRaceKind(session) ? (
                 <>
                   The{" "}
-                  <Link to="/leaderboards" className="text-white/55 underline underline-offset-2 hover:text-white/80">
+                  <Link
+                    to="/leaderboards"
+                    className="text-white/55 underline underline-offset-2 hover:text-white/80"
+                  >
                     fastest lap
                   </Link>{" "}
-                  board lists the top ten drivers across the platform. Your session can still have the best lap shown
-                  here without appearing on that list.
+                  board lists the top ten drivers across the platform. Your
+                  session can still have the best lap shown here without
+                  appearing on that list.
                 </>
               ) : (
                 <>
                   The{" "}
-                  <Link to="/leaderboards" className="text-white/55 underline underline-offset-2 hover:text-white/80">
+                  <Link
+                    to="/leaderboards"
+                    className="text-white/55 underline underline-offset-2 hover:text-white/80"
+                  >
                     fastest lap
                   </Link>{" "}
-                  leaderboard uses race laps only (telemetry race/sprint, or manual activity with session kind Race).
-                  Practice and qualifying laps are ignored there—this session&apos;s badge above shows how it was
-                  logged.
+                  leaderboard uses race laps only (telemetry race/sprint, or
+                  manual activity with session kind Race). Practice and
+                  qualifying laps are ignored there—this session&apos;s badge
+                  above shows how it was logged.
                 </>
               )}
             </p>
@@ -626,9 +688,7 @@ export default function SessionDetailPage() {
           <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
             Total Laps
           </p>
-          <p className="text-lg font-semibold text-white">
-            {totalLapsCount}
-          </p>
+          <p className="text-lg font-semibold text-white">{totalLapsCount}</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
           <p className="mb-1 text-xs uppercase tracking-wider text-white/50">
@@ -681,7 +741,9 @@ export default function SessionDetailPage() {
         {proFeaturesLocked ? (
           <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs uppercase tracking-wider text-white/50">Ideal Lap</span>
+              <span className="text-xs uppercase tracking-wider text-white/50">
+                Ideal Lap
+              </span>
               <Link
                 to="/pricing"
                 className="text-xs font-medium text-amber-400 hover:text-amber-300"
@@ -696,7 +758,9 @@ export default function SessionDetailPage() {
         ) : (
           <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
             <div className="mb-1.5 flex items-center justify-between gap-2">
-              <span className="text-xs uppercase tracking-wider text-white/50">Ideal Lap</span>
+              <span className="text-xs uppercase tracking-wider text-white/50">
+                Ideal Lap
+              </span>
             </div>
             <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-4">
               <div className="text-right">
@@ -704,7 +768,9 @@ export default function SessionDetailPage() {
                   S1
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s1Ms != null ? formatLapMs(sessionMinima.s1Ms) : "—"}
+                  {sessionMinima.s1Ms != null
+                    ? formatLapMs(sessionMinima.s1Ms)
+                    : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -712,7 +778,9 @@ export default function SessionDetailPage() {
                   S2
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s2Ms != null ? formatLapMs(sessionMinima.s2Ms) : "—"}
+                  {sessionMinima.s2Ms != null
+                    ? formatLapMs(sessionMinima.s2Ms)
+                    : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -720,7 +788,9 @@ export default function SessionDetailPage() {
                   S3
                 </div>
                 <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                  {sessionMinima.s3Ms != null ? formatLapMs(sessionMinima.s3Ms) : "—"}
+                  {sessionMinima.s3Ms != null
+                    ? formatLapMs(sessionMinima.s3Ms)
+                    : "—"}
                 </div>
               </div>
               <div className="text-right">
@@ -762,10 +832,7 @@ export default function SessionDetailPage() {
             <tbody>
               {visibleLaps.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-10 text-center"
-                  >
+                  <td colSpan={6} className="px-4 py-10 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
                         <Timer className="size-5 text-white/45" />
@@ -784,16 +851,16 @@ export default function SessionDetailPage() {
                     bestLapMsFromLaps != null &&
                     row.timeMs === bestLapMsFromLaps;
                   const deltaContent: ReactNode =
-                    bestLapMsFromLaps == null
-                      ? "—"
-                      : row.timeMs === bestLapMsFromLaps
-                        ? (
-                          <span className="inline-flex items-center gap-1">
-                            <Flag className="size-3.5 shrink-0" aria-hidden />
-                            BEST
-                          </span>
-                        )
-                        : formatLapDeltaMsForDisplay(row.timeMs - bestLapMsFromLaps);
+                    bestLapMsFromLaps == null ? (
+                      "—"
+                    ) : row.timeMs === bestLapMsFromLaps ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Flag className="size-3.5 shrink-0" aria-hidden />
+                        BEST
+                      </span>
+                    ) : (
+                      formatLapDeltaMsForDisplay(row.timeMs - bestLapMsFromLaps)
+                    );
                   return (
                     <tr
                       key={`lap-${row.lap}-${index}`}
@@ -808,31 +875,37 @@ export default function SessionDetailPage() {
                         <span className="inline-flex items-center gap-1.5">
                           {row.lap}
                           {isFastest && (
-                            <Flag className="size-4 shrink-0 text-white/90" aria-hidden />
+                            <Flag
+                              className="size-4 shrink-0 text-white/90"
+                              aria-hidden
+                            />
                           )}
                         </span>
                       </td>
                       <td
-                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${
+                          proFeaturesLocked
                             ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s1)
-                          }`}
+                        }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector1Ms)}
                       </td>
                       <td
-                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${
+                          proFeaturesLocked
                             ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s2)
-                          }`}
+                        }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector2Ms)}
                       </td>
                       <td
-                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${proFeaturesLocked
+                        className={`p-2 text-right font-mono text-sm sm:px-4 sm:py-3 ${
+                          proFeaturesLocked
                             ? "select-none text-white/40 blur-sm"
                             : timingHighlightClass(rowHighlights.s3)
-                          }`}
+                        }`}
                       >
                         {proFeaturesLocked ? "—" : formatLapMs(row.sector3Ms)}
                       </td>
@@ -846,10 +919,11 @@ export default function SessionDetailPage() {
                         </span>
                       </td>
                       <td
-                        className={`p-2 text-right sm:px-4 sm:py-3 ${row.timeMs === bestLapMsFromLaps
+                        className={`p-2 text-right sm:px-4 sm:py-3 ${
+                          row.timeMs === bestLapMsFromLaps
                             ? "text-sm font-medium text-white"
                             : "text-sm text-white/60"
-                          }`}
+                        }`}
                       >
                         {deltaContent}
                       </td>
@@ -873,7 +947,10 @@ export default function SessionDetailPage() {
         </div>
 
         {id && (
-          <TelemetryAnalysisSection sessionId={id} ingestPath={session.ingestPath} />
+          <TelemetryAnalysisSection
+            sessionId={id}
+            ingestPath={session.ingestPath}
+          />
         )}
 
         <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
@@ -906,9 +983,7 @@ export default function SessionDetailPage() {
         </div>
 
         <div className="mt-10 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
-          <h3 className="text-lg font-semibold text-white">
-            Apex Analysis
-          </h3>
+          <h3 className="text-lg font-semibold text-white">Apex Analysis</h3>
           {apexInsightsLocked ? (
             <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
               <div className="flex items-center justify-between gap-2">
@@ -931,8 +1006,8 @@ export default function SessionDetailPage() {
             <div className="mt-4 space-y-4">
               {apexInsightLines.length === 0 ? (
                 <p className="text-sm text-white/50">
-                  No coaching insights for this session yet. Upload telemetry with lap
-                  data to generate analysis.
+                  No coaching insights for this session yet. Upload telemetry
+                  with lap data to generate analysis.
                 </p>
               ) : (
                 apexInsightLines.map((line, idx) => (
@@ -961,7 +1036,7 @@ export default function SessionDetailPage() {
                       : "was slower"}{" "}
                     by{" "}
                     {formatLapDelta(
-                      Math.abs(session.compareToPrevious.bestLapDiffMs)
+                      Math.abs(session.compareToPrevious.bestLapDiffMs),
                     )}
                   </div>
                 )}
@@ -973,7 +1048,7 @@ export default function SessionDetailPage() {
                       : "was slower"}{" "}
                     by{" "}
                     {formatLapDelta(
-                      Math.abs(session.compareToPrevious.medianLapDiffMs)
+                      Math.abs(session.compareToPrevious.medianLapDiffMs),
                     )}
                   </div>
                 )}
@@ -985,7 +1060,7 @@ export default function SessionDetailPage() {
                       : "decreased"}{" "}
                     by{" "}
                     {Math.abs(
-                      session.compareToPrevious.consistencyDiffPct
+                      session.compareToPrevious.consistencyDiffPct,
                     ).toFixed(1)}
                     %
                   </div>

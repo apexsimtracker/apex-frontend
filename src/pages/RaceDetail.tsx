@@ -176,7 +176,9 @@ export default function RaceDetail() {
                 <h1 className="mb-2 text-3xl font-bold text-foreground">
                   {race.track}
                 </h1>
-                <p className="text-muted-foreground">{formatSimEnum(race.sim)}</p>
+                <p className="text-muted-foreground">
+                  {formatSimEnum(race.sim)}
+                </p>
               </div>
               <div className="text-right">
                 <p className="mb-1 text-sm text-muted-foreground">
@@ -204,7 +206,9 @@ export default function RaceDetail() {
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">
                   Car
                 </p>
-                <p className="font-semibold text-foreground">{formatCarName(race.car)}</p>
+                <p className="font-semibold text-foreground">
+                  {formatCarName(race.car)}
+                </p>
               </div>
               <div className="rounded-lg bg-secondary p-4">
                 <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">

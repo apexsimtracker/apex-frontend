@@ -36,7 +36,9 @@ export default function DeleteConfirmModal({
       await onConfirm();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to delete. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Failed to delete. Please try again.",
       );
       setIsDeleting(false);
     }
@@ -78,16 +80,16 @@ export default function DeleteConfirmModal({
       }
       bodyClassName="space-y-4 text-center"
     >
-        <div className="flex justify-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="size-6 text-destructive" />
-          </div>
+      <div className="flex justify-center">
+        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+          <AlertTriangle className="size-6 text-destructive" />
         </div>
-        {error && (
-          <div className="rounded-lg bg-destructive/10 px-3 py-2">
-            <p className="text-center text-sm text-destructive">{error}</p>
-          </div>
-        )}
+      </div>
+      {error && (
+        <div className="rounded-lg bg-destructive/10 px-3 py-2">
+          <p className="text-center text-sm text-destructive">{error}</p>
+        </div>
+      )}
     </BaseAlertDialog>
   );
 }

@@ -17,7 +17,10 @@ import {
   FormRootMessage,
 } from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
-import { signupFormSchema, type SignupFormValues } from "@/lib/validation/authPages";
+import {
+  signupFormSchema,
+  type SignupFormValues,
+} from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
@@ -42,7 +45,11 @@ export default function Signup() {
     setLoading(true);
     const trimmedEmail = values.email.trim();
     try {
-      const data = await authRegister(trimmedEmail, values.password, values.name.trim() || undefined);
+      const data = await authRegister(
+        trimmedEmail,
+        values.password,
+        values.name.trim() || undefined,
+      );
       const token = data.accessToken ?? data.token;
       const hasToken = token && typeof token === "string";
 
@@ -50,10 +57,13 @@ export default function Signup() {
         localStorage.setItem("apex_token", token as string);
         persistSessionTokenFromAuthPayload(data as { sessionToken?: string });
         try {
-          await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+          await queryClient.fetchQuery({
+            queryKey: AUTH_ME_QUERY_KEY,
+            queryFn: authMe,
+          });
           prefetchHomeWeeklyAfterAuth(
             queryClient,
-            queryClient.getQueryData(AUTH_ME_QUERY_KEY)
+            queryClient.getQueryData(AUTH_ME_QUERY_KEY),
           );
         } catch (meErr) {
           localStorage.removeItem("apex_token");
@@ -62,7 +72,9 @@ export default function Signup() {
           form.setError("root", {
             type: "server",
             message:
-              meErr instanceof Error ? meErr.message : "Could not load your session. Please try signing in.",
+              meErr instanceof Error
+                ? meErr.message
+                : "Could not load your session. Please try signing in.",
           });
           return;
         }
@@ -73,12 +85,17 @@ export default function Signup() {
       }
 
       sessionStorage.setItem("apex_verify_email", trimmedEmail);
-      navigate("/verify-email", { replace: true, state: { email: trimmedEmail } });
+      navigate("/verify-email", {
+        replace: true,
+        state: { email: trimmedEmail },
+      });
     } catch (err) {
       form.setError("root", {
         type: "server",
         message:
-          err instanceof Error ? err.message : "Signup failed. Email may already exist.",
+          err instanceof Error
+            ? err.message
+            : "Signup failed. Email may already exist.",
       });
     } finally {
       setLoading(false);
@@ -94,8 +111,13 @@ export default function Signup() {
         noindex
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Create account</h1>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="w-full space-y-4"
+        >
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Create account
+          </h1>
           {authRedirect.message && (
             <p className="text-sm text-muted-foreground" role="status">
               {authRedirect.message}

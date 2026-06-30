@@ -62,8 +62,10 @@ const SUPPORTED_SIMS: Array<{
     },
     detail: {
       macos: "Automatic iRacing session log capture is currently Windows-only.",
-      windows: "Watches and uploads .ibt session log files when disk telemetry is enabled.",
-      linux: "Automatic iRacing session log capture is not currently available on Linux.",
+      windows:
+        "Watches and uploads .ibt session log files when disk telemetry is enabled.",
+      linux:
+        "Automatic iRacing session log capture is not currently available on Linux.",
     },
   },
   {
@@ -76,8 +78,10 @@ const SUPPORTED_SIMS: Array<{
     },
     detail: {
       macos: "LMU telemetry recording support is currently Windows-only.",
-      windows: "Watches telemetry recordings and uploads completed LMU sessions automatically.",
-      linux: "LMU telemetry auto-discovery is not currently available on Linux.",
+      windows:
+        "Watches telemetry recordings and uploads completed LMU sessions automatically.",
+      linux:
+        "LMU telemetry auto-discovery is not currently available on Linux.",
     },
   },
 ];
@@ -147,20 +151,24 @@ export default function Agent() {
       if (err instanceof ApiError && err.code === "AGENT_DOWNLOAD_DISABLED") {
         toast.error("Download temporarily unavailable", {
           description:
-            err.message || "Agent downloads are disabled. Please try again later.",
+            err.message ||
+            "Agent downloads are disabled. Please try again later.",
         });
         return;
       }
       if (err instanceof ApiError && err.code === "AGENT_NOT_AVAILABLE") {
         toast.error("Download unavailable", {
           description:
-            err.message || "No installer is configured on the server. Please try again later.",
+            err.message ||
+            "No installer is configured on the server. Please try again later.",
         });
         return;
       }
       toast.error("Download failed", {
         description:
-          err instanceof ApiError ? err.message : "Unable to start download. Please try again.",
+          err instanceof ApiError
+            ? err.message
+            : "Unable to start download. Please try again.",
       });
     } finally {
       setIsDownloading(false);
@@ -169,7 +177,12 @@ export default function Agent() {
 
   return (
     <>
-      <PageMeta title={agentTitle} description={agentDescription} path={AGENT_PATH} noindex />
+      <PageMeta
+        title={agentTitle}
+        description={agentDescription}
+        path={AGENT_PATH}
+        noindex
+      />
       <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
         <div className="mb-8 text-center sm:mb-10">
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-white/10 bg-muted/30">
@@ -184,15 +197,18 @@ export default function Agent() {
         </div>
 
         <div className="mb-6">
-          <AgentPlatformSelector selectedOs={selectedOs} onSelect={setSelectedOs} />
+          <AgentPlatformSelector
+            selectedOs={selectedOs}
+            onSelect={setSelectedOs}
+          />
         </div>
 
         {showWelcomeBanner && isPro && (
           <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-foreground">
             <p className="font-medium text-green-400">Welcome to Apex Pro!</p>
             <p className="mt-1 text-muted-foreground">
-              Download the agent below, then sign in with the same email and password you use on
-              this website.
+              Download the agent below, then sign in with the same email and
+              password you use on this website.
             </p>
             <button
               type="button"
@@ -213,9 +229,11 @@ export default function Agent() {
               What it does
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              Apex Agent runs quietly in the {selectedOs === "macos" ? "menu bar" : "system tray"}.
-              When you finish a session in a supported simulator, it detects the completed data and
-              uploads telemetry to your Apex account in the background.
+              Apex Agent runs quietly in the{" "}
+              {selectedOs === "macos" ? "menu bar" : "system tray"}. When you
+              finish a session in a supported simulator, it detects the
+              completed data and uploads telemetry to your Apex account in the
+              background.
             </p>
           </section>
 
@@ -234,11 +252,15 @@ export default function Agent() {
                     <div className="flex items-center gap-3">
                       <sim.icon
                         className={`size-4 shrink-0 ${
-                          isSupported ? "text-green-500" : "text-muted-foreground/50"
+                          isSupported
+                            ? "text-green-500"
+                            : "text-muted-foreground/50"
                         }`}
                         aria-hidden
                       />
-                      <span className="text-sm font-medium text-foreground">{sim.name}</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {sim.name}
+                      </span>
                       <span className="ml-auto text-xs text-muted-foreground">
                         {simStatusLabel(isSupported)}
                       </span>
@@ -263,7 +285,8 @@ export default function Agent() {
                 </span>
                 <span>
                   Open Apex Agent from your{" "}
-                  {selectedOs === "macos" ? "menu bar" : "system tray"} (look for the Apex icon).
+                  {selectedOs === "macos" ? "menu bar" : "system tray"} (look
+                  for the Apex icon).
                 </span>
               </li>
               <li className="flex gap-3">
@@ -271,8 +294,12 @@ export default function Agent() {
                   2
                 </span>
                 <span>
-                  Sign in with the <strong className="font-medium text-foreground">same email and password</strong>{" "}
-                  as your {COMPANY_NAME} account. No separate activation code is required.
+                  Sign in with the{" "}
+                  <strong className="font-medium text-foreground">
+                    same email and password
+                  </strong>{" "}
+                  as your {COMPANY_NAME} account. No separate activation code is
+                  required.
                 </span>
               </li>
               <li className="flex gap-3">
@@ -280,7 +307,8 @@ export default function Agent() {
                   3
                 </span>
                 <span>
-                  The agent minimizes to the {selectedOs === "macos" ? "menu bar" : "system tray"} and
+                  The agent minimizes to the{" "}
+                  {selectedOs === "macos" ? "menu bar" : "system tray"} and
                   uploads sessions automatically while you race.
                 </span>
               </li>
@@ -328,7 +356,8 @@ export default function Agent() {
 
           {!authLoading && !isPro && (
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Apex Pro required for automatic telemetry uploads and agent download.
+              Apex Pro required for automatic telemetry uploads and agent
+              download.
             </p>
           )}
         </div>
@@ -351,7 +380,11 @@ export default function Agent() {
         description="Automatic telemetry uploads and the Apex Agent installer are available with Apex Pro."
         footer={
           <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" className="border-white/15" onClick={() => setUpgradeModalOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-white/15"
+              onClick={() => setUpgradeModalOpen(false)}
+            >
               Not now
             </Button>
             <Button
@@ -369,23 +402,35 @@ export default function Agent() {
       >
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex items-start gap-2">
-            <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" aria-hidden />
+            <CheckCircle
+              className="mt-0.5 size-4 shrink-0 text-green-500"
+              aria-hidden
+            />
             Background F1 25 UDP telemetry capture
           </li>
           {selectedOs === "windows" && (
             <li className="flex items-start gap-2">
-              <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" aria-hidden />
+              <CheckCircle
+                className="mt-0.5 size-4 shrink-0 text-green-500"
+                aria-hidden
+              />
               Automatic iRacing session log uploads
             </li>
           )}
           {selectedOs === "windows" && (
             <li className="flex items-start gap-2">
-              <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" aria-hidden />
+              <CheckCircle
+                className="mt-0.5 size-4 shrink-0 text-green-500"
+                aria-hidden
+              />
               Automatic Le Mans Ultimate telemetry uploads
             </li>
           )}
           <li className="flex items-start gap-2">
-            <CheckCircle className="mt-0.5 size-4 shrink-0 text-green-500" aria-hidden />
+            <CheckCircle
+              className="mt-0.5 size-4 shrink-0 text-green-500"
+              aria-hidden
+            />
             Unlimited session history and full analytics
           </li>
         </ul>

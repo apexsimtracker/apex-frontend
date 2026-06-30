@@ -22,7 +22,7 @@ type MeResponse = {
 export async function loginViaApi(
   request: APIRequestContext,
   email: string,
-  password: string
+  password: string,
 ): Promise<AuthSession> {
   const { apiUrl } = getE2eEnv();
 
@@ -59,7 +59,10 @@ export async function loginViaApi(
   return { token, sessionToken, userId: me.id.trim() };
 }
 
-export function authHeaders(token: string, sessionToken: string): Record<string, string> {
+export function authHeaders(
+  token: string,
+  sessionToken: string,
+): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
     "X-Apex-Session": sessionToken,
@@ -67,20 +70,23 @@ export function authHeaders(token: string, sessionToken: string): Record<string,
   };
 }
 
-export async function applyAuthToPage(page: Page, auth: AuthSession): Promise<void> {
+export async function applyAuthToPage(
+  page: Page,
+  auth: AuthSession,
+): Promise<void> {
   await page.addInitScript(
     ({ token, session }) => {
       localStorage.setItem("apex_token", token);
       localStorage.setItem("apex_session_token", session);
     },
-    { token: auth.token, session: auth.sessionToken }
+    { token: auth.token, session: auth.sessionToken },
   );
 }
 
 export async function gotoAuthenticated(
   page: Page,
   auth: AuthSession,
-  path: string
+  path: string,
 ): Promise<void> {
   await applyAuthToPage(page, auth);
   await page.goto(path);
@@ -100,19 +106,21 @@ export async function loginViaUi(
   page: Page,
   email: string,
   password: string,
-  returnTo = "/pricing"
+  returnTo = "/pricing",
 ): Promise<void> {
   const next = encodeURIComponent(returnTo);
   await page.goto(`/login?next=${next}`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL((url) => matchesReturnPath(url, returnTo), { timeout: 30_000 });
+  await page.waitForURL((url) => matchesReturnPath(url, returnTo), {
+    timeout: 30_000,
+  });
 }
 
 export async function logoutViaApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/auth/logout`, {

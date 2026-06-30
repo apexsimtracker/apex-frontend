@@ -6,10 +6,7 @@ import {
   APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
   APEX_SESSION_TOKEN_KEY,
 } from "@/auth/token";
-import {
-  APEX_TOKEN_ADMIN_KEY,
-  isImpersonating,
-} from "@/lib/impersonation";
+import { APEX_TOKEN_ADMIN_KEY, isImpersonating } from "@/lib/impersonation";
 
 /**
  * Fixed control to leave impersonation. Restores the admin JWT (and browser session token)
@@ -39,12 +36,16 @@ export default function ImpersonationExitFab() {
   const exit = () => {
     const admin = localStorage.getItem(APEX_TOKEN_ADMIN_KEY);
     if (!admin?.trim()) {
-      toast.error("Could not restore admin session. Sign out and sign in again.");
+      toast.error(
+        "Could not restore admin session. Sign out and sign in again.",
+      );
       return;
     }
     localStorage.setItem("apex_token", admin);
     localStorage.removeItem(APEX_TOKEN_ADMIN_KEY);
-    const adminSession = localStorage.getItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
+    const adminSession = localStorage.getItem(
+      APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
+    );
     if (adminSession?.trim()) {
       localStorage.setItem(APEX_SESSION_TOKEN_KEY, adminSession.trim());
     } else {
@@ -52,7 +53,7 @@ export default function ImpersonationExitFab() {
     }
     localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
     window.dispatchEvent(
-      new CustomEvent("apex:auth", { detail: { exitImpersonation: true } })
+      new CustomEvent("apex:auth", { detail: { exitImpersonation: true } }),
     );
     navigate("/admin/users", { replace: true });
   };

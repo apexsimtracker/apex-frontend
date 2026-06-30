@@ -7,10 +7,7 @@ import {
   fetchAdminAuthSessionsMetrics,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
-import {
-  BaseAlertDialog,
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,7 +34,10 @@ const SEARCH_DEBOUNCE_MS = 200;
 function formatTs(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   } catch {
     return iso;
   }
@@ -62,17 +62,22 @@ export function AdminWebSignInsPanel() {
 
   const [sessionPage, setSessionPage] = useState(1);
   const [sessionSearchInput, setSessionSearchInput] = useState("");
-  const debouncedSessionSearch = useDebouncedValue(sessionSearchInput, SEARCH_DEBOUNCE_MS);
+  const debouncedSessionSearch = useDebouncedValue(
+    sessionSearchInput,
+    SEARCH_DEBOUNCE_MS,
+  );
   const [sessionSuspiciousOnly, setSessionSuspiciousOnly] = useState(false);
 
   const sessionListParams = useMemo(
     () => ({
       page: sessionPage,
       pageSize: 20,
-      ...(debouncedSessionSearch.trim() ? { q: debouncedSessionSearch.trim() } : {}),
+      ...(debouncedSessionSearch.trim()
+        ? { q: debouncedSessionSearch.trim() }
+        : {}),
       ...(sessionSuspiciousOnly ? { suspiciousOnly: true as const } : {}),
     }),
-    [sessionPage, debouncedSessionSearch, sessionSuspiciousOnly]
+    [sessionPage, debouncedSessionSearch, sessionSuspiciousOnly],
   );
 
   useEffect(() => {
@@ -80,7 +85,9 @@ export function AdminWebSignInsPanel() {
   }, [debouncedSessionSearch, sessionSuspiciousOnly]);
 
   useEffect(() => {
-    void qc.invalidateQueries({ queryKey: ["admin", "metrics", "authSessions"] });
+    void qc.invalidateQueries({
+      queryKey: ["admin", "metrics", "authSessions"],
+    });
   }, [qc]);
 
   const sessionsQuery = useQuery({
@@ -88,7 +95,9 @@ export function AdminWebSignInsPanel() {
     queryFn: () => fetchAdminAuthSessionUsersList(sessionListParams),
   });
 
-  const [sessionModalUserId, setSessionModalUserId] = useState<string | null>(null);
+  const [sessionModalUserId, setSessionModalUserId] = useState<string | null>(
+    null,
+  );
 
   const revokeAllUserSessionsMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -103,10 +112,14 @@ export function AdminWebSignInsPanel() {
       }
       await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions"] });
       await qc.invalidateQueries({ queryKey: ["admin", "metrics"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "auth-sessions", "user"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "auth-sessions", "user"],
+      });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not revoke sessions.");
+      toast.error(
+        e instanceof ApiError ? e.message : "Could not revoke sessions.",
+      );
     },
   });
 
@@ -195,15 +208,22 @@ export function AdminWebSignInsPanel() {
 
           {sessionsQuery.isPending ? (
             <div className="flex justify-center px-4 py-12" aria-busy="true">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+              <Loader2
+                className="size-6 animate-spin text-muted-foreground"
+                aria-hidden
+              />
             </div>
           ) : sessionUserRows.length === 0 ? (
             <div className="px-6 py-16 text-center">
-              <p className="text-sm font-medium text-foreground">No active web sessions listed</p>
+              <p className="text-sm font-medium text-foreground">
+                No active web sessions listed
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                This list shows server sessions created when someone signs in (non-expired only). Each browser
-                needs a fresh sign-in after this feature rolls out so it stores the server session id with the
-                JWT; otherwise only JWT auth runs and this list can stay empty.
+                This list shows server sessions created when someone signs in
+                (non-expired only). Each browser needs a fresh sign-in after
+                this feature rolls out so it stores the server session id with
+                the JWT; otherwise only JWT auth runs and this list can stay
+                empty.
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Expired sessions are never shown. Try another search.
@@ -217,10 +237,18 @@ export function AdminWebSignInsPanel() {
                     <th className={ADMIN_TH}>User</th>
                     <th className={ADMIN_TH}>Last active</th>
                     <th className={ADMIN_TH}>Expires (soonest)</th>
-                    <th className={`${ADMIN_TH} text-right tabular-nums`}>Devices</th>
-                    <th className={`${ADMIN_TH} text-right tabular-nums`}>Active</th>
-                    <th className={`${ADMIN_TH} text-right tabular-nums`}>Max risk</th>
-                    <th className={`${ADMIN_TH} text-right tabular-nums`}>Flagged</th>
+                    <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                      Devices
+                    </th>
+                    <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                      Active
+                    </th>
+                    <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                      Max risk
+                    </th>
+                    <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                      Flagged
+                    </th>
                     <th className="w-12 whitespace-nowrap p-3" />
                   </tr>
                 </thead>
@@ -234,18 +262,28 @@ export function AdminWebSignInsPanel() {
                         >
                           {row.user.displayName}
                         </Link>
-                        <div className="text-xs text-muted-foreground">{row.user.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {row.user.email}
+                        </div>
                       </td>
-                      <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                      >
                         {formatTs(row.lastActiveAt)}
                       </td>
-                      <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                      >
                         {formatTs(row.soonestExpiresAt)}
                       </td>
-                      <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}
+                      >
                         {row.distinctDeviceCount ?? "—"}
                       </td>
-                      <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}
+                      >
                         {row.activeSessionCount}
                       </td>
                       <td className={`${ADMIN_TD} text-right tabular-nums`}>
@@ -259,13 +297,19 @@ export function AdminWebSignInsPanel() {
                           {row.maxRiskScore ?? 0}
                         </span>
                       </td>
-                      <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
+                      <td
+                        className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}
+                      >
                         {row.suspiciousSessionCount ?? 0}
                       </td>
                       <td className={ADMIN_TD_ACTIONS}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Actions">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Actions"
+                            >
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -301,31 +345,35 @@ export function AdminWebSignInsPanel() {
         </div>
       )}
 
-      {!sessionsQuery.isPending && !sessionsQuery.isError && sessionTotal > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={sessionPage <= 1}
-            onClick={() => setSessionPage((p) => Math.max(1, p - 1))}
-          >
-            Previous
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={sessionPage >= sessionTotalPages}
-            onClick={() => setSessionPage((p) => Math.min(sessionTotalPages, p + 1))}
-          >
-            Next
-          </Button>
-          <span className="self-center text-xs text-muted-foreground">
-            Page {sessionPage} / {sessionTotalPages}
-          </span>
-        </div>
-      )}
+      {!sessionsQuery.isPending &&
+        !sessionsQuery.isError &&
+        sessionTotal > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={sessionPage <= 1}
+              onClick={() => setSessionPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={sessionPage >= sessionTotalPages}
+              onClick={() =>
+                setSessionPage((p) => Math.min(sessionTotalPages, p + 1))
+              }
+            >
+              Next
+            </Button>
+            <span className="self-center text-xs text-muted-foreground">
+              Page {sessionPage} / {sessionTotalPages}
+            </span>
+          </div>
+        )}
 
       {sessionModalUserId && (
         <BaseModal
@@ -354,34 +402,49 @@ export function AdminWebSignInsPanel() {
           description={
             <>
               Invalidates every usable browser session for{" "}
-              <span className="font-medium text-foreground">{revokeAllContext.displayName}</span>.
-              API access stops immediately; session rows are kept for analysis unless deleted. Type{" "}
-              <span className="font-mono text-foreground">revoke all</span> to confirm.
+              <span className="font-medium text-foreground">
+                {revokeAllContext.displayName}
+              </span>
+              . API access stops immediately; session rows are kept for analysis
+              unless deleted. Type{" "}
+              <span className="font-mono text-foreground">revoke all</span> to
+              confirm.
             </>
           }
           size="sm"
           footer={
             <>
-              <Button type="button" variant="outline" onClick={() => setRevokeAllContext(null)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRevokeAllContext(null)}
+              >
                 Cancel
               </Button>
               <Button
                 type="button"
                 variant="destructive"
-                disabled={revokeAllConfirm !== "revoke all" || revokeAllUserSessionsMutation.isPending}
-                onClick={() => revokeAllUserSessionsMutation.mutate(revokeAllContext.userId)}
+                disabled={
+                  revokeAllConfirm !== "revoke all" ||
+                  revokeAllUserSessionsMutation.isPending
+                }
+                onClick={() =>
+                  revokeAllUserSessionsMutation.mutate(revokeAllContext.userId)
+                }
               >
-                {revokeAllUserSessionsMutation.isPending ? "Revoking…" : "Revoke all"}
+                {revokeAllUserSessionsMutation.isPending
+                  ? "Revoking…"
+                  : "Revoke all"}
               </Button>
             </>
           }
         >
-            <Input
-              value={revokeAllConfirm}
-              onChange={(e) => setRevokeAllConfirm(e.target.value)}
-              placeholder="revoke all"
-              autoComplete="off"
-            />
+          <Input
+            value={revokeAllConfirm}
+            onChange={(e) => setRevokeAllConfirm(e.target.value)}
+            placeholder="revoke all"
+            autoComplete="off"
+          />
         </BaseAlertDialog>
       )}
     </>

@@ -19,7 +19,7 @@ export type CreateDiscussionInput = {
 export async function createDiscussionViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  input: CreateDiscussionInput
+  input: CreateDiscussionInput,
 ): Promise<DiscussionApi> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/community/discussions`, {
@@ -52,12 +52,12 @@ export async function createDiscussionViaApi(
 export async function deleteDiscussionViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  discussionId: string
+  discussionId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.delete(
     `${apiUrl}/api/community/discussions/${encodeURIComponent(discussionId)}`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
 
   if (!res.ok() && res.status() !== 404) {

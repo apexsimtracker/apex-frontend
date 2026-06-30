@@ -13,10 +13,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import {
-  BaseAlertDialog,
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,12 +42,17 @@ export default function AdminCommunityDiscussionDetail() {
   const [hardDeleteOpen, setHardDeleteOpen] = useState(false);
   /** Shown inside the permanent-delete confirmation dialog only. */
   const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
-  const [commentDeleteTarget, setCommentDeleteTarget] = useState<{ id: string } | null>(null);
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<{
+    id: string;
+  } | null>(null);
 
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ["admin", "community", "discussion", discussionId, commentsPage],
     queryFn: () =>
-      fetchAdminCommunityDiscussionDetail(discussionId, { page: commentsPage, limit: 20 }),
+      fetchAdminCommunityDiscussionDetail(discussionId, {
+        page: commentsPage,
+        limit: 20,
+      }),
     enabled: Boolean(discussionId),
   });
 
@@ -64,11 +66,17 @@ export default function AdminCommunityDiscussionDetail() {
   }, [editOpen, d]);
 
   const patchMutation = useMutation({
-    mutationFn: () => patchAdminCommunityDiscussion(discussionId, { title: editTitle.trim(), body: editBody.trim() }),
+    mutationFn: () =>
+      patchAdminCommunityDiscussion(discussionId, {
+        title: editTitle.trim(),
+        body: editBody.trim(),
+      }),
     onSuccess: async () => {
       setEditOpen(false);
       await refetch();
-      await qc.invalidateQueries({ queryKey: ["admin", "community", "discussions"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "community", "discussions"],
+      });
     },
     onError: (e) => {
       setFormError(e instanceof ApiError ? e.message : "Update failed");
@@ -79,7 +87,9 @@ export default function AdminCommunityDiscussionDetail() {
     mutationFn: () => softDeleteAdminCommunityDiscussion(discussionId),
     onSuccess: async () => {
       await refetch();
-      await qc.invalidateQueries({ queryKey: ["admin", "community", "discussions"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "community", "discussions"],
+      });
     },
   });
 
@@ -87,7 +97,9 @@ export default function AdminCommunityDiscussionDetail() {
     mutationFn: () => restoreAdminCommunityDiscussion(discussionId),
     onSuccess: async () => {
       await refetch();
-      await qc.invalidateQueries({ queryKey: ["admin", "community", "discussions"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "community", "discussions"],
+      });
     },
   });
 
@@ -96,7 +108,9 @@ export default function AdminCommunityDiscussionDetail() {
     onSuccess: async () => {
       setHardDeleteError(null);
       setHardDeleteOpen(false);
-      await qc.invalidateQueries({ queryKey: ["admin", "community", "discussions"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "community", "discussions"],
+      });
       navigate("/admin/community");
     },
     onError: (e) => {
@@ -140,7 +154,9 @@ export default function AdminCommunityDiscussionDetail() {
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load discussion."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load discussion."}
           </div>
         )}
 
@@ -154,7 +170,9 @@ export default function AdminCommunityDiscussionDetail() {
           <>
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-bold text-foreground">{d.title}</h1>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {d.title}
+                </h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {getDiscussionCategoryLabel(d.category)} · {d.views} views ·{" "}
                   <Link
@@ -171,7 +189,12 @@ export default function AdminCommunityDiscussionDetail() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditOpen(true)}
+                >
                   Edit
                 </Button>
                 {!d.deletedAt ? (
@@ -207,7 +230,11 @@ export default function AdminCommunityDiscussionDetail() {
                   Delete permanently
                 </Button>
                 <Button type="button" variant="outline" size="sm" asChild>
-                  <Link to={`/discussion/${d.id}`} target="_blank" rel="noreferrer">
+                  <Link
+                    to={`/discussion/${d.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Open public page
                   </Link>
                 </Button>
@@ -216,17 +243,26 @@ export default function AdminCommunityDiscussionDetail() {
 
             {d.profanityFlaggedAt && (
               <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
-                Profanity flagged at {new Date(d.profanityFlaggedAt).toLocaleString()}
+                Profanity flagged at{" "}
+                {new Date(d.profanityFlaggedAt).toLocaleString()}
               </div>
             )}
 
             <div className="mb-8 rounded-xl border border-white/10 bg-card p-4 sm:p-6">
-              <h2 className="mb-3 text-sm font-medium text-muted-foreground">Body</h2>
-              <p className="whitespace-pre-wrap text-sm text-foreground">{d.body}</p>
+              <h2 className="mb-3 text-sm font-medium text-muted-foreground">
+                Body
+              </h2>
+              <p className="whitespace-pre-wrap text-sm text-foreground">
+                {d.body}
+              </p>
               {(d.originalTitle || d.originalBody) && (
                 <div className="mt-6 border-t border-white/10 pt-4">
-                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">Pre-edit snapshot</h3>
-                  <p className="text-sm font-medium text-foreground">{d.originalTitle}</p>
+                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+                    Pre-edit snapshot
+                  </h3>
+                  <p className="text-sm font-medium text-foreground">
+                    {d.originalTitle}
+                  </p>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                     {d.originalBody}
                   </p>
@@ -258,17 +294,28 @@ export default function AdminCommunityDiscussionDetail() {
                           {c.author.displayName ?? c.userId.slice(0, 8)}
                         </Link>
                         {c.deletedAt && (
-                          <span className="ml-1 text-xs text-amber-200/80">(removed)</span>
+                          <span className="ml-1 text-xs text-amber-200/80">
+                            (removed)
+                          </span>
                         )}
                       </td>
                       <td className="max-w-md p-3 text-muted-foreground">
-                        <span className="line-clamp-4 whitespace-pre-wrap">{c.body}</span>
+                        <span className="line-clamp-4 whitespace-pre-wrap">
+                          {c.body}
+                        </span>
                       </td>
-                      <td className="p-3 text-muted-foreground">{c.createdAt}</td>
+                      <td className="p-3 text-muted-foreground">
+                        {c.createdAt}
+                      </td>
                       <td className="p-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button type="button" variant="ghost" size="icon" className="size-8">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="size-8"
+                            >
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -314,7 +361,7 @@ export default function AdminCommunityDiscussionDetail() {
                   disabled={commentsPage >= (data?.comments.totalPages ?? 1)}
                   onClick={() =>
                     setCommentsPage((p) =>
-                      Math.min(data?.comments.totalPages ?? 1, p + 1)
+                      Math.min(data?.comments.totalPages ?? 1, p + 1),
                     )
                   }
                 >
@@ -333,7 +380,11 @@ export default function AdminCommunityDiscussionDetail() {
             size="md"
             footer={
               <>
-                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button
@@ -346,27 +397,31 @@ export default function AdminCommunityDiscussionDetail() {
               </>
             }
           >
-              {formError && (
-                <p className="text-sm text-destructive">{formError}</p>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Title</label>
-                  <Input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="border-white/10 bg-secondary"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Body</label>
-                  <Textarea
-                    className="min-h-[160px] border-white/10 bg-secondary"
-                    value={editBody}
-                    onChange={(e) => setEditBody(e.target.value)}
-                  />
-                </div>
+            {formError && (
+              <p className="text-sm text-destructive">{formError}</p>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">
+                  Title
+                </label>
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="border-white/10 bg-secondary"
+                />
               </div>
+              <div>
+                <label className="mb-1 block text-sm text-muted-foreground">
+                  Body
+                </label>
+                <Textarea
+                  className="min-h-[160px] border-white/10 bg-secondary"
+                  value={editBody}
+                  onChange={(e) => setEditBody(e.target.value)}
+                />
+              </div>
+            </div>
           </BaseModal>
         )}
 
@@ -395,13 +450,17 @@ export default function AdminCommunityDiscussionDetail() {
               <Button
                 type="button"
                 variant="destructive"
-                disabled={deleteCommentMutation.isPending || !commentDeleteTarget}
+                disabled={
+                  deleteCommentMutation.isPending || !commentDeleteTarget
+                }
                 onClick={() => {
                   if (!commentDeleteTarget) return;
                   deleteCommentMutation.mutate(commentDeleteTarget.id);
                 }}
               >
-                {deleteCommentMutation.isPending ? "Deleting..." : "Delete reply"}
+                {deleteCommentMutation.isPending
+                  ? "Deleting..."
+                  : "Delete reply"}
               </Button>
             </>
           }
@@ -453,14 +512,14 @@ export default function AdminCommunityDiscussionDetail() {
             </>
           }
         >
-            {hardDeleteError && (
-              <div
-                className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                role="alert"
-              >
-                {hardDeleteError}
-              </div>
-            )}
+          {hardDeleteError && (
+            <div
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {hardDeleteError}
+            </div>
+          )}
         </BaseAlertDialog>
       </div>
     </>

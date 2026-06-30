@@ -18,7 +18,9 @@ export type AdminEmailVerificationUsersParams = {
   status?: "pending" | "expired";
 };
 
-export async function fetchAdminEmailVerificationUsers(params?: AdminEmailVerificationUsersParams): Promise<{
+export async function fetchAdminEmailVerificationUsers(
+  params?: AdminEmailVerificationUsersParams,
+): Promise<{
   items: AdminEmailVerificationUserRow[];
   page: number;
   pageSize: number;
@@ -36,7 +38,7 @@ export async function fetchAdminEmailVerificationUsers(params?: AdminEmailVerifi
     "GET",
     `/api/admin/email-verification/users${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -68,11 +70,13 @@ export async function fetchAdminPasswordResetPending(params?: {
     "GET",
     `/api/admin/password-reset/pending${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function postAdminEmailVerificationResend(userId: string): Promise<{
+export async function postAdminEmailVerificationResend(
+  userId: string,
+): Promise<{
   ok: boolean;
   expiresAt: string;
 }> {
@@ -80,6 +84,6 @@ export async function postAdminEmailVerificationResend(userId: string): Promise<
     "POST",
     `/api/admin/email-verification/users/${encodeURIComponent(userId)}/resend`,
     {},
-    false
+    false,
   );
 }

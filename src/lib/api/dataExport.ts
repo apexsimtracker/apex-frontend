@@ -1,6 +1,10 @@
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
-import { buildApiAuthHeaders, extractErrorInfo, notifyAuthExpired } from "./fetchClient";
+import {
+  buildApiAuthHeaders,
+  extractErrorInfo,
+  notifyAuthExpired,
+} from "./fetchClient";
 
 export type DataExportFormat = "xlsx" | "pdf";
 
@@ -19,8 +23,9 @@ export async function downloadUserDataExport(options?: {
   if (includeTelemetry) params.set("includeTelemetry", "1");
   const qs = `?${params.toString()}`;
   const path = `/api/settings/data-export${qs}`;
-  const url =
-    path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = path.startsWith("http")
+    ? path
+    : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
   let res: Response;
   try {

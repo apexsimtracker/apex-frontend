@@ -31,7 +31,7 @@ export async function selectMonthlyInterval(page: Page): Promise<void> {
 export async function postRevenueCatWebhook(
   request: APIRequestContext,
   payload: RevenueCatWebhookPayload,
-  options?: { secret?: string | null }
+  options?: { secret?: string | null },
 ): Promise<{ status: number; body: unknown }> {
   const { apiUrl } = getE2eEnv();
   const secret =
@@ -64,7 +64,7 @@ export async function postRevenueCatWebhook(
 
 export async function refreshBillingSubscription(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/billing/refresh`, {
@@ -72,14 +72,16 @@ export async function refreshBillingSubscription(
   });
   if (!res.ok() && res.status() !== 503) {
     const text = await res.text();
-    throw new Error(`POST /api/billing/refresh failed (${res.status()}): ${text}`);
+    throw new Error(
+      `POST /api/billing/refresh failed (${res.status()}): ${text}`,
+    );
   }
 }
 
 /** Wait for async webhook handler (setImmediate) then nudge RC sync. */
 export async function waitForWebhookSync(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<void> {
   await new Promise((r) => setTimeout(r, 1_500));
   await refreshBillingSubscription(request, auth).catch(() => undefined);
@@ -90,7 +92,7 @@ export async function pollUntilHasPro(
   request: APIRequestContext,
   auth: AuthSession,
   expected: boolean,
-  timeoutMs = 30_000
+  timeoutMs = 30_000,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const headers = authHeaders(auth.token, auth.sessionToken);
@@ -112,7 +114,7 @@ export async function pollUntilHasPro(
 
 export async function fetchEntitlement(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<{
   effectivePlan?: string;
   status?: string;
@@ -138,7 +140,9 @@ export async function fetchEntitlement(
 }
 
 /** Restore seeded Pro on e2e-pro@example.com after admin RC sync or webhook side effects. */
-export async function ensureProSeedHasPro(request: APIRequestContext): Promise<AuthSession> {
+export async function ensureProSeedHasPro(
+  request: APIRequestContext,
+): Promise<AuthSession> {
   const auth = await loginPersona(request, "proSeed");
   const { apiUrl, adminSecret } = getE2eEnv();
   const headers = authHeaders(auth.token, auth.sessionToken);
@@ -154,11 +158,13 @@ export async function ensureProSeedHasPro(request: APIRequestContext): Promise<A
   if (!adminSecret) {
     throw new Error(
       "proSeed lost Pro entitlement. Re-run `cd apex && E2E_SEED_PASSWORD=... npm run seed:e2e` " +
-        "or set ADMIN_SECRET so tests can restore via /api/billing/dev/set-entitlement."
+        "or set ADMIN_SECRET so tests can restore via /api/billing/dev/set-entitlement.",
     );
   }
 
-  const periodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const periodEnd = new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000,
+  ).toISOString();
   await setDevEntitlement(request, auth, {
     plan: "PRO",
     status: "ACTIVE",
@@ -177,7 +183,7 @@ export async function setDevEntitlement(
     status?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
     currentPeriodStart?: string | null;
     currentPeriodEnd?: string | null;
-  }
+  },
 ): Promise<void> {
   const { apiUrl, adminSecret } = getE2eEnv();
   const headers = authHeaders(auth.token, auth.sessionToken);

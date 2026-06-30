@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteAdminUser,
@@ -72,7 +77,7 @@ function RoleBadge({ role }: { role: "USER" | "ADMIN" }) {
         "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
         isAdmin
           ? "border-purple-500/40 bg-purple-500/15 text-purple-200"
-          : "border-blue-500/40 bg-blue-500/15 text-blue-200"
+          : "border-blue-500/40 bg-blue-500/15 text-blue-200",
       )}
     >
       {isAdmin ? "Admin" : "User"}
@@ -159,8 +164,12 @@ function AdminUserSubscriptionSection({
     mutationFn: () => postAdminSubscriptionSync(userId),
     onSuccess: async () => {
       toast.success("Subscription synced from RevenueCat");
-      await queryClient.invalidateQueries({ queryKey: ["admin", "user", userId] });
-      await queryClient.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "user", userId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "subscriptions"],
+      });
       await queryClient.invalidateQueries({ queryKey: ["admin", "metrics"] });
     },
     onError: (e) => {
@@ -179,7 +188,9 @@ function AdminUserSubscriptionSection({
         <div className="flex flex-wrap items-center gap-2">
           {billingConfigQ.data?.mode ? (
             <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-muted-foreground">
-              {billingConfigQ.data.mode === "sandbox" ? "Sandbox billing" : "Live billing"}
+              {billingConfigQ.data.mode === "sandbox"
+                ? "Sandbox billing"
+                : "Live billing"}
             </span>
           ) : null}
           <Button
@@ -237,9 +248,18 @@ function AdminUserSubscriptionSection({
               : "Never"}
           </p>
         </div>
-        <CopyableId label="Entitlement id" value={subscription.entitlementIdentifier} />
-        <CopyableId label="RevenueCat app user id" value={subscription.revenuecatAppUserId} />
-        <CopyableId label="Stripe customer id" value={subscription.stripeCustomerId} />
+        <CopyableId
+          label="Entitlement id"
+          value={subscription.entitlementIdentifier}
+        />
+        <CopyableId
+          label="RevenueCat app user id"
+          value={subscription.revenuecatAppUserId}
+        />
+        <CopyableId
+          label="Stripe customer id"
+          value={subscription.stripeCustomerId}
+        />
       </div>
 
       {stripeUrl ? (
@@ -254,11 +274,13 @@ function AdminUserSubscriptionSection({
             <ExternalLink className="size-3" aria-hidden />
           </a>
           {" · "}
-          Manage subscription via the user billing portal or RevenueCat dashboard (app user id above).
+          Manage subscription via the user billing portal or RevenueCat
+          dashboard (app user id above).
         </p>
       ) : (
         <p className="mt-4 text-xs text-muted-foreground">
-          No Stripe customer id on file. Use RevenueCat dashboard with the app user id above.
+          No Stripe customer id on file. Use RevenueCat dashboard with the app
+          user id above.
         </p>
       )}
     </div>
@@ -281,8 +303,7 @@ function formatReverifyToastDescription(validation: {
   isDisposable: boolean;
 }): string {
   const { status, reason, score } = validation;
-  const reasonBit =
-    reason && reason !== "OK" ? ` Reason code: ${reason}.` : "";
+  const reasonBit = reason && reason !== "OK" ? ` Reason code: ${reason}.` : "";
   if (status === "VALID") {
     return `Result: VALID · score ${score}.${reasonBit} No disposable list match and no elevated-risk heuristics fired for this domain right now.`;
   }
@@ -315,14 +336,16 @@ function ModerationSupportCard({
           <div
             className={cn(
               "flex size-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03]",
-              iconRingClass
+              iconRingClass,
             )}
           >
             <Icon className="size-[1.15rem]" strokeWidth={1.75} />
           </div>
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                {title}
+              </h3>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -333,16 +356,27 @@ function ModerationSupportCard({
                     <Info className="size-3.5 opacity-80" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-left text-xs leading-relaxed">
+                <TooltipContent
+                  side="top"
+                  className="max-w-xs text-left text-xs leading-relaxed"
+                >
                   {tooltipBody}
                 </TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
-            {hint ? <p className="text-[11px] leading-snug text-amber-200/75">{hint}</p> : null}
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {description}
+            </p>
+            {hint ? (
+              <p className="text-[11px] leading-snug text-amber-200/75">
+                {hint}
+              </p>
+            ) : null}
           </div>
         </div>
-        <div className="flex w-full shrink-0 flex-col gap-2 lg:w-auto lg:min-w-[12rem]">{children}</div>
+        <div className="flex w-full shrink-0 flex-col gap-2 lg:w-auto lg:min-w-[12rem]">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -390,14 +424,29 @@ export default function AdminUserDetail() {
   const detail = detailQuery.data;
 
   const discussionsStartedQuery = useQuery({
-    queryKey: ["admin", "users", "detail", id, "discussions-started", startedPage],
+    queryKey: [
+      "admin",
+      "users",
+      "detail",
+      id,
+      "discussions-started",
+      startedPage,
+    ],
     queryFn: () => fetchAdminUserDiscussionsStarted(id, { page: startedPage }),
     enabled: Boolean(id),
   });
 
   const discussionsCommentedQuery = useQuery({
-    queryKey: ["admin", "users", "detail", id, "discussions-commented", commentedPage],
-    queryFn: () => fetchAdminUserDiscussionsCommented(id, { page: commentedPage }),
+    queryKey: [
+      "admin",
+      "users",
+      "detail",
+      id,
+      "discussions-commented",
+      commentedPage,
+    ],
+    queryFn: () =>
+      fetchAdminUserDiscussionsCommented(id, { page: commentedPage }),
     enabled: Boolean(id),
   });
 
@@ -444,7 +493,10 @@ export default function AdminUserDetail() {
   }
 
   const profileMutation = useMutation({
-    mutationFn: async (vars: { userId: string; body: { name?: string; email?: string } }) => {
+    mutationFn: async (vars: {
+      userId: string;
+      body: { name?: string; email?: string };
+    }) => {
       if (Object.keys(vars.body).length === 0) return;
       await patchAdminUserProfile(vars.userId, vars.body);
     },
@@ -454,7 +506,9 @@ export default function AdminUserDetail() {
       await detailQuery.refetch();
     },
     onError: (e) => {
-      setProfileError(e instanceof ApiError ? e.message : "Could not save profile");
+      setProfileError(
+        e instanceof ApiError ? e.message : "Could not save profile",
+      );
     },
   });
 
@@ -475,7 +529,11 @@ export default function AdminUserDetail() {
       });
     },
     onError: (e: unknown) => {
-      if (e instanceof ApiError && e.status === 503 && e.code === "EMAIL_SEND_FAILED") {
+      if (
+        e instanceof ApiError &&
+        e.status === 503 &&
+        e.code === "EMAIL_SEND_FAILED"
+      ) {
         setPasswordError(null);
         toast.warning("Password updated; email not sent", {
           description: e.message,
@@ -488,7 +546,9 @@ export default function AdminUserDetail() {
         void detailQuery.refetch();
         return;
       }
-      setPasswordError(e instanceof ApiError ? e.message : "Could not set password");
+      setPasswordError(
+        e instanceof ApiError ? e.message : "Could not set password",
+      );
     },
   });
 
@@ -516,7 +576,9 @@ export default function AdminUserDetail() {
       await detailQuery.refetch();
     },
     onError: (e) => {
-      setProfileError(e instanceof ApiError ? e.message : "Could not reset avatar");
+      setProfileError(
+        e instanceof ApiError ? e.message : "Could not reset avatar",
+      );
     },
   });
 
@@ -536,13 +598,17 @@ export default function AdminUserDetail() {
       await detailQuery.refetch();
     },
     onError: (e) => {
-      setModError(e instanceof ApiError ? e.message : "Could not update status");
+      setModError(
+        e instanceof ApiError ? e.message : "Could not update status",
+      );
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (vars: { userId: string; confirmationEmail: string }) => {
-      await deleteAdminUser(vars.userId, { confirmationEmail: vars.confirmationEmail });
+      await deleteAdminUser(vars.userId, {
+        confirmationEmail: vars.confirmationEmail,
+      });
     },
     onSuccess: async () => {
       setDeleteOpen(false);
@@ -559,7 +625,8 @@ export default function AdminUserDetail() {
   const handleSaveProfile = () => {
     if (!detail?.user || detail.user.id !== id) return;
     const body: { name?: string; email?: string } = {};
-    if (editName.trim() !== (detail.user.name ?? "")) body.name = editName.trim();
+    if (editName.trim() !== (detail.user.name ?? ""))
+      body.name = editName.trim();
     if (editEmail.trim().toLowerCase() !== detail.user.email.toLowerCase()) {
       body.email = editEmail.trim().toLowerCase();
     }
@@ -590,7 +657,10 @@ export default function AdminUserDetail() {
     setModError(null);
     try {
       const res = await postAdminUserImpersonate(targetId);
-      const cur = typeof localStorage !== "undefined" ? localStorage.getItem("apex_token") : null;
+      const cur =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem("apex_token")
+          : null;
       if (cur) localStorage.setItem(APEX_TOKEN_ADMIN_KEY, cur);
       try {
         sessionStorage.removeItem(LEGACY_SESSION_ADMIN_BACKUP_KEY);
@@ -603,15 +673,22 @@ export default function AdminUserDetail() {
           ? localStorage.getItem(APEX_SESSION_TOKEN_KEY)
           : null;
       if (curSession?.trim()) {
-        localStorage.setItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY, curSession.trim());
+        localStorage.setItem(
+          APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
+          curSession.trim(),
+        );
       } else {
         localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
       }
       persistSessionTokenFromAuthPayload({});
-      window.dispatchEvent(new CustomEvent("apex:auth", { detail: { impersonation: true } }));
+      window.dispatchEvent(
+        new CustomEvent("apex:auth", { detail: { impersonation: true } }),
+      );
       navigate("/", { replace: true });
     } catch (e) {
-      setModError(e instanceof ApiError ? e.message : "Could not start impersonation");
+      setModError(
+        e instanceof ApiError ? e.message : "Could not start impersonation",
+      );
       setImpersonateBusy(false);
     }
   };
@@ -630,7 +707,8 @@ export default function AdminUserDetail() {
         duration: 12_000,
       });
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Could not reverify email";
+      const msg =
+        e instanceof ApiError ? e.message : "Could not reverify email";
       setModError(msg);
       toast.error(msg);
     } finally {
@@ -667,7 +745,10 @@ export default function AdminUserDetail() {
 
       {detailQuery.isPending && (
         <div className="flex justify-center py-12">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="size-8 animate-spin text-muted-foreground"
+            aria-hidden
+          />
         </div>
       )}
 
@@ -684,7 +765,10 @@ export default function AdminUserDetail() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="mb-3 flex flex-wrap gap-2">
-                <AccountBadge isDeleted={u.isDeleted} suspendedAt={u.suspendedAt} />
+                <AccountBadge
+                  isDeleted={u.isDeleted}
+                  suspendedAt={u.suspendedAt}
+                />
                 <RoleBadge role={u.role} />
                 <PlanBadge
                   effectivePlan={u.subscription.effectivePlan}
@@ -698,16 +782,25 @@ export default function AdminUserDetail() {
                   </span>
                 ) : null}
               </div>
-              <h1 className="text-2xl font-bold text-foreground">{u.displayName}</h1>
-              <p className="mt-1 font-mono text-sm text-muted-foreground">{u.email}</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                {u.displayName}
+              </h1>
+              <p className="mt-1 font-mono text-sm text-muted-foreground">
+                {u.email}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                User id: <span className="font-mono text-foreground/90">{u.id}</span>
+                User id:{" "}
+                <span className="font-mono text-foreground/90">{u.id}</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {!u.isDeleted &&
                 (!editing ? (
-                  <Button type="button" variant="outline" onClick={() => setEditMode(true)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditMode(true)}
+                  >
                     Edit
                   </Button>
                 ) : (
@@ -725,7 +818,10 @@ export default function AdminUserDetail() {
                     </Button>
                     <Button
                       type="button"
-                      disabled={profileMutation.isPending || resetAvatarMutation.isPending}
+                      disabled={
+                        profileMutation.isPending ||
+                        resetAvatarMutation.isPending
+                      }
                       onClick={handleSaveProfile}
                     >
                       {profileMutation.isPending ? "Saving…" : "Save"}
@@ -737,7 +833,9 @@ export default function AdminUserDetail() {
 
           {u.isSuspicious ? (
             <div className="mb-8 rounded-xl border border-amber-500/35 bg-amber-500/[0.08] px-4 py-3">
-              <p className="text-sm font-semibold text-amber-100">Suspicious account</p>
+              <p className="text-sm font-semibold text-amber-100">
+                Suspicious account
+              </p>
               <p className="mt-1 text-xs leading-relaxed text-amber-100/90">
                 {formatSuspicionReason(u.suspicionReason)}
               </p>
@@ -746,7 +844,9 @@ export default function AdminUserDetail() {
 
           {editing && !u.isDeleted ? (
             <div className="mb-8 space-y-4 rounded-xl border border-white/10 p-4">
-              <h2 className="text-sm font-semibold text-foreground">Edit profile</h2>
+              <h2 className="text-sm font-semibold text-foreground">
+                Edit profile
+              </h2>
               <label className="block text-xs text-muted-foreground">
                 Display name
                 <Input
@@ -766,7 +866,9 @@ export default function AdminUserDetail() {
               </label>
               {!isSelf(u.id) ? (
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                  <p className="text-xs font-medium text-foreground">Set password (emailed to user)</p>
+                  <p className="text-xs font-medium text-foreground">
+                    Set password (emailed to user)
+                  </p>
                   <label className="block text-xs text-muted-foreground">
                     New password
                     <Input
@@ -794,9 +896,13 @@ export default function AdminUserDetail() {
                     disabled={passwordMutation.isPending}
                     onClick={handleSetPassword}
                   >
-                    {passwordMutation.isPending ? "Saving…" : "Set password & notify"}
+                    {passwordMutation.isPending
+                      ? "Saving…"
+                      : "Set password & notify"}
                   </Button>
-                  {passwordError ? <p className="text-sm text-destructive">{passwordError}</p> : null}
+                  {passwordError ? (
+                    <p className="text-sm text-destructive">{passwordError}</p>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
@@ -824,33 +930,47 @@ export default function AdminUserDetail() {
                   variant="outline"
                   size="sm"
                   onClick={() => resetAvatarMutation.mutate(id)}
-                  disabled={resetAvatarMutation.isPending || profileMutation.isPending}
+                  disabled={
+                    resetAvatarMutation.isPending || profileMutation.isPending
+                  }
                 >
-                  {resetAvatarMutation.isPending ? "Resetting…" : "Reset avatar"}
+                  {resetAvatarMutation.isPending
+                    ? "Resetting…"
+                    : "Reset avatar"}
                 </Button>
               </div>
-              {profileError && <p className="text-sm text-destructive">{profileError}</p>}
+              {profileError && (
+                <p className="text-sm text-destructive">{profileError}</p>
+              )}
             </div>
           ) : (
             <div className="mb-8 space-y-4">
               {u.bio?.trim() ? (
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{u.bio}</p>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {u.bio}
+                </p>
               ) : (
                 <p className="text-sm text-muted-foreground">No bio.</p>
               )}
               <div className="grid grid-cols-2 gap-4 rounded-xl border border-white/10 p-4 sm:grid-cols-3">
                 <div>
                   <p className={LABEL}>Email verified</p>
-                  <p className="mt-1 text-sm text-foreground">{u.emailVerified ? "Yes" : "No"}</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {u.emailVerified ? "Yes" : "No"}
+                  </p>
                 </div>
                 <div>
                   <p className={LABEL}>Email status</p>
-                  <p className="mt-1 text-sm text-foreground">{u.emailStatus ?? "—"}</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {u.emailStatus ?? "—"}
+                  </p>
                 </div>
                 <div>
                   <p className={LABEL}>Risk score</p>
                   <p className="mt-1 text-sm tabular-nums text-foreground">
-                    {typeof u.emailRiskScore === "number" ? u.emailRiskScore : "—"}
+                    {typeof u.emailRiskScore === "number"
+                      ? u.emailRiskScore
+                      : "—"}
                   </p>
                 </div>
                 <div>
@@ -862,16 +982,22 @@ export default function AdminUserDetail() {
                 <div className="sm:col-span-2">
                   <p className={LABEL}>Last validated</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {u.lastValidatedAt ? new Date(u.lastValidatedAt).toLocaleString() : "—"}
+                    {u.lastValidatedAt
+                      ? new Date(u.lastValidatedAt).toLocaleString()
+                      : "—"}
                   </p>
                 </div>
                 <div>
                   <p className={LABEL}>Session visibility</p>
-                  <p className="mt-1 text-sm text-foreground">{u.sessionVisibility}</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {u.sessionVisibility}
+                  </p>
                 </div>
                 <div>
                   <p className={LABEL}>Private profile</p>
-                  <p className="mt-1 text-sm text-foreground">{u.privateProfile ? "Yes" : "No"}</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {u.privateProfile ? "Yes" : "No"}
+                  </p>
                 </div>
                 {u.deletedAt && (
                   <div>
@@ -894,11 +1020,16 @@ export default function AdminUserDetail() {
             </div>
           )}
 
-          <AdminUserSubscriptionSection userId={u.id} subscription={u.subscription} />
+          <AdminUserSubscriptionSection
+            userId={u.id}
+            subscription={u.subscription}
+          />
 
           <div className="mb-8 rounded-xl border border-white/10 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Follow graph</h2>
+              <h2 className="text-sm font-semibold text-foreground">
+                Follow graph
+              </h2>
               <Button type="button" variant="outline" size="sm" asChild>
                 <Link to={`/admin/follows/users/${encodeURIComponent(u.id)}`}>
                   Open social graph →
@@ -937,7 +1068,9 @@ export default function AdminUserDetail() {
                 Could not load follow graph summary.
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">Loading follow graph…</p>
+              <p className="text-sm text-muted-foreground">
+                Loading follow graph…
+              </p>
             )}
           </div>
 
@@ -945,9 +1078,12 @@ export default function AdminUserDetail() {
             <div className="mb-8 rounded-xl border border-white/10 p-4">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-foreground">Moderation & support</h2>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Moderation & support
+                  </h2>
                   <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                    Account enforcement and support viewing. Actions are audited.
+                    Account enforcement and support viewing. Actions are
+                    audited.
                   </p>
                 </div>
                 {u.suspendedAt ? (
@@ -979,11 +1115,13 @@ export default function AdminUserDetail() {
                             Restore access
                           </h3>
                           <p className="text-xs leading-relaxed text-muted-foreground">
-                            Removes suspension so the user can sign in again with a valid password.
+                            Removes suspension so the user can sign in again
+                            with a valid password.
                           </p>
                           {isSelf(u.id) ? (
                             <p className="text-[11px] text-amber-200/75">
-                              You cannot restore your own account from this screen.
+                              You cannot restore your own account from this
+                              screen.
                             </p>
                           ) : null}
                         </div>
@@ -993,7 +1131,10 @@ export default function AdminUserDetail() {
                         variant="secondary"
                         className="w-full shrink-0 border-emerald-500/35 bg-emerald-500/20 text-emerald-50 hover:bg-emerald-500/30 sm:w-auto sm:min-w-[11rem]"
                         onClick={() =>
-                          statusMutation.mutate({ userId: id, payload: { suspended: false } })
+                          statusMutation.mutate({
+                            userId: id,
+                            payload: { suspended: false },
+                          })
                         }
                         disabled={statusMutation.isPending || isSelf(u.id)}
                       >
@@ -1044,7 +1185,11 @@ export default function AdminUserDetail() {
                       iconRingClass="text-red-200/85"
                       title="Close account (GDPR)"
                       description="Soft-delete and anonymize the account. Treat as permanent closure."
-                      hint={isSelf(u.id) ? "You cannot close your own account from here." : undefined}
+                      hint={
+                        isSelf(u.id)
+                          ? "You cannot close your own account from here."
+                          : undefined
+                      }
                       tooltipLabel="About account closure"
                       tooltipBody="GDPR-style closure: soft-delete, anonymized email, profile cleared, sessions removed. Not a full purge of every database row."
                     >
@@ -1054,7 +1199,7 @@ export default function AdminUserDetail() {
                         className={cn(
                           "w-full border-destructive/45 bg-destructive/[0.08] text-destructive sm:min-w-[11rem]",
                           "hover:bg-destructive/18 hover:border-destructive/75 hover:text-red-50",
-                          "focus-visible:ring-destructive/35"
+                          "focus-visible:ring-destructive/35",
                         )}
                         onClick={() => {
                           setDeleteEmailConfirm("");
@@ -1136,7 +1281,9 @@ export default function AdminUserDetail() {
                   </span>
                   <p className="min-w-0 flex-1">
                     When you open a support session, use the floating{" "}
-                    <strong className="font-medium text-foreground/95">Back to admin</strong>{" "}
+                    <strong className="font-medium text-foreground/95">
+                      Back to admin
+                    </strong>{" "}
                     control (bottom-right) to return to this console.
                   </p>
                 </div>
@@ -1145,7 +1292,9 @@ export default function AdminUserDetail() {
           )}
 
           <div className="mb-8 rounded-xl border border-white/10 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Community</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              Community
+            </h2>
             <p className="mb-6 text-sm text-muted-foreground">
               Totals — discussions: {detail.counts.discussions} · comments:{" "}
               {detail.counts.discussionComments}
@@ -1158,13 +1307,20 @@ export default function AdminUserDetail() {
               {discussionsStartedQuery.isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading…</p>
               ) : discussionsStartedQuery.isError ? (
-                <p className="text-sm text-destructive">Could not load discussions.</p>
+                <p className="text-sm text-destructive">
+                  Could not load discussions.
+                </p>
               ) : !discussionsStartedQuery.data?.items.length ? (
-                <p className="text-sm text-muted-foreground">No topics started.</p>
+                <p className="text-sm text-muted-foreground">
+                  No topics started.
+                </p>
               ) : (
                 <ul className="space-y-3 text-sm">
                   {discussionsStartedQuery.data.items.map((row) => (
-                    <li key={row.id} className="border-b border-white/5 pb-3 last:border-0">
+                    <li
+                      key={row.id}
+                      className="border-b border-white/5 pb-3 last:border-0"
+                    >
                       <Link
                         to={`/discussion/${row.id}`}
                         className="line-clamp-2 font-medium text-primary hover:underline"
@@ -1172,44 +1328,53 @@ export default function AdminUserDetail() {
                         {row.title}
                       </Link>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {row.category} · updated {new Date(row.updatedAt).toLocaleString()}
+                        {row.category} · updated{" "}
+                        {new Date(row.updatedAt).toLocaleString()}
                       </p>
                     </li>
                   ))}
                 </ul>
               )}
-              {discussionsStartedQuery.data && discussionsStartedQuery.data.totalPages > 1 && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={startedPage <= 1 || discussionsStartedQuery.isFetching}
-                    onClick={() => setStartedPage((p) => Math.max(1, p - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <span>
-                    Page {startedPage} of {discussionsStartedQuery.data.totalPages}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={
-                      startedPage >= discussionsStartedQuery.data.totalPages ||
-                      discussionsStartedQuery.isFetching
-                    }
-                    onClick={() =>
-                      setStartedPage((p) =>
-                        Math.min(discussionsStartedQuery.data!.totalPages, p + 1)
-                      )
-                    }
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
+              {discussionsStartedQuery.data &&
+                discussionsStartedQuery.data.totalPages > 1 && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        startedPage <= 1 || discussionsStartedQuery.isFetching
+                      }
+                      onClick={() => setStartedPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span>
+                      Page {startedPage} of{" "}
+                      {discussionsStartedQuery.data.totalPages}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        startedPage >=
+                          discussionsStartedQuery.data.totalPages ||
+                        discussionsStartedQuery.isFetching
+                      }
+                      onClick={() =>
+                        setStartedPage((p) =>
+                          Math.min(
+                            discussionsStartedQuery.data!.totalPages,
+                            p + 1,
+                          ),
+                        )
+                      }
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
             </div>
 
             <div>
@@ -1219,9 +1384,13 @@ export default function AdminUserDetail() {
               {discussionsCommentedQuery.isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading…</p>
               ) : discussionsCommentedQuery.isError ? (
-                <p className="text-sm text-destructive">Could not load commented topics.</p>
+                <p className="text-sm text-destructive">
+                  Could not load commented topics.
+                </p>
               ) : !discussionsCommentedQuery.data?.items.length ? (
-                <p className="text-sm text-muted-foreground">No comments on community topics.</p>
+                <p className="text-sm text-muted-foreground">
+                  No comments on community topics.
+                </p>
               ) : (
                 <ul className="space-y-3 text-sm">
                   {discussionsCommentedQuery.data.items.map((row) => (
@@ -1250,25 +1419,35 @@ export default function AdminUserDetail() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={commentedPage <= 1 || discussionsCommentedQuery.isFetching}
-                      onClick={() => setCommentedPage((p) => Math.max(1, p - 1))}
+                      disabled={
+                        commentedPage <= 1 ||
+                        discussionsCommentedQuery.isFetching
+                      }
+                      onClick={() =>
+                        setCommentedPage((p) => Math.max(1, p - 1))
+                      }
                     >
                       Previous
                     </Button>
                     <span>
-                      Page {commentedPage} of {discussionsCommentedQuery.data.totalPages}
+                      Page {commentedPage} of{" "}
+                      {discussionsCommentedQuery.data.totalPages}
                     </span>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       disabled={
-                        commentedPage >= discussionsCommentedQuery.data.totalPages ||
+                        commentedPage >=
+                          discussionsCommentedQuery.data.totalPages ||
                         discussionsCommentedQuery.isFetching
                       }
                       onClick={() =>
                         setCommentedPage((p) =>
-                          Math.min(discussionsCommentedQuery.data!.totalPages, p + 1)
+                          Math.min(
+                            discussionsCommentedQuery.data!.totalPages,
+                            p + 1,
+                          ),
                         )
                       }
                     >
@@ -1283,10 +1462,15 @@ export default function AdminUserDetail() {
 
           {detail.challengeBans.length > 0 && (
             <div className="mb-8 rounded-xl border border-white/10 p-4">
-              <h2 className="mb-3 text-sm font-semibold text-foreground">Challenge bans</h2>
+              <h2 className="mb-3 text-sm font-semibold text-foreground">
+                Challenge bans
+              </h2>
               <ul className="space-y-2 text-sm">
                 {detail.challengeBans.map((b) => (
-                  <li key={b.challengeId} className="border-b border-white/5 pb-2">
+                  <li
+                    key={b.challengeId}
+                    className="border-b border-white/5 pb-2"
+                  >
                     <Link
                       to={`/admin/challenges/${b.challengeId}`}
                       className="font-medium text-primary hover:underline"
@@ -1294,7 +1478,9 @@ export default function AdminUserDetail() {
                       {b.challengeTitle}
                     </Link>
                     {b.reason && (
-                      <span className="mt-0.5 block text-xs text-muted-foreground">{b.reason}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {b.reason}
+                      </span>
                     )}
                   </li>
                 ))}
@@ -1303,7 +1489,9 @@ export default function AdminUserDetail() {
           )}
 
           <div className="mb-8 rounded-xl border border-white/10 p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Recent sessions</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              Recent sessions
+            </h2>
             {detail.recentSessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">No sessions yet.</p>
             ) : (
@@ -1337,8 +1525,12 @@ export default function AdminUserDetail() {
                         <td className="p-2">
                           <SimBadge sim={s.sim} size="sm" />
                         </td>
-                        <td className="p-2 text-foreground">{formatTrackName(s.track)}</td>
-                        <td className="p-2 text-muted-foreground">{formatCarName(s.car)}</td>
+                        <td className="p-2 text-foreground">
+                          {formatTrackName(s.track)}
+                        </td>
+                        <td className="p-2 text-muted-foreground">
+                          {formatCarName(s.car)}
+                        </td>
                         <td className="p-2 tabular-nums text-muted-foreground">
                           {new Date(s.createdAt).toLocaleString()}
                         </td>
@@ -1381,12 +1573,17 @@ export default function AdminUserDetail() {
                 type="button"
                 variant="destructive"
                 disabled={
-                  !suspendReasonInput.trim() || statusMutation.isPending || u.role === "ADMIN"
+                  !suspendReasonInput.trim() ||
+                  statusMutation.isPending ||
+                  u.role === "ADMIN"
                 }
                 onClick={() =>
                   statusMutation.mutate({
                     userId: id,
-                    payload: { suspended: true, reason: suspendReasonInput.trim() },
+                    payload: {
+                      suspended: true,
+                      reason: suspendReasonInput.trim(),
+                    },
                   })
                 }
               >
@@ -1395,16 +1592,16 @@ export default function AdminUserDetail() {
             </>
           }
         >
-            <Label htmlFor="suspend-modal-reason" className="mt-4 block text-xs">
-              Reason (required)
-            </Label>
-            <Textarea
-              id="suspend-modal-reason"
-              className="mt-1"
-              value={suspendReasonInput}
-              onChange={(e) => setSuspendReasonInput(e.target.value)}
-              placeholder="Reason…"
-            />
+          <Label htmlFor="suspend-modal-reason" className="mt-4 block text-xs">
+            Reason (required)
+          </Label>
+          <Textarea
+            id="suspend-modal-reason"
+            className="mt-1"
+            value={suspendReasonInput}
+            onChange={(e) => setSuspendReasonInput(e.target.value)}
+            placeholder="Reason…"
+          />
         </BaseAlertDialog>
       )}
 
@@ -1433,7 +1630,10 @@ export default function AdminUserDetail() {
               <Button
                 type="button"
                 variant="destructive"
-                disabled={deleteEmailConfirm.trim() !== u.email || deleteMutation.isPending}
+                disabled={
+                  deleteEmailConfirm.trim() !== u.email ||
+                  deleteMutation.isPending
+                }
                 onClick={() =>
                   deleteMutation.mutate({
                     userId: id,
@@ -1446,15 +1646,17 @@ export default function AdminUserDetail() {
             </>
           }
         >
-            <p className="mt-2 font-mono text-sm text-foreground">{u.email}</p>
-            <Input
-              className="mt-4"
-              value={deleteEmailConfirm}
-              onChange={(e) => setDeleteEmailConfirm(e.target.value)}
-              placeholder={u.email}
-              autoComplete="off"
-            />
-            {deleteError && <p className="mt-2 text-sm text-destructive">{deleteError}</p>}
+          <p className="mt-2 font-mono text-sm text-foreground">{u.email}</p>
+          <Input
+            className="mt-4"
+            value={deleteEmailConfirm}
+            onChange={(e) => setDeleteEmailConfirm(e.target.value)}
+            placeholder={u.email}
+            autoComplete="off"
+          />
+          {deleteError && (
+            <p className="mt-2 text-sm text-destructive">{deleteError}</p>
+          )}
         </BaseAlertDialog>
       )}
     </div>

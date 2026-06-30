@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import {
-  CheckCircle,
-  Trophy,
-  Upload as UploadIcon,
-} from "lucide-react";
+import { CheckCircle, Trophy, Upload as UploadIcon } from "lucide-react";
 import { createManualActivity, ApiError } from "@/lib/api";
 import ManualActivityForm from "@/components/ManualActivityForm";
 import PageMeta from "@/components/PageMeta";
@@ -25,7 +21,10 @@ type LogAgainState = {
 export default function ManualActivity() {
   const navigate = useNavigate();
   const location = useLocation();
-  const navState = location.state as { logAgain?: LogAgainState; challengeId?: string } | null;
+  const navState = location.state as {
+    logAgain?: LogAgainState;
+    challengeId?: string;
+  } | null;
   const logAgain = navState?.logAgain;
   const challengeId =
     typeof navState?.challengeId === "string" && navState.challengeId.trim()
@@ -83,7 +82,12 @@ export default function ManualActivity() {
 
   return (
     <>
-      <PageMeta title={manualTitle} description={manualDescription} path={MANUAL_PATH} noindex />
+      <PageMeta
+        title={manualTitle}
+        description={manualDescription}
+        path={MANUAL_PATH}
+        noindex
+      />
       <div className="min-h-[calc(100vh-4rem)] bg-background">
         <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6 sm:py-12 lg:max-w-xl">
           <div className="mb-8">
@@ -92,8 +96,8 @@ export default function ManualActivity() {
                 Log manual activity
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                Record a session without telemetry. Add lap times to appear on fastest-lap
-                leaderboards.
+                Record a session without telemetry. Add lap times to appear on
+                fastest-lap leaderboards.
               </p>
             </div>
           </div>
@@ -101,9 +105,13 @@ export default function ManualActivity() {
           <div className="rounded-xl border border-white/10 bg-card/20 p-5 shadow-sm backdrop-blur-lg sm:p-7">
             {challengeId && (
               <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                <Trophy className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden />
+                <Trophy
+                  className="mt-0.5 size-4 shrink-0 text-amber-400"
+                  aria-hidden
+                />
                 <p className="text-sm text-amber-100/90">
-                  This session will count toward your active challenge when saved.
+                  This session will count toward your active challenge when
+                  saved.
                 </p>
               </div>
             )}
@@ -115,8 +123,12 @@ export default function ManualActivity() {
                     <CheckCircle className="size-7 text-green-500" />
                   </div>
                 </div>
-                <p className="text-lg font-medium text-white">Activity logged</p>
-                <p className="mt-2 text-sm text-white/50">Redirecting to your session…</p>
+                <p className="text-lg font-medium text-white">
+                  Activity logged
+                </p>
+                <p className="mt-2 text-sm text-white/50">
+                  Redirecting to your session…
+                </p>
               </div>
             ) : (
               <ManualActivityForm
@@ -134,7 +146,9 @@ export default function ManualActivity() {
 
           <p className="mt-6 text-center text-sm text-white/45">
             Have an iRacing{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">.ibt</code>{" "}
+            <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">
+              .ibt
+            </code>{" "}
             file?{" "}
             <Link
               to="/upload"

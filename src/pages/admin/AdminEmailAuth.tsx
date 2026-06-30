@@ -5,7 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminWebSignInsPanel } from "./AdminWebSignInsPanel";
 import { AdminEmailOpsTab } from "./AdminEmailOpsTab";
 import { ADMIN_PAGE } from "@/pages/admin/adminTableLayout";
-import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
+import {
+  ADMIN_TABS_CONTENT,
+  ADMIN_TABS_LIST,
+} from "@/pages/admin/adminTabsLayout";
 
 const TITLE = `Admin · Email & auth ops | ${COMPANY_NAME}`;
 
@@ -33,15 +36,25 @@ export default function AdminEmailAuth() {
       />
       <div className={ADMIN_PAGE}>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Email &amp; auth ops</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Email &amp; auth ops
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review verification and password-reset queues, resend signup codes, and manage{" "}
-            <strong className="font-medium text-foreground">web sign-ins</strong> (site auth sessions — not
-            racing sessions on <span className="whitespace-nowrap">/admin/sessions</span>).
+            Review verification and password-reset queues, resend signup codes,
+            and manage{" "}
+            <strong className="font-medium text-foreground">
+              web sign-ins
+            </strong>{" "}
+            (site auth sessions — not racing sessions on{" "}
+            <span className="whitespace-nowrap">/admin/sessions</span>).
           </p>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as MainTab)} className="w-full">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as MainTab)}
+          className="w-full"
+        >
           <TabsList className={ADMIN_TABS_LIST}>
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="auth">Auth</TabsTrigger>

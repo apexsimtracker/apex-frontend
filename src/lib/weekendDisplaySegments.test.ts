@@ -4,7 +4,7 @@ import type { SessionItem } from "./sessionTypes";
 
 function session(
   id: string,
-  overrides: Partial<SessionItem> = {}
+  overrides: Partial<SessionItem> = {},
 ): SessionItem {
   return {
     id,

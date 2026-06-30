@@ -9,12 +9,14 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { authMe, registerAuthExpiredHandler, ApiError, type AuthUser } from "@/lib/api";
-import { storedAccessTokenSubject } from "@/lib/impersonation";
 import {
-  resolveAuthLoading,
-  resolveAuthUser,
-} from "@/auth/authSessionState";
+  authMe,
+  registerAuthExpiredHandler,
+  ApiError,
+  type AuthUser,
+} from "@/lib/api";
+import { storedAccessTokenSubject } from "@/lib/impersonation";
+import { resolveAuthLoading, resolveAuthUser } from "@/auth/authSessionState";
 
 /** TanStack Query key for GET /api/auth/me — invalidate or setQueryData from profile/settings. */
 export const AUTH_ME_QUERY_KEY = ["auth", "me"] as const;
@@ -31,7 +33,10 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function readHasToken(): boolean {
-  return typeof localStorage !== "undefined" && Boolean(localStorage.getItem("apex_token"));
+  return (
+    typeof localStorage !== "undefined" &&
+    Boolean(localStorage.getItem("apex_token"))
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -62,7 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // invalidateQueries alone leaves stale data visible until refetch completes, so AdminRoute
       // can redirect using the wrong role. Remove cached session first so loading stays true until
       // /api/auth/me returns for the new token.
-      const cached = queryClient.getQueryData<AuthUser | null>(AUTH_ME_QUERY_KEY);
+      const cached = queryClient.getQueryData<AuthUser | null>(
+        AUTH_ME_QUERY_KEY,
+      );
       const tokenSub = storedAccessTokenSubject();
       const identityChanged =
         cached != null &&
@@ -82,7 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     syncTokenFromStorage();
     const onAuth = (event: Event) => {
       const detail = (
-        event as CustomEvent<{ exitImpersonation?: boolean; impersonation?: boolean }>
+        event as CustomEvent<{
+          exitImpersonation?: boolean;
+          impersonation?: boolean;
+        }>
       ).detail;
       // Impersonation start/exit swaps JWTs without a full reload. Drop every cached query so
       // billing, settings, activity, etc. from the prior identity cannot leak across the switch.
@@ -112,7 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: authMe,
     enabled: tokenPresent,
     retry: (failureCount, err) => {
-      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      if (
+        err instanceof ApiError &&
+        (err.status === 401 || err.status === 403)
+      ) {
         return false;
       }
       return failureCount < 1;
@@ -152,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = useMemo(
     () => resolveAuthUser(tokenPresent, meQuery),
-    [tokenPresent, meQuery]
+    [tokenPresent, meQuery],
   );
 
   // Has token but /api/auth/me not resolved yet (success or confirmed 401/403). Use isFetching so
@@ -189,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (next: AuthUser | null) => {
       queryClient.setQueryData<AuthUser | null>(AUTH_ME_QUERY_KEY, next);
     },
-    [queryClient]
+    [queryClient],
   );
 
   // Register global auth expired handler
@@ -222,7 +235,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyTokenStorageToQueryClient]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, refreshUser, refreshMe, setUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, error, refreshUser, refreshMe, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -34,9 +34,7 @@ export const EMPTY_SESSION_TIMING_MINIMA: SessionTimingMinima = {
 };
 
 /** Normalize GET /sessions/:id lap rows (lap/timeMs or lapNumber/lapTimeMs) for display helpers. */
-export function coerceSessionDetailLaps(
-  laps: unknown[]
-): {
+export function coerceSessionDetailLaps(laps: unknown[]): {
   lap: number;
   lapNumber: number;
   lapTimeMs: number;
@@ -74,19 +72,22 @@ export function coerceSessionDetailLaps(
       sector2Ms: (l.sector2Ms as number | null | undefined) ?? null,
       sector3Ms: (l.sector3Ms as number | null | undefined) ?? null,
       sectorsEstimated:
-        typeof l.sectorsEstimated === "boolean" ? l.sectorsEstimated : undefined,
-      highlights: (l.highlights as
-        | LapTimingHighlights
-        | { lap: LapTimingHighlights["lap"] }
-        | null
-        | undefined) ?? null,
+        typeof l.sectorsEstimated === "boolean"
+          ? l.sectorsEstimated
+          : undefined,
+      highlights:
+        (l.highlights as
+          | LapTimingHighlights
+          | { lap: LapTimingHighlights["lap"] }
+          | null
+          | undefined) ?? null,
     };
   });
 }
 
 export function timingHighlightClass(
   h: TimingHighlight,
-  opts?: { isLapTime?: boolean }
+  opts?: { isLapTime?: boolean },
 ): string {
   const semibold = opts?.isLapTime ? " font-semibold" : "";
   switch (h) {
@@ -101,8 +102,11 @@ export function timingHighlightClass(
 
 /** Build highlight map from API lap payloads when every lap includes highlights. */
 export function buildHighlightMapFromLaps(
-  laps: { lap: number; highlights?: LapTimingHighlights | { lap: TimingHighlight } | null }[],
-  opts?: { missingAsDefault?: boolean }
+  laps: {
+    lap: number;
+    highlights?: LapTimingHighlights | { lap: TimingHighlight } | null;
+  }[],
+  opts?: { missingAsDefault?: boolean },
 ): Map<number, LapTimingHighlights> | null {
   if (laps.length === 0) return null;
   const map = new Map<number, LapTimingHighlights>();

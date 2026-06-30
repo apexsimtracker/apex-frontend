@@ -36,7 +36,7 @@ export function BillingIntervalToggle({
           interval === "MONTHLY"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",
-          (!monthlyAvailable || disabled) && "cursor-not-allowed opacity-50"
+          (!monthlyAvailable || disabled) && "cursor-not-allowed opacity-50",
         )}
       >
         Monthly
@@ -52,7 +52,7 @@ export function BillingIntervalToggle({
           interval === "ANNUAL"
             ? "bg-background text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground",
-          (!annualAvailable || disabled) && "cursor-not-allowed opacity-50"
+          (!annualAvailable || disabled) && "cursor-not-allowed opacity-50",
         )}
       >
         Annual

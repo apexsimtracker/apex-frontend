@@ -1,5 +1,8 @@
 import { fetchApi } from "./fetchClient";
-import type { LapTimingHighlights, SessionTimingMinima } from "@/lib/sessionLapDisplay";
+import type {
+  LapTimingHighlights,
+  SessionTimingMinima,
+} from "@/lib/sessionLapDisplay";
 import {
   buildManualActivityRequestBody,
   type ManualActivityRequest,
@@ -48,7 +51,7 @@ export type AdminSessionListParams = {
 };
 
 export async function fetchAdminSessionList(
-  params?: AdminSessionListParams
+  params?: AdminSessionListParams,
 ): Promise<{
   items: AdminSessionListRow[];
   page: number;
@@ -62,7 +65,8 @@ export async function fetchAdminSessionList(
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   if (params?.userId?.trim()) sp.set("userId", params.userId.trim());
   if (params?.sim?.trim()) sp.set("sim", params.sim.trim());
-  if (params?.challengeId?.trim()) sp.set("challengeId", params.challengeId.trim());
+  if (params?.challengeId?.trim())
+    sp.set("challengeId", params.challengeId.trim());
   if (params?.from) sp.set("from", params.from);
   if (params?.to) sp.set("to", params.to);
   if (params?.zeroLaps) sp.set("zeroLaps", "true");
@@ -71,12 +75,18 @@ export async function fetchAdminSessionList(
   if (params?.missingTelemetry) sp.set("missingTelemetry", "true");
   if (params?.maxLapMs != null) sp.set("maxLapMs", String(params.maxLapMs));
   if (params?.multipleBestLaps) sp.set("multipleBestLaps", "true");
-  if (params?.sessionType?.trim()) sp.set("sessionType", params.sessionType.trim());
+  if (params?.sessionType?.trim())
+    sp.set("sessionType", params.sessionType.trim());
   if (params?.manualSessionKind?.trim()) {
     sp.set("manualSessionKind", params.manualSessionKind.trim());
   }
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/sessions${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/sessions${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export type AdminSessionLapRow = {
@@ -125,7 +135,7 @@ export type AdminSessionDetail = {
 
 export async function fetchAdminSessionDetail(
   sessionId: string,
-  options?: { includeTelemetry?: boolean }
+  options?: { includeTelemetry?: boolean },
 ): Promise<AdminSessionDetail> {
   const sp = new URLSearchParams();
   if (options?.includeTelemetry) sp.set("includeTelemetry", "true");
@@ -134,20 +144,20 @@ export async function fetchAdminSessionDetail(
     "GET",
     `/api/admin/sessions/${encodeURIComponent(sessionId)}${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 /** Same body shape as {@link updateActivity} / PUT `/api/sessions/:id`; admin-only route applies edits on behalf of the session owner. */
 export async function putAdminSessionActivity(
   sessionId: string,
-  data: ManualActivityRequest
+  data: ManualActivityRequest,
 ): Promise<ManualActivityResponse> {
   return fetchApi(
     "PUT",
     `/api/admin/sessions/${encodeURIComponent(sessionId)}/activity`,
     buildManualActivityRequestBody(data),
-    false
+    false,
   );
 }
 
@@ -166,16 +176,30 @@ export type AdminSessionPatchBody = {
 
 export async function patchAdminSession(
   sessionId: string,
-  body: AdminSessionPatchBody
+  body: AdminSessionPatchBody,
 ): Promise<{ ok: boolean; id: string }> {
-  return fetchApi("PATCH", `/api/admin/sessions/${encodeURIComponent(sessionId)}`, body, false);
+  return fetchApi(
+    "PATCH",
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}`,
+    body,
+    false,
+  );
 }
 
-export async function deleteAdminSession(sessionId: string): Promise<{ ok: boolean }> {
-  return fetchApi("DELETE", `/api/admin/sessions/${encodeURIComponent(sessionId)}`, undefined, false);
+export async function deleteAdminSession(
+  sessionId: string,
+): Promise<{ ok: boolean }> {
+  return fetchApi(
+    "DELETE",
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}`,
+    undefined,
+    false,
+  );
 }
 
-export async function bulkDeleteAdminSessions(ids: string[]): Promise<{ ok: boolean; deleted: number }> {
+export async function bulkDeleteAdminSessions(
+  ids: string[],
+): Promise<{ ok: boolean; deleted: number }> {
   return fetchApi("POST", "/api/admin/sessions/bulk-delete", { ids }, false);
 }
 
@@ -191,13 +215,13 @@ export type AdminLapPatchBody = {
 export async function patchAdminSessionLap(
   sessionId: string,
   lapId: string,
-  body: AdminLapPatchBody
+  body: AdminLapPatchBody,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "PATCH",
     `/api/admin/sessions/${encodeURIComponent(sessionId)}/laps/${encodeURIComponent(lapId)}`,
     body,
-    false
+    false,
   );
 }
 
@@ -211,17 +235,25 @@ export type AdminLapCreateBody = {
 
 export async function createAdminSessionLap(
   sessionId: string,
-  body: AdminLapCreateBody
+  body: AdminLapCreateBody,
 ): Promise<{ ok: boolean }> {
-  return fetchApi("POST", `/api/admin/sessions/${encodeURIComponent(sessionId)}/laps`, body, false);
+  return fetchApi(
+    "POST",
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}/laps`,
+    body,
+    false,
+  );
 }
 
-export async function deleteAdminSessionLap(sessionId: string, lapId: string): Promise<{ ok: boolean }> {
+export async function deleteAdminSessionLap(
+  sessionId: string,
+  lapId: string,
+): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/sessions/${encodeURIComponent(sessionId)}/laps/${encodeURIComponent(lapId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -229,7 +261,12 @@ export async function postAdminReconcileChallengeLeaderboard(body: {
   challengeId: string;
   userId: string;
 }): Promise<{ ok: boolean }> {
-  return fetchApi("POST", "/api/admin/sessions/reconcile-leaderboard", body, false);
+  return fetchApi(
+    "POST",
+    "/api/admin/sessions/reconcile-leaderboard",
+    body,
+    false,
+  );
 }
 
 export type AdminDuplicateCluster = {
@@ -259,14 +296,25 @@ export async function fetchAdminDuplicateClusters(params?: {
   const sp = new URLSearchParams();
   if (params?.userId?.trim()) sp.set("userId", params.userId.trim());
   if (params?.sim?.trim()) sp.set("sim", params.sim.trim());
-  if (params?.windowHours != null) sp.set("windowHours", String(params.windowHours));
+  if (params?.windowHours != null)
+    sp.set("windowHours", String(params.windowHours));
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/sessions/duplicates${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/sessions/duplicates${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export async function mergeAdminDuplicateSessions(body: {
   keepSessionId: string;
   mergeSessionIds: string[];
-}): Promise<{ ok: boolean; keepSessionId: string; mergedCount: number; lapCount: number }> {
+}): Promise<{
+  ok: boolean;
+  keepSessionId: string;
+  mergedCount: number;
+  lapCount: number;
+}> {
   return fetchApi("POST", "/api/admin/sessions/merge", body, false);
 }

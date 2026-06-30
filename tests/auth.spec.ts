@@ -19,7 +19,10 @@ function isEmailDeliveryConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
 }
 
-async function expectGuestRedirectToLogin(page: Page, path: string): Promise<void> {
+async function expectGuestRedirectToLogin(
+  page: Page,
+  path: string,
+): Promise<void> {
   await clearGuestSession(page);
   await page.goto(path);
   await expect(page).toHaveURL(/\/login$/);
@@ -31,7 +34,7 @@ test.describe("@auth", () => {
   test("A1 — guest redirect to protected route", async ({ page }) => {
     await expectGuestRedirectToLogin(page, "/profile");
     await expect(
-      page.getByText(/Sign in to view your profile and stats/i)
+      page.getByText(/Sign in to view your profile and stats/i),
     ).toBeVisible();
   });
 
@@ -59,11 +62,13 @@ test.describe("@auth", () => {
 
     await loginViaUi(page, email, env.password, "/pricing");
     await expect(page).toHaveURL(/\/pricing$/);
-    await expect(page.getByRole("heading", { name: "Choose your plan" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Choose your plan" }),
+    ).toBeVisible();
 
     const token = await page.evaluate(() => localStorage.getItem("apex_token"));
     const sessionToken = await page.evaluate(() =>
-      localStorage.getItem("apex_session_token")
+      localStorage.getItem("apex_session_token"),
     );
     expect(token?.trim()).toBeTruthy();
     expect(sessionToken?.trim()).toBeTruthy();
@@ -78,7 +83,7 @@ test.describe("@auth", () => {
   test("A4 — signup requires email verification", async ({ page }) => {
     test.skip(
       !isEmailDeliveryConfigured(),
-      "RESEND_API_KEY must be set on the backend for signup verification email"
+      "RESEND_API_KEY must be set on the backend for signup verification email",
     );
 
     const env = getE2eEnv();
@@ -86,14 +91,18 @@ test.describe("@auth", () => {
 
     await clearGuestSession(page);
     await page.goto("/signup");
-    await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Create account" }),
+    ).toBeVisible();
 
     await page.getByLabel("Name (optional)").fill("E2E Signup");
     await page.getByLabel("Email").fill(uniqueEmail);
     await page.getByLabel("Password").fill(env.password);
 
     const registerPost = page.waitForResponse(
-      (res) => res.url().includes("/api/auth/register") && res.request().method() === "POST"
+      (res) =>
+        res.url().includes("/api/auth/register") &&
+        res.request().method() === "POST",
     );
     await page.getByRole("button", { name: "Sign up" }).click();
 
@@ -103,7 +112,9 @@ test.describe("@auth", () => {
     expect(body.verificationRequired).toBe(true);
 
     await expect(page).toHaveURL(/\/verify-email$/);
-    await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Verify your email" }),
+    ).toBeVisible();
     await expect(page.getByText(uniqueEmail)).toBeVisible();
   });
 
@@ -123,12 +134,15 @@ test.describe("@auth", () => {
       }, email);
       await page.reload();
 
-      await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Verify your email" }),
+      ).toBeVisible();
       await page.getByLabel("Verification code").fill(code);
 
       const verifyPost = page.waitForResponse(
         (res) =>
-          res.url().includes("/api/auth/verify-email") && res.request().method() === "POST"
+          res.url().includes("/api/auth/verify-email") &&
+          res.request().method() === "POST",
       );
       await page.getByRole("button", { name: "Verify" }).click();
 
@@ -137,15 +151,17 @@ test.describe("@auth", () => {
         const body = await response.text();
         expect(
           response.ok(),
-          `verify-email failed (${response.status()}): ${body}`
+          `verify-email failed (${response.status()}): ${body}`,
         ).toBeTruthy();
       }
 
       await expect(page).toHaveURL(/\/profile/, { timeout: 30_000 });
 
-      const token = await page.evaluate(() => localStorage.getItem("apex_token"));
+      const token = await page.evaluate(() =>
+        localStorage.getItem("apex_token"),
+      );
       const sessionToken = await page.evaluate(() =>
-        localStorage.getItem("apex_session_token")
+        localStorage.getItem("apex_session_token"),
       );
       expect(token?.trim()).toBeTruthy();
       expect(sessionToken?.trim()).toBeTruthy();
@@ -164,7 +180,8 @@ test.describe("@auth", () => {
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     const logoutReq = page.waitForRequest(
-      (req) => req.url().includes("/api/auth/logout") && req.method() === "POST"
+      (req) =>
+        req.url().includes("/api/auth/logout") && req.method() === "POST",
     );
     await page.getByRole("button", { name: "Log out" }).click();
     await logoutReq;
@@ -178,7 +195,7 @@ test.describe("@auth", () => {
   test("A6 — forgot-password wizard", async ({ page, request }) => {
     test.skip(
       !isEmailDeliveryConfigured(),
-      "RESEND_API_KEY must be set on the backend for forgot-password email delivery"
+      "RESEND_API_KEY must be set on the backend for forgot-password email delivery",
     );
 
     const env = getE2eEnv();
@@ -188,42 +205,53 @@ test.describe("@auth", () => {
 
     await clearGuestSession(page);
     await page.goto("/forgot-password");
-    await expect(page.getByRole("heading", { name: "Forgot password" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Forgot password" }),
+    ).toBeVisible();
 
     await page.getByLabel("Email").fill(email);
     const forgotPost = page.waitForResponse(
-      (res) => res.url().includes("/api/auth/forgot-password") && res.request().method() === "POST"
+      (res) =>
+        res.url().includes("/api/auth/forgot-password") &&
+        res.request().method() === "POST",
     );
     await page.getByRole("button", { name: "Send code" }).click();
     const forgotRes = await forgotPost;
     expect(forgotRes.ok()).toBeTruthy();
 
-    await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Check your email" }),
+    ).toBeVisible();
 
     assignKnownPasswordResetCode(email, resetCode);
 
     await page.getByLabel("Verification code").fill(resetCode);
     const verifyPost = page.waitForResponse(
       (res) =>
-        res.url().includes("/api/auth/verify-reset-code") && res.request().method() === "POST"
+        res.url().includes("/api/auth/verify-reset-code") &&
+        res.request().method() === "POST",
     );
     await page.getByRole("button", { name: "Verify code" }).click();
     const verifyRes = await verifyPost;
     expect(verifyRes.ok()).toBeTruthy();
 
-    await expect(page.getByRole("heading", { name: "Reset password" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Reset password" }),
+    ).toBeVisible();
     await page.getByLabel("New password").fill(rotatedPassword);
     await page.getByLabel("Confirm password").fill(rotatedPassword);
 
     const resetPost = page.waitForResponse(
-      (res) => res.url().includes("/api/auth/reset-password") && res.request().method() === "POST"
+      (res) =>
+        res.url().includes("/api/auth/reset-password") &&
+        res.request().method() === "POST",
     );
     await page.getByRole("button", { name: "Reset password" }).click();
     const resetRes = await resetPost;
     expect(resetRes.ok()).toBeTruthy();
 
     await expect(
-      page.getByText(/Your password has been updated/i)
+      page.getByText(/Your password has been updated/i),
     ).toBeVisible();
     await page.getByRole("button", { name: "Back to sign in" }).click();
     await expect(page).toHaveURL(/\/login$/);
@@ -232,9 +260,12 @@ test.describe("@auth", () => {
     await expect(page).toHaveURL(/\/profile/, { timeout: 30_000 });
 
     assignKnownPasswordResetCode(email, resetCode);
-    const restoreRes = await request.post(`${env.apiUrl}/api/auth/reset-password`, {
-      data: { email, code: resetCode, password: env.password },
-    });
+    const restoreRes = await request.post(
+      `${env.apiUrl}/api/auth/reset-password`,
+      {
+        data: { email, code: resetCode, password: env.password },
+      },
+    );
     expect(restoreRes.ok()).toBeTruthy();
   });
 
@@ -249,7 +280,9 @@ test.describe("@auth", () => {
 
     await expect(page).toHaveURL(/\/login$/);
     await expect(
-      page.getByRole("alert").getByText(/Your account has been suspended from this platform/i)
+      page
+        .getByRole("alert")
+        .getByText(/Your account has been suspended from this platform/i),
     ).toBeVisible();
     await expect(page.getByText(/E2E seed — suspended persona/i)).toBeVisible();
   });

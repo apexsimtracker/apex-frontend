@@ -42,7 +42,9 @@ const PARTICIPANT_PAGE_SIZE = 20;
 const LEADERBOARD_PAGE_SIZE = 20;
 const PARTICIPANT_SEARCH_DEBOUNCE_MS = 300;
 
-function formatChallengeStatusLabel(status: string): "Live" | "Upcoming" | "Finished" {
+function formatChallengeStatusLabel(
+  status: string,
+): "Live" | "Upcoming" | "Finished" {
   switch (status.toUpperCase()) {
     case "ACTIVE":
       return "Live";
@@ -78,12 +80,14 @@ function normLabel(s: string): string {
 function resolveCatalogTrackId(
   catalog: { id: string; name: string }[],
   storedToken: string,
-  nameHint: string | null | undefined
+  nameHint: string | null | undefined,
 ): string {
   const token = storedToken?.trim();
   if (token && catalog.some((t) => t.id === token)) return token;
   if (token) {
-    const byTokenAsName = catalog.find((t) => normLabel(t.name) === normLabel(token));
+    const byTokenAsName = catalog.find(
+      (t) => normLabel(t.name) === normLabel(token),
+    );
     if (byTokenAsName) return byTokenAsName.id;
   }
   const h = nameHint?.trim();
@@ -92,7 +96,7 @@ function resolveCatalogTrackId(
   const exact = catalog.find((t) => normLabel(t.name) === nh);
   if (exact) return exact.id;
   const partial = catalog.find(
-    (t) => nh.includes(normLabel(t.name)) || normLabel(t.name).includes(nh)
+    (t) => nh.includes(normLabel(t.name)) || normLabel(t.name).includes(nh),
   );
   return partial?.id ?? "";
 }
@@ -100,12 +104,14 @@ function resolveCatalogTrackId(
 function resolveCatalogCarId(
   catalog: { id: string; name: string }[],
   storedToken: string,
-  nameHint: string | null | undefined
+  nameHint: string | null | undefined,
 ): string {
   const token = storedToken?.trim();
   if (token && catalog.some((c) => c.id === token)) return token;
   if (token) {
-    const byTokenAsName = catalog.find((c) => normLabel(c.name) === normLabel(token));
+    const byTokenAsName = catalog.find(
+      (c) => normLabel(c.name) === normLabel(token),
+    );
     if (byTokenAsName) return byTokenAsName.id;
   }
   const h = nameHint?.trim();
@@ -114,7 +120,7 @@ function resolveCatalogCarId(
   const exact = catalog.find((c) => normLabel(c.name) === nh);
   if (exact) return exact.id;
   const partial = catalog.find(
-    (c) => nh.includes(normLabel(c.name)) || normLabel(c.name).includes(nh)
+    (c) => nh.includes(normLabel(c.name)) || normLabel(c.name).includes(nh),
   );
   return partial?.id ?? "";
 }
@@ -153,10 +159,20 @@ type AdminDetail = {
   fastestLapMs: number | null;
   /** Matches admin list API; derived from creator user name/email. */
   createdByDisplayName: string | null;
-  badges?: { userId: string; displayName: string; place: number; tier: string; awardedAt: string }[];
+  badges?: {
+    userId: string;
+    displayName: string;
+    place: number;
+    tier: string;
+    awardedAt: string;
+  }[];
 };
 
-type ActionTarget = { userId: string; displayName: string; ban?: BanInfo | null };
+type ActionTarget = {
+  userId: string;
+  displayName: string;
+  ban?: BanInfo | null;
+};
 
 export default function AdminChallengeDetail() {
   const { challengeId } = useParams<{ challengeId: string }>();
@@ -191,7 +207,11 @@ export default function AdminChallengeDetail() {
   const { data: leaderboardData, isPending: leaderboardLoading } = useQuery({
     queryKey: ["admin", "challenge", id, "leaderboard", leaderboardPage],
     queryFn: () =>
-      fetchAdminChallengeLeaderboard(id, leaderboardPage, LEADERBOARD_PAGE_SIZE),
+      fetchAdminChallengeLeaderboard(
+        id,
+        leaderboardPage,
+        LEADERBOARD_PAGE_SIZE,
+      ),
     enabled: Boolean(id),
   });
 
@@ -199,7 +219,7 @@ export default function AdminChallengeDetail() {
   const [participantSearch, setParticipantSearch] = useState("");
   const debouncedParticipantSearch = useDebouncedValue(
     participantSearch,
-    PARTICIPANT_SEARCH_DEBOUNCE_MS
+    PARTICIPANT_SEARCH_DEBOUNCE_MS,
   );
   useEffect(() => {
     setParticipantsPage(1);
@@ -240,8 +260,13 @@ export default function AdminChallengeDetail() {
     return m;
   }, [data?.badges]);
 
-  const { tracks, cars, loading: catalogsLoading, error: catalogsError, retry: retryCatalogs } =
-    useCatalogs(sim || null);
+  const {
+    tracks,
+    cars,
+    loading: catalogsLoading,
+    error: catalogsError,
+    retry: retryCatalogs,
+  } = useCatalogs(sim || null);
 
   useEffect(() => {
     hydratedForChallengeIdRef.current = null;
@@ -259,7 +284,7 @@ export default function AdminChallengeDetail() {
     setSim(
       (data.sim === "IRACING" || data.sim === "F1_25" || data.sim === "LMU"
         ? data.sim
-        : "") as ManualActivitySim | ""
+        : "") as ManualActivitySim | "",
     );
     setStartsAt(localFromIso(data.startsAt));
     setEndsAt(localFromIso(data.endsAt));
@@ -360,7 +385,9 @@ export default function AdminChallengeDetail() {
       await qc.invalidateQueries({ queryKey: ["challenges"] });
     },
     onError: (e) => {
-      setEndEarlyError(e instanceof ApiError ? e.message : "Could not end challenge");
+      setEndEarlyError(
+        e instanceof ApiError ? e.message : "Could not end challenge",
+      );
     },
   });
 
@@ -387,8 +414,7 @@ export default function AdminChallengeDetail() {
   }
 
   const removeMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeAdminChallengeParticipant(id, userId),
+    mutationFn: (userId: string) => removeAdminChallengeParticipant(id, userId),
     onSuccess: async () => {
       setRemoveTarget(null);
       setRemoveError(null);
@@ -396,7 +422,7 @@ export default function AdminChallengeDetail() {
     },
     onError: (e) => {
       setRemoveError(
-        e instanceof ApiError ? e.message : "Could not remove participant"
+        e instanceof ApiError ? e.message : "Could not remove participant",
       );
     },
   });
@@ -436,14 +462,13 @@ export default function AdminChallengeDetail() {
     },
     onError: (e) => {
       setBanError(
-        e instanceof ApiError ? e.message : "Could not update ban reason"
+        e instanceof ApiError ? e.message : "Could not update ban reason",
       );
     },
   });
 
   const unbanMutation = useMutation({
-    mutationFn: (userId: string) =>
-      unbanAdminChallengeParticipant(id, userId),
+    mutationFn: (userId: string) => unbanAdminChallengeParticipant(id, userId),
     onSuccess: async () => {
       setBanTarget(null);
       setBanReasonInput("");
@@ -508,12 +533,15 @@ export default function AdminChallengeDetail() {
           <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <span
-                className={`mb-3 inline-block rounded border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${STATUS_PILL_STYLE[formatChallengeStatusLabel(data.status)]
-                  }`}
+                className={`mb-3 inline-block rounded border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${
+                  STATUS_PILL_STYLE[formatChallengeStatusLabel(data.status)]
+                }`}
               >
                 {formatChallengeStatusLabel(data.status)}
               </span>
-              <h1 className="text-2xl font-bold text-foreground">{data.title}</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                {data.title}
+              </h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                 <span>{data.participantCount} joined</span>
                 {data.fastestLapMs != null && (
@@ -533,7 +561,11 @@ export default function AdminChallengeDetail() {
             <div className="flex gap-2">
               {!editing ? (
                 <>
-                  <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditing(true)}
+                  >
                     Edit
                   </Button>
                   {!isEnded && (
@@ -552,7 +584,11 @@ export default function AdminChallengeDetail() {
                 </>
               ) : (
                 <>
-                  <Button type="button" variant="outline" onClick={() => setEditing(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditing(false)}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -571,14 +607,18 @@ export default function AdminChallengeDetail() {
             <div className="mb-8 space-y-4 rounded-xl border border-white/10 p-4">
               {isEnded && (
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
-                  Challenge has ended. Only title and description can be edited —
-                  changing sim, track, car, or dates would invalidate the awarded
-                  badges and leaderboard.
+                  Challenge has ended. Only title and description can be edited
+                  — changing sim, track, car, or dates would invalidate the
+                  awarded badges and leaderboard.
                 </div>
               )}
               <label className="block text-xs text-muted-foreground">
                 Title <span className="text-red-400">*</span>
-                <Input className="mt-1" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input
+                  className="mt-1"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </label>
               <label className="block text-xs text-muted-foreground">
                 Description <span className="text-red-400">*</span>
@@ -637,10 +677,16 @@ export default function AdminChallengeDetail() {
                   className={`mt-1 ${SELECT_MANUAL_LIKE}`}
                   value={trackId}
                   onChange={(e) => setTrackId(e.target.value)}
-                  disabled={saveMutation.isPending || !sim || catalogsLoading || isEnded}
+                  disabled={
+                    saveMutation.isPending || !sim || catalogsLoading || isEnded
+                  }
                 >
                   <option value="">
-                    {!sim ? "Select a sim first" : catalogsLoading ? "Loading…" : "Select track…"}
+                    {!sim
+                      ? "Select a sim first"
+                      : catalogsLoading
+                        ? "Loading…"
+                        : "Select track…"}
                   </option>
                   {tracks.map((tr) => (
                     <option key={tr.id} value={tr.id}>
@@ -662,10 +708,16 @@ export default function AdminChallengeDetail() {
                   className={`mt-1 ${SELECT_MANUAL_LIKE}`}
                   value={carId}
                   onChange={(e) => setCarId(e.target.value)}
-                  disabled={saveMutation.isPending || !sim || catalogsLoading || isEnded}
+                  disabled={
+                    saveMutation.isPending || !sim || catalogsLoading || isEnded
+                  }
                 >
                   <option value="">
-                    {!sim ? "Select a sim first" : catalogsLoading ? "Loading…" : "Select car…"}
+                    {!sim
+                      ? "Select a sim first"
+                      : catalogsLoading
+                        ? "Loading…"
+                        : "Select car…"}
                   </option>
                   {cars.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -677,8 +729,10 @@ export default function AdminChallengeDetail() {
 
               <p className="text-xs text-muted-foreground">
                 Times are entered in your local timezone:{" "}
-                <span className="font-medium text-foreground">{getBrowserTimeZone()}</span>.
-                Players see them in their own local timezone.
+                <span className="font-medium text-foreground">
+                  {getBrowserTimeZone()}
+                </span>
+                . Players see them in their own local timezone.
               </p>
               <label className="block text-xs text-muted-foreground">
                 Starts at <span className="text-red-400">*</span>
@@ -702,12 +756,16 @@ export default function AdminChallengeDetail() {
                   disabled={isEnded}
                 />
               </label>
-              {formError && <p className="text-sm text-destructive">{formError}</p>}
+              {formError && (
+                <p className="text-sm text-destructive">{formError}</p>
+              )}
             </div>
           ) : (
             <div className="mb-8 space-y-4">
               <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {data.description?.trim() ? data.description : "No description."}
+                {data.description?.trim()
+                  ? data.description
+                  : "No description."}
               </p>
               <div className="grid grid-cols-2 gap-4 rounded-xl border border-white/10 p-4 sm:grid-cols-3">
                 <div>
@@ -765,386 +823,423 @@ export default function AdminChallengeDetail() {
           )}
 
           {!editing && (
-          <>
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 p-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                  Participants
-                  {participantsData?.total != null && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      ({participantsData.total})
-                    </span>
-                  )}
-                </h2>
-              </div>
-              <Input
-                placeholder="Search participants…"
-                value={participantSearch}
-                onChange={(e) => setParticipantSearch(e.target.value)}
-                className="mb-0"
-                aria-label="Search participants"
-                autoComplete="off"
-              />
+            <>
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className="rounded-xl border border-white/10 p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                      Participants
+                      {participantsData?.total != null && (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          ({participantsData.total})
+                        </span>
+                      )}
+                    </h2>
+                  </div>
+                  <Input
+                    placeholder="Search participants…"
+                    value={participantSearch}
+                    onChange={(e) => setParticipantSearch(e.target.value)}
+                    className="mb-0"
+                    aria-label="Search participants"
+                    autoComplete="off"
+                  />
 
-              {participantsData && participantsData.total > 0 && !participantsLoading && (
-                <p className="mb-2 text-xs text-muted-foreground">
-                  {(() => {
-                    const start = (participantsData.page - 1) * PARTICIPANT_PAGE_SIZE + 1;
-                    const end = Math.min(
-                      participantsData.page * PARTICIPANT_PAGE_SIZE,
-                      participantsData.total
-                    );
-                    return `Showing ${start}–${end} of ${participantsData.total}`;
-                  })()}
-                </p>
-              )}
-              {participantsLoading ? (
-                <div className="flex justify-center py-6" aria-busy="true">
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
-                </div>
-              ) : (participantsData?.items ?? []).length === 0 ? (
-                <p className="py-4 text-sm text-muted-foreground">
-                  {debouncedParticipantSearch.trim()
-                    ? "No participants match."
-                    : "No participants yet."}
-                </p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {(participantsData?.items ?? []).map((p) => {
-                    const banned = !!p.ban;
-                    const target: ActionTarget = {
-                      userId: p.userId,
-                      displayName: p.displayName,
-                      ban: p.ban ?? null,
-                    };
-                    return (
-                      <li key={p.userId}>
-                        <div
-                          className={`flex items-center justify-between gap-2 rounded-md p-2 transition-colors hover:bg-white/5 ${banned ? "opacity-70" : ""}`}
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Link
-                              to={`/user/${encodeURIComponent(p.userId)}`}
-                              className="min-w-0 truncate font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                              aria-label={`View profile: ${p.displayName}`}
-                            >
-                              {p.displayName}
-                            </Link>
-                            {banned && (
-                              <span
-                                className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300"
-                                title={p.ban?.reason ?? undefined}
-                              >
-                                Banned
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              Joined {new Date(p.joinedAt).toLocaleDateString()}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={`Actions for ${p.displayName}`}
-                                  className="size-7"
-                                >
-                                  <MoreHorizontal className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <Link to={`/user/${encodeURIComponent(p.userId)}`}>
-                                    Open profile
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => openRemove(target)}
-                                  className="text-destructive"
-                                >
-                                  Remove from challenge
-                                </DropdownMenuItem>
-                                {banned ? (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() => openEditBan(target)}
-                                    >
-                                      Edit ban reason
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        unbanMutation.mutate(p.userId)
-                                      }
-                                    >
-                                      Unban
-                                    </DropdownMenuItem>
-                                  </>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() => openCreateBan(target)}
-                                    className="text-destructive"
-                                  >
-                                    Ban from challenge
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {participantsData && participantsData.totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between gap-2 text-xs">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={participantsPage <= 1}
-                    onClick={() => setParticipantsPage((p) => Math.max(1, p - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-muted-foreground">
-                    Page {participantsData.page} / {participantsData.totalPages}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={participantsPage >= participantsData.totalPages}
-                    onClick={() =>
-                      setParticipantsPage((p) =>
-                        Math.min(participantsData.totalPages, p + 1)
-                      )
-                    }
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="rounded-xl border border-white/10 p-4">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
-                Badges
-              </h2>
-              {(data.badges ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No podium badges yet.</p>
-              ) : (
-                <ul className="space-y-2 text-sm">
-                  {(data.badges ?? []).map((b) => (
-                    <li
-                      key={b.userId}
-                      className={`flex items-center justify-between gap-2 rounded px-2 py-1 ${tierAccent(
-                        b.place
-                      )}`}
-                    >
-                      <span className="font-medium">
-                        P{b.place} · {b.tier}
-                      </span>
-                      <span>{b.displayName}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-8 rounded-xl border border-white/10">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 p-3 sm:px-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-                Leaderboard
-                {leaderboardData?.total != null && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    ({leaderboardData.total})
-                  </span>
-                )}
-              </h2>
-              {leaderboardData && (
-                <p className="text-xs text-muted-foreground">
-                  Page {leaderboardData.page} / {leaderboardData.totalPages}
-                </p>
-              )}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 text-muted-foreground">
-                    <th className="p-3">#</th>
-                    <th className="p-3">Driver</th>
-                    <th className="p-3">Best lap</th>
-                    <th className="p-3">Date set</th>
-                    <th className="p-3">Attempts</th>
-                    <th className="p-3">Verification</th>
-                    <th className="p-3">Session</th>
-                    <th className="p-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboardLoading ? (
-                    <tr>
-                      <td colSpan={8} className="p-6 text-center" aria-busy="true">
-                        <Loader2
-                          className="mx-auto size-5 animate-spin text-muted-foreground"
-                          aria-hidden
-                        />
-                      </td>
-                    </tr>
-                  ) : (leaderboardData?.items ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="p-6 text-center text-muted-foreground">
-                        No laps recorded yet.
-                      </td>
-                    </tr>
+                  {participantsData &&
+                    participantsData.total > 0 &&
+                    !participantsLoading && (
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        {(() => {
+                          const start =
+                            (participantsData.page - 1) *
+                              PARTICIPANT_PAGE_SIZE +
+                            1;
+                          const end = Math.min(
+                            participantsData.page * PARTICIPANT_PAGE_SIZE,
+                            participantsData.total,
+                          );
+                          return `Showing ${start}–${end} of ${participantsData.total}`;
+                        })()}
+                      </p>
+                    )}
+                  {participantsLoading ? (
+                    <div className="flex justify-center py-6" aria-busy="true">
+                      <Loader2
+                        className="size-4 animate-spin text-muted-foreground"
+                        aria-hidden
+                      />
+                    </div>
+                  ) : (participantsData?.items ?? []).length === 0 ? (
+                    <p className="py-4 text-sm text-muted-foreground">
+                      {debouncedParticipantSearch.trim()
+                        ? "No participants match."
+                        : "No participants yet."}
+                    </p>
                   ) : (
-                    (leaderboardData?.items ?? []).map((r) => {
-                      const place = badgePlaceByUser.get(r.userId);
-                      const banned = !!r.ban;
-                      const target: ActionTarget = {
-                        userId: r.userId,
-                        displayName: r.username,
-                        ban: r.ban ?? null,
-                      };
-                      return (
-                        <tr
-                          key={`${r.userId}-${r.rank}`}
-                          className={`border-b border-white/5 ${place != null ? tierAccent(place) : ""} ${banned ? "opacity-60" : ""}`}
-                        >
-                          <td className="p-3 tabular-nums">{r.rank}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <Link
-                                to={`/user/${encodeURIComponent(r.userId)}`}
-                                className="text-primary underline-offset-2 hover:underline"
-                              >
-                                {r.username}
-                              </Link>
-                              {banned && (
-                                <span
-                                  className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300"
-                                  title={r.ban?.reason ?? undefined}
+                    <ul className="space-y-1 text-sm">
+                      {(participantsData?.items ?? []).map((p) => {
+                        const banned = !!p.ban;
+                        const target: ActionTarget = {
+                          userId: p.userId,
+                          displayName: p.displayName,
+                          ban: p.ban ?? null,
+                        };
+                        return (
+                          <li key={p.userId}>
+                            <div
+                              className={`flex items-center justify-between gap-2 rounded-md p-2 transition-colors hover:bg-white/5 ${banned ? "opacity-70" : ""}`}
+                            >
+                              <div className="flex min-w-0 items-center gap-2">
+                                <Link
+                                  to={`/user/${encodeURIComponent(p.userId)}`}
+                                  className="min-w-0 truncate font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                                  aria-label={`View profile: ${p.displayName}`}
                                 >
-                                  Banned
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 font-mono">{formatLapMs(r.bestLapMs)}</td>
-                          <td className="p-3 text-muted-foreground">
-                            {formatChallengeDateTime(r.bestLapAt)}
-                          </td>
-                          <td className="p-3 tabular-nums">{r.attemptCount}</td>
-                          <td className="p-3">
-                            {r.verification === "VERIFIED" ? (
-                              <span className="text-emerald-400">Verified</span>
-                            ) : (
-                              <span className="text-amber-400">Manual</span>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            {r.bestSessionId ? (
-                              <Link
-                                to={`/sessions/${r.bestSessionId}`}
-                                className="text-primary underline-offset-4 hover:underline"
-                              >
-                                View
-                              </Link>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label={`Actions for ${r.username}`}
-                                  className="size-7"
-                                >
-                                  <MoreHorizontal className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <Link to={`/user/${encodeURIComponent(r.userId)}`}>
-                                    Open profile
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => openRemove(target)}
-                                  className="text-destructive"
-                                >
-                                  Remove from challenge
-                                </DropdownMenuItem>
-                                {banned ? (
-                                  <>
-                                    <DropdownMenuItem
-                                      onClick={() => openEditBan(target)}
-                                    >
-                                      Edit ban reason
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        unbanMutation.mutate(r.userId)
-                                      }
-                                    >
-                                      Unban
-                                    </DropdownMenuItem>
-                                  </>
-                                ) : (
-                                  <DropdownMenuItem
-                                    onClick={() => openCreateBan(target)}
-                                    className="text-destructive"
+                                  {p.displayName}
+                                </Link>
+                                {banned && (
+                                  <span
+                                    className="shrink-0 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300"
+                                    title={p.ban?.reason ?? undefined}
                                   >
-                                    Ban from challenge
-                                  </DropdownMenuItem>
+                                    Banned
+                                  </span>
                                 )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  Joined{" "}
+                                  {new Date(p.joinedAt).toLocaleDateString()}
+                                </span>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={`Actions for ${p.displayName}`}
+                                      className="size-7"
+                                    >
+                                      <MoreHorizontal className="size-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link
+                                        to={`/user/${encodeURIComponent(p.userId)}`}
+                                      >
+                                        Open profile
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => openRemove(target)}
+                                      className="text-destructive"
+                                    >
+                                      Remove from challenge
+                                    </DropdownMenuItem>
+                                    {banned ? (
+                                      <>
+                                        <DropdownMenuItem
+                                          onClick={() => openEditBan(target)}
+                                        >
+                                          Edit ban reason
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            unbanMutation.mutate(p.userId)
+                                          }
+                                        >
+                                          Unban
+                                        </DropdownMenuItem>
+                                      </>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() => openCreateBan(target)}
+                                        className="text-destructive"
+                                      >
+                                        Ban from challenge
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {participantsData && participantsData.totalPages > 1 && (
+                    <div className="mt-4 flex items-center justify-between gap-2 text-xs">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={participantsPage <= 1}
+                        onClick={() =>
+                          setParticipantsPage((p) => Math.max(1, p - 1))
+                        }
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-muted-foreground">
+                        Page {participantsData.page} /{" "}
+                        {participantsData.totalPages}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          participantsPage >= participantsData.totalPages
+                        }
+                        onClick={() =>
+                          setParticipantsPage((p) =>
+                            Math.min(participantsData.totalPages, p + 1),
+                          )
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div className="rounded-xl border border-white/10 p-4">
+                  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
+                    Badges
+                  </h2>
+                  {(data.badges ?? []).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No podium badges yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-sm">
+                      {(data.badges ?? []).map((b) => (
+                        <li
+                          key={b.userId}
+                          className={`flex items-center justify-between gap-2 rounded px-2 py-1 ${tierAccent(
+                            b.place,
+                          )}`}
+                        >
+                          <span className="font-medium">
+                            P{b.place} · {b.tier}
+                          </span>
+                          <span>{b.displayName}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-8 rounded-xl border border-white/10">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 p-3 sm:px-4">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                    Leaderboard
+                    {leaderboardData?.total != null && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        ({leaderboardData.total})
+                      </span>
+                    )}
+                  </h2>
+                  {leaderboardData && (
+                    <p className="text-xs text-muted-foreground">
+                      Page {leaderboardData.page} / {leaderboardData.totalPages}
+                    </p>
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-muted-foreground">
+                        <th className="p-3">#</th>
+                        <th className="p-3">Driver</th>
+                        <th className="p-3">Best lap</th>
+                        <th className="p-3">Date set</th>
+                        <th className="p-3">Attempts</th>
+                        <th className="p-3">Verification</th>
+                        <th className="p-3">Session</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboardLoading ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="p-6 text-center"
+                            aria-busy="true"
+                          >
+                            <Loader2
+                              className="mx-auto size-5 animate-spin text-muted-foreground"
+                              aria-hidden
+                            />
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {leaderboardData && leaderboardData.totalPages > 1 && (
-              <div className="flex items-center justify-end gap-2 border-t border-white/10 p-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={leaderboardPage <= 1}
-                  onClick={() => setLeaderboardPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={leaderboardPage >= leaderboardData.totalPages}
-                  onClick={() =>
-                    setLeaderboardPage((p) =>
-                      Math.min(leaderboardData.totalPages, p + 1)
-                    )
-                  }
-                >
-                  Next
-                </Button>
+                      ) : (leaderboardData?.items ?? []).length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="p-6 text-center text-muted-foreground"
+                          >
+                            No laps recorded yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        (leaderboardData?.items ?? []).map((r) => {
+                          const place = badgePlaceByUser.get(r.userId);
+                          const banned = !!r.ban;
+                          const target: ActionTarget = {
+                            userId: r.userId,
+                            displayName: r.username,
+                            ban: r.ban ?? null,
+                          };
+                          return (
+                            <tr
+                              key={`${r.userId}-${r.rank}`}
+                              className={`border-b border-white/5 ${place != null ? tierAccent(place) : ""} ${banned ? "opacity-60" : ""}`}
+                            >
+                              <td className="p-3 tabular-nums">{r.rank}</td>
+                              <td className="p-3">
+                                <div className="flex items-center gap-2">
+                                  <Link
+                                    to={`/user/${encodeURIComponent(r.userId)}`}
+                                    className="text-primary underline-offset-2 hover:underline"
+                                  >
+                                    {r.username}
+                                  </Link>
+                                  {banned && (
+                                    <span
+                                      className="rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300"
+                                      title={r.ban?.reason ?? undefined}
+                                    >
+                                      Banned
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-3 font-mono">
+                                {formatLapMs(r.bestLapMs)}
+                              </td>
+                              <td className="p-3 text-muted-foreground">
+                                {formatChallengeDateTime(r.bestLapAt)}
+                              </td>
+                              <td className="p-3 tabular-nums">
+                                {r.attemptCount}
+                              </td>
+                              <td className="p-3">
+                                {r.verification === "VERIFIED" ? (
+                                  <span className="text-emerald-400">
+                                    Verified
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-400">Manual</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                {r.bestSessionId ? (
+                                  <Link
+                                    to={`/sessions/${r.bestSessionId}`}
+                                    className="text-primary underline-offset-4 hover:underline"
+                                  >
+                                    View
+                                  </Link>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3 text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      aria-label={`Actions for ${r.username}`}
+                                      className="size-7"
+                                    >
+                                      <MoreHorizontal className="size-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link
+                                        to={`/user/${encodeURIComponent(r.userId)}`}
+                                      >
+                                        Open profile
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => openRemove(target)}
+                                      className="text-destructive"
+                                    >
+                                      Remove from challenge
+                                    </DropdownMenuItem>
+                                    {banned ? (
+                                      <>
+                                        <DropdownMenuItem
+                                          onClick={() => openEditBan(target)}
+                                        >
+                                          Edit ban reason
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            unbanMutation.mutate(r.userId)
+                                          }
+                                        >
+                                          Unban
+                                        </DropdownMenuItem>
+                                      </>
+                                    ) : (
+                                      <DropdownMenuItem
+                                        onClick={() => openCreateBan(target)}
+                                        className="text-destructive"
+                                      >
+                                        Ban from challenge
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                {leaderboardData && leaderboardData.totalPages > 1 && (
+                  <div className="flex items-center justify-end gap-2 border-t border-white/10 p-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={leaderboardPage <= 1}
+                      onClick={() =>
+                        setLeaderboardPage((p) => Math.max(1, p - 1))
+                      }
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={leaderboardPage >= leaderboardData.totalPages}
+                      onClick={() =>
+                        setLeaderboardPage((p) =>
+                          Math.min(leaderboardData.totalPages, p + 1),
+                        )
+                      }
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          </>
+            </>
           )}
 
           {removeTarget && (
@@ -1160,8 +1255,9 @@ export default function AdminChallengeDetail() {
                   <span className="font-medium text-foreground">
                     {removeTarget.displayName}
                   </span>
-                  &apos;s sessions for this challenge will be detached and their leaderboard entry
-                  deleted. They may rejoin the challenge afterwards. This cannot be undone.
+                  &apos;s sessions for this challenge will be detached and their
+                  leaderboard entry deleted. They may rejoin the challenge
+                  afterwards. This cannot be undone.
                 </>
               }
               size="sm"
@@ -1189,9 +1285,9 @@ export default function AdminChallengeDetail() {
                 </>
               }
             >
-                {removeError && (
-                  <p className="mt-3 text-sm text-destructive">{removeError}</p>
-                )}
+              {removeError && (
+                <p className="mt-3 text-sm text-destructive">{removeError}</p>
+              )}
             </BaseAlertDialog>
           )}
 
@@ -1203,7 +1299,9 @@ export default function AdminChallengeDetail() {
                 setBanReasonInput("");
                 setBanError(null);
               }}
-              title={banMode === "edit" ? "Edit ban reason" : "Ban this participant?"}
+              title={
+                banMode === "edit" ? "Edit ban reason" : "Ban this participant?"
+              }
               description={
                 banMode === "edit" ? (
                   <>
@@ -1218,9 +1316,10 @@ export default function AdminChallengeDetail() {
                     <span className="font-medium text-foreground">
                       {banTarget.displayName}
                     </span>{" "}
-                    will not be able to post, join, or view this challenge. Existing rows stay in
-                    the database (admin still sees them) but are hidden from public views,
-                    including any podium badge.
+                    will not be able to post, join, or view this challenge.
+                    Existing rows stay in the database (admin still sees them)
+                    but are hidden from public views, including any podium
+                    badge.
                   </>
                 )
               }
@@ -1232,7 +1331,9 @@ export default function AdminChallengeDetail() {
                       type="button"
                       variant="outline"
                       onClick={() => unbanMutation.mutate(banTarget.userId)}
-                      disabled={unbanMutation.isPending || updateBanMutation.isPending}
+                      disabled={
+                        unbanMutation.isPending || updateBanMutation.isPending
+                      }
                     >
                       {unbanMutation.isPending ? "Unbanning…" : "Unban"}
                     </Button>
@@ -1256,7 +1357,9 @@ export default function AdminChallengeDetail() {
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={banMutation.isPending || updateBanMutation.isPending}
+                    disabled={
+                      banMutation.isPending || updateBanMutation.isPending
+                    }
                     onClick={() => {
                       const reason = banReasonInput.trim();
                       const reasonValue = reason.length > 0 ? reason : null;
@@ -1284,24 +1387,24 @@ export default function AdminChallengeDetail() {
                 </>
               }
             >
-                <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
-                  Reason (optional)
-                  <Textarea
-                    className="mt-1 min-h-[88px]"
-                    value={banReasonInput}
-                    onChange={(e) =>
-                      setBanReasonInput(e.target.value.slice(0, BAN_REASON_MAX))
-                    }
-                    maxLength={BAN_REASON_MAX}
-                    placeholder="e.g. Posted a fake telemetry record"
-                  />
-                  <span className="mt-1 block text-right text-[11px] text-muted-foreground">
-                    {banReasonInput.length}/{BAN_REASON_MAX}
-                  </span>
-                </label>
-                {banError && (
-                  <p className="mt-3 text-sm text-destructive">{banError}</p>
-                )}
+              <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
+                Reason (optional)
+                <Textarea
+                  className="mt-1 min-h-[88px]"
+                  value={banReasonInput}
+                  onChange={(e) =>
+                    setBanReasonInput(e.target.value.slice(0, BAN_REASON_MAX))
+                  }
+                  maxLength={BAN_REASON_MAX}
+                  placeholder="e.g. Posted a fake telemetry record"
+                />
+                <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+                  {banReasonInput.length}/{BAN_REASON_MAX}
+                </span>
+              </label>
+              {banError && (
+                <p className="mt-3 text-sm text-destructive">{banError}</p>
+              )}
             </BaseAlertDialog>
           )}
 
@@ -1339,9 +1442,9 @@ export default function AdminChallengeDetail() {
                 </>
               }
             >
-                {endEarlyError && (
-                  <p className="mt-3 text-sm text-destructive">{endEarlyError}</p>
-                )}
+              {endEarlyError && (
+                <p className="mt-3 text-sm text-destructive">{endEarlyError}</p>
+              )}
             </BaseAlertDialog>
           )}
         </>

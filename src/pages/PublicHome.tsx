@@ -89,8 +89,9 @@ export default function PublicHome() {
               </span>
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Track sessions, compare across sims, join challenges, and learn from the community —
-              built by a racer who needed professional-grade tools for modern prep.
+              Track sessions, compare across sims, join challenges, and learn
+              from the community — built by a racer who needed
+              professional-grade tools for modern prep.
             </p>
             <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Button
@@ -101,7 +102,12 @@ export default function PublicHome() {
               >
                 <Link to="/signup">Create account</Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-white/15 bg-white/5 sm:min-w-[200px]">
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-white/15 bg-white/5 sm:min-w-[200px]"
+              >
                 <Link to="/login">Log in</Link>
               </Button>
             </div>
@@ -113,8 +119,9 @@ export default function PublicHome() {
               Everything in one hub
             </h2>
             <p className="mx-auto mb-8 max-w-2xl text-center text-sm text-muted-foreground sm:mb-10">
-              Sign in for your activity feed, weekly goals, uploads, and personalized stats — or browse
-              what&apos;s happening on the track today.
+              Sign in for your activity feed, weekly goals, uploads, and
+              personalized stats — or browse what&apos;s happening on the track
+              today.
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <SectionCard>
@@ -124,10 +131,12 @@ export default function PublicHome() {
                 >
                   <LayoutGrid className="size-5" aria-hidden />
                 </div>
-                <h3 className="font-semibold text-foreground">Activity feed & goals</h3>
+                <h3 className="font-semibold text-foreground">
+                  Activity feed & goals
+                </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  See your sessions and weekly targets alongside the community — your home base when
-                  you&apos;re logged in.
+                  See your sessions and weekly targets alongside the community —
+                  your home base when you&apos;re logged in.
                 </p>
               </SectionCard>
               <SectionCard>
@@ -137,9 +146,12 @@ export default function PublicHome() {
                 >
                   <BarChart3 className="size-5" aria-hidden />
                 </div>
-                <h3 className="font-semibold text-foreground">Sessions & stats</h3>
+                <h3 className="font-semibold text-foreground">
+                  Sessions & stats
+                </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Log performance and spot trends instead of scattering notes across spreadsheets.
+                  Log performance and spot trends instead of scattering notes
+                  across spreadsheets.
                 </p>
               </SectionCard>
               <SectionCard>
@@ -151,7 +163,8 @@ export default function PublicHome() {
                 </div>
                 <h3 className="font-semibold text-foreground">Leaderboards</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Compare laps and climb the ranks — see where you stand against the field.
+                  Compare laps and climb the ranks — see where you stand against
+                  the field.
                 </p>
               </SectionCard>
               <SectionCard>
@@ -163,7 +176,8 @@ export default function PublicHome() {
                 </div>
                 <h3 className="font-semibold text-foreground">Challenges</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Enter events, qualify, and compete in structured sim racing challenges.
+                  Enter events, qualify, and compete in structured sim racing
+                  challenges.
                 </p>
               </SectionCard>
               <SectionCard>
@@ -175,8 +189,8 @@ export default function PublicHome() {
                 </div>
                 <h3 className="font-semibold text-foreground">Community</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Discuss setups, events, and technique with other racers — jump into discussions
-                  anytime.
+                  Discuss setups, events, and technique with other racers — jump
+                  into discussions anytime.
                 </p>
               </SectionCard>
               <SectionCard>
@@ -186,11 +200,13 @@ export default function PublicHome() {
                 >
                   <Bot className="size-5" aria-hidden />
                 </div>
-                <h3 className="font-semibold text-foreground">Agent & Apex Pro</h3>
+                <h3 className="font-semibold text-foreground">
+                  Agent & Apex Pro
+                </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Download the Apex background agent for automatic F1 25 telemetry on macOS,
-                  Windows, and Linux, with broader sim support on Windows — available with Apex Pro
-                  on Pricing.
+                  Download the Apex background agent for automatic F1 25
+                  telemetry on macOS, Windows, and Linux, with broader sim
+                  support on Windows — available with Apex Pro on Pricing.
                 </p>
               </SectionCard>
             </div>
@@ -205,25 +221,46 @@ export default function PublicHome() {
                     Explore without signing in
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Browse community, challenges, and leaderboards — create an account when
-                    you&apos;re ready to track your own data.
+                    Browse community, challenges, and leaderboards — create an
+                    account when you&apos;re ready to track your own data.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:shrink-0">
-                  <Button asChild variant="secondary" className="justify-between gap-2 border-white/10 bg-white/5">
-                    <Link to="/community" className="flex w-full items-center justify-between">
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="justify-between gap-2 border-white/10 bg-white/5"
+                  >
+                    <Link
+                      to="/community"
+                      className="flex w-full items-center justify-between"
+                    >
                       Community
                       <ChevronRight className="size-4 opacity-70" aria-hidden />
                     </Link>
                   </Button>
-                  <Button asChild variant="secondary" className="justify-between gap-2 border-white/10 bg-white/5">
-                    <Link to="/challenges" className="flex w-full items-center justify-between">
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="justify-between gap-2 border-white/10 bg-white/5"
+                  >
+                    <Link
+                      to="/challenges"
+                      className="flex w-full items-center justify-between"
+                    >
                       Challenges
                       <ChevronRight className="size-4 opacity-70" aria-hidden />
                     </Link>
                   </Button>
-                  <Button asChild variant="secondary" className="justify-between gap-2 border-white/10 bg-white/5">
-                    <Link to="/leaderboards" className="flex w-full items-center justify-between">
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="justify-between gap-2 border-white/10 bg-white/5"
+                  >
+                    <Link
+                      to="/leaderboards"
+                      className="flex w-full items-center justify-between"
+                    >
                       Leaderboards
                       <ChevronRight className="size-4 opacity-70" aria-hidden />
                     </Link>
@@ -239,8 +276,8 @@ export default function PublicHome() {
               One place for every sim
             </h2>
             <p className="mx-auto mb-5 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Compare progress across the titles you already run — consistent data, not siloed
-              sheets.
+              Compare progress across the titles you already run — consistent
+              data, not siloed sheets.
             </p>
             <ul className="flex flex-wrap items-center justify-center gap-2">
               {SIMS.map((name) => (
@@ -265,10 +302,13 @@ export default function PublicHome() {
                   <Flag className="size-6" aria-hidden />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Built by a racer</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    Built by a racer
+                  </p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    Founded by Hugo Cook — British GT with Barwell Motorsport. Apex exists because sim
-                    prep deserved the same seriousness as real-world racing.
+                    Founded by Hugo Cook — British GT with Barwell Motorsport.
+                    Apex exists because sim prep deserved the same seriousness
+                    as real-world racing.
                   </p>
                   <Link
                     to="/about"
@@ -292,24 +332,36 @@ export default function PublicHome() {
                 Apex Pro
               </h2>
               <p className="mx-auto mb-6 max-w-lg text-center text-sm leading-relaxed text-muted-foreground">
-                Automatic telemetry uploads, Apex Agent access, full analytics, and future Pro-only
-                challenges — unlock after you join.
+                Automatic telemetry uploads, Apex Agent access, full analytics,
+                and future Pro-only challenges — unlock after you join.
               </p>
               <ul className="mx-auto grid max-w-md gap-3 text-sm text-muted-foreground sm:grid-cols-2">
                 <li className="flex items-start gap-2">
-                  <Upload className="mt-0.5 size-4 shrink-0 text-foreground/70" aria-hidden />
+                  <Upload
+                    className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                    aria-hidden
+                  />
                   <span>Automatic telemetry uploads</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Zap className="mt-0.5 size-4 shrink-0 text-foreground/70" aria-hidden />
+                  <Zap
+                    className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                    aria-hidden
+                  />
                   <span>Apex Agent access</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <BarChart3 className="mt-0.5 size-4 shrink-0 text-foreground/70" aria-hidden />
+                  <BarChart3
+                    className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                    aria-hidden
+                  />
                   <span>Full analytics & comparisons</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Trophy className="mt-0.5 size-4 shrink-0 text-foreground/70" aria-hidden />
+                  <Trophy
+                    className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                    aria-hidden
+                  />
                   <span>Future Pro-only challenges</span>
                 </li>
               </ul>
@@ -321,7 +373,11 @@ export default function PublicHome() {
                 >
                   <Link to="/signup">Get started</Link>
                 </Button>
-                <Button asChild variant="ghost" className="text-muted-foreground hover:text-foreground">
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                >
                   <Link to="/login">Already have an account?</Link>
                 </Button>
               </div>
@@ -332,12 +388,16 @@ export default function PublicHome() {
           <section className="mx-auto mt-12 max-w-3xl sm:mt-14">
             <div className="grid gap-4 sm:grid-cols-2">
               <SectionCard className="flex flex-col justify-center">
-                <Users className="mx-auto mb-3 size-8 text-foreground/80 sm:mx-0" aria-hidden />
+                <Users
+                  className="mx-auto mb-3 size-8 text-foreground/80 sm:mx-0"
+                  aria-hidden
+                />
                 <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-foreground sm:text-left">
                   Questions?
                 </h2>
                 <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground sm:text-left">
-                  Plans, sessions, Pro, and more — we&apos;ve collected answers in one place.
+                  Plans, sessions, Pro, and more — we&apos;ve collected answers
+                  in one place.
                 </p>
                 <Button
                   asChild
@@ -348,15 +408,22 @@ export default function PublicHome() {
                 </Button>
               </SectionCard>
               <SectionCard className="flex flex-col justify-center">
-                <Sparkles className="mx-auto mb-3 size-8 text-foreground/80 sm:mx-0" aria-hidden />
+                <Sparkles
+                  className="mx-auto mb-3 size-8 text-foreground/80 sm:mx-0"
+                  aria-hidden
+                />
                 <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-foreground sm:text-left">
                   Mission
                 </h2>
                 <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground sm:text-left">
-                  Give every sim racer — weekend warrior to esports pro — the insights they need to
-                  find the limit and go beyond it.
+                  Give every sim racer — weekend warrior to esports pro — the
+                  insights they need to find the limit and go beyond it.
                 </p>
-                <Button asChild variant="outline" className="mt-5 border-white/15">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-5 border-white/15"
+                >
                   <Link to="/about">About us</Link>
                 </Button>
               </SectionCard>
@@ -369,7 +436,8 @@ export default function PublicHome() {
               Ready to centralize your sim racing data?
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Join {COMPANY_NAME} and turn scattered sessions into a clear picture of your pace.
+              Join {COMPANY_NAME} and turn scattered sessions into a clear
+              picture of your pace.
             </p>
             <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:justify-center">
               <Button
@@ -380,7 +448,12 @@ export default function PublicHome() {
               >
                 <Link to="/signup">Sign up free</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/15 bg-white/5">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/15 bg-white/5"
+              >
                 <Link to="/contact">Contact us</Link>
               </Button>
             </div>

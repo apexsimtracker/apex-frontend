@@ -50,8 +50,9 @@ export default function FAQPage() {
                 Frequently Asked Questions
               </h1>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Search by keyword to jump to an answer, or browse the topics below. Still stuck? Reach out via the
-                support email in the footer.
+                Search by keyword to jump to an answer, or browse the topics
+                below. Still stuck? Reach out via the support email in the
+                footer.
               </p>
             </header>
 
@@ -89,7 +90,10 @@ export default function FAQPage() {
               )}
             </div>
 
-            <p className="mb-6 text-xs text-muted-foreground sm:text-sm" aria-live="polite">
+            <p
+              className="mb-6 text-xs text-muted-foreground sm:text-sm"
+              aria-live="polite"
+            >
               Showing {shown} of {total} questions
             </p>
 
@@ -111,7 +115,10 @@ export default function FAQPage() {
                 </Button>
               </div>
             ) : (
-              <FaqAccordion sections={groupFaqByCategory(filtered)} query={query} />
+              <FaqAccordion
+                sections={groupFaqByCategory(filtered)}
+                query={query}
+              />
             )}
           </div>
         </div>
@@ -198,5 +205,10 @@ function FaqCategorySection({
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "section"
+  );
 }

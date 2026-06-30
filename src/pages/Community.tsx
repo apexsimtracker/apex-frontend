@@ -2,7 +2,11 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
@@ -68,7 +72,8 @@ export default function Community() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const [selectedCategory, setSelectedCategory] = useState<DiscussionCategory>("all");
+  const [selectedCategory, setSelectedCategory] =
+    useState<DiscussionCategory>("all");
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
@@ -134,8 +139,9 @@ export default function Community() {
   });
 
   const discussions = useMemo(
-    () => (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
-    [discussionPages]
+    () =>
+      (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
+    [discussionPages],
   );
 
   const error = discussionsQueryError
@@ -145,10 +151,11 @@ export default function Community() {
     : null;
 
   /** Category/search changed: refetching first page (not “load more”). */
-  const listRefetching =
-    isFetching && !isFetchingNextPage && !loading;
+  const listRefetching = isFetching && !isFetchingNextPage && !loading;
 
-  const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
+  const createCategories = DISCUSSION_CATEGORIES.filter(
+    (c) => c.value !== "all",
+  );
 
   const onCreateDiscussion = async (values: NewDiscussionFormValues) => {
     newDiscussionForm.clearErrors("root");
@@ -171,7 +178,8 @@ export default function Community() {
       console.error(e);
       newDiscussionForm.setError("root", {
         type: "server",
-        message: e instanceof Error ? e.message : "Failed to create discussion.",
+        message:
+          e instanceof Error ? e.message : "Failed to create discussion.",
       });
     } finally {
       setCreating(false);
@@ -196,7 +204,8 @@ export default function Community() {
     setShowNewDiscussionModal(true);
   }, [user, navigate, location.pathname, location.search]);
 
-  const hasFilters = selectedCategory !== "all" || searchQuery.trim().length > 0;
+  const hasFilters =
+    selectedCategory !== "all" || searchQuery.trim().length > 0;
   const emptyMessage =
     loading || error
       ? null
@@ -208,158 +217,174 @@ export default function Community() {
 
   return (
     <>
-      <PageMeta title={communityTitle} description={communityDescription} path={COMMUNITY_PATH} />
+      <PageMeta
+        title={communityTitle}
+        description={communityDescription}
+        path={COMMUNITY_PATH}
+      />
       <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        {/* Header */}
-        <div className="mb-10 sm:mb-12">
-          <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
-            Sim Racing Community
-          </h1>
-          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
-            Connect with drivers, share setups, and discuss racing strategies.
-          </p>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="mb-8 flex flex-col gap-2 sm:mb-10 sm:flex-row sm:gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-3 size-3.5 text-muted-foreground/40" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-8 pr-3 text-xs text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-[rgba(240,28,28,0.4)] focus:outline-none sm:py-2 sm:text-sm"
-            />
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          {/* Header */}
+          <div className="mb-10 sm:mb-12">
+            <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
+              Sim Racing Community
+            </h1>
+            <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
+              Connect with drivers, share setups, and discuss racing strategies.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={openNewDiscussion}
-            className="mt-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium text-white transition-colors sm:mt-0 sm:px-4 sm:py-2 sm:text-sm"
-            style={{ backgroundColor: "rgb(240, 28, 28)" }}
-          >
-            New Discussion
-          </button>
-        </div>
 
-        {/* Categories — All → category=all, Setups → setup, Guides → guides, General → general */}
-        <div className="mb-8 grid grid-cols-2 gap-2 sm:mb-10 sm:gap-3 md:grid-cols-4">
-          {DISCUSSION_CATEGORIES.map((cat) => (
+          {/* Search and Filter */}
+          <div className="mb-8 flex flex-col gap-2 sm:mb-10 sm:flex-row sm:gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-3 size-3.5 text-muted-foreground/40" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="border-white/4 w-full rounded-lg border bg-card/15 py-2.5 pl-8 pr-3 text-xs text-foreground transition-colors placeholder:text-muted-foreground/40 focus:border-[rgba(240,28,28,0.4)] focus:outline-none sm:py-2 sm:text-sm"
+              />
+            </div>
             <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              className={`rounded-lg p-3 text-center transition-all ${
-                selectedCategory === cat.value
-                  ? "border border-[rgba(240,28,28,0.5)] bg-[rgba(240,28,28,0.04)] text-foreground"
-                  : "border-white/4 hover:bg-white/2 border text-foreground/70 hover:text-foreground"
-              }`}
+              type="button"
+              onClick={openNewDiscussion}
+              className="mt-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-xs font-medium text-white transition-colors sm:mt-0 sm:px-4 sm:py-2 sm:text-sm"
+              style={{ backgroundColor: "rgb(240, 28, 28)" }}
             >
-              <span
-                className={`mb-1 flex justify-center ${
+              New Discussion
+            </button>
+          </div>
+
+          {/* Categories — All → category=all, Setups → setup, Guides → guides, General → general */}
+          <div className="mb-8 grid grid-cols-2 gap-2 sm:mb-10 sm:gap-3 md:grid-cols-4">
+            {DISCUSSION_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`rounded-lg p-3 text-center transition-all ${
                   selectedCategory === cat.value
-                    ? "text-[rgb(240,28,28)]"
-                    : "text-muted-foreground/70"
+                    ? "border border-[rgba(240,28,28,0.5)] bg-[rgba(240,28,28,0.04)] text-foreground"
+                    : "border-white/4 hover:bg-white/2 border text-foreground/70 hover:text-foreground"
                 }`}
               >
-                <DiscussionCategoryIcon
-                  categoryKey={cat.value}
-                  className="size-5 sm:size-6"
-                />
-              </span>
-              <p className="text-xs font-medium">{cat.label}</p>
-              <div className="mt-0.5 text-xs text-muted-foreground/50">
-                {categoryCountsPending ? (
-                  <SkeletonBlock className="mx-auto h-3 w-6 rounded" />
-                ) : (
-                  categoryCounts[cat.value]
+                <span
+                  className={`mb-1 flex justify-center ${
+                    selectedCategory === cat.value
+                      ? "text-[rgb(240,28,28)]"
+                      : "text-muted-foreground/70"
+                  }`}
+                >
+                  <DiscussionCategoryIcon
+                    categoryKey={cat.value}
+                    className="size-5 sm:size-6"
+                  />
+                </span>
+                <p className="text-xs font-medium">{cat.label}</p>
+                <div className="mt-0.5 text-xs text-muted-foreground/50">
+                  {categoryCountsPending ? (
+                    <SkeletonBlock className="mx-auto h-3 w-6 rounded" />
+                  ) : (
+                    categoryCounts[cat.value]
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Discussions */}
+          <div className="space-y-5 sm:space-y-6">
+            {listRefetching && (
+              <DiscussionCardSkeleton
+                count={2}
+                className="mb-2 space-y-5 sm:space-y-6"
+              />
+            )}
+            {loading ? (
+              <DiscussionCardSkeleton count={4} />
+            ) : error ? (
+              <div className="py-12 text-center">
+                <p className="text-sm text-muted-foreground/60">{error}</p>
+              </div>
+            ) : emptyMessage ? (
+              <div className="py-12 text-center">
+                <p className="text-sm text-muted-foreground/60">
+                  {emptyMessage}
+                </p>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "space-y-5 sm:space-y-6",
+                  listRefetching && "pointer-events-none opacity-60",
+                )}
+                aria-busy={listRefetching || undefined}
+              >
+                {discussions.map((d) => (
+                  <DiscussionCard
+                    key={d.id}
+                    id={d.id}
+                    title={d.title}
+                    excerpt={
+                      d.excerpt ??
+                      truncateDescription(d.content ?? d.description ?? d.title)
+                    }
+                    author={d.author}
+                    categoryKey={d.category ?? "general"}
+                    timestamp={timeAgo(d.createdAt)}
+                    replies={
+                      d.commentCount ?? d.commentsCount ?? d.replies ?? 0
+                    }
+                    views={d.views ?? 0}
+                    isPinned={d.isPinned}
+                    wasEdited={Boolean(d.wasEdited || d.editedAt)}
+                  />
+                ))}
+                {hasNextPage && (
+                  <div className="flex justify-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => void fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      {isFetchingNextPage ? "Loading…" : "Load more"}
+                    </button>
+                  </div>
                 )}
               </div>
-            </button>
-          ))}
+            )}
+          </div>
         </div>
 
-        {/* Discussions */}
-        <div className="space-y-5 sm:space-y-6">
-          {listRefetching && <DiscussionCardSkeleton count={2} className="mb-2 space-y-5 sm:space-y-6" />}
-          {loading ? (
-            <DiscussionCardSkeleton count={4} />
-          ) : error ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground/60">{error}</p>
-            </div>
-          ) : emptyMessage ? (
-            <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground/60">{emptyMessage}</p>
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "space-y-5 sm:space-y-6",
-                listRefetching && "pointer-events-none opacity-60"
-              )}
-              aria-busy={listRefetching || undefined}
-            >
-              {discussions.map((d) => (
-                <DiscussionCard
-                  key={d.id}
-                  id={d.id}
-                  title={d.title}
-                  excerpt={
-                    d.excerpt ??
-                    truncateDescription(d.content ?? d.description ?? d.title)
-                  }
-                  author={d.author}
-                  categoryKey={d.category ?? "general"}
-                  timestamp={timeAgo(d.createdAt)}
-                  replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
-                  views={d.views ?? 0}
-                  isPinned={d.isPinned}
-                  wasEdited={Boolean(d.wasEdited || d.editedAt)}
-                />
-              ))}
-              {hasNextPage && (
-                <div className="flex justify-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => void fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    {isFetchingNextPage ? "Loading…" : "Load more"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      {/* New Discussion Modal */}
-      {showNewDiscussionModal && (
-        <BaseModal
-          isOpen={showNewDiscussionModal}
-          onClose={closeModal}
-          title="Create New Discussion"
-          size="xl"
-          mobileVariant="fullscreen"
-          footer={
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeModal}
-                disabled={creating}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" form="create-discussion-form" disabled={creating}>
-                {creating ? "Creating…" : "Create"}
-              </Button>
-            </>
-          }
-        >
+        {/* New Discussion Modal */}
+        {showNewDiscussionModal && (
+          <BaseModal
+            isOpen={showNewDiscussionModal}
+            onClose={closeModal}
+            title="Create New Discussion"
+            size="xl"
+            mobileVariant="fullscreen"
+            footer={
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeModal}
+                  disabled={creating}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  form="create-discussion-form"
+                  disabled={creating}
+                >
+                  {creating ? "Creating…" : "Create"}
+                </Button>
+              </>
+            }
+          >
             <Form {...newDiscussionForm}>
               <form
                 id="create-discussion-form"
@@ -387,7 +412,7 @@ export default function Community() {
                               "rounded-lg border p-3 text-sm font-medium transition-all",
                               field.value === cat.value
                                 ? "border-primary/60 bg-primary/10 text-foreground"
-                                : "text-foreground hover:border-border"
+                                : "text-foreground hover:border-border",
                             )}
                           >
                             {cat.label}
@@ -439,12 +464,11 @@ export default function Community() {
                     </FormItem>
                   )}
                 />
-
               </form>
             </Form>
-        </BaseModal>
-      )}
-    </div>
+          </BaseModal>
+        )}
+      </div>
     </>
   );
 }

@@ -63,7 +63,7 @@ export default function AdminContact() {
         ? { hasSubmitter: hasSubmitter as "true" | "false" }
         : {}),
     }),
-    [page, debouncedQ, statusFilter, hasLinked, hasSubmitter]
+    [page, debouncedQ, statusFilter, hasLinked, hasSubmitter],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -86,23 +86,36 @@ export default function AdminContact() {
   }, [total, currentPage, pageSize]);
 
   const hasFilters =
-    Boolean(qInput.trim()) || Boolean(statusFilter) || Boolean(hasLinked) || Boolean(hasSubmitter);
+    Boolean(qInput.trim()) ||
+    Boolean(statusFilter) ||
+    Boolean(hasLinked) ||
+    Boolean(hasSubmitter);
 
   return (
     <>
-      <PageMeta path="/admin/contact" title={TITLE} description="Contact form submissions." noindex />
+      <PageMeta
+        path="/admin/contact"
+        title={TITLE}
+        description="Contact form submissions."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Contact inbox</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Contact inbox
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Messages from the public contact form. Linked rows match an existing account email; submitter
-            indicates someone was signed in when they sent the message.
+            Messages from the public contact form. Linked rows match an existing
+            account email; submitter indicates someone was signed in when they
+            sent the message.
           </p>
         </div>
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load contact submissions."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load contact submissions."}
           </div>
         )}
 
@@ -166,13 +179,19 @@ export default function AdminContact() {
 
             {isPending ? (
               <div className="flex justify-center px-4 py-12" aria-busy="true">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : rows.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <p className="text-sm font-medium text-foreground">No submissions match</p>
+                <p className="text-sm font-medium text-foreground">
+                  No submissions match
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Try clearing search or filters, or check back when new messages arrive.
+                  Try clearing search or filters, or check back when new
+                  messages arrive.
                 </p>
                 {hasFilters && (
                   <button
@@ -207,7 +226,9 @@ export default function AdminContact() {
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.id} className="border-b border-white/5">
-                        <td className={`${ADMIN_TD} whitespace-nowrap tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} whitespace-nowrap tabular-nums text-muted-foreground`}
+                        >
                           {new Date(r.createdAt).toLocaleString(undefined, {
                             month: "short",
                             day: "numeric",
@@ -216,10 +237,14 @@ export default function AdminContact() {
                           })}
                         </td>
                         <td className={`${ADMIN_TD} font-medium`}>{r.name}</td>
-                        <td className={`max-w-[12rem] truncate ${ADMIN_TD} text-muted-foreground`}>
+                        <td
+                          className={`max-w-[12rem] truncate ${ADMIN_TD} text-muted-foreground`}
+                        >
                           {r.email}
                         </td>
-                        <td className={`max-w-[14rem] truncate ${ADMIN_TD} text-muted-foreground`}>
+                        <td
+                          className={`max-w-[14rem] truncate ${ADMIN_TD} text-muted-foreground`}
+                        >
                           {subjectSnippet(r.subject)}
                         </td>
                         <td className={`${ADMIN_TD} text-muted-foreground`}>
@@ -238,7 +263,9 @@ export default function AdminContact() {
                               </span>
                             )}
                             {!r.hasLinkedUser && !r.hasSubmitter && (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
                             )}
                           </div>
                         </td>

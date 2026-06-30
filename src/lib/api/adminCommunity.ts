@@ -108,13 +108,13 @@ export async function fetchAdminCommunityDiscussions(params?: {
     "GET",
     `/api/admin/community/discussions${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function fetchAdminCommunityDiscussionDetail(
   discussionId: string,
-  params?: { page?: number; limit?: number }
+  params?: { page?: number; limit?: number },
 ): Promise<AdminCommunityDiscussionDetailResponse> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -124,52 +124,65 @@ export async function fetchAdminCommunityDiscussionDetail(
     "GET",
     `/api/admin/community/discussions/${encodeURIComponent(discussionId)}${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function patchAdminCommunityDiscussion(
   discussionId: string,
-  body: { title: string; body: string }
-): Promise<{ id: string; title: string; body: string; profanityFlaggedAt: string | null }> {
-  return apiPatch(`/api/admin/community/discussions/${encodeURIComponent(discussionId)}`, body);
+  body: { title: string; body: string },
+): Promise<{
+  id: string;
+  title: string;
+  body: string;
+  profanityFlaggedAt: string | null;
+}> {
+  return apiPatch(
+    `/api/admin/community/discussions/${encodeURIComponent(discussionId)}`,
+    body,
+  );
 }
 
-export async function softDeleteAdminCommunityDiscussion(discussionId: string): Promise<void> {
+export async function softDeleteAdminCommunityDiscussion(
+  discussionId: string,
+): Promise<void> {
   await apiPost(
     `/api/admin/community/discussions/${encodeURIComponent(discussionId)}/soft-delete`,
-    undefined
+    undefined,
   );
 }
 
-export async function restoreAdminCommunityDiscussion(discussionId: string): Promise<void> {
+export async function restoreAdminCommunityDiscussion(
+  discussionId: string,
+): Promise<void> {
   await apiPost(
     `/api/admin/community/discussions/${encodeURIComponent(discussionId)}/restore`,
-    undefined
+    undefined,
   );
 }
 
-export async function hardDeleteAdminCommunityDiscussion(discussionId: string): Promise<void> {
+export async function hardDeleteAdminCommunityDiscussion(
+  discussionId: string,
+): Promise<void> {
   await fetchApi(
     "DELETE",
     `/api/admin/community/discussions/${encodeURIComponent(discussionId)}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function deleteAdminCommunityComment(
   discussionId: string,
   commentId: string,
-  options?: { hard?: boolean }
+  options?: { hard?: boolean },
 ): Promise<void> {
-  const qs =
-    options?.hard === true ? "?hard=1" : "";
+  const qs = options?.hard === true ? "?hard=1" : "";
   await fetchApi(
     "DELETE",
     `/api/admin/community/discussions/${encodeURIComponent(discussionId)}/comments/${encodeURIComponent(commentId)}${qs}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -193,13 +206,15 @@ export async function fetchAdminCommunityModerationFlags(params?: {
     "GET",
     `/api/admin/community/moderation-flags${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function resolveAdminCommunityModerationFlag(flagId: string): Promise<void> {
+export async function resolveAdminCommunityModerationFlag(
+  flagId: string,
+): Promise<void> {
   await apiPost(
     `/api/admin/community/moderation-flags/${encodeURIComponent(flagId)}/resolve`,
-    undefined
+    undefined,
   );
 }

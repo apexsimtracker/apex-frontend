@@ -37,8 +37,12 @@ export function LapSelector({
                     : "border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white"
               }`}
             >
-              <div className="font-medium tabular-nums">Lap {lap.lapNumber}</div>
-              <div className="tabular-nums text-white/60">{formatLapMs(lap.lapTimeMs)}</div>
+              <div className="font-medium tabular-nums">
+                Lap {lap.lapNumber}
+              </div>
+              <div className="tabular-nums text-white/60">
+                {formatLapMs(lap.lapTimeMs)}
+              </div>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {lap.isBestLap && (
                   <span className="rounded bg-amber-500/20 px-1 text-[10px] text-amber-300">

@@ -48,7 +48,7 @@ function RoleBadge({ role }: { role: "USER" | "ADMIN" }) {
         "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
         isAdmin
           ? "border-purple-500/40 bg-purple-500/15 text-purple-200"
-          : "border-blue-500/40 bg-blue-500/15 text-blue-200"
+          : "border-blue-500/40 bg-blue-500/15 text-blue-200",
       )}
     >
       {isAdmin ? "Admin" : "User"}
@@ -106,13 +106,22 @@ export default function AdminUsers() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, roleFilter, statusFilter, riskFilter, planFilter, subscriptionStatusFilter]);
+  }, [
+    debouncedSearch,
+    roleFilter,
+    statusFilter,
+    riskFilter,
+    planFilter,
+    subscriptionStatusFilter,
+  ]);
 
   const listParams = useMemo((): AdminUserListParams => {
     const role: "USER" | "ADMIN" | undefined =
       roleFilter === "USER" || roleFilter === "ADMIN" ? roleFilter : undefined;
     const status: "active" | "suspended" | "deleted" | undefined =
-      statusFilter === "active" || statusFilter === "suspended" || statusFilter === "deleted"
+      statusFilter === "active" ||
+      statusFilter === "suspended" ||
+      statusFilter === "deleted"
         ? statusFilter
         : undefined;
     const suspiciousOnly = riskFilter === "suspicious";
@@ -170,20 +179,23 @@ export default function AdminUsers() {
       toast.success(
         data.updated === 0
           ? "No accounts needed updating."
-          : `Flagged ${data.updated} account(s).`
+          : `Flagged ${data.updated} account(s).`,
       );
       void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       setScanDialogOpen(false);
       previewDisposableScan.reset();
     },
     onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Could not apply flags.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not apply flags.",
+      );
     },
   });
 
-  const previewData = previewDisposableScan.data?.dryRun === true
-    ? previewDisposableScan.data
-    : undefined;
+  const previewData =
+    previewDisposableScan.data?.dryRun === true
+      ? previewDisposableScan.data
+      : undefined;
 
   const rows = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -225,7 +237,8 @@ export default function AdminUsers() {
               <Button
                 type="button"
                 disabled={
-                  previewData.pendingFlagCount === 0 || applyDisposableScan.isPending
+                  previewData.pendingFlagCount === 0 ||
+                  applyDisposableScan.isPending
                 }
                 onClick={() => applyDisposableScan.mutate()}
               >
@@ -239,86 +252,104 @@ export default function AdminUsers() {
           ) : undefined
         }
       >
-          {previewData ? (
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <p className="text-sm text-foreground">
-                Scanned{" "}
-                <span className="font-medium tabular-nums">{previewData.scanned}</span>{" "}
-                accounts ·{" "}
-                <span className="font-medium tabular-nums">{previewData.totalMatching}</span>{" "}
-                use a disposable domain
-                {previewData.pendingFlagCount > 0 ? (
-                  <>
-                    {" "}
-                    ·{" "}
-                    <span className="font-medium tabular-nums text-amber-100">
-                      {previewData.pendingFlagCount}
-                    </span>{" "}
-                    not yet flagged
-                  </>
-                ) : null}
-              </p>
-              {previewData.matchesTruncated ? (
-                <p className="text-xs text-amber-200/90">
-                  Showing the first {previewData.matching.length} matches in this list; total
-                  matching is {previewData.totalMatching}.
-                </p>
+        {previewData ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <p className="text-sm text-foreground">
+              Scanned{" "}
+              <span className="font-medium tabular-nums">
+                {previewData.scanned}
+              </span>{" "}
+              accounts ·{" "}
+              <span className="font-medium tabular-nums">
+                {previewData.totalMatching}
+              </span>{" "}
+              use a disposable domain
+              {previewData.pendingFlagCount > 0 ? (
+                <>
+                  {" "}
+                  ·{" "}
+                  <span className="font-medium tabular-nums text-amber-100">
+                    {previewData.pendingFlagCount}
+                  </span>{" "}
+                  not yet flagged
+                </>
               ) : null}
-              {previewData.totalMatching === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No accounts match disposable domains.
-                </p>
-              ) : (
-                <div className="min-h-0 flex-1 overflow-auto rounded-md border border-white/10">
-                  <table className="w-full text-left text-sm">
-                    <thead className="sticky top-0 bg-card">
-                      <tr className="border-b border-white/10 text-muted-foreground">
-                        <th className="p-2">Email</th>
-                        <th className="p-2">Status</th>
-                        <th className="w-16 p-2" />
+            </p>
+            {previewData.matchesTruncated ? (
+              <p className="text-xs text-amber-200/90">
+                Showing the first {previewData.matching.length} matches in this
+                list; total matching is {previewData.totalMatching}.
+              </p>
+            ) : null}
+            {previewData.totalMatching === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No accounts match disposable domains.
+              </p>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-auto rounded-md border border-white/10">
+                <table className="w-full text-left text-sm">
+                  <thead className="sticky top-0 bg-card">
+                    <tr className="border-b border-white/10 text-muted-foreground">
+                      <th className="p-2">Email</th>
+                      <th className="p-2">Status</th>
+                      <th className="w-16 p-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewData.matching.map((m) => (
+                      <tr key={m.id} className="border-b border-white/5">
+                        <td className="p-2 font-mono text-xs text-foreground">
+                          {m.email}
+                        </td>
+                        <td className="p-2 text-xs">
+                          {m.alreadyFlagged ? (
+                            <span className="text-muted-foreground">
+                              Already flagged
+                            </span>
+                          ) : (
+                            <span className="text-amber-100">Will flag</span>
+                          )}
+                        </td>
+                        <td className="p-2 text-right">
+                          <Link
+                            to={`/admin/users/${m.id}`}
+                            className="text-xs text-primary underline-offset-4 hover:underline"
+                          >
+                            View
+                          </Link>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {previewData.matching.map((m) => (
-                        <tr key={m.id} className="border-b border-white/5">
-                          <td className="p-2 font-mono text-xs text-foreground">{m.email}</td>
-                          <td className="p-2 text-xs">
-                            {m.alreadyFlagged ? (
-                              <span className="text-muted-foreground">Already flagged</span>
-                            ) : (
-                              <span className="text-amber-100">Will flag</span>
-                            )}
-                          </td>
-                          <td className="p-2 text-right">
-                            <Link
-                              to={`/admin/users/${m.id}`}
-                              className="text-xs text-primary underline-offset-4 hover:underline"
-                            >
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          ) : null}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
       </BaseModal>
 
-      <PageMeta path="/admin/users" title={TITLE} description="Manage users and moderation." noindex />
+      <PageMeta
+        path="/admin/users"
+        title={TITLE}
+        description="Manage users and moderation."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Users</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Users
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Search and filter accounts. Open a user for full details, edits, and moderation.
+            Search and filter accounts. Open a user for full details, edits, and
+            moderation.
           </p>
         </div>
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load users."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load users."}
           </div>
         )}
 
@@ -405,7 +436,8 @@ export default function AdminUsers() {
                   size="sm"
                   className="w-full shrink-0 sm:w-auto"
                   disabled={
-                    previewDisposableScan.isPending || applyDisposableScan.isPending
+                    previewDisposableScan.isPending ||
+                    applyDisposableScan.isPending
                   }
                   onClick={() => previewDisposableScan.mutate()}
                 >
@@ -422,11 +454,16 @@ export default function AdminUsers() {
 
             {isPending ? (
               <div className="flex justify-center px-4 py-12" aria-busy="true">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : rows.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <p className="text-sm font-medium text-foreground">No users match</p>
+                <p className="text-sm font-medium text-foreground">
+                  No users match
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Try another search, role, or status filter.
                 </p>
@@ -473,10 +510,15 @@ export default function AdminUsers() {
                     {rows.map((r) => (
                       <tr
                         key={r.id}
-                        className={cn("border-b border-white/5", r.isDeleted && "opacity-70")}
+                        className={cn(
+                          "border-b border-white/5",
+                          r.isDeleted && "opacity-70",
+                        )}
                       >
                         <td className={`min-w-[12rem] ${ADMIN_TD}`}>
-                          <div className="font-medium text-foreground">{r.displayName}</div>
+                          <div className="font-medium text-foreground">
+                            {r.displayName}
+                          </div>
                           <div className="mt-1 flex flex-wrap items-center gap-2">
                             <span className="break-all text-xs text-muted-foreground sm:break-normal">
                               {r.email}
@@ -488,7 +530,10 @@ export default function AdminUsers() {
                           <RoleBadge role={r.role} />
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
-                          <AccountBadge isDeleted={r.isDeleted} suspendedAt={r.suspendedAt} />
+                          <AccountBadge
+                            isDeleted={r.isDeleted}
+                            suspendedAt={r.suspendedAt}
+                          />
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
                           <PlanBadge
@@ -499,23 +544,33 @@ export default function AdminUsers() {
                           />
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
-                          <SubscriptionStatusBadge status={r.subscriptionStatus} />
+                          <SubscriptionStatusBadge
+                            status={r.subscriptionStatus}
+                          />
                         </td>
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
                           <BillingIntervalChip interval={r.billingInterval} />
                         </td>
-                        <td className={`whitespace-nowrap tabular-nums ${ADMIN_TD} text-xs text-muted-foreground`}>
+                        <td
+                          className={`whitespace-nowrap tabular-nums ${ADMIN_TD} text-xs text-muted-foreground`}
+                        >
                           {r.currentPeriodEnd
                             ? new Date(r.currentPeriodEnd).toLocaleDateString()
                             : "—"}
                         </td>
-                        <td className={`whitespace-nowrap ${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`whitespace-nowrap ${ADMIN_TD} tabular-nums text-muted-foreground`}
+                        >
                           {new Date(r.createdAt).toLocaleDateString()}
                         </td>
                         <td className={ADMIN_TD_ACTIONS}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" aria-label="Actions">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Actions"
+                              >
                                 <MoreHorizontal className="size-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -524,7 +579,9 @@ export default function AdminUsers() {
                                 <Link to={`/admin/users/${r.id}`}>View</Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/users/${r.id}?edit=1`}>Edit</Link>
+                                <Link to={`/admin/users/${r.id}?edit=1`}>
+                                  Edit
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {

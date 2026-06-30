@@ -19,8 +19,14 @@ export const newDiscussionFormSchema = z.object({
     .string()
     .trim()
     .min(1, "Description is required.")
-    .min(DESCRIPTION_MIN, `Description must be at least ${DESCRIPTION_MIN} characters.`)
-    .max(DESCRIPTION_MAX, `Description must be ${DESCRIPTION_MAX} characters or less.`),
+    .min(
+      DESCRIPTION_MIN,
+      `Description must be at least ${DESCRIPTION_MIN} characters.`,
+    )
+    .max(
+      DESCRIPTION_MAX,
+      `Description must be ${DESCRIPTION_MAX} characters or less.`,
+    ),
 });
 
 export type NewDiscussionFormValues = z.infer<typeof newDiscussionFormSchema>;

@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { authLogin, authMe, ApiError } from "@/lib/api";
 import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
@@ -17,7 +22,10 @@ import {
   FormRootMessage,
 } from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
-import { loginFormSchema, type LoginFormValues } from "@/lib/validation/authPages";
+import {
+  loginFormSchema,
+  type LoginFormValues,
+} from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
@@ -33,7 +41,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [emailVerifiedMessage, setEmailVerifiedMessage] = useState(false);
-  const [suspendedReason, setSuspendedReason] = useState<string | null | undefined>(undefined);
+  const [suspendedReason, setSuspendedReason] = useState<
+    string | null | undefined
+  >(undefined);
 
   const form = useForm<WithRootError<LoginFormValues>>({
     resolver: zodResolver(loginFormSchema),
@@ -44,7 +54,7 @@ export default function Login() {
   const returnFromQuery = searchParams.get("next");
   const postLoginPath = getSafeReturnPath(
     authRedirect.from ?? returnFromQuery,
-    "/profile"
+    "/profile",
   );
 
   useEffect(() => {
@@ -75,10 +85,13 @@ export default function Login() {
       localStorage.setItem("apex_token", token);
       persistSessionTokenFromAuthPayload(data);
       try {
-        await queryClient.fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe });
+        await queryClient.fetchQuery({
+          queryKey: AUTH_ME_QUERY_KEY,
+          queryFn: authMe,
+        });
         prefetchHomeWeeklyAfterAuth(
           queryClient,
-          queryClient.getQueryData(AUTH_ME_QUERY_KEY)
+          queryClient.getQueryData(AUTH_ME_QUERY_KEY),
         );
       } catch (meErr) {
         localStorage.removeItem("apex_token");
@@ -87,7 +100,9 @@ export default function Login() {
         form.setError("root", {
           type: "server",
           message:
-            meErr instanceof Error ? meErr.message : "Could not load your session. Please try again.",
+            meErr instanceof Error
+              ? meErr.message
+              : "Could not load your session. Please try again.",
         });
         setLoading(false);
         return;
@@ -106,7 +121,7 @@ export default function Login() {
         setSuspendedReason(
           err.suspensionReason != null && err.suspensionReason.trim() !== ""
             ? err.suspensionReason.trim()
-            : null
+            : null,
         );
       } else {
         form.setError("root", {
@@ -132,7 +147,9 @@ export default function Login() {
           className="w-full space-y-4"
           aria-busy={loading || undefined}
         >
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Sign in
+          </h1>
           {emailVerifiedMessage && (
             <p className="text-sm text-green-500" role="status">
               Email verified. You can sign in now.
@@ -199,7 +216,10 @@ export default function Login() {
               ) : null}
               <p className="mt-3 text-red-100/90">
                 If you believe this is a mistake, please visit our{" "}
-                <Link to="/contact" className="font-medium text-red-50 underline hover:no-underline">
+                <Link
+                  to="/contact"
+                  className="font-medium text-red-50 underline hover:no-underline"
+                >
                   contact page
                 </Link>{" "}
                 and reach out to the team.

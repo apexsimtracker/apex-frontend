@@ -9,7 +9,10 @@ type GuestOnlyRouteProps = {
   redirectTo?: string;
 };
 
-export default function GuestOnlyRoute({ children, redirectTo = "/profile" }: GuestOnlyRouteProps) {
+export default function GuestOnlyRoute({
+  children,
+  redirectTo = "/profile",
+}: GuestOnlyRouteProps) {
   const { user } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -18,7 +21,7 @@ export default function GuestOnlyRoute({ children, redirectTo = "/profile" }: Gu
     const authRedirect = parseAuthRedirectState(location.state);
     const target = getSafeReturnPath(
       authRedirect.from ?? searchParams.get("next"),
-      redirectTo
+      redirectTo,
     );
     return <Navigate to={target} replace />;
   }

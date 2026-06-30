@@ -18,7 +18,9 @@ interface DiscussionCardProps {
   id: string;
   title: string;
   excerpt: string;
-  author: { id: string; displayName?: string | null; avatarUrl?: string | null } | unknown;
+  author:
+    | { id: string; displayName?: string | null; avatarUrl?: string | null }
+    | unknown;
   /** Backend category: setup | guides | general */
   categoryKey: string;
   timestamp: string;
@@ -112,9 +114,7 @@ export default function DiscussionCard({
               {categoryLabel}
             </span>
             {isPinned && (
-              <span
-                className="inline-block rounded-md bg-[rgba(240,28,28,0.06)] px-2 py-1 text-xs font-medium text-[rgb(240,28,28)]"
-              >
+              <span className="inline-block rounded-md bg-[rgba(240,28,28,0.06)] px-2 py-1 text-xs font-medium text-[rgb(240,28,28)]">
                 Pinned
               </span>
             )}
@@ -139,13 +139,19 @@ export default function DiscussionCard({
           <div className="flex items-center gap-4 text-xs text-white/50">
             <div className="flex items-center gap-1">
               <MessageCircle className="size-3" />
-              <span className="font-medium tabular-nums" title={String(replies ?? 0)}>
+              <span
+                className="font-medium tabular-nums"
+                title={String(replies ?? 0)}
+              >
                 {formatCompactCount(replies ?? 0)}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <Eye className="size-3" />
-              <span className="font-medium tabular-nums" title={String(views ?? 0)}>
+              <span
+                className="font-medium tabular-nums"
+                title={String(views ?? 0)}
+              >
                 {formatCompactCount(views ?? 0)}
               </span>
             </div>

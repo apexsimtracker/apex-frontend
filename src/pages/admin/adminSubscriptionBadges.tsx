@@ -26,7 +26,9 @@ export function SubscriptionStatusBadge({
   className?: string;
 }) {
   if (!status) {
-    return <span className={cn("text-xs text-muted-foreground", className)}>—</span>;
+    return (
+      <span className={cn("text-xs text-muted-foreground", className)}>—</span>
+    );
   }
   const styles =
     status === "ACTIVE"
@@ -42,7 +44,7 @@ export function SubscriptionStatusBadge({
       className={cn(
         "inline-flex rounded-full border px-2 py-0.5 text-xs font-medium",
         styles,
-        className
+        className,
       )}
     >
       {formatSubscriptionStatus(status)}
@@ -58,14 +60,16 @@ export function BillingIntervalChip({
   className?: string;
 }) {
   if (!interval) {
-    return <span className={cn("text-xs text-muted-foreground", className)}>—</span>;
+    return (
+      <span className={cn("text-xs text-muted-foreground", className)}>—</span>
+    );
   }
   const label = interval === "MONTHLY" ? "Monthly" : "Annual";
   return (
     <span
       className={cn(
         "inline-flex rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-foreground/90",
-        className
+        className,
       )}
     >
       {label}

@@ -10,10 +10,7 @@ import {
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import {
-  BaseAlertDialog,
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,11 +68,19 @@ export default function AdminChallenges() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [simFilter, setSimFilter] = useState<string>("");
   const [titleSearchInput, setTitleSearchInput] = useState("");
-  const debouncedTitleSearch = useDebouncedValue(titleSearchInput, SEARCH_DEBOUNCE_MS);
+  const debouncedTitleSearch = useDebouncedValue(
+    titleSearchInput,
+    SEARCH_DEBOUNCE_MS,
+  );
   const [carClassInput, setCarClassInput] = useState("");
-  const debouncedCarClass = useDebouncedValue(carClassInput, CAR_CLASS_DEBOUNCE_MS);
+  const debouncedCarClass = useDebouncedValue(
+    carClassInput,
+    CAR_CLASS_DEBOUNCE_MS,
+  );
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<AdminChallengeRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminChallengeRow | null>(
+    null,
+  );
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -90,10 +95,14 @@ export default function AdminChallenges() {
       pageSize: 20,
       ...(statusFilter.trim() ? { status: statusFilter.trim() } : {}),
       ...(simFilter.trim() ? { sim: simFilter.trim() } : {}),
-      ...(debouncedTitleSearch.trim() ? { q: debouncedTitleSearch.trim() } : {}),
-      ...(debouncedCarClass.trim() ? { carClass: debouncedCarClass.trim() } : {}),
+      ...(debouncedTitleSearch.trim()
+        ? { q: debouncedTitleSearch.trim() }
+        : {}),
+      ...(debouncedCarClass.trim()
+        ? { carClass: debouncedCarClass.trim() }
+        : {}),
     }),
-    [page, statusFilter, simFilter, debouncedTitleSearch, debouncedCarClass]
+    [page, statusFilter, simFilter, debouncedTitleSearch, debouncedCarClass],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -132,23 +141,36 @@ export default function AdminChallenges() {
 
   return (
     <>
-      <PageMeta path="/admin/challenges" title={TITLE} description="Manage challenges." noindex />
+      <PageMeta
+        path="/admin/challenges"
+        title={TITLE}
+        description="Manage challenges."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Challenges</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Challenges
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Create and manage time-limited sim racing challenges.
             </p>
           </div>
-          <Button type="button" variant="destructive" onClick={() => setCreateOpen(true)}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setCreateOpen(true)}
+          >
             New challenge
           </Button>
         </div>
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load challenges."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load challenges."}
           </div>
         )}
 
@@ -206,13 +228,19 @@ export default function AdminChallenges() {
 
             {isPending ? (
               <div className="flex justify-center px-4 py-12" aria-busy="true">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : rows.length === 0 ? (
               <div className="px-6 py-16 text-center">
-                <p className="text-sm font-medium text-foreground">No challenges match</p>
+                <p className="text-sm font-medium text-foreground">
+                  No challenges match
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Try a different status, sim, car class, or clear the title search.
+                  Try a different status, sim, car class, or clear the title
+                  search.
                 </p>
                 {(titleSearchInput.trim() ||
                   statusFilter ||
@@ -258,25 +286,39 @@ export default function AdminChallenges() {
                         <td className={ADMIN_TD}>
                           <SimBadge sim={r.sim} size="md" />
                         </td>
-                        <td className={`${ADMIN_TD} text-foreground`}>{formatTrackName(r.track)}</td>
-                        <td className={`${ADMIN_TD} text-muted-foreground`}>{formatCarName(r.carClass)}</td>
-                        <td className={`${ADMIN_TD} tabular-nums`}>{r.participantCount}</td>
+                        <td className={`${ADMIN_TD} text-foreground`}>
+                          {formatTrackName(r.track)}
+                        </td>
+                        <td className={`${ADMIN_TD} text-muted-foreground`}>
+                          {formatCarName(r.carClass)}
+                        </td>
+                        <td className={`${ADMIN_TD} tabular-nums`}>
+                          {r.participantCount}
+                        </td>
                         <td className={`${ADMIN_TD} text-muted-foreground`}>
                           {r.createdByDisplayName ?? "—"}
                         </td>
                         <td className={ADMIN_TD_ACTIONS}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" aria-label="Actions">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Actions"
+                              >
                                 <MoreHorizontal className="size-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/challenges/${r.id}`}>View</Link>
+                                <Link to={`/admin/challenges/${r.id}`}>
+                                  View
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/challenges/${r.id}?edit=1`}>Edit</Link>
+                                <Link to={`/admin/challenges/${r.id}?edit=1`}>
+                                  Edit
+                                </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
@@ -291,7 +333,7 @@ export default function AdminChallenges() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
-                  </tr>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
@@ -348,7 +390,8 @@ export default function AdminChallenges() {
             description={
               <>
                 This removes participants and leaderboard data. Type{" "}
-                <span className="font-mono text-foreground">delete</span> to confirm.
+                <span className="font-mono text-foreground">delete</span> to
+                confirm.
               </>
             }
             size="sm"
@@ -367,9 +410,14 @@ export default function AdminChallenges() {
                 <Button
                   type="button"
                   variant="destructive"
-                  disabled={deleteConfirm !== "delete" || deleteMutation.isPending}
+                  disabled={
+                    deleteConfirm !== "delete" || deleteMutation.isPending
+                  }
                   onClick={() =>
-                    deleteMutation.mutate({ id: deleteTarget.id, confirmation: deleteConfirm })
+                    deleteMutation.mutate({
+                      id: deleteTarget.id,
+                      confirmation: deleteConfirm,
+                    })
                   }
                 >
                   {deleteMutation.isPending ? "Deleting…" : "Delete"}
@@ -377,13 +425,15 @@ export default function AdminChallenges() {
               </>
             }
           >
-              <Input
-                value={deleteConfirm}
-                onChange={(e) => setDeleteConfirm(e.target.value)}
-                placeholder="delete"
-                autoComplete="off"
-              />
-              {formError && <p className="mt-2 text-sm text-destructive">{formError}</p>}
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="delete"
+              autoComplete="off"
+            />
+            {formError && (
+              <p className="mt-2 text-sm text-destructive">{formError}</p>
+            )}
           </BaseAlertDialog>
         )}
       </div>
@@ -408,8 +458,13 @@ function CreateChallengeModal({
   const [err, setErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const { tracks, cars, loading: catalogsLoading, error: catalogsError, retry: retryCatalogs } =
-    useCatalogs(sim || null);
+  const {
+    tracks,
+    cars,
+    loading: catalogsLoading,
+    error: catalogsError,
+    retry: retryCatalogs,
+  } = useCatalogs(sim || null);
 
   async function submit() {
     setErr(null);
@@ -476,137 +531,155 @@ function CreateChallengeModal({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="button" disabled={pending} onClick={() => void submit()}>
+          <Button
+            type="button"
+            disabled={pending}
+            onClick={() => void submit()}
+          >
             {pending ? "Saving…" : "Create"}
           </Button>
         </>
       }
     >
-          <label className="block text-xs text-muted-foreground">
-            Title <span className="text-red-400">*</span>
-            <Input className="mt-1" value={title} onChange={(e) => setTitle(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Description <span className="text-red-400">*</span>
-            <Textarea
-              className="mt-1 min-h-[80px]"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <label className="block text-xs text-white/80">
-            Sim / Game <span className="text-red-400">*</span>
-            <select
-              className={`mt-1 ${SELECT_MANUAL_LIKE}`}
-              value={sim}
-              onChange={(e) => {
-                const v = e.target.value as ManualActivitySim | "";
-                setSim(v);
-                setTrackId("");
-                setCarId("");
-              }}
-              disabled={pending}
-            >
-              <option value="">Select sim…</option>
-              {MANUAL_ACTIVITY_SIMS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="block text-xs text-muted-foreground">
+        Title <span className="text-red-400">*</span>
+        <Input
+          className="mt-1"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </label>
+      <label className="block text-xs text-muted-foreground">
+        Description <span className="text-red-400">*</span>
+        <Textarea
+          className="mt-1 min-h-[80px]"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </label>
+      <label className="block text-xs text-white/80">
+        Sim / Game <span className="text-red-400">*</span>
+        <select
+          className={`mt-1 ${SELECT_MANUAL_LIKE}`}
+          value={sim}
+          onChange={(e) => {
+            const v = e.target.value as ManualActivitySim | "";
+            setSim(v);
+            setTrackId("");
+            setCarId("");
+          }}
+          disabled={pending}
+        >
+          <option value="">Select sim…</option>
+          {MANUAL_ACTIVITY_SIMS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          {catalogsError && sim && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-red-500/10 p-3">
-              <p className="text-sm text-red-500">{catalogsError}</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={retryCatalogs}
-                className="border-white/20 text-foreground hover:bg-white/10"
-              >
-                Retry
-              </Button>
-            </div>
-          )}
+      {catalogsError && sim && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-red-500/10 p-3">
+          <p className="text-sm text-red-500">{catalogsError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={retryCatalogs}
+            className="border-white/20 text-foreground hover:bg-white/10"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
 
-          <label className="block text-xs text-white/80">
-            Track <span className="text-red-400">*</span>
-            {catalogsLoading && sim && (
-              <span className="ml-2 text-xs font-normal text-white/50">
-                <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
-                Loading…
-              </span>
-            )}
-            <select
-              className={`mt-1 ${SELECT_MANUAL_LIKE}`}
-              value={trackId}
-              onChange={(e) => setTrackId(e.target.value)}
-              disabled={pending || !sim || catalogsLoading}
-            >
-              <option value="">
-                {!sim ? "Select a sim first" : catalogsLoading ? "Loading…" : "Select track…"}
-              </option>
-              {tracks.map((tr) => (
-                <option key={tr.id} value={tr.id}>
-                  {tr.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="block text-xs text-white/80">
+        Track <span className="text-red-400">*</span>
+        {catalogsLoading && sim && (
+          <span className="ml-2 text-xs font-normal text-white/50">
+            <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
+            Loading…
+          </span>
+        )}
+        <select
+          className={`mt-1 ${SELECT_MANUAL_LIKE}`}
+          value={trackId}
+          onChange={(e) => setTrackId(e.target.value)}
+          disabled={pending || !sim || catalogsLoading}
+        >
+          <option value="">
+            {!sim
+              ? "Select a sim first"
+              : catalogsLoading
+                ? "Loading…"
+                : "Select track…"}
+          </option>
+          {tracks.map((tr) => (
+            <option key={tr.id} value={tr.id}>
+              {tr.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          <label className="block text-xs text-white/80">
-            Car <span className="text-red-400">*</span>
-            {catalogsLoading && sim && (
-              <span className="ml-2 text-xs font-normal text-white/50">
-                <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
-                Loading…
-              </span>
-            )}
-            <select
-              className={`mt-1 ${SELECT_MANUAL_LIKE}`}
-              value={carId}
-              onChange={(e) => setCarId(e.target.value)}
-              disabled={pending || !sim || catalogsLoading}
-            >
-              <option value="">
-                {!sim ? "Select a sim first" : catalogsLoading ? "Loading…" : "Select car…"}
-              </option>
-              {cars.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="block text-xs text-white/80">
+        Car <span className="text-red-400">*</span>
+        {catalogsLoading && sim && (
+          <span className="ml-2 text-xs font-normal text-white/50">
+            <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
+            Loading…
+          </span>
+        )}
+        <select
+          className={`mt-1 ${SELECT_MANUAL_LIKE}`}
+          value={carId}
+          onChange={(e) => setCarId(e.target.value)}
+          disabled={pending || !sim || catalogsLoading}
+        >
+          <option value="">
+            {!sim
+              ? "Select a sim first"
+              : catalogsLoading
+                ? "Loading…"
+                : "Select car…"}
+          </option>
+          {cars.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          <p className="text-xs text-muted-foreground">
-            Times are entered in your local timezone:{" "}
-            <span className="font-medium text-foreground">{getBrowserTimeZone()}</span>.
-            Players see them in their own local timezone.
-          </p>
-          <label className="block text-xs text-muted-foreground">
-            Starts at <span className="text-red-400">*</span>
-            <Input
-              className="mt-1"
-              type="datetime-local"
-              step="1"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-            />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Ends at <span className="text-red-400">*</span>
-            <Input
-              className="mt-1"
-              type="datetime-local"
-              step="1"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-            />
-          </label>
-        {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
+      <p className="text-xs text-muted-foreground">
+        Times are entered in your local timezone:{" "}
+        <span className="font-medium text-foreground">
+          {getBrowserTimeZone()}
+        </span>
+        . Players see them in their own local timezone.
+      </p>
+      <label className="block text-xs text-muted-foreground">
+        Starts at <span className="text-red-400">*</span>
+        <Input
+          className="mt-1"
+          type="datetime-local"
+          step="1"
+          value={startsAt}
+          onChange={(e) => setStartsAt(e.target.value)}
+        />
+      </label>
+      <label className="block text-xs text-muted-foreground">
+        Ends at <span className="text-red-400">*</span>
+        <Input
+          className="mt-1"
+          type="datetime-local"
+          step="1"
+          value={endsAt}
+          onChange={(e) => setEndsAt(e.target.value)}
+        />
+      </label>
+      {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
     </BaseModal>
   );
 }

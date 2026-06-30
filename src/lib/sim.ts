@@ -15,7 +15,12 @@ export const CANONICAL_SIM_API_KEYS = ["iracing", "f1_25", "lmu"] as const;
 export type CanonicalSimApiKey = (typeof CANONICAL_SIM_API_KEYS)[number];
 
 /** Multipart upload tags including legacy F1 tag (server normalizes f125 → f1_25). */
-export const LAP_UPLOAD_SIM_FORM_TAGS = ["iracing", "f1_25", "f125", "lmu"] as const;
+export const LAP_UPLOAD_SIM_FORM_TAGS = [
+  "iracing",
+  "f1_25",
+  "f125",
+  "lmu",
+] as const;
 
 export type SimKey = SupportedSimEnum | "F1_24" | "ACC" | "AC" | string;
 
@@ -150,11 +155,7 @@ const DEFAULT_CONFIG: SimConfig = {
  */
 function normalizeSimKey(sim: string | null | undefined): string | null {
   if (!sim) return null;
-  return sim
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "_")
-    .replace(/-/g, "_");
+  return sim.trim().toUpperCase().replace(/\s+/g, "_").replace(/-/g, "_");
 }
 
 /**
@@ -163,7 +164,9 @@ function normalizeSimKey(sim: string | null | undefined): string | null {
 export function getSimConfig(sim: string | null | undefined): SimConfig {
   const key = normalizeSimKey(sim);
   if (!key) return DEFAULT_CONFIG;
-  return SIM_CONFIGS[key] ?? { ...DEFAULT_CONFIG, displayName: sim ?? "Unknown Sim" };
+  return (
+    SIM_CONFIGS[key] ?? { ...DEFAULT_CONFIG, displayName: sim ?? "Unknown Sim" }
+  );
 }
 
 /**
@@ -174,7 +177,8 @@ export function getSimLogoSrc(sim: string | null | undefined): string | null {
   const key = normalizeSimKey(sim);
   if (!key) return null;
   if (key === "IRACING") return "/sims/iracing.svg";
-  if (key === "F1_25" || key === "F1_24" || key.startsWith("F1_")) return "/sims/f1.svg";
+  if (key === "F1_25" || key === "F1_24" || key.startsWith("F1_"))
+    return "/sims/f1.svg";
   if (key === "F1") return "/sims/f1.svg";
   return null;
 }
@@ -243,12 +247,12 @@ export function simHasLicenseClass(sim: string | null | undefined): boolean {
  */
 export function formatSessionType(
   type: string | null | undefined,
-  _sim?: string | null
+  _sim?: string | null,
 ): string {
   if (!type) return "Session";
-  
+
   const normalized = type.toUpperCase().trim();
-  
+
   switch (normalized) {
     case "PRACTICE":
       return "Practice";
@@ -278,7 +282,7 @@ export function formatSessionType(
  */
 export function formatSessionTypeUpper(
   type: string | null | undefined,
-  _sim?: string | null
+  _sim?: string | null,
 ): string {
   return formatSessionType(type, _sim).toUpperCase();
 }

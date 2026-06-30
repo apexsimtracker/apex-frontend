@@ -10,7 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
 const SITE_ORIGIN =
-  process.env.VITE_SITE_ORIGIN?.replace(/\/$/, "") || "https://apexsimtracker.com";
+  process.env.VITE_SITE_ORIGIN?.replace(/\/$/, "") ||
+  "https://apexsimtracker.com";
 
 const routesPath = join(root, "src/config/publicSeoRoutes.ts");
 const routesSource = readFileSync(routesPath, "utf8");

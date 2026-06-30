@@ -28,10 +28,10 @@ cp .env.e2e.example .env.e2e.local
 
 `.env.e2e.local` is gitignored (`.env.e2e.local` + `*.local`). Use these sandbox roles:
 
-| Variable | Account | Role |
-|----------|---------|------|
+| Variable                  | Account                      | Role                                    |
+| ------------------------- | ---------------------------- | --------------------------------------- |
 | `E2E_CHECKOUT_USER_EMAIL` | `hello.worlda1220@gmail.com` | Free / new user — monthly checkout test |
-| `E2E_PRO_USER_EMAIL` | `iamrohanilyas863@gmail.com` | Admin with Pro — portal test |
+| `E2E_PRO_USER_EMAIL`      | `iamrohanilyas863@gmail.com` | Admin with Pro — portal test            |
 
 Webhook secret can live in `apex/.env` only; Playwright loads both files.
 
@@ -57,11 +57,11 @@ pnpm typecheck:e2e      # strict TS for tests/
 
 ## Test suites (`tests/billing.spec.ts`)
 
-| Suite | User | What it verifies |
-|-------|------|------------------|
-| Checkout | `E2E_CHECKOUT_USER_EMAIL` | Monthly subscribe → Stripe test card → Pro UI + `hasPro` |
-| Portal | `E2E_PRO_USER_EMAIL` | `POST /api/billing/portal` → `billing.stripe.com` |
-| Webhook | API only | Auth rejection, TEST event, EXPIRATION (free user), EXPIRATION (active sub stays Pro), CANCELLATION (checkout user with active Pro) |
+| Suite    | User                      | What it verifies                                                                                                                    |
+| -------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Checkout | `E2E_CHECKOUT_USER_EMAIL` | Monthly subscribe → Stripe test card → Pro UI + `hasPro`                                                                            |
+| Portal   | `E2E_PRO_USER_EMAIL`      | `POST /api/billing/portal` → `billing.stripe.com`                                                                                   |
+| Webhook  | API only                  | Auth rejection, TEST event, EXPIRATION (free user), EXPIRATION (active sub stays Pro), CANCELLATION (checkout user with active Pro) |
 
 **Notes**
 

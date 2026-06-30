@@ -2,7 +2,10 @@ import { useEffect, type Dispatch, type SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { SessionVisibility, AuthUser } from "@/lib/api";
-import type { SettingsDisplayNameValues, DeleteAccountFormValues } from "@/lib/validation/settingsForms";
+import type {
+  SettingsDisplayNameValues,
+  DeleteAccountFormValues,
+} from "@/lib/validation/settingsForms";
 import type { ApexSettings } from "@/lib/settingsStorage";
 import { setApexSettings } from "@/lib/settingsStorage";
 
@@ -15,12 +18,13 @@ export function useDisplayNameFormResetEffect(
     WithRootError<SettingsDisplayNameValues>,
     unknown,
     WithRootError<SettingsDisplayNameValues>
-  >
+  >,
 ) {
   useEffect(() => {
     if (user) {
       displayNameForm.reset({
-        displayName: (user as { displayName?: string }).displayName ?? user.email ?? "",
+        displayName:
+          (user as { displayName?: string }).displayName ?? user.email ?? "",
       });
     }
   }, [user, displayNameForm]);
@@ -31,7 +35,7 @@ export function useDisplayNameFormResetEffect(
  */
 export function useApexFromServerUserEffect(
   user: AuthUser | null,
-  setSettings: Dispatch<SetStateAction<ApexSettings>>
+  setSettings: Dispatch<SetStateAction<ApexSettings>>,
 ) {
   useEffect(() => {
     if (!user) return;
@@ -44,15 +48,25 @@ export function useApexFromServerUserEffect(
     };
     setSettings((prev) => ({
       ...prev,
-      ...(typeof u.privateProfile === "boolean" ? { privateProfile: u.privateProfile } : {}),
-      ...(typeof u.manualFollowApproval === "boolean" ? { manualFollowApproval: u.manualFollowApproval } : {}),
-      ...(u.sessionVisibility === "PUBLIC" || u.sessionVisibility === "FOLLOWERS_ONLY" || u.sessionVisibility === "PRIVATE"
+      ...(typeof u.privateProfile === "boolean"
+        ? { privateProfile: u.privateProfile }
+        : {}),
+      ...(typeof u.manualFollowApproval === "boolean"
+        ? { manualFollowApproval: u.manualFollowApproval }
+        : {}),
+      ...(u.sessionVisibility === "PUBLIC" ||
+      u.sessionVisibility === "FOLLOWERS_ONLY" ||
+      u.sessionVisibility === "PRIVATE"
         ? { sessionVisibility: u.sessionVisibility }
         : {}),
-      ...(typeof u.emailNotifications === "boolean" ? { emailNotifications: u.emailNotifications } : {}),
-      ...(typeof u.showNotificationBadge === "boolean" ? { showNotificationBadge: u.showNotificationBadge } : {}),
+      ...(typeof u.emailNotifications === "boolean"
+        ? { emailNotifications: u.emailNotifications }
+        : {}),
+      ...(typeof u.showNotificationBadge === "boolean"
+        ? { showNotificationBadge: u.showNotificationBadge }
+        : {}),
     }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- field-level deps mirror previous Settings page (avoids `user` object in deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- field-level deps mirror previous Settings page (avoids `user` object in deps)
   }, [
     user?.id,
     user?.privateProfile,
@@ -76,7 +90,7 @@ export function useDeleteAccountFormOnDialogEffect(
     WithRootError<DeleteAccountFormValues>,
     unknown,
     WithRootError<DeleteAccountFormValues>
-  >
+  >,
 ) {
   useEffect(() => {
     if (deleteDialogOpen) {

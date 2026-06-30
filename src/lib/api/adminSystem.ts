@@ -311,7 +311,9 @@ export type AdminSystemAuditResponse = {
   totalPages: number;
 };
 
-function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
+function buildQuery(
+  params: Record<string, string | number | boolean | null | undefined>,
+): string {
   const sp = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value == null) continue;
@@ -330,7 +332,9 @@ export async function fetchAdminSystemHealth(): Promise<AdminSystemHealth> {
   return fetchApi("GET", "/api/admin/system/health", undefined, false);
 }
 
-export async function fetchAdminSystemComponents(): Promise<{ items: AdminSystemComponent[] }> {
+export async function fetchAdminSystemComponents(): Promise<{
+  items: AdminSystemComponent[];
+}> {
   return fetchApi("GET", "/api/admin/system/components", undefined, false);
 }
 
@@ -338,7 +342,10 @@ export async function fetchAdminSystemFeatures(params?: {
   q?: string;
   environment?: SystemEnvironment;
   enabled?: boolean;
-}): Promise<{ items: AdminSystemFeature[]; currentEnvironment: SystemEnvironment }> {
+}): Promise<{
+  items: AdminSystemFeature[];
+  currentEnvironment: SystemEnvironment;
+}> {
   return fetchApi(
     "GET",
     `/api/admin/system/features${buildQuery({
@@ -347,7 +354,7 @@ export async function fetchAdminSystemFeatures(params?: {
       enabled: params?.enabled,
     })}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -357,13 +364,13 @@ export async function patchAdminSystemFeature(
     enabled: boolean;
     environment: SystemEnvironment;
     reason: string;
-  }>
+  }>,
 ): Promise<{ id: string; ok: boolean }> {
   return fetchApi(
     "PATCH",
     `/api/admin/system/features/${encodeURIComponent(featureKey)}`,
     body,
-    false
+    false,
   );
 }
 
@@ -380,7 +387,7 @@ export async function fetchAdminSystemIncidents(params?: {
       status: params?.status,
     })}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -418,24 +425,24 @@ export async function patchAdminSystemIncident(
     nextUpdateAt: string;
     updateMessage: string;
     reason: string;
-  }>
+  }>,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "PATCH",
     `/api/admin/system/incidents/${encodeURIComponent(incidentId)}`,
     body,
-    false
+    false,
   );
 }
 
 export async function deleteAdminSystemIncident(
-  incidentId: string
+  incidentId: string,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/system/incidents/${encodeURIComponent(incidentId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -452,7 +459,7 @@ export async function fetchAdminSystemMaintenance(params?: {
       status: params?.status,
     })}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -490,35 +497,35 @@ export async function patchAdminSystemMaintenance(
     affectedComponents: ServiceComponentKey[];
     linkedBroadcastId: string;
     reason: string;
-  }>
+  }>,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "PATCH",
     `/api/admin/system/maintenance/${encodeURIComponent(maintenanceId)}`,
     body,
-    false
+    false,
   );
 }
 
 export async function deleteAdminSystemMaintenance(
-  maintenanceId: string
+  maintenanceId: string,
 ): Promise<{ ok: boolean }> {
   return fetchApi(
     "DELETE",
     `/api/admin/system/maintenance/${encodeURIComponent(maintenanceId)}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function fetchPublicMaintenanceWindow(
-  maintenanceId: string
+  maintenanceId: string,
 ): Promise<PublicMaintenanceWindowDetail> {
   return fetchApi(
     "GET",
     `/api/system/maintenance/${encodeURIComponent(maintenanceId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -539,6 +546,6 @@ export async function fetchAdminSystemAudit(params?: {
       source: params?.source,
     })}`,
     undefined,
-    false
+    false,
   );
 }

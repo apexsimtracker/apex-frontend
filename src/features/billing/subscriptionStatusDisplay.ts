@@ -7,13 +7,17 @@ type SubscriptionUserFields = Pick<
   "hasPro" | "subscriptionStatus" | "cancelAtPeriodEnd" | "currentPeriodEnd"
 >;
 
-export function isSubscriptionCanceled(user: SubscriptionUserFields | null | undefined): boolean {
+export function isSubscriptionCanceled(
+  user: SubscriptionUserFields | null | undefined,
+): boolean {
   if (!user) return false;
-  return user.subscriptionStatus === "CANCELED" || user.cancelAtPeriodEnd === true;
+  return (
+    user.subscriptionStatus === "CANCELED" || user.cancelAtPeriodEnd === true
+  );
 }
 
 export function formatAccessUntilLabel(
-  currentPeriodEnd: string | null | undefined
+  currentPeriodEnd: string | null | undefined,
 ): string | null {
   if (!currentPeriodEnd) return null;
   return new Date(currentPeriodEnd).toLocaleDateString(undefined, {
@@ -21,7 +25,9 @@ export function formatAccessUntilLabel(
   });
 }
 
-export function subscriptionStatusLabel(user: SubscriptionUserFields | null | undefined): string {
+export function subscriptionStatusLabel(
+  user: SubscriptionUserFields | null | undefined,
+): string {
   if (!user?.hasPro) return "Free";
   if (user.subscriptionStatus === "CANCELED" || user.cancelAtPeriodEnd) {
     return "Pro (canceled — access until period end)";
@@ -33,7 +39,7 @@ export function subscriptionStatusLabel(user: SubscriptionUserFields | null | un
 }
 
 export function subscriptionPeriodEndLabel(
-  user: SubscriptionUserFields | null | undefined
+  user: SubscriptionUserFields | null | undefined,
 ): string {
   if (!user?.hasPro) return "Renews / period ends";
   if (isSubscriptionCanceled(user)) return "Access until";

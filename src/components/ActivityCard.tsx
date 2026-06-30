@@ -4,7 +4,12 @@ import { Heart, MessageCircle, Share2 } from "lucide-react";
 import SimBadge from "./SimBadge";
 import SessionTypeTag from "./SessionTypeTag";
 import SessionShareModal from "@/components/SessionShareModal";
-import { formatLapMs, formatCarName, formatCompactCount, cn } from "@/lib/utils";
+import {
+  formatLapMs,
+  formatCarName,
+  formatCompactCount,
+  cn,
+} from "@/lib/utils";
 import { apiPost, API_BASE, resolveApiUrl } from "@/lib/api";
 import { SessionCommentsModal } from "@/components/SessionCommentsModal";
 import { buildSessionShareText } from "@/lib/sessionShareText";
@@ -92,8 +97,7 @@ const getPodiumColor = (pos: number) => {
 /** Coerce session position / grid size from the API (sometimes string) for numeric comparisons and podium UI. */
 function activityPositionValue(raw: unknown): number {
   if (raw == null || raw === "") return 0;
-  const n =
-    typeof raw === "number" ? raw : Number(String(raw).trim());
+  const n = typeof raw === "number" ? raw : Number(String(raw).trim());
   if (!Number.isFinite(n) || n < 0) return 0;
   return Math.trunc(n);
 }
@@ -116,8 +120,12 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
   // If we only have Position + Car (no best lap), keep the layout balanced.
   if (showPosition && !showBest) {
     return (
-      <div className={`grid ${(item.lapCount ?? 0) > 0 ? "grid-cols-3" : "grid-cols-2"} gap-4`}>
-        <div className={`${getPodiumColor(pos)} flex items-center justify-between rounded-lg p-3`}>
+      <div
+        className={`grid ${(item.lapCount ?? 0) > 0 ? "grid-cols-3" : "grid-cols-2"} gap-4`}
+      >
+        <div
+          className={`${getPodiumColor(pos)} flex items-center justify-between rounded-lg p-3`}
+        >
           <div>
             <p className="mb-0.5 text-xs font-medium uppercase text-white/70">
               Position
@@ -194,7 +202,9 @@ function OriginalRaceStats({ item }: { item: ActivityCardItem }) {
           </div>
         )}
 
-        {showBest && (item.lapCount ?? 0) > 0 && <LapCountStat lapCount={item.lapCount} />}
+        {showBest && (item.lapCount ?? 0) > 0 && (
+          <LapCountStat lapCount={item.lapCount} />
+        )}
 
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
@@ -234,7 +244,9 @@ function PracticeStatsBlock({ item }: { item: ActivityCardItem }) {
       </div>
 
       <div className="mt-6">
-        <div className="text-xs uppercase tracking-wider text-white/50">Car</div>
+        <div className="text-xs uppercase tracking-wider text-white/50">
+          Car
+        </div>
         <div className="mt-1 font-semibold text-white">
           {item.vehicleDisplay ?? formatCarName(item.car)}
         </div>
@@ -282,40 +294,41 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           position: item.position,
           qualifyingPosition: item.qualifyingPosition,
           totalDrivers: item.totalRacers,
-        }) && (() => {
-          const displaySession = {
-            sessionType: item.sessionType,
-            manualSessionKind: item.manualSessionKind,
-            position: item.position,
-            qualifyingPosition: item.qualifyingPosition,
-            totalDrivers: item.totalRacers,
-          };
-          const displayLabel = getDisplayPosition(displaySession);
-          const pos = displayPositionRank(displaySession);
-          return (
-            <div>
-              <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
-                Position
-              </p>
-              <div
-                className={cn(
-                  "flex items-center justify-between gap-2 rounded-lg py-2",
-                  getPodiumColor(pos),
-                  pos <= 3 && pos > 0 && "px-4"
-                )}
-              >
-                <p className="text-xs font-semibold text-white sm:text-sm">
-                  {displayLabel}
+        }) &&
+          (() => {
+            const displaySession = {
+              sessionType: item.sessionType,
+              manualSessionKind: item.manualSessionKind,
+              position: item.position,
+              qualifyingPosition: item.qualifyingPosition,
+              totalDrivers: item.totalRacers,
+            };
+            const displayLabel = getDisplayPosition(displaySession);
+            const pos = displayPositionRank(displaySession);
+            return (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-widest text-white/50">
+                  Position
                 </p>
-                {pos >= 1 && pos <= 3 && (
-                  <span className="shrink-0 text-lg" aria-hidden>
-                    {["🥇", "🥈", "🥉"][pos - 1]}
-                  </span>
-                )}
+                <div
+                  className={cn(
+                    "flex items-center justify-between gap-2 rounded-lg py-2",
+                    getPodiumColor(pos),
+                    pos <= 3 && pos > 0 && "px-4",
+                  )}
+                >
+                  <p className="text-xs font-semibold text-white sm:text-sm">
+                    {displayLabel}
+                  </p>
+                  {pos >= 1 && pos <= 3 && (
+                    <span className="shrink-0 text-lg" aria-hidden>
+                      {["🥇", "🥈", "🥉"][pos - 1]}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
       </div>
       {item.bestLapMs == null &&
         !shouldShowSessionPosition({
@@ -324,9 +337,7 @@ function ManualStatsBlock({ item }: { item: ActivityCardItem }) {
           position: item.position,
           qualifyingPosition: item.qualifyingPosition,
           totalDrivers: item.totalRacers,
-        }) && (
-        <div className="h-10" aria-hidden />
-      )}
+        }) && <div className="h-10" aria-hidden />}
     </div>
   );
 }
@@ -367,9 +378,7 @@ function RaceCardContent({
   /** Telemetry/practice rows with no laps; false for manual so we don't show "No laps recorded" on manual cards. */
   const isEmptySession = !isManual && (item.lapCount ?? 0) === 0;
   const isStrongSession =
-    !isManual &&
-    (item.lapCount ?? 0) > 5 &&
-    (item.consistencyScore ?? 0) >= 75;
+    !isManual && (item.lapCount ?? 0) > 5 && (item.consistencyScore ?? 0) >= 75;
 
   const avatarSrc = resolveApiUrl(item.userAvatar);
 
@@ -492,7 +501,7 @@ function RaceCardContent({
             {isManual ? (
               <ManualStatsBlock item={item} />
             ) : (
-              statsOverride ?? <OriginalRaceStats item={item} />
+              (statsOverride ?? <OriginalRaceStats item={item} />)
             )}
           </div>
         </div>
@@ -533,7 +542,9 @@ function RaceCardContent({
             className="flex items-center gap-1 p-1 text-white/60 transition-colors hover:text-white/80"
           >
             <MessageCircle className="size-3.5" />
-            <span className="text-xs text-white/60">{formatCompactCount(commentCount)}</span>
+            <span className="text-xs text-white/60">
+              {formatCompactCount(commentCount)}
+            </span>
           </button>
         </div>
         <button
@@ -590,7 +601,10 @@ interface ActivityCardProps {
 }
 
 /** True when position/total represent a valid race result (legacy feed rows). */
-function hasValidRacePosition(position: unknown, totalRacers: unknown): boolean {
+function hasValidRacePosition(
+  position: unknown,
+  totalRacers: unknown,
+): boolean {
   const pos = activityPositionValue(position);
   const total = activityPositionValue(totalRacers);
   return pos > 0 || total > 0;
@@ -623,9 +637,11 @@ export default function ActivityCard(props: ActivityCardProps) {
     });
 
   const [likedByMe, setLikedByMe] = useState(props.likedByMe ?? false);
-  const [likeCount, setLikeCount] = useState(props.likeCount ?? props.likes ?? 0);
+  const [likeCount, setLikeCount] = useState(
+    props.likeCount ?? props.likes ?? 0,
+  );
   const [commentCount, setCommentCount] = useState(
-    props.commentCount ?? props.comments ?? 0
+    props.commentCount ?? props.comments ?? 0,
   );
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [likePending, setLikePending] = useState(false);
@@ -656,7 +672,7 @@ export default function ActivityCard(props: ActivityCardProps) {
       props.consistencyScore,
       props.sim,
       props.source,
-    ]
+    ],
   );
 
   const onShareClick = useCallback((e: React.MouseEvent) => {
@@ -689,14 +705,17 @@ export default function ActivityCard(props: ActivityCardProps) {
       try {
         const data = await apiPost<{ liked: boolean; likeCount: number }>(
           `/api/sessions/${props.id}/like`,
-          {}
+          {},
         );
         const newLiked = Boolean(data.liked);
         const newCount = Number(data.likeCount ?? 0);
         setLikedByMe(newLiked);
         setLikeCount(newCount);
         if (props.onSessionPatch) {
-          props.onSessionPatch(props.id, { likedByMe: newLiked, likeCount: newCount });
+          props.onSessionPatch(props.id, {
+            likedByMe: newLiked,
+            likeCount: newCount,
+          });
         }
       } catch {
         setLikedByMe(prevLiked);
@@ -705,7 +724,7 @@ export default function ActivityCard(props: ActivityCardProps) {
         setLikePending(false);
       }
     },
-    [props.id, props.onSessionPatch, likedByMe, likeCount, likePending]
+    [props.id, props.onSessionPatch, likedByMe, likeCount, likePending],
   );
 
   const onCommentClick = useCallback((e: React.MouseEvent) => {
@@ -717,7 +736,8 @@ export default function ActivityCard(props: ActivityCardProps) {
   const onCommentAdded = useCallback(() => {
     setCommentCount((c) => {
       const next = c + 1;
-      if (props.onSessionPatch) props.onSessionPatch(props.id, { commentCount: next });
+      if (props.onSessionPatch)
+        props.onSessionPatch(props.id, { commentCount: next });
       return next;
     });
   }, [props.id, props.onSessionPatch]);
@@ -725,7 +745,9 @@ export default function ActivityCard(props: ActivityCardProps) {
   const refreshSessionSocial = useCallback(
     async (sid: string) => {
       try {
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
         const token = getToken();
         if (token) headers["Authorization"] = `Bearer ${token}`;
         const res = await fetch(`${API_BASE}/api/sessions/${sid}`, {
@@ -747,7 +769,7 @@ export default function ActivityCard(props: ActivityCardProps) {
         // ignore
       }
     },
-    [props.onSessionPatch]
+    [props.onSessionPatch],
   );
   /* eslint-enable react-hooks/exhaustive-deps */
 
@@ -787,7 +809,9 @@ export default function ActivityCard(props: ActivityCardProps) {
       <RaceCardContent
         item={item}
         profileUserId={props.profileUserId}
-        statsOverride={isPractice ? <PracticeStatsBlock item={item} /> : undefined}
+        statsOverride={
+          isPractice ? <PracticeStatsBlock item={item} /> : undefined
+        }
         likedByMe={likedByMe}
         likeCount={likeCount}
         commentCount={commentCount}

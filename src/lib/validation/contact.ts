@@ -2,7 +2,11 @@ import { z } from "zod";
 import { emailSchema } from "@/lib/validation/auth";
 
 export const contactFormSchema = z.object({
-  name: z.string().trim().min(1, "Name is required.").max(120, "Name is too long."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required.")
+    .max(120, "Name is too long."),
   email: emailSchema,
   subject: z.string().max(200, "Subject is too long."),
   message: z

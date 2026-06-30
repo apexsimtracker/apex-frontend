@@ -150,7 +150,9 @@ export default function AdminBroadcastDetail() {
           </div>
         ) : isError || !data ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load broadcast."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load broadcast."}
           </div>
         ) : (
           <>
@@ -255,13 +257,18 @@ export default function AdminBroadcastDetail() {
                     archiveMut.error ??
                     unarchiveMut.error ??
                     deleteMut.error;
-                  return err instanceof ApiError ? err.message : "Action failed.";
+                  return err instanceof ApiError
+                    ? err.message
+                    : "Action failed.";
                 })()}
               </div>
             )}
 
             <div className="grid gap-3 sm:grid-cols-4">
-              <StatTile label="Eligible audience" value={data.eligibleAudienceCount} />
+              <StatTile
+                label="Eligible audience"
+                value={data.eligibleAudienceCount}
+              />
               <StatTile label="Views" value={data.viewCount} />
               <StatTile label="Dismissed" value={data.dismissalCount} />
               <StatTile
@@ -276,10 +283,13 @@ export default function AdminBroadcastDetail() {
 
             <div className="mt-6 rounded-xl border border-white/10 bg-card/40 p-4">
               <h2 className="text-sm font-semibold text-foreground">Body</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{data.body}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                {data.body}
+              </p>
               {data.ctaLabel && data.ctaUrl ? (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  CTA: <span className="text-foreground">{data.ctaLabel}</span> →{" "}
+                  CTA: <span className="text-foreground">{data.ctaLabel}</span>{" "}
+                  →{" "}
                   <a
                     href={data.ctaUrl}
                     className="text-primary hover:underline"
@@ -294,20 +304,31 @@ export default function AdminBroadcastDetail() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-white/10 bg-card/40 p-4">
-                <h2 className="text-sm font-semibold text-foreground">Window</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Window
+                </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Starts: {new Date(data.startsAt).toLocaleString()}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Ends: {data.endsAt ? new Date(data.endsAt).toLocaleString() : "(no end)"}
+                  Ends:{" "}
+                  {data.endsAt
+                    ? new Date(data.endsAt).toLocaleString()
+                    : "(no end)"}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {data.dismissible ? "Users can dismiss" : "Cannot be dismissed by users"}
+                  {data.dismissible
+                    ? "Users can dismiss"
+                    : "Cannot be dismissed by users"}
                 </p>
               </div>
               <div className="rounded-xl border border-white/10 bg-card/40 p-4">
-                <h2 className="text-sm font-semibold text-foreground">Audience</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{data.audienceSummary}</p>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Audience
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {data.audienceSummary}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Created by {data.createdByDisplayName ?? "(unknown)"}
                 </p>
@@ -381,7 +402,9 @@ export default function AdminBroadcastDetail() {
 function StatTile({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-white/10 bg-card/50 p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
     </div>
   );

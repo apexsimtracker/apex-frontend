@@ -81,8 +81,8 @@ describe("agentDownload API", () => {
         {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }
-      )
+        },
+      ),
     );
 
     await downloadAgentBinary("macos");
@@ -95,10 +95,10 @@ describe("agentDownload API", () => {
           Authorization: "Bearer test-jwt",
           "X-Apex-Session": "session-abc",
         }),
-      }
+      },
     );
     expect(locationState.assign).toHaveBeenCalledWith(
-      "https://r2.example.com/signed?token=abc"
+      "https://r2.example.com/signed?token=abc",
     );
     expect(locationState.href).toBe("https://r2.example.com/signed?token=abc");
     expect(createObjectURLMock).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("agentDownload API", () => {
           "Content-Type": "application/octet-stream",
           "Content-Disposition": 'attachment; filename="test.exe"',
         },
-      })
+      }),
     );
 
     const result = await getAgentDownloadLink("windows");
@@ -133,7 +133,7 @@ describe("agentDownload API", () => {
         headers: {
           "Content-Type": "application/octet-stream",
         },
-      })
+      }),
     );
 
     const result = await getAgentDownloadLink("linux");
@@ -145,13 +145,18 @@ describe("agentDownload API", () => {
 
   it("throws ProRequiredError on 403 PRO_REQUIRED", async () => {
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify({ code: "PRO_REQUIRED", message: "Pro required" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
-      })
+      new Response(
+        JSON.stringify({ code: "PRO_REQUIRED", message: "Pro required" }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
     );
 
-    await expect(downloadAgentBinary("windows")).rejects.toBeInstanceOf(ProRequiredError);
+    await expect(downloadAgentBinary("windows")).rejects.toBeInstanceOf(
+      ProRequiredError,
+    );
     expect(emitProRequiredEvent).toHaveBeenCalled();
   });
 });

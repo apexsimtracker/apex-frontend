@@ -39,7 +39,7 @@ function loadSessionJsonFixture(filename: string): JsonFixture {
 
 function applySessionUploadFixtureOptions(
   fixture: JsonFixture,
-  options?: SessionUploadOptions
+  options?: SessionUploadOptions,
 ): Buffer {
   const next: JsonFixture = { ...fixture };
 
@@ -116,7 +116,7 @@ export async function authFromPage(page: Page): Promise<AuthSession> {
 export async function clearUploadRateLimitViaApi(
   request: APIRequestContext,
   auth?: AuthSession,
-  options?: { all?: boolean; userId?: string }
+  options?: { all?: boolean; userId?: string },
 ): Promise<void> {
   const { apiUrl, adminSecret } = getE2eEnv();
   const headers: Record<string, string> = {
@@ -130,17 +130,22 @@ export async function clearUploadRateLimitViaApi(
     headers["X-Apex-Session"] = auth.sessionToken;
   }
 
-  const res = await request.post(`${apiUrl}/api/sessions/dev/clear-upload-rate-limit`, {
-    headers,
-    data: {
-      ...(options?.all ? { all: true } : {}),
-      ...(options?.userId ? { userId: options.userId } : {}),
+  const res = await request.post(
+    `${apiUrl}/api/sessions/dev/clear-upload-rate-limit`,
+    {
+      headers,
+      data: {
+        ...(options?.all ? { all: true } : {}),
+        ...(options?.userId ? { userId: options.userId } : {}),
+      },
     },
-  });
+  );
 
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`clear-upload-rate-limit failed (${res.status()}): ${body}`);
+    throw new Error(
+      `clear-upload-rate-limit failed (${res.status()}): ${body}`,
+    );
   }
 }
 
@@ -148,13 +153,13 @@ export async function uploadSessionJsonViaApi(
   request: APIRequestContext,
   auth: AuthSession,
   filename: string,
-  options?: SessionUploadOptions
+  options?: SessionUploadOptions,
 ): Promise<SessionUploadResult> {
   const { apiUrl } = getE2eEnv();
   const challengeId = options?.challengeId?.trim();
   const fixtureBuffer = applySessionUploadFixtureOptions(
     loadSessionJsonFixture(filename),
-    options
+    options,
   );
 
   const multipart: {
@@ -199,7 +204,9 @@ export async function uploadSessionJsonViaApi(
   const data = (await res.json()) as ManualUploadResponse;
   const sessionId = data.sessionId?.trim();
   if (!sessionId) {
-    throw new Error(`manual-upload response missing sessionId: ${JSON.stringify(data)}`);
+    throw new Error(
+      `manual-upload response missing sessionId: ${JSON.stringify(data)}`,
+    );
   }
 
   return {
@@ -214,13 +221,15 @@ export async function uploadSessionJsonViaApi(
 /** Upload JSON telemetry using auth tokens already stored on `page`. */
 export async function uploadSessionJson(
   page: Page,
-  filename: string
+  filename: string,
 ): Promise<SessionUploadResult> {
   const auth = await authFromPage(page);
   return uploadSessionJsonViaApi(page.request, auth, filename);
 }
 
-export function parseSessionGetResponse(data: SessionGetResponse): SessionDetailApi {
+export function parseSessionGetResponse(
+  data: SessionGetResponse,
+): SessionDetailApi {
   if (data && typeof data === "object" && "session" in data && data.session) {
     const session = data.session;
     return {
@@ -236,12 +245,15 @@ export function parseSessionGetResponse(data: SessionGetResponse): SessionDetail
 export async function getSessionDetailViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  sessionId: string
+  sessionId: string,
 ): Promise<SessionDetailApi> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.get(`${apiUrl}/api/sessions/${encodeURIComponent(sessionId)}`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-  });
+  const res = await request.get(
+    `${apiUrl}/api/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+    },
+  );
 
   if (!res.ok()) {
     const body = await res.text();
@@ -266,7 +278,7 @@ export type ManualActivityCreateInput = {
 export async function createManualActivityViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  input: ManualActivityCreateInput
+  input: ManualActivityCreateInput,
 ): Promise<string> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/sessions/manual-activity`, {
@@ -277,7 +289,9 @@ export async function createManualActivityViaApi(
       manualSessionKind: input.manualSessionKind ?? "PRACTICE",
       ...(input.carId ? { carId: input.carId } : {}),
       ...(input.position != null ? { position: input.position } : {}),
-      ...(input.totalDrivers != null ? { totalDrivers: input.totalDrivers } : {}),
+      ...(input.totalDrivers != null
+        ? { totalDrivers: input.totalDrivers }
+        : {}),
       ...(input.qualifyingPosition != null
         ? { qualifyingPosition: input.qualifyingPosition }
         : {}),
@@ -302,14 +316,14 @@ export async function createManualActivityViaApi(
 export async function deleteManualActivityViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  sessionId: string
+  sessionId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.delete(
     `${apiUrl}/api/sessions/manual-activity/${encodeURIComponent(sessionId)}`,
     {
       headers: authHeaders(auth.token, auth.sessionToken),
-    }
+    },
   );
 
   if (!res.ok() && res.status() !== 404) {
@@ -321,13 +335,16 @@ export async function deleteManualActivityViaApi(
 export async function followUserViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  userId: string
+  userId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.post(`${apiUrl}/api/users/${encodeURIComponent(userId)}/follow`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-    data: {},
-  });
+  const res = await request.post(
+    `${apiUrl}/api/users/${encodeURIComponent(userId)}/follow`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+      data: {},
+    },
+  );
 
   if (!res.ok() && res.status() !== 409) {
     const body = await res.text();
@@ -345,7 +362,11 @@ function collectFeedSessionIds(items: unknown[] | undefined): string[] {
   for (const item of items ?? []) {
     if (!item || typeof item !== "object") continue;
     const rec = item as Record<string, unknown>;
-    if (rec.type === "standalone" && rec.session && typeof rec.session === "object") {
+    if (
+      rec.type === "standalone" &&
+      rec.session &&
+      typeof rec.session === "object"
+    ) {
       const id = (rec.session as { id?: string }).id?.trim();
       if (id) ids.push(id);
       continue;
@@ -365,13 +386,13 @@ function collectFeedSessionIds(items: unknown[] | undefined): string[] {
 async function fetchActivityFeedPage(
   request: APIRequestContext,
   auth: AuthSession,
-  query: { type: string; page: number; limit?: number }
+  query: { type: string; page: number; limit?: number },
 ): Promise<ActivityFeedPayload> {
   const { apiUrl } = getE2eEnv();
   const limit = query.limit ?? 50;
   const res = await request.get(
     `${apiUrl}/api/activity?type=${encodeURIComponent(query.type)}&page=${query.page}&limit=${limit}`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
   if (!res.ok()) {
     const body = await res.text();
@@ -388,7 +409,7 @@ export async function findActivityFeedPageForSession(
   auth: AuthSession,
   sessionId: string,
   type: "all" | "telemetry" | "manual" = "all",
-  maxPages = 150
+  maxPages = 150,
 ): Promise<number | null> {
   for (let page = 1; page <= maxPages; page++) {
     const body = await fetchActivityFeedPage(request, auth, {
@@ -408,7 +429,7 @@ export async function listActivityFeedSessionIds(
   request: APIRequestContext,
   auth: AuthSession,
   type: "all" | "telemetry" | "manual",
-  maxPages = 10
+  maxPages = 10,
 ): Promise<string[]> {
   const ids: string[] = [];
 
@@ -432,9 +453,10 @@ async function clickActivityFeedLoadMore(page: Page): Promise<boolean> {
 
   const activityResponse = page.waitForResponse(
     (res) =>
-      (res.url().includes("/api/activity") || res.url().includes("/api/activity/home")) &&
+      (res.url().includes("/api/activity") ||
+        res.url().includes("/api/activity/home")) &&
       res.request().method() === "GET" &&
-      res.ok()
+      res.ok(),
   );
   await loadMore.click();
   await activityResponse.catch(() => undefined);
@@ -457,7 +479,7 @@ export async function expectSessionOnSessionsFeedPage(
     feedType?: "all" | "telemetry" | "manual";
     request?: APIRequestContext;
     auth?: AuthSession;
-  }
+  },
 ): Promise<void> {
   const link = page.locator(`a[href="/sessions/${sessionId}"]`);
 
@@ -466,9 +488,12 @@ export async function expectSessionOnSessionsFeedPage(
       options.request,
       options.auth,
       sessionId,
-      options.feedType ?? "all"
+      options.feedType ?? "all",
     );
-    expect(feedPage, `session ${sessionId} not found in activity feed`).not.toBeNull();
+    expect(
+      feedPage,
+      `session ${sessionId} not found in activity feed`,
+    ).not.toBeNull();
     for (let pageIndex = 1; pageIndex < feedPage!; pageIndex++) {
       expect(await clickActivityFeedLoadMore(page)).toBe(true);
     }
@@ -477,7 +502,9 @@ export async function expectSessionOnSessionsFeedPage(
 
     for (let attempt = 0; attempt <= maxLoadMoreClicks; attempt++) {
       try {
-        await expect(link).toBeVisible({ timeout: attempt === 0 ? 5_000 : 1_500 });
+        await expect(link).toBeVisible({
+          timeout: attempt === 0 ? 5_000 : 1_500,
+        });
         if (options?.containsText) {
           await expect(link).toContainText(options.containsText);
         }
@@ -501,13 +528,13 @@ export async function expectSessionOnSessionsFeedPage(
 async function fetchHomeFeedPage(
   request: APIRequestContext,
   auth: AuthSession,
-  query: { type: string; page: number; limit?: number }
+  query: { type: string; page: number; limit?: number },
 ): Promise<ActivityFeedPayload> {
   const { apiUrl } = getE2eEnv();
   const limit = query.limit ?? 50;
   const res = await request.get(
     `${apiUrl}/api/activity/home?type=${encodeURIComponent(query.type)}&page=${query.page}&limit=${limit}`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
   if (!res.ok()) {
     const body = await res.text();
@@ -520,7 +547,7 @@ async function fetchHomeFeedPage(
 export async function listHomeFeedSessionIds(
   request: APIRequestContext,
   auth: AuthSession,
-  maxPages = 10
+  maxPages = 10,
 ): Promise<string[]> {
   const ids: string[] = [];
 
@@ -537,20 +564,31 @@ export async function getActivityFeedGroupingForSession(
   request: APIRequestContext,
   auth: AuthSession,
   sessionId: string,
-  maxPages = 15
+  maxPages = 15,
 ): Promise<"standalone" | "weekend" | "missing"> {
   for (let page = 1; page <= maxPages; page++) {
-    const body = await fetchActivityFeedPage(request, auth, { type: "all", page });
+    const body = await fetchActivityFeedPage(request, auth, {
+      type: "all",
+      page,
+    });
 
     for (const item of body.items ?? []) {
       if (!item || typeof item !== "object") continue;
       const rec = item as Record<string, unknown>;
-      if (rec.type === "standalone" && rec.session && typeof rec.session === "object") {
+      if (
+        rec.type === "standalone" &&
+        rec.session &&
+        typeof rec.session === "object"
+      ) {
         const id = (rec.session as { id?: string }).id?.trim();
         if (id === sessionId) return "standalone";
         continue;
       }
-      if (rec.type === "weekend" && rec.group && typeof rec.group === "object") {
+      if (
+        rec.type === "weekend" &&
+        rec.group &&
+        typeof rec.group === "object"
+      ) {
         const sessions = (rec.group as { sessions?: unknown[] }).sessions ?? [];
         for (const session of sessions) {
           if (!session || typeof session !== "object") continue;
@@ -570,7 +608,7 @@ export async function findWeekendGroupContainingSession(
   request: APIRequestContext,
   auth: AuthSession,
   sessionId: string,
-  maxPages = 15
+  maxPages = 15,
 ): Promise<{
   trackName: string;
   hasPractice: boolean;
@@ -579,12 +617,16 @@ export async function findWeekendGroupContainingSession(
   sessionIds: string[];
 } | null> {
   for (let page = 1; page <= maxPages; page++) {
-    const body = await fetchActivityFeedPage(request, auth, { type: "all", page });
+    const body = await fetchActivityFeedPage(request, auth, {
+      type: "all",
+      page,
+    });
 
     for (const item of body.items ?? []) {
       if (!item || typeof item !== "object") continue;
       const rec = item as Record<string, unknown>;
-      if (rec.type !== "weekend" || !rec.group || typeof rec.group !== "object") continue;
+      if (rec.type !== "weekend" || !rec.group || typeof rec.group !== "object")
+        continue;
 
       const group = rec.group as {
         trackName?: string;
@@ -617,7 +659,7 @@ export async function findWeekendGroupForSessions(
   request: APIRequestContext,
   auth: AuthSession,
   sessionIds: string[],
-  maxPages = 15
+  maxPages = 15,
 ): Promise<{
   trackName: string;
   hasPractice: boolean;
@@ -626,7 +668,12 @@ export async function findWeekendGroupForSessions(
   sessionIds: string[];
 } | null> {
   for (const sessionId of sessionIds) {
-    const group = await findWeekendGroupContainingSession(request, auth, sessionId, maxPages);
+    const group = await findWeekendGroupContainingSession(
+      request,
+      auth,
+      sessionId,
+      maxPages,
+    );
     if (!group) continue;
     const wanted = new Set(sessionIds);
     if ([...wanted].every((id) => group.sessionIds.includes(id))) {

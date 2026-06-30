@@ -5,8 +5,7 @@ import { parseTrendInsight } from "@/lib/parseTrendInsight";
 
 type ApexTrendInsight = NonNullable<ProfileSummary["apexTrendInsight"]>;
 
-const EMPTY_INSIGHT_COPY =
-  "Drive a session this week to see your pace trend.";
+const EMPTY_INSIGHT_COPY = "Drive a session this week to see your pace trend.";
 
 function TrendInsightContent({ insight }: { insight: string }) {
   const { stats, coaching } = parseTrendInsight(insight);
@@ -52,8 +51,7 @@ export default function ApexAnalysisTrendCard({
   trend: ApexTrendInsight;
 }) {
   const isLocked = trend.locked === true;
-  const insight =
-    !isLocked && "insight" in trend ? trend.insight : null;
+  const insight = !isLocked && "insight" in trend ? trend.insight : null;
   const hasInsight = Boolean(insight);
 
   return (
@@ -79,7 +77,10 @@ export default function ApexAnalysisTrendCard({
         <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider text-white/50">
-              <Lock className="size-3.5 shrink-0 text-amber-400/80" aria-hidden />
+              <Lock
+                className="size-3.5 shrink-0 text-amber-400/80"
+                aria-hidden
+              />
               Pro insight
             </span>
             <Link

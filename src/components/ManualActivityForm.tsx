@@ -4,7 +4,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, AlertCircle, Plus, Trash2, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { MANUAL_ACTIVITY_SIMS, type ManualActivitySim } from "@/lib/manualActivityData";
+import {
+  MANUAL_ACTIVITY_SIMS,
+  type ManualActivitySim,
+} from "@/lib/manualActivityData";
 import { parseStrictManualLapTimeToMs, formatMsToLapTime } from "@/lib/utils";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import {
@@ -60,13 +63,15 @@ function FormBlock({
     <section
       className={cn(
         "rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5",
-        className
+        className,
       )}
     >
       <header className="mb-4 border-b border-white/5 pb-3">
         <h3 className="text-sm font-semibold text-white">{title}</h3>
         {description ? (
-          <p className="mt-1 text-xs leading-relaxed text-white/50">{description}</p>
+          <p className="mt-1 text-xs leading-relaxed text-white/50">
+            {description}
+          </p>
         ) : null}
       </header>
       <div className="space-y-4">{children}</div>
@@ -146,12 +151,14 @@ function normLabel(s: string): string {
 function resolveCatalogTrackId(
   catalog: { id: string; name: string }[],
   storedToken: string,
-  nameHint: string | null | undefined
+  nameHint: string | null | undefined,
 ): string {
   const token = storedToken?.trim();
   if (token && catalog.some((t) => t.id === token)) return token;
   if (token) {
-    const byTokenAsName = catalog.find((t) => normLabel(t.name) === normLabel(token));
+    const byTokenAsName = catalog.find(
+      (t) => normLabel(t.name) === normLabel(token),
+    );
     if (byTokenAsName) return byTokenAsName.id;
   }
   const h = nameHint?.trim();
@@ -160,7 +167,7 @@ function resolveCatalogTrackId(
   const exact = catalog.find((t) => normLabel(t.name) === nh);
   if (exact) return exact.id;
   const partial = catalog.find(
-    (t) => nh.includes(normLabel(t.name)) || normLabel(t.name).includes(nh)
+    (t) => nh.includes(normLabel(t.name)) || normLabel(t.name).includes(nh),
   );
   return partial?.id ?? "";
 }
@@ -168,12 +175,14 @@ function resolveCatalogTrackId(
 function resolveCatalogCarId(
   catalog: { id: string; name: string }[],
   storedToken: string,
-  nameHint: string | null | undefined
+  nameHint: string | null | undefined,
 ): string {
   const token = storedToken?.trim();
   if (token && catalog.some((c) => c.id === token)) return token;
   if (token) {
-    const byTokenAsName = catalog.find((c) => normLabel(c.name) === normLabel(token));
+    const byTokenAsName = catalog.find(
+      (c) => normLabel(c.name) === normLabel(token),
+    );
     if (byTokenAsName) return byTokenAsName.id;
   }
   const h = nameHint?.trim();
@@ -182,12 +191,14 @@ function resolveCatalogCarId(
   const exact = catalog.find((c) => normLabel(c.name) === nh);
   if (exact) return exact.id;
   const partial = catalog.find(
-    (c) => nh.includes(normLabel(c.name)) || normLabel(c.name).includes(nh)
+    (c) => nh.includes(normLabel(c.name)) || normLabel(c.name).includes(nh),
   );
   return partial?.id ?? "";
 }
 
-function buildDefaults(initial?: ManualActivityInitialData): ManualActivityFormValues {
+function buildDefaults(
+  initial?: ManualActivityInitialData,
+): ManualActivityFormValues {
   let laps: { lapTime: string }[];
   if (initial?.lapsMs && initial.lapsMs.length > 0) {
     laps = initial.lapsMs.map((ms) => ({ lapTime: formatMsToInput(ms) }));
@@ -208,9 +219,12 @@ function buildDefaults(initial?: ManualActivityInitialData): ManualActivityFormV
     carId: initial?.catalogCarId ?? initial?.carId ?? "",
     manualSessionKind,
     position: initial?.position != null ? String(initial.position) : "",
-    totalDrivers: initial?.totalDrivers != null ? String(initial.totalDrivers) : "",
+    totalDrivers:
+      initial?.totalDrivers != null ? String(initial.totalDrivers) : "",
     qualifyingPosition:
-      initial?.qualifyingPosition != null ? String(initial.qualifyingPosition) : "",
+      initial?.qualifyingPosition != null
+        ? String(initial.qualifyingPosition)
+        : "",
     laps,
     notes: initial?.notes ?? "",
   };
@@ -229,7 +243,7 @@ export default function ManualActivityForm({
   const telemetryMinLapRows = initialData?.telemetryMinLapRows ?? null;
   const activitySchema = useMemo(
     () => createManualActivityFormSchema(telemetryMinLapRows),
-    [telemetryMinLapRows]
+    [telemetryMinLapRows],
   );
 
   const [pendingRecent, setPendingRecent] = useState<{
@@ -257,13 +271,22 @@ export default function ManualActivityForm({
   const sessionKind = form.watch("manualSessionKind");
   const lapsWatch = form.watch("laps");
 
-  const maxLapsForSim = effectiveManualLapMaxForForm(sim || "", telemetryMinLapRows ?? null);
+  const maxLapsForSim = effectiveManualLapMaxForForm(
+    sim || "",
+    telemetryMinLapRows ?? null,
+  );
   const canAddLap = fields.length < maxLapsForSim;
   const canRemoveLap = fields.length > 1;
 
-  const { tracks, cars, loading: catalogsLoading, error: catalogsError, retry: retryCatalogs } =
-    useCatalogs(sim || null);
-  const { recent: recentItems, loading: recentLoading } = useRecentManualSessions();
+  const {
+    tracks,
+    cars,
+    loading: catalogsLoading,
+    error: catalogsError,
+    retry: retryCatalogs,
+  } = useCatalogs(sim || null);
+  const { recent: recentItems, loading: recentLoading } =
+    useRecentManualSessions();
 
   useManualActivityFormSync({
     initialData,
@@ -294,7 +317,9 @@ export default function ManualActivityForm({
 
   async function handleValid(values: ManualActivityFormValues) {
     form.clearErrors("root");
-    const positionNum = values.position.trim() ? parseInt(values.position, 10) : undefined;
+    const positionNum = values.position.trim()
+      ? parseInt(values.position, 10)
+      : undefined;
     const totalDriversNum = values.totalDrivers.trim()
       ? parseInt(values.totalDrivers, 10)
       : undefined;
@@ -377,7 +402,7 @@ export default function ManualActivityForm({
                       title={getRecentChipLabel(item)}
                       className={cn(
                         "max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:opacity-50",
-                        layout === "page" && "sm:max-w-[14rem]"
+                        layout === "page" && "sm:max-w-[14rem]",
                       )}
                     >
                       {getRecentChipLabel(item)}
@@ -394,206 +419,206 @@ export default function ManualActivityForm({
           title="Session details"
           description="Choose your sim, track, and session type."
         >
-        <FormField
-          control={form.control}
-          name="sim"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="sim" className="text-white/80">
-                Sim / Game <span className="text-red-400">*</span>
-              </FormLabel>
-              <FormControl>
-                <select
-                  id="sim"
-                  value={field.value}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    field.onChange(v);
-                    form.setValue("trackId", "");
-                    form.setValue("carId", "");
-                    setPendingRecent(null);
-                  }}
-                  disabled={isSubmitting}
-                  className={INPUT_CLASS}
-                >
-                  <option value="">Select sim…</option>
-                  {MANUAL_ACTIVITY_SIMS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        {catalogsError && sim && (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg bg-red-500/10 p-3">
-            <p className="text-sm text-red-500">{catalogsError}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={retryCatalogs}
-              className="border-white/20 text-white/80 hover:bg-white/10"
-            >
-              Retry
-            </Button>
-          </div>
-        )}
-
-        <FormField
-          control={form.control}
-          name="trackId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="track" className="text-white/80">
-                Track <span className="text-red-400">*</span>
-                {catalogsLoading && sim && (
-                  <span className="ml-2 text-xs font-normal text-white/50">
-                    <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
-                    Loading…
-                  </span>
-                )}
-              </FormLabel>
-              <FormControl>
-                <select
-                  id="track"
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={isSubmitting || !sim || catalogsLoading}
-                  className={INPUT_CLASS}
-                >
-                  <option value="">
-                    {!sim
-                      ? "Select a sim first"
-                      : catalogsLoading
-                        ? "Loading…"
-                        : "Select track…"}
-                  </option>
-                  {field.value.trim() &&
-                  !tracks.some((t) => t.id === field.value) && (
-                    <option value={field.value}>
-                      {field.value} (stored token — not in catalog)
-                    </option>
-                  )}
-                  {tracks.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="carId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="car" className="text-white/80">
-                Car <span className="text-white/40">(optional)</span>
-                {catalogsLoading && sim && (
-                  <span className="ml-2 text-xs font-normal text-white/50">
-                    <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
-                    Loading…
-                  </span>
-                )}
-              </FormLabel>
-              <FormControl>
-                <select
-                  id="car"
-                  value={field.value}
-                  onChange={field.onChange}
-                  disabled={isSubmitting || !sim || catalogsLoading}
-                  className={INPUT_CLASS}
-                >
-                  <option value="">
-                    {!sim
-                      ? "Select a sim first"
-                      : catalogsLoading
-                        ? "Loading…"
-                        : "Select car…"}
-                  </option>
-                  {field.value.trim() &&
-                  !cars.some((c) => c.id === field.value) && (
-                    <option value={field.value}>
-                      {field.value} (stored token — not in catalog)
-                    </option>
-                  )}
-                  {cars.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="manualSessionKind"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel
-                htmlFor={layout === "page" ? undefined : "manualSessionKind"}
-                className="text-white/80"
-              >
-                Session type <span className="text-red-400">*</span>
-              </FormLabel>
-              <FormControl>
-                {layout === "page" ? (
-                  <div
-                    className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-white/5 p-1"
-                    role="group"
-                    aria-label="Session type"
-                  >
-                    {SESSION_KIND_OPTIONS.map((option) => {
-                      const active = (field.value || "RACE") === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={() => field.onChange(option.value)}
-                          className={cn(
-                            "rounded-md p-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
-                            active
-                              ? "bg-white text-black shadow-sm"
-                              : "text-white/60 hover:text-white"
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
+          <FormField
+            control={form.control}
+            name="sim"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="sim" className="text-white/80">
+                  Sim / Game <span className="text-red-400">*</span>
+                </FormLabel>
+                <FormControl>
                   <select
-                    id="manualSessionKind"
-                    value={field.value || "RACE"}
-                    onChange={field.onChange}
+                    id="sim"
+                    value={field.value}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      field.onChange(v);
+                      form.setValue("trackId", "");
+                      form.setValue("carId", "");
+                      setPendingRecent(null);
+                    }}
                     disabled={isSubmitting}
                     className={INPUT_CLASS}
                   >
-                    <option value="PRACTICE">Practice</option>
-                    <option value="QUALIFY">Qualifying</option>
-                    <option value="RACE">Race</option>
+                    <option value="">Select sim…</option>
+                    {MANUAL_ACTIVITY_SIMS.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
                   </select>
-                )}
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-            </FormItem>
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
+
+          {catalogsError && sim && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-red-500/10 p-3">
+              <p className="text-sm text-red-500">{catalogsError}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={retryCatalogs}
+                className="border-white/20 text-white/80 hover:bg-white/10"
+              >
+                Retry
+              </Button>
+            </div>
           )}
-        />
+
+          <FormField
+            control={form.control}
+            name="trackId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="track" className="text-white/80">
+                  Track <span className="text-red-400">*</span>
+                  {catalogsLoading && sim && (
+                    <span className="ml-2 text-xs font-normal text-white/50">
+                      <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
+                      Loading…
+                    </span>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <select
+                    id="track"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                    className={INPUT_CLASS}
+                  >
+                    <option value="">
+                      {!sim
+                        ? "Select a sim first"
+                        : catalogsLoading
+                          ? "Loading…"
+                          : "Select track…"}
+                    </option>
+                    {field.value.trim() &&
+                      !tracks.some((t) => t.id === field.value) && (
+                        <option value={field.value}>
+                          {field.value} (stored token — not in catalog)
+                        </option>
+                      )}
+                    {tracks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="carId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="car" className="text-white/80">
+                  Car <span className="text-white/40">(optional)</span>
+                  {catalogsLoading && sim && (
+                    <span className="ml-2 text-xs font-normal text-white/50">
+                      <Loader2 className="mr-0.5 inline size-3 animate-spin align-middle" />
+                      Loading…
+                    </span>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <select
+                    id="car"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                    className={INPUT_CLASS}
+                  >
+                    <option value="">
+                      {!sim
+                        ? "Select a sim first"
+                        : catalogsLoading
+                          ? "Loading…"
+                          : "Select car…"}
+                    </option>
+                    {field.value.trim() &&
+                      !cars.some((c) => c.id === field.value) && (
+                        <option value={field.value}>
+                          {field.value} (stored token — not in catalog)
+                        </option>
+                      )}
+                    {cars.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="manualSessionKind"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel
+                  htmlFor={layout === "page" ? undefined : "manualSessionKind"}
+                  className="text-white/80"
+                >
+                  Session type <span className="text-red-400">*</span>
+                </FormLabel>
+                <FormControl>
+                  {layout === "page" ? (
+                    <div
+                      className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-white/5 p-1"
+                      role="group"
+                      aria-label="Session type"
+                    >
+                      {SESSION_KIND_OPTIONS.map((option) => {
+                        const active = (field.value || "RACE") === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            disabled={isSubmitting}
+                            onClick={() => field.onChange(option.value)}
+                            className={cn(
+                              "rounded-md p-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
+                              active
+                                ? "bg-white text-black shadow-sm"
+                                : "text-white/60 hover:text-white",
+                            )}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <select
+                      id="manualSessionKind"
+                      value={field.value || "RACE"}
+                      onChange={field.onChange}
+                      disabled={isSubmitting}
+                      className={INPUT_CLASS}
+                    >
+                      <option value="PRACTICE">Practice</option>
+                      <option value="QUALIFY">Qualifying</option>
+                      <option value="RACE">Race</option>
+                    </select>
+                  )}
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
         </FormBlock>
 
         <FormBlock
@@ -605,56 +630,32 @@ export default function ManualActivityForm({
               : "Optional — helps track wins, podiums, and grid position."
           }
         >
-        <div className={sessionKind === "PRACTICE" ? "opacity-60" : ""}>
-          <label className="mb-1.5 block text-sm font-medium text-white/80">
-            {sessionKind === "QUALIFY"
-              ? "Qualifying position"
-              : sessionKind === "RACE"
-                ? "Race finish"
-                : "Finishing position"}{" "}
-            <span className="text-white/40">
-              ({sessionKind === "PRACTICE" ? "not used" : "optional"})
-            </span>
-          </label>
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] sm:items-start sm:gap-2">
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem className="space-y-0">
-                  <FormControl>
-                    <input
-                      id="position"
-                      type="number"
-                      min={1}
-                      max={MANUAL_ACTIVITY_POSITION_MAX}
-                      inputMode="numeric"
-                      disabled={isSubmitting || sessionKind === "PRACTICE"}
-                      placeholder="7"
-                      className={INPUT_CLASS}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs text-red-500" />
-                </FormItem>
-              )}
-            />
-            <span className="text-xs text-white/60 sm:mt-3 sm:text-center">out of</span>
-            <div className="flex gap-1">
+          <div className={sessionKind === "PRACTICE" ? "opacity-60" : ""}>
+            <label className="mb-1.5 block text-sm font-medium text-white/80">
+              {sessionKind === "QUALIFY"
+                ? "Qualifying position"
+                : sessionKind === "RACE"
+                  ? "Race finish"
+                  : "Finishing position"}{" "}
+              <span className="text-white/40">
+                ({sessionKind === "PRACTICE" ? "not used" : "optional"})
+              </span>
+            </label>
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] sm:items-start sm:gap-2">
               <FormField
                 control={form.control}
-                name="totalDrivers"
+                name="position"
                 render={({ field }) => (
-                  <FormItem className="flex-1 space-y-0">
+                  <FormItem className="space-y-0">
                     <FormControl>
                       <input
-                        id="totalDrivers"
+                        id="position"
                         type="number"
                         min={1}
-                        max={MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX}
+                        max={MANUAL_ACTIVITY_POSITION_MAX}
                         inputMode="numeric"
                         disabled={isSubmitting || sessionKind === "PRACTICE"}
-                        placeholder="20"
+                        placeholder="7"
                         className={INPUT_CLASS}
                         {...field}
                       />
@@ -663,49 +664,78 @@ export default function ManualActivityForm({
                   </FormItem>
                 )}
               />
-              <span className="shrink-0 text-xs text-white/60 sm:mt-3">drivers</span>
+              <span className="text-xs text-white/60 sm:mt-3 sm:text-center">
+                out of
+              </span>
+              <div className="flex gap-1">
+                <FormField
+                  control={form.control}
+                  name="totalDrivers"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 space-y-0">
+                      <FormControl>
+                        <input
+                          id="totalDrivers"
+                          type="number"
+                          min={1}
+                          max={MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX}
+                          inputMode="numeric"
+                          disabled={isSubmitting || sessionKind === "PRACTICE"}
+                          placeholder="20"
+                          className={INPUT_CLASS}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-xs text-red-500" />
+                    </FormItem>
+                  )}
+                />
+                <span className="shrink-0 text-xs text-white/60 sm:mt-3">
+                  drivers
+                </span>
+              </div>
             </div>
-          </div>
-          <p className="mt-1 text-xs text-white/40">
-            {sessionKind === "PRACTICE"
-              ? "Practice sessions do not use finishing position."
-              : sessionKind === "QUALIFY"
-                ? "Your position after qualifying. Leave empty if unknown."
-                : "Your race result. Leave empty if unknown."}
-          </p>
-        </div>
-
-        {sessionKind === "RACE" && (
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-white/80">
-              Qualifying position <span className="text-white/40">(optional)</span>
-            </label>
-            <FormField
-              control={form.control}
-              name="qualifyingPosition"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <input
-                      type="number"
-                      min={1}
-                      max={MANUAL_ACTIVITY_POSITION_MAX}
-                      inputMode="numeric"
-                      disabled={isSubmitting}
-                      placeholder="e.g. 3"
-                      className={cn(INPUT_CLASS, "max-w-xs")}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs text-red-500" />
-                </FormItem>
-              )}
-            />
             <p className="mt-1 text-xs text-white/40">
-              Where you started on the grid (from qualifying).
+              {sessionKind === "PRACTICE"
+                ? "Practice sessions do not use finishing position."
+                : sessionKind === "QUALIFY"
+                  ? "Your position after qualifying. Leave empty if unknown."
+                  : "Your race result. Leave empty if unknown."}
             </p>
           </div>
-        )}
+
+          {sessionKind === "RACE" && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-white/80">
+                Qualifying position{" "}
+                <span className="text-white/40">(optional)</span>
+              </label>
+              <FormField
+                control={form.control}
+                name="qualifyingPosition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <input
+                        type="number"
+                        min={1}
+                        max={MANUAL_ACTIVITY_POSITION_MAX}
+                        inputMode="numeric"
+                        disabled={isSubmitting}
+                        placeholder="e.g. 3"
+                        className={cn(INPUT_CLASS, "max-w-xs")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs text-red-500" />
+                  </FormItem>
+                )}
+              />
+              <p className="mt-1 text-xs text-white/40">
+                Where you started on the grid (from qualifying).
+              </p>
+            </div>
+          )}
         </FormBlock>
 
         <FormBlock
@@ -713,125 +743,143 @@ export default function ManualActivityForm({
           title="Lap times"
           description="Add at least one valid lap time for this session."
         >
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            {layout === "default" ? (
-              <FormLabel className="text-white/80">
-                Laps{" "}
-                <span className="text-white/40">(required)</span>
-              </FormLabel>
-            ) : (
-              <span className="text-xs font-medium text-white/50">Lap entries (required)</span>
-            )}
-            <span className="text-xs text-white/40">
-              {sim ? `Max ${maxLapsForSim} · ${fields.length} row${fields.length === 1 ? "" : "s"}` : "Select sim for limit"}
-            </span>
-          </div>
-          <div
-            className={cn(
-              layout === "page" && fields.length > 0 && "divide-y divide-white/5 rounded-lg border border-white/10"
-            )}
-          >
-          {fields.map((fieldItem, index) => {
-            const raw = lapsWatch?.[index]?.lapTime ?? "";
-            const parsed = raw.trim() ? parseStrictManualLapTimeToMs(raw) : null;
-            const lapInvalid = raw.trim() !== "" && parsed === null;
-            return (
-              <FormField
-                key={fieldItem.id}
-                control={form.control}
-                name={`laps.${index}.lapTime`}
-                render={({ field }) => (
-                  <FormItem className={layout === "page" ? "p-3 sm:p-4" : undefined}>
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0 flex-1">
-                        <FormLabel className="text-xs text-white/50">
-                          Lap {index + 1}
-                        </FormLabel>
-                        <FormControl>
-                          <input
-                            type="text"
-                            disabled={isSubmitting}
-                            placeholder="1:32.456 · 92.456 · 0:59.900"
-                            className={cn(
-                              "mt-1 w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50",
-                              lapInvalid
-                                ? "border-red-500/50 focus:border-red-500/50"
-                                : "border-white/10 focus:border-white/25 focus:bg-white/[0.07]"
-                            )}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage className="text-xs text-red-500" />
-                        {raw.trim() && parsed != null && !formErrors.laps?.[index]?.lapTime && (
-                          <p className="mt-1 text-xs text-white/50">
-                            Saved as {formatMsToLapTime(parsed)}
-                          </p>
-                        )}
-                      </div>
-                      {canRemoveLap && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className={cn(
-                            "shrink-0 border-white/20 text-white/80 hover:bg-white/10",
-                            layout === "page" ? "mt-5" : "mt-6"
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              {layout === "default" ? (
+                <FormLabel className="text-white/80">
+                  Laps <span className="text-white/40">(required)</span>
+                </FormLabel>
+              ) : (
+                <span className="text-xs font-medium text-white/50">
+                  Lap entries (required)
+                </span>
+              )}
+              <span className="text-xs text-white/40">
+                {sim
+                  ? `Max ${maxLapsForSim} · ${fields.length} row${fields.length === 1 ? "" : "s"}`
+                  : "Select sim for limit"}
+              </span>
+            </div>
+            <div
+              className={cn(
+                layout === "page" &&
+                  fields.length > 0 &&
+                  "divide-y divide-white/5 rounded-lg border border-white/10",
+              )}
+            >
+              {fields.map((fieldItem, index) => {
+                const raw = lapsWatch?.[index]?.lapTime ?? "";
+                const parsed = raw.trim()
+                  ? parseStrictManualLapTimeToMs(raw)
+                  : null;
+                const lapInvalid = raw.trim() !== "" && parsed === null;
+                return (
+                  <FormField
+                    key={fieldItem.id}
+                    control={form.control}
+                    name={`laps.${index}.lapTime`}
+                    render={({ field }) => (
+                      <FormItem
+                        className={layout === "page" ? "p-3 sm:p-4" : undefined}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <FormLabel className="text-xs text-white/50">
+                              Lap {index + 1}
+                            </FormLabel>
+                            <FormControl>
+                              <input
+                                type="text"
+                                disabled={isSubmitting}
+                                placeholder="1:32.456 · 92.456 · 0:59.900"
+                                className={cn(
+                                  "mt-1 w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white transition-colors placeholder:text-white/40 focus:outline-none focus:ring-0 disabled:opacity-50",
+                                  lapInvalid
+                                    ? "border-red-500/50 focus:border-red-500/50"
+                                    : "border-white/10 focus:border-white/25 focus:bg-white/[0.07]",
+                                )}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs text-red-500" />
+                            {raw.trim() &&
+                              parsed != null &&
+                              !formErrors.laps?.[index]?.lapTime && (
+                                <p className="mt-1 text-xs text-white/50">
+                                  Saved as {formatMsToLapTime(parsed)}
+                                </p>
+                              )}
+                          </div>
+                          {canRemoveLap && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className={cn(
+                                "shrink-0 border-white/20 text-white/80 hover:bg-white/10",
+                                layout === "page" ? "mt-5" : "mt-6",
+                              )}
+                              disabled={isSubmitting}
+                              onClick={() => remove(index)}
+                              aria-label={`Remove lap ${index + 1}`}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
                           )}
-                          disabled={isSubmitting}
-                          onClick={() => remove(index)}
-                          aria-label={`Remove lap ${index + 1}`}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </FormItem>
-                )}
-              />
-            );
-          })}
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                );
+              })}
+            </div>
+            {formErrors.laps && typeof formErrors.laps.message === "string" && (
+              <p className="text-xs text-red-500">{formErrors.laps.message}</p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-white/20 text-white/80 hover:bg-white/10"
+              disabled={isSubmitting || !canAddLap}
+              onClick={() => append({ lapTime: "" })}
+            >
+              <Plus className="mr-1 size-4" />
+              Add lap
+            </Button>
           </div>
-          {formErrors.laps && typeof formErrors.laps.message === "string" && (
-            <p className="text-xs text-red-500">{formErrors.laps.message}</p>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="border-white/20 text-white/80 hover:bg-white/10"
-            disabled={isSubmitting || !canAddLap}
-            onClick={() => append({ lapTime: "" })}
-          >
-            <Plus className="mr-1 size-4" />
-            Add lap
-          </Button>
-        </div>
         </FormBlock>
 
-        <FormBlock layout={layout} title="Notes" description="Anything else to remember about this session.">
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="notes" className={layout === "page" ? "sr-only" : "text-white/80"}>
-                Notes <span className="text-white/40">(optional)</span>
-              </FormLabel>
-              <FormControl>
-                <textarea
-                  id="notes"
-                  disabled={isSubmitting}
-                  placeholder="Setup changes, weather, incidents, strategy…"
-                  rows={layout === "page" ? 4 : 3}
-                  className={cn(INPUT_CLASS, "resize-none")}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage className="text-xs text-red-500" />
-            </FormItem>
-          )}
-        />
+        <FormBlock
+          layout={layout}
+          title="Notes"
+          description="Anything else to remember about this session."
+        >
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel
+                  htmlFor="notes"
+                  className={layout === "page" ? "sr-only" : "text-white/80"}
+                >
+                  Notes <span className="text-white/40">(optional)</span>
+                </FormLabel>
+                <FormControl>
+                  <textarea
+                    id="notes"
+                    disabled={isSubmitting}
+                    placeholder="Setup changes, weather, incidents, strategy…"
+                    rows={layout === "page" ? 4 : 3}
+                    className={cn(INPUT_CLASS, "resize-none")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
         </FormBlock>
 
         {formErrors.root?.message ? (
@@ -842,9 +890,7 @@ export default function ManualActivityForm({
         ) : null}
 
         <div
-          className={cn(
-            layout === "page" && "border-t border-white/10 pt-5"
-          )}
+          className={cn(layout === "page" && "border-t border-white/10 pt-5")}
         >
           <Button
             type="submit"

@@ -146,7 +146,9 @@ export function useRevenueCat() {
   });
 
   const purchaseMutation = useMutation({
-    mutationFn: async (rcPackage: RevenueCatPackage): Promise<PurchasePackageOutcome> => {
+    mutationFn: async (
+      rcPackage: RevenueCatPackage,
+    ): Promise<PurchasePackageOutcome> => {
       const purchases = await ensureRevenueCatReady({
         config: billingConfigQuery.data as BillingConfigResponse,
         userId: user?.id as string,

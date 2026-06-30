@@ -49,10 +49,7 @@ import PageMeta from "@/components/PageMeta";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
-import {
-  BaseAlertDialog,
-  BaseModal,
-} from "@/components/ui/base-modal";
+import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SkeletonBlock } from "@/components/ui/skeleton";
@@ -111,7 +108,8 @@ function CommentAuthorAvatar({ author }: { author: unknown }) {
 
 function discussionLoadErrorMessage(e: unknown): string {
   if (e instanceof ApiError && e.status === 404) return "Discussion not found.";
-  if (e instanceof ApiError && e.status === 0) return "Failed to load discussion.";
+  if (e instanceof ApiError && e.status === 0)
+    return "Failed to load discussion.";
   return "Failed to load discussion.";
 }
 
@@ -173,13 +171,14 @@ export default function DiscussionDetail() {
     onSuccess: () => {
       setReplyBody("");
       if (!id) return;
-      const pageResult = queryClient.getQueryData<DiscussionCommentsPageResult>([
+      const pageResult = queryClient.getQueryData<DiscussionCommentsPageResult>(
+        ["discussion", "comments", id, commentsPage],
+      );
+      const disc = queryClient.getQueryData<Discussion>([
         "discussion",
-        "comments",
+        "detail",
         id,
-        commentsPage,
       ]);
-      const disc = queryClient.getQueryData<Discussion>(["discussion", "detail", id]);
       const prevTotal =
         pageResult?.total ??
         disc?.commentsCount ??
@@ -188,21 +187,26 @@ export default function DiscussionDetail() {
         0;
       const newTotal = prevTotal + 1;
       setCommentsPage(
-        Math.max(1, Math.ceil(newTotal / DISCUSSION_COMMENTS_PAGE_SIZE))
+        Math.max(1, Math.ceil(newTotal / DISCUSSION_COMMENTS_PAGE_SIZE)),
       );
-      queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) => {
-        if (!prev) return prev;
-        const prevCount =
-          prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
-        const nextCount = prevCount + 1;
-        return {
-          ...prev,
-          commentsCount: nextCount,
-          commentCount: nextCount,
-          replies: nextCount,
-        };
+      queryClient.setQueryData<Discussion>(
+        ["discussion", "detail", id],
+        (prev) => {
+          if (!prev) return prev;
+          const prevCount =
+            prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
+          const nextCount = prevCount + 1;
+          return {
+            ...prev,
+            commentsCount: nextCount,
+            commentCount: nextCount,
+            replies: nextCount,
+          };
+        },
+      );
+      void queryClient.invalidateQueries({
+        queryKey: ["discussion", "comments", id],
       });
-      void queryClient.invalidateQueries({ queryKey: ["discussion", "comments", id] });
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
     onError: (e: unknown) => {
@@ -214,18 +218,29 @@ export default function DiscussionDetail() {
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (!id) throw new Error("Missing discussion id");
-      const current = queryClient.getQueryData<Discussion>(["discussion", "detail", id]);
+      const current = queryClient.getQueryData<Discussion>([
+        "discussion",
+        "detail",
+        id,
+      ]);
       return current?.likedByMe ? unlikeDiscussion(id) : likeDiscussion(id);
     },
     onSuccess: (data) => {
       if (!id) return;
-      queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) =>
-        prev ? { ...prev, likeCount: data.likeCount, likedByMe: data.likedByMe } : prev
+      queryClient.setQueryData<Discussion>(
+        ["discussion", "detail", id],
+        (prev) =>
+          prev
+            ? { ...prev, likeCount: data.likeCount, likedByMe: data.likedByMe }
+            : prev,
       );
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
     onError: () => {
-      if (id) void queryClient.invalidateQueries({ queryKey: ["discussion", "detail", id] });
+      if (id)
+        void queryClient.invalidateQueries({
+          queryKey: ["discussion", "detail", id],
+        });
     },
   });
 
@@ -257,7 +272,9 @@ export default function DiscussionDetail() {
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
     onError: (e: unknown) => {
-      setEditError(e instanceof ApiError ? e.message : "Could not save changes.");
+      setEditError(
+        e instanceof ApiError ? e.message : "Could not save changes.",
+      );
     },
   });
 
@@ -300,10 +317,13 @@ export default function DiscussionDetail() {
       try {
         const res = user
           ? await recordDiscussionView(id)
-          : await recordDiscussionView(id, { anonymousId: getOrCreateAnonymousViewerId() });
+          : await recordDiscussionView(id, {
+              anonymousId: getOrCreateAnonymousViewerId(),
+            });
         if (cancelled) return;
-        queryClient.setQueryData<Discussion>(["discussion", "detail", id], (prev) =>
-          prev ? { ...prev, views: res.views } : prev
+        queryClient.setQueryData<Discussion>(
+          ["discussion", "detail", id],
+          (prev) => (prev ? { ...prev, views: res.views } : prev),
         );
         if (res.recorded) {
           void queryClient.invalidateQueries({ queryKey: ["discussions"] });
@@ -327,7 +347,7 @@ export default function DiscussionDetail() {
     if (!editOpen || !discussion) return;
     setEditTitle(discussion.title);
     setEditDescription(
-      (discussion.content ?? discussion.description ?? "").trim() || ""
+      (discussion.content ?? discussion.description ?? "").trim() || "",
     );
     setEditError(null);
   }, [editOpen, discussion]);
@@ -466,7 +486,7 @@ export default function DiscussionDetail() {
     Boolean(user) && getDiscussionAuthorId(discussion.author) === user.id;
   const alreadyEdited = Boolean(discussion.editedAt ?? discussion.wasEdited);
   const showEditedBadge = Boolean(
-    discussion.wasEdited || discussion.editedAt || discussion.originalBody
+    discussion.wasEdited || discussion.editedAt || discussion.originalBody,
   );
 
   const repliesTotal =
@@ -482,9 +502,9 @@ export default function DiscussionDetail() {
     repliesTotal === 0
       ? null
       : {
-        start: (commentsPage - 1) * commentsPageSize + 1,
-        end: Math.min(commentsPage * commentsPageSize, repliesTotal),
-      };
+          start: (commentsPage - 1) * commentsPageSize + 1,
+          end: Math.min(commentsPage * commentsPageSize, repliesTotal),
+        };
 
   return (
     <div className="min-h-screen bg-background">
@@ -633,13 +653,13 @@ export default function DiscussionDetail() {
               className={cn(
                 "border-white/8 hover:border-white/12 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
                 discussion.likedByMe &&
-                "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500"
+                  "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500",
               )}
             >
               <Heart
                 className={cn(
                   "size-4 shrink-0",
-                  discussion.likedByMe && "fill-current text-rose-500"
+                  discussion.likedByMe && "fill-current text-rose-500",
                 )}
               />
               <span title={String(discussion.likeCount ?? 0)}>
@@ -647,20 +667,23 @@ export default function DiscussionDetail() {
               </span>
             </button>
             <div className="border-white/8 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
-              <MessageCircle className="size-4 shrink-0 opacity-80" aria-hidden />
+              <MessageCircle
+                className="size-4 shrink-0 opacity-80"
+                aria-hidden
+              />
               <span
                 title={String(
                   discussion.commentCount ??
-                  discussion.commentsCount ??
-                  discussion.replies ??
-                  0
+                    discussion.commentsCount ??
+                    discussion.replies ??
+                    0,
                 )}
               >
                 {formatCompactCount(
                   discussion.commentCount ??
-                  discussion.commentsCount ??
-                  discussion.replies ??
-                  0
+                    discussion.commentsCount ??
+                    discussion.replies ??
+                    0,
                 )}
               </span>
             </div>
@@ -718,7 +741,9 @@ export default function DiscussionDetail() {
                 strokeWidth={1.25}
                 aria-hidden
               />
-              <p className="text-sm font-medium text-foreground">No replies yet</p>
+              <p className="text-sm font-medium text-foreground">
+                No replies yet
+              </p>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 Be the first to share your thoughts.
               </p>
@@ -756,7 +781,8 @@ export default function DiscussionDetail() {
             <div className="mt-8 space-y-3">
               {commentsRange && (
                 <p className="text-center text-xs text-muted-foreground">
-                  Showing {commentsRange.start}–{commentsRange.end} of {repliesTotal}
+                  Showing {commentsRange.start}–{commentsRange.end} of{" "}
+                  {repliesTotal}
                 </p>
               )}
               <RaceHistoryPagination
@@ -770,8 +796,13 @@ export default function DiscussionDetail() {
 
           <div className="border-white/6 mt-10 overflow-hidden rounded-xl border bg-card/20 p-5 shadow-none backdrop-blur-lg sm:p-6">
             <div className="mb-4 flex items-center gap-2">
-              <MessageCircle className="size-4 text-muted-foreground" aria-hidden />
-              <span className="text-sm font-semibold text-foreground">Add a reply</span>
+              <MessageCircle
+                className="size-4 text-muted-foreground"
+                aria-hidden
+              />
+              <span className="text-sm font-semibold text-foreground">
+                Add a reply
+              </span>
             </div>
             {replyError && (
               <p className="mb-3 text-sm text-destructive/90">{replyError}</p>
@@ -806,7 +837,11 @@ export default function DiscussionDetail() {
         size="md"
         footer={
           <>
-            <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -823,29 +858,31 @@ export default function DiscussionDetail() {
           </>
         }
       >
-          <div className="space-y-4">
-            {editError && (
-              <p className="text-sm text-destructive">{editError}</p>
-            )}
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                disabled={editMutation.isPending}
-                className="border-white/10 bg-secondary"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Body</label>
-              <Textarea
-                className="min-h-[160px] resize-y border-white/10 bg-secondary"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                disabled={editMutation.isPending}
-              />
-            </div>
+        <div className="space-y-4">
+          {editError && <p className="text-sm text-destructive">{editError}</p>}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Title
+            </label>
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              disabled={editMutation.isPending}
+              className="border-white/10 bg-secondary"
+            />
           </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Body
+            </label>
+            <Textarea
+              className="min-h-[160px] resize-y border-white/10 bg-secondary"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              disabled={editMutation.isPending}
+            />
+          </div>
+        </div>
       </BaseModal>
 
       <BaseModal
@@ -854,21 +891,25 @@ export default function DiscussionDetail() {
         title="Original post"
         size="md"
         footer={
-          <Button type="button" variant="outline" onClick={() => setOriginalOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOriginalOpen(false)}
+          >
             Close
           </Button>
         }
         bodyClassName="min-h-0 space-y-3 text-sm"
       >
-            <p className="font-semibold text-foreground">
-              {discussion.originalTitle ?? discussion.title}
-            </p>
-            <p className="whitespace-pre-wrap text-muted-foreground">
-              {discussion.originalBody ??
-                discussion.content ??
-                discussion.description ??
-                ""}
-            </p>
+        <p className="font-semibold text-foreground">
+          {discussion.originalTitle ?? discussion.title}
+        </p>
+        <p className="whitespace-pre-wrap text-muted-foreground">
+          {discussion.originalBody ??
+            discussion.content ??
+            discussion.description ??
+            ""}
+        </p>
       </BaseModal>
 
       <BaseAlertDialog

@@ -1,5 +1,9 @@
 import { getOrCreateDeviceId } from "@/auth/deviceId";
-import { buildApiAuthHeaders, fetchApi, notifyAuthExpired } from "./fetchClient";
+import {
+  buildApiAuthHeaders,
+  fetchApi,
+  notifyAuthExpired,
+} from "./fetchClient";
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
 import type { SessionVisibility } from "./profile";
@@ -44,14 +48,24 @@ export type UpdateMeBody = {
 // authMe skips auth expired check to avoid infinite loops during session verification.
 // Normalize response: backend may return { user: {...} } or {...} at top level.
 export async function authMe(): Promise<AuthUser> {
-  const data = await fetchApi<AuthUser | { user?: AuthUser }>("GET", "/api/auth/me", undefined, true);
+  const data = await fetchApi<AuthUser | { user?: AuthUser }>(
+    "GET",
+    "/api/auth/me",
+    undefined,
+    true,
+  );
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
   return user;
 }
 
 /** PATCH /api/auth/me — update current user (displayName, optional avatarUrl/tagline). Returns updated user. */
 export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
-  const data = await fetchApi<AuthUser | { user?: AuthUser }>("PATCH", "/api/auth/me", body, true);
+  const data = await fetchApi<AuthUser | { user?: AuthUser }>(
+    "PATCH",
+    "/api/auth/me",
+    body,
+    true,
+  );
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
   return user;
 }
@@ -59,7 +73,9 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
 // Avatar upload – POST /api/profile/avatar with FormData (file field "avatar"). Uses fetch so we can send multipart; auth same as fetchApi.
 export type UploadProfileAvatarResponse = { avatarUrl: string };
 
-export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvatarResponse> {
+export async function uploadProfileAvatar(
+  file: File,
+): Promise<UploadProfileAvatarResponse> {
   const formData = new FormData();
   formData.append("avatar", file);
 
@@ -97,7 +113,6 @@ export async function uploadProfileAvatar(file: File): Promise<UploadProfileAvat
   }
   return data;
 }
-
 
 /** Response from POST /api/auth/register. Backend may return accessToken or token, or require email verification. */
 export type RegisterResponse = {
@@ -151,49 +166,74 @@ export type ResetPasswordResponse = {
 export async function authRegister(
   email: string,
   password: string,
-  name?: string
+  name?: string,
 ): Promise<RegisterResponse> {
-  return fetchApi<RegisterResponse>("POST", "/api/auth/register", {
-    name: name?.trim() || undefined,
-    email,
-    password,
-  }, true);
+  return fetchApi<RegisterResponse>(
+    "POST",
+    "/api/auth/register",
+    {
+      name: name?.trim() || undefined,
+      email,
+      password,
+    },
+    true,
+  );
 }
 
 /** @deprecated Use authRegister. Kept for compatibility. */
 /** POST /api/auth/forgot-password — request reset code via email. Body: { email }. */
-export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
-  return fetchApi<ForgotPasswordResponse>("POST", "/api/auth/forgot-password", {
-    email: email.trim(),
-  }, true);
+export async function requestPasswordReset(
+  email: string,
+): Promise<ForgotPasswordResponse> {
+  return fetchApi<ForgotPasswordResponse>(
+    "POST",
+    "/api/auth/forgot-password",
+    {
+      email: email.trim(),
+    },
+    true,
+  );
 }
 
 /** POST /api/auth/verify-reset-code — verify reset code. Body: { email, code }. */
 export async function verifyPasswordResetCode(
   email: string,
-  code: string
+  code: string,
 ): Promise<VerifyResetCodeResponse> {
-  return fetchApi<VerifyResetCodeResponse>("POST", "/api/auth/verify-reset-code", {
-    email: email.trim(),
-    code: String(code).trim(),
-  }, true);
+  return fetchApi<VerifyResetCodeResponse>(
+    "POST",
+    "/api/auth/verify-reset-code",
+    {
+      email: email.trim(),
+      code: String(code).trim(),
+    },
+    true,
+  );
 }
 
 /** POST /api/auth/reset-password — reset password. Body: { email, code, password }. */
 export async function resetPasswordWithCode(
   email: string,
   code: string,
-  password: string
+  password: string,
 ): Promise<ResetPasswordResponse> {
-  return fetchApi<ResetPasswordResponse>("POST", "/api/auth/reset-password", {
-    email: email.trim(),
-    code: String(code).trim(),
-    password,
-  }, true);
+  return fetchApi<ResetPasswordResponse>(
+    "POST",
+    "/api/auth/reset-password",
+    {
+      email: email.trim(),
+      code: String(code).trim(),
+      password,
+    },
+    true,
+  );
 }
 
 /** POST /api/auth/verify-email — submit verification code. Body: { email, code }. Returns token if backend auto-completes auth. */
-export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResponse> {
+export async function verifyEmail(
+  email: string,
+  code: string,
+): Promise<VerifyEmailResponse> {
   const clientDeviceId = getOrCreateDeviceId();
   return fetchApi<VerifyEmailResponse>(
     "POST",
@@ -203,15 +243,22 @@ export async function verifyEmail(email: string, code: string): Promise<VerifyEm
       code: String(code).trim(),
       ...(clientDeviceId ? { clientDeviceId } : {}),
     },
-    true
+    true,
   );
 }
 
 /** POST /api/auth/resend-verification-code — request new code. Body: { email }. */
-export async function resendVerificationCode(email: string): Promise<ResendVerificationResponse> {
-  return fetchApi<ResendVerificationResponse>("POST", "/api/auth/resend-verification-code", {
-    email: email.trim(),
-  }, true);
+export async function resendVerificationCode(
+  email: string,
+): Promise<ResendVerificationResponse> {
+  return fetchApi<ResendVerificationResponse>(
+    "POST",
+    "/api/auth/resend-verification-code",
+    {
+      email: email.trim(),
+    },
+    true,
+  );
 }
 
 /** POST /api/contact — public contact form; emails support inbox. */
@@ -226,7 +273,9 @@ export type ContactResponse = {
   ok: true;
 };
 
-export async function submitContact(body: ContactPayload): Promise<ContactResponse> {
+export async function submitContact(
+  body: ContactPayload,
+): Promise<ContactResponse> {
   return fetchApi<ContactResponse>(
     "POST",
     "/api/contact",
@@ -238,7 +287,7 @@ export async function submitContact(body: ContactPayload): Promise<ContactRespon
         : {}),
       message: body.message.trim(),
     },
-    true
+    true,
   );
 }
 
@@ -251,7 +300,7 @@ export type LoginResponse = {
 
 export async function authLogin(
   email: string,
-  password: string
+  password: string,
 ): Promise<LoginResponse> {
   const clientDeviceId = getOrCreateDeviceId();
   return fetchApi<LoginResponse>(
@@ -262,7 +311,7 @@ export async function authLogin(
       password,
       ...(clientDeviceId ? { clientDeviceId } : {}),
     },
-    true
+    true,
   );
 }
 
@@ -270,13 +319,23 @@ export async function authLogout(): Promise<void> {
   await fetchApi<{ ok?: boolean }>("POST", "/api/auth/logout", undefined, true);
 }
 
-export async function changePassword(currentPassword: string, newPassword: string): Promise<{ ok?: boolean }> {
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok?: boolean }> {
   return fetchApi<{ ok?: boolean }>("POST", "/api/settings/change-password", {
     currentPassword,
     newPassword,
   });
 }
 
-export async function deleteAccount(password: string): Promise<{ ok?: boolean }> {
-  return fetchApi<{ ok?: boolean }>("DELETE", "/api/settings/account", { password }, true);
+export async function deleteAccount(
+  password: string,
+): Promise<{ ok?: boolean }> {
+  return fetchApi<{ ok?: boolean }>(
+    "DELETE",
+    "/api/settings/account",
+    { password },
+    true,
+  );
 }

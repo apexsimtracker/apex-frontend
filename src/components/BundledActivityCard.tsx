@@ -16,7 +16,7 @@ type ActivityOwner = {
 
 function getActivityHeaderFromOwner(
   session: SessionItem,
-  currentUser?: { id: string; avatarUrl?: string | null } | null
+  currentUser?: { id: string; avatarUrl?: string | null } | null,
 ): {
   name: string;
   avatar: string | null;
@@ -25,11 +25,16 @@ function getActivityHeaderFromOwner(
   const sessionAny = session as any;
   const sessionOwnerId =
     sessionAny.authorId ??
-    ((owner && typeof owner === "object" && "id" in owner && typeof (owner as any).id === "string")
+    (owner &&
+    typeof owner === "object" &&
+    "id" in owner &&
+    typeof (owner as any).id === "string"
       ? ((owner as any).id as string)
       : null);
   const isCurrentUsersSession =
-    Boolean(currentUser?.id) && Boolean(sessionOwnerId) && currentUser!.id === sessionOwnerId;
+    Boolean(currentUser?.id) &&
+    Boolean(sessionOwnerId) &&
+    currentUser!.id === sessionOwnerId;
   const name =
     sessionAny.authorName?.trim() ||
     owner?.displayName?.trim() ||
@@ -41,14 +46,14 @@ function getActivityHeaderFromOwner(
       ? currentUser.avatarUrl
       : null;
   const avatar =
-    (isCurrentUsersSession && currentUserAvatar
+    isCurrentUsersSession && currentUserAvatar
       ? currentUserAvatar
       : sessionAny.authorAvatarUrl &&
-    sessionAny.authorAvatarUrl.trim().length > 0
-      ? sessionAny.authorAvatarUrl
-      : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
-        ? owner.avatarUrl
-        : null);
+          sessionAny.authorAvatarUrl.trim().length > 0
+        ? sessionAny.authorAvatarUrl
+        : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
+          ? owner.avatarUrl
+          : null;
   return { name, avatar };
 }
 
@@ -83,7 +88,7 @@ export default function BundledActivityCard({
       e.stopPropagation();
       setCurrentIndex((i) => (i > 0 ? i - 1 : i));
     },
-    []
+    [],
   );
 
   const handleNext = useCallback(
@@ -92,7 +97,7 @@ export default function BundledActivityCard({
       e.stopPropagation();
       setCurrentIndex((i) => (i < sessions.length - 1 ? i + 1 : i));
     },
-    [sessions.length]
+    [sessions.length],
   );
 
   const handleKeyDown = useCallback(
@@ -100,7 +105,7 @@ export default function BundledActivityCard({
       if (e.key === "ArrowLeft") handlePrev(e);
       if (e.key === "ArrowRight") handleNext(e);
     },
-    [handlePrev, handleNext]
+    [handlePrev, handleNext],
   );
 
   const firstSession = sessions[0];
@@ -109,12 +114,16 @@ export default function BundledActivityCard({
       authorId?: string | null;
       owner?: { id?: string | null };
     };
-    if (typeof s.authorId === "string" && s.authorId.trim()) return s.authorId.trim();
+    if (typeof s.authorId === "string" && s.authorId.trim())
+      return s.authorId.trim();
     const oid = s.owner && typeof s.owner === "object" ? s.owner.id : null;
     return typeof oid === "string" && oid.trim() ? oid.trim() : null;
   })();
 
-  const currentHeader = getActivityHeaderFromOwner(currentSession, user ?? null);
+  const currentHeader = getActivityHeaderFromOwner(
+    currentSession,
+    user ?? null,
+  );
 
   return (
     <div
@@ -220,7 +229,9 @@ export default function BundledActivityCard({
                 +{overflowCount}
               </Link>
             ) : (
-              <span className="ml-2 text-xs text-white/30">+{overflowCount}</span>
+              <span className="ml-2 text-xs text-white/30">
+                +{overflowCount}
+              </span>
             ))}
         </div>
 

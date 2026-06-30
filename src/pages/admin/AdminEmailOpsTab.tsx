@@ -27,7 +27,10 @@ const SEARCH_DEBOUNCE_MS = 200;
 function formatTs(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
   } catch {
     return iso;
   }
@@ -49,11 +52,17 @@ export function AdminEmailOpsTab() {
   const [verStatus, setVerStatus] = useState<"pending" | "expired">("pending");
   const [verPage, setVerPage] = useState(1);
   const [verSearchInput, setVerSearchInput] = useState("");
-  const debouncedVerSearch = useDebouncedValue(verSearchInput, SEARCH_DEBOUNCE_MS);
+  const debouncedVerSearch = useDebouncedValue(
+    verSearchInput,
+    SEARCH_DEBOUNCE_MS,
+  );
 
   const [prPage, setPrPage] = useState(1);
   const [prSearchInput, setPrSearchInput] = useState("");
-  const debouncedPrSearch = useDebouncedValue(prSearchInput, SEARCH_DEBOUNCE_MS);
+  const debouncedPrSearch = useDebouncedValue(
+    prSearchInput,
+    SEARCH_DEBOUNCE_MS,
+  );
 
   useEffect(() => {
     setVerPage(1);
@@ -70,7 +79,7 @@ export function AdminEmailOpsTab() {
       status: verStatus,
       ...(debouncedVerSearch.trim() ? { q: debouncedVerSearch.trim() } : {}),
     }),
-    [verPage, verStatus, debouncedVerSearch]
+    [verPage, verStatus, debouncedVerSearch],
   );
 
   const verQuery = useQuery({
@@ -84,7 +93,7 @@ export function AdminEmailOpsTab() {
       pageSize: 20,
       ...(debouncedPrSearch.trim() ? { q: debouncedPrSearch.trim() } : {}),
     }),
-    [prPage, debouncedPrSearch]
+    [prPage, debouncedPrSearch],
   );
 
   const prQuery = useQuery({
@@ -101,7 +110,11 @@ export function AdminEmailOpsTab() {
       await qc.invalidateQueries({ queryKey: ["admin", "email-verification"] });
     },
     onError: (e: unknown) => {
-      toast.error(e instanceof ApiError ? e.message : "Could not resend verification email.");
+      toast.error(
+        e instanceof ApiError
+          ? e.message
+          : "Could not resend verification email.",
+      );
     },
   });
 
@@ -137,26 +150,37 @@ export function AdminEmailOpsTab() {
             EmailCode rows (legacy counter)
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-            {signalsPending ? "—" : formatInt(authSignals?.emailCodesTotal ?? 0)}
+            {signalsPending
+              ? "—"
+              : formatInt(authSignals?.emailCodesTotal ?? 0)}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Total rows in EmailCode table</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Total rows in EmailCode table
+          </p>
         </div>
         <div className="rounded-xl border border-white/10 bg-card/30 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Pending password resets
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-            {signalsPending ? "—" : formatInt(authSignals?.passwordResetCodesPending ?? 0)}
+            {signalsPending
+              ? "—"
+              : formatInt(authSignals?.passwordResetCodesPending ?? 0)}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Unused codes not yet expired</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Unused codes not yet expired
+          </p>
         </div>
       </div>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-foreground">Signup email verification</h2>
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
+          Signup email verification
+        </h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Codes are never shown here (stored hashed). Use <strong className="text-foreground">Resend</strong> to
-          email a fresh code to the user.
+          Codes are never shown here (stored hashed). Use{" "}
+          <strong className="text-foreground">Resend</strong> to email a fresh
+          code to the user.
         </p>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -180,7 +204,9 @@ export function AdminEmailOpsTab() {
 
         {verQuery.isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {verQuery.error instanceof ApiError ? verQuery.error.message : "Could not load verification queue."}
+            {verQuery.error instanceof ApiError
+              ? verQuery.error.message
+              : "Could not load verification queue."}
           </div>
         )}
 
@@ -193,14 +219,21 @@ export function AdminEmailOpsTab() {
                 onChange={(e) => setVerSearchInput(e.target.value)}
                 className="w-full min-w-[12rem] max-w-xs"
               />
-              <p className="text-xs text-muted-foreground">{verQuery.isPending ? "Loading…" : verRangeLabel}</p>
+              <p className="text-xs text-muted-foreground">
+                {verQuery.isPending ? "Loading…" : verRangeLabel}
+              </p>
             </div>
             {verQuery.isPending ? (
               <div className="flex justify-center px-4 py-12">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : verRows.length === 0 ? (
-              <div className="px-6 py-12 text-center text-sm text-muted-foreground">No accounts in this view.</div>
+              <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+                No accounts in this view.
+              </div>
             ) : (
               <div className={ADMIN_TABLE_SCROLL}>
                 <table className={adminTable("min-w-[36rem]")}>
@@ -209,7 +242,9 @@ export function AdminEmailOpsTab() {
                       <th className={ADMIN_TH}>User</th>
                       <th className={ADMIN_TH}>Code expires</th>
                       <th className={ADMIN_TH}>Email status</th>
-                      <th className={`${ADMIN_TH} text-right tabular-nums`}>Risk</th>
+                      <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                        Risk
+                      </th>
                       <th className="w-28 whitespace-nowrap p-3" />
                     </tr>
                   </thead>
@@ -223,13 +258,21 @@ export function AdminEmailOpsTab() {
                           >
                             {r.displayName}
                           </Link>
-                          <div className="text-xs text-muted-foreground">{r.email}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {r.email}
+                          </div>
                         </td>
-                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                        >
                           {formatTs(r.emailVerificationExpiresAt)}
                         </td>
-                        <td className={`${ADMIN_TD} text-muted-foreground`}>{r.emailStatus}</td>
-                        <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
+                        <td className={`${ADMIN_TD} text-muted-foreground`}>
+                          {r.emailStatus}
+                        </td>
+                        <td
+                          className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}
+                        >
                           {r.emailRiskScore}
                         </td>
                         <td className={ADMIN_TD_ACTIONS}>
@@ -280,14 +323,19 @@ export function AdminEmailOpsTab() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-foreground">Forgot-password queue</h2>
+        <h2 className="mb-3 text-lg font-semibold text-foreground">
+          Forgot-password queue
+        </h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Active reset codes (masked email). Users complete reset from the public forgot-password flow.
+          Active reset codes (masked email). Users complete reset from the
+          public forgot-password flow.
         </p>
 
         {prQuery.isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {prQuery.error instanceof ApiError ? prQuery.error.message : "Could not load password reset queue."}
+            {prQuery.error instanceof ApiError
+              ? prQuery.error.message
+              : "Could not load password reset queue."}
           </div>
         )}
 
@@ -300,11 +348,16 @@ export function AdminEmailOpsTab() {
                 onChange={(e) => setPrSearchInput(e.target.value)}
                 className="w-full min-w-[12rem] max-w-xs"
               />
-              <p className="text-xs text-muted-foreground">{prQuery.isPending ? "Loading…" : prRangeLabel}</p>
+              <p className="text-xs text-muted-foreground">
+                {prQuery.isPending ? "Loading…" : prRangeLabel}
+              </p>
             </div>
             {prQuery.isPending ? (
               <div className="flex justify-center px-4 py-12">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <Loader2
+                  className="size-6 animate-spin text-muted-foreground"
+                  aria-hidden
+                />
               </div>
             ) : prRows.length === 0 ? (
               <div className="px-6 py-12 text-center text-sm text-muted-foreground">
@@ -317,23 +370,33 @@ export function AdminEmailOpsTab() {
                     <tr className="border-b border-white/10 text-muted-foreground">
                       <th className={ADMIN_TH}>Email (masked)</th>
                       <th className={ADMIN_TH}>Expires</th>
-                      <th className={`${ADMIN_TH} text-right tabular-nums`}>Attempts</th>
+                      <th className={`${ADMIN_TH} text-right tabular-nums`}>
+                        Attempts
+                      </th>
                       <th className={ADMIN_TH}>Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {prRows.map((r) => (
                       <tr key={r.id} className="border-b border-white/5">
-                        <td className={`${ADMIN_TD} font-mono text-xs text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} font-mono text-xs text-muted-foreground`}
+                        >
                           {r.emailMasked}
                         </td>
-                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                        >
                           {formatTs(r.expiresAt)}
                         </td>
-                        <td className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} text-right tabular-nums text-muted-foreground`}
+                        >
                           {r.attempts}
                         </td>
-                        <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                        <td
+                          className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                        >
                           {formatTs(r.createdAt)}
                         </td>
                       </tr>

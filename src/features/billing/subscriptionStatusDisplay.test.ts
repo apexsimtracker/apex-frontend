@@ -13,14 +13,14 @@ describe("subscriptionStatusDisplay", () => {
         hasPro: true,
         subscriptionStatus: "CANCELED",
         cancelAtPeriodEnd: false,
-      })
+      }),
     ).toBe(true);
     expect(
       isSubscriptionCanceled({
         hasPro: true,
         subscriptionStatus: "ACTIVE",
         cancelAtPeriodEnd: true,
-      })
+      }),
     ).toBe(true);
   });
 
@@ -30,14 +30,14 @@ describe("subscriptionStatusDisplay", () => {
         hasPro: true,
         subscriptionStatus: "CANCELED",
         cancelAtPeriodEnd: true,
-      })
+      }),
     ).toBe("Pro (canceled — access until period end)");
     expect(
       subscriptionPeriodEndLabel({
         hasPro: true,
         subscriptionStatus: "CANCELED",
         cancelAtPeriodEnd: true,
-      })
+      }),
     ).toBe("Access until");
     expect(formatAccessUntilLabel("2026-07-01T00:00:00.000Z")).toMatch(/2026/);
   });

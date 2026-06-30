@@ -27,13 +27,17 @@ export function persistSessionTokenFromAuthPayload(payload: {
   if (typeof localStorage === "undefined") return;
   const isFullClear = payload != null && Object.keys(payload).length === 0;
 
-  const s = typeof payload.sessionToken === "string" ? payload.sessionToken.trim() : "";
+  const s =
+    typeof payload.sessionToken === "string" ? payload.sessionToken.trim() : "";
   if (s) localStorage.setItem(APEX_SESSION_TOKEN_KEY, s);
-  else if ("sessionToken" in payload || isFullClear) localStorage.removeItem(APEX_SESSION_TOKEN_KEY);
+  else if ("sessionToken" in payload || isFullClear)
+    localStorage.removeItem(APEX_SESSION_TOKEN_KEY);
 
-  const r = typeof payload.refreshToken === "string" ? payload.refreshToken.trim() : "";
+  const r =
+    typeof payload.refreshToken === "string" ? payload.refreshToken.trim() : "";
   if (r) localStorage.setItem(APEX_REFRESH_TOKEN_KEY, r);
-  else if ("refreshToken" in payload || isFullClear) localStorage.removeItem(APEX_REFRESH_TOKEN_KEY);
+  else if ("refreshToken" in payload || isFullClear)
+    localStorage.removeItem(APEX_REFRESH_TOKEN_KEY);
 }
 
 export function clearToken(): void {

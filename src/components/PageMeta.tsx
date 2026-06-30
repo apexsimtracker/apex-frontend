@@ -61,7 +61,9 @@ function upsertMeta(
 }
 
 function upsertLink(rel: string, href: string): LinkSnapshot {
-  let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+  let el = document.querySelector(
+    `link[rel="${rel}"]`,
+  ) as HTMLLinkElement | null;
   const created = !el;
   if (!el) {
     el = document.createElement("link");
@@ -113,13 +115,10 @@ export default function PageMeta({
     const prevTitle = document.title;
     const metaDescription = clampMetaDescription(description);
     const canonical = buildCanonicalUrl(path);
-    const imageAbsolute =
-      absoluteUrlForOg(image) ?? defaultOgImageAbsolute();
+    const imageAbsolute = absoluteUrlForOg(image) ?? defaultOgImageAbsolute();
     const robotsContent =
       robotsOverride ??
-      (noindex
-        ? robotsNoindex(noindexNofollow)
-        : robotsIndexFollow());
+      (noindex ? robotsNoindex(noindexNofollow) : robotsIndexFollow());
 
     document.title = title;
 

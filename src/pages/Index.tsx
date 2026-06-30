@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityFeedList from "@/components/ActivityFeedList";
 import DiscussionCard from "@/components/DiscussionCard";
@@ -21,7 +25,10 @@ import {
   type Discussion,
 } from "@/lib/api";
 import type { InfiniteData } from "@tanstack/react-query";
-import { patchActivityFeedInfiniteData, flattenFeedItemSessions } from "@/lib/activityFeedCache";
+import {
+  patchActivityFeedInfiniteData,
+  flattenFeedItemSessions,
+} from "@/lib/activityFeedCache";
 import type { SessionItem } from "@/lib/sessionTypes";
 import GoalsBar from "@/components/GoalsBar";
 import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
@@ -29,10 +36,7 @@ import OnboardingEmptyState from "@/components/OnboardingEmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import {
-  ownedProfileUserKey,
-  profileKeys,
-} from "@/lib/profileQueryKeys";
+import { ownedProfileUserKey, profileKeys } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
 
 const HOME_PATH = "/";
@@ -124,7 +128,7 @@ export default function Index() {
         "all",
         ACTIVITY_FEED_DEFAULT_LIMIT,
       ] as const,
-    [user?.id]
+    [user?.id],
   );
 
   const {
@@ -165,21 +169,24 @@ export default function Index() {
   });
 
   const activity = useMemo(
-    () => (activityPages?.pages.flatMap((p) => p.items) ?? []) as ActivityFeedItem[],
-    [activityPages]
+    () =>
+      (activityPages?.pages.flatMap((p) => p.items) ??
+        []) as ActivityFeedItem[],
+    [activityPages],
   );
 
   const feedSessions = useMemo(
     () => flattenFeedItemSessions(activity) as RawActivityItem[],
-    [activity]
+    [activity],
   );
 
   const profileSummaryKey = ownedProfileUserKey(user);
-  const { data: profileHomeWeekly, isPending: profileHomeWeeklyPending } = useQuery({
-    queryKey: profileKeys.homeWeekly(profileSummaryKey),
-    queryFn: getProfileHomeWeekly,
-    enabled: Boolean(user),
-  });
+  const { data: profileHomeWeekly, isPending: profileHomeWeeklyPending } =
+    useQuery({
+      queryKey: profileKeys.homeWeekly(profileSummaryKey),
+      queryFn: getProfileHomeWeekly,
+      enabled: Boolean(user),
+    });
   const profileWeeklyGoals = profileHomeWeekly?.weeklyGoals ?? null;
 
   const { data: profileTrendInsight } = useQuery({
@@ -212,7 +219,7 @@ export default function Index() {
   const discussions = useMemo(
     () =>
       (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
-    [discussionPages]
+    [discussionPages],
   );
 
   const feedError = useMemo(() => {
@@ -362,14 +369,14 @@ export default function Index() {
     const startThisWeek = now - weekMs;
 
     const thisWeek = feedSessions.filter(
-      (i) => new Date(i.createdAt).getTime() >= startThisWeek
+      (i) => new Date(i.createdAt).getTime() >= startThisWeek,
     );
 
     const races = thisWeek.filter((s) =>
       isRaceKind({
         sessionType: s.sessionType ?? null,
         manualSessionKind: s.manualSessionKind ?? null,
-      })
+      }),
     ).length;
     const podiums = thisWeek.filter(
       (s) =>
@@ -378,7 +385,7 @@ export default function Index() {
           manualSessionKind: s.manualSessionKind ?? null,
         }) &&
         s.position != null &&
-        s.position <= 3
+        s.position <= 3,
     ).length;
     const laps = thisWeek.reduce((sum, s) => sum + (s.lapCount ?? 0), 0);
     return { races, podiums, laps };
@@ -406,7 +413,9 @@ export default function Index() {
     };
   }, [profileWeeklyGoals, goalsStats]);
 
-  const showApexTrendCard = Boolean(user?.id && profileTrendInsight?.apexTrendInsight);
+  const showApexTrendCard = Boolean(
+    user?.id && profileTrendInsight?.apexTrendInsight,
+  );
 
   const showEmptyFeedOnboarding = useMemo(() => {
     return (
@@ -441,157 +450,171 @@ export default function Index() {
         noindex
       />
       <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <WeeklySnapshot
-          loading={weeklySnapshotLoading}
-          sessionsCount={weeklyStats.sessionsCount}
-          totalLaps={weeklyStats.totalLaps}
-          trackTimeMs={weeklyStats.trackTimeMs}
-          sessionDelta={weeklyStats.sessionDelta}
-          lapsDelta={weeklyStats.lapsDelta}
-          trackTimeDelta={weeklyStats.trackTimeDelta}
-        />
+        {/* Hero Section */}
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <WeeklySnapshot
+            loading={weeklySnapshotLoading}
+            sessionsCount={weeklyStats.sessionsCount}
+            totalLaps={weeklyStats.totalLaps}
+            trackTimeMs={weeklyStats.trackTimeMs}
+            sessionDelta={weeklyStats.sessionDelta}
+            lapsDelta={weeklyStats.lapsDelta}
+            trackTimeDelta={weeklyStats.trackTimeDelta}
+          />
 
-        {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
-          <ApexAnalysisTrendCard trend={profileTrendInsight.apexTrendInsight} />
-        )}
-
-        {/* Goals */}
-        <GoalsBar
-          loading={weeklySnapshotLoading}
-          races={goalsForBar.races}
-          podiums={goalsForBar.podiums}
-          laps={goalsForBar.laps}
-          racesTarget={goalsForBar.racesTarget}
-          podiumsTarget={goalsForBar.podiumsTarget}
-          lapsTarget={goalsForBar.lapsTarget}
-        />
-
-        {/* Feed */}
-        <div className="mt-6">
-          {showUploadBanner && (
-            <div className="mb-4 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3">
-              <CheckCircle className="size-5 shrink-0 text-green-500" />
-              <p className="flex-1 text-sm text-green-400">
-                Your session was uploaded and processed successfully.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowUploadBanner(false)}
-                className="p-1 text-green-400/60 transition-colors hover:text-green-400"
-                aria-label="Dismiss"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+          {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
+            <ApexAnalysisTrendCard
+              trend={profileTrendInsight.apexTrendInsight}
+            />
           )}
 
-          {activityLoading ? (
-            <div className="space-y-0">
-              <p className="mb-3 text-sm text-muted-foreground">Loading activity...</p>
-              <FeedSkeletonCard />
-              <FeedSkeletonCard />
-              <FeedSkeletonCard />
-            </div>
-          ) : (
-            <>
-              {feedError && (
-                <div className="mb-3 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
-                  <div>
-                    Can&apos;t reach Apex backend. Check it&apos;s running.
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-2 text-sm text-zinc-200 hover:text-white"
-                    onClick={() => void refetchActivity()}
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-              {error && !feedError && (
-                <p className="mb-6 text-sm text-destructive">
-                  Failed to load activity
+          {/* Goals */}
+          <GoalsBar
+            loading={weeklySnapshotLoading}
+            races={goalsForBar.races}
+            podiums={goalsForBar.podiums}
+            laps={goalsForBar.laps}
+            racesTarget={goalsForBar.racesTarget}
+            podiumsTarget={goalsForBar.podiumsTarget}
+            lapsTarget={goalsForBar.lapsTarget}
+          />
+
+          {/* Feed */}
+          <div className="mt-6">
+            {showUploadBanner && (
+              <div className="mb-4 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3">
+                <CheckCircle className="size-5 shrink-0 text-green-500" />
+                <p className="flex-1 text-sm text-green-400">
+                  Your session was uploaded and processed successfully.
                 </p>
-              )}
-              {showEmptyFeedOnboarding && (
-                <div className="py-4">
-                  <OnboardingEmptyState />
-                </div>
-              )}
-              {!error && !feedError && (
-                <ActivityFeedList
-                  items={activity}
-                  currentUser={user ?? null}
-                  onSessionPatch={(id, patch) => {
-                    queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                      homeActivityFeedQueryKey,
-                      (prev) => patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
-                    );
-                  }}
-                />
-              )}
-              {!error && !feedError && hasNextPage && (
-                <div className="flex justify-center py-6">
-                  <button
-                    type="button"
-                    onClick={() => void fetchNextPage()}
-                    disabled={isFetchingNextPage}
-                    className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    {isFetchingNextPage ? "Loading…" : "Load more"}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-          {homeDiscussionsEnabled &&
-            (discussionsLoading ? (
-              <div className="mt-6 border-t border-white/5 py-6">
-                <DiscussionCardSkeleton count={3} />
+                <button
+                  type="button"
+                  onClick={() => setShowUploadBanner(false)}
+                  className="p-1 text-green-400/60 transition-colors hover:text-green-400"
+                  aria-label="Dismiss"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
+
+            {activityLoading ? (
+              <div className="space-y-0">
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Loading activity...
+                </p>
+                <FeedSkeletonCard />
+                <FeedSkeletonCard />
+                <FeedSkeletonCard />
               </div>
             ) : (
               <>
-                {discussions.map((d) => (
-                  <DiscussionCard
-                    key={d.id}
-                    id={d.id}
-                    title={d.title}
-                    excerpt={
-                      d.excerpt ??
-                      (() => {
-                        const body = d.description ?? d.content ?? "";
-                        return body
-                          ? body.slice(0, 160) + (body.length > 160 ? "…" : "")
-                          : "";
-                      })()
-                    }
-                    author={d.author}
-                    categoryKey={d.category ?? "general"}
-                    timestamp={timeAgo(d.createdAt)}
-                    replies={d.replies ?? d.commentCount ?? d.commentsCount ?? 0}
-                    views={d.views ?? 0}
-                    isPinned={d.isPinned}
+                {feedError && (
+                  <div className="mb-3 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+                    <div>
+                      Can&apos;t reach Apex backend. Check it&apos;s running.
+                    </div>
+                    <button
+                      type="button"
+                      className="mt-2 text-sm text-zinc-200 hover:text-white"
+                      onClick={() => void refetchActivity()}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {error && !feedError && (
+                  <p className="mb-6 text-sm text-destructive">
+                    Failed to load activity
+                  </p>
+                )}
+                {showEmptyFeedOnboarding && (
+                  <div className="py-4">
+                    <OnboardingEmptyState />
+                  </div>
+                )}
+                {!error && !feedError && (
+                  <ActivityFeedList
+                    items={activity}
+                    currentUser={user ?? null}
+                    onSessionPatch={(id, patch) => {
+                      queryClient.setQueryData<
+                        InfiniteData<ActivityFeedPageResult>
+                      >(homeActivityFeedQueryKey, (prev) =>
+                        patchActivityFeedInfiniteData(
+                          prev,
+                          id,
+                          patch as Record<string, unknown>,
+                        ),
+                      );
+                    }}
                   />
-                ))}
-                {discussionsHasNextPage && (
+                )}
+                {!error && !feedError && hasNextPage && (
                   <div className="flex justify-center py-6">
                     <button
                       type="button"
-                      onClick={() => void fetchNextDiscussionsPage()}
-                      disabled={isFetchingNextDiscussionsPage}
+                      onClick={() => void fetchNextPage()}
+                      disabled={isFetchingNextPage}
                       className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
                     >
-                      {isFetchingNextDiscussionsPage ? "Loading…" : "Load more discussions"}
+                      {isFetchingNextPage ? "Loading…" : "Load more"}
                     </button>
                   </div>
                 )}
               </>
-            ))}
+            )}
+            {homeDiscussionsEnabled &&
+              (discussionsLoading ? (
+                <div className="mt-6 border-t border-white/5 py-6">
+                  <DiscussionCardSkeleton count={3} />
+                </div>
+              ) : (
+                <>
+                  {discussions.map((d) => (
+                    <DiscussionCard
+                      key={d.id}
+                      id={d.id}
+                      title={d.title}
+                      excerpt={
+                        d.excerpt ??
+                        (() => {
+                          const body = d.description ?? d.content ?? "";
+                          return body
+                            ? body.slice(0, 160) +
+                                (body.length > 160 ? "…" : "")
+                            : "";
+                        })()
+                      }
+                      author={d.author}
+                      categoryKey={d.category ?? "general"}
+                      timestamp={timeAgo(d.createdAt)}
+                      replies={
+                        d.replies ?? d.commentCount ?? d.commentsCount ?? 0
+                      }
+                      views={d.views ?? 0}
+                      isPinned={d.isPinned}
+                    />
+                  ))}
+                  {discussionsHasNextPage && (
+                    <div className="flex justify-center py-6">
+                      <button
+                        type="button"
+                        onClick={() => void fetchNextDiscussionsPage()}
+                        disabled={isFetchingNextDiscussionsPage}
+                        className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        {isFetchingNextDiscussionsPage
+                          ? "Loading…"
+                          : "Load more discussions"}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ))}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

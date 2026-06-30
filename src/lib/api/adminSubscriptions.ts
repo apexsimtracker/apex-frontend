@@ -60,8 +60,10 @@ function buildSubscriptionQuery(params?: AdminSubscriptionListParams): string {
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   const plan = params?.effectivePlan ?? params?.plan;
   if (plan) sp.set("effectivePlan", plan);
-  if (params?.subscriptionStatus) sp.set("subscriptionStatus", params.subscriptionStatus);
-  if (params?.billingInterval) sp.set("billingInterval", params.billingInterval);
+  if (params?.subscriptionStatus)
+    sp.set("subscriptionStatus", params.subscriptionStatus);
+  if (params?.billingInterval)
+    sp.set("billingInterval", params.billingInterval);
   if (params?.cancelAtPeriodEnd === true) sp.set("cancelAtPeriodEnd", "true");
   if (params?.cancelAtPeriodEnd === false) sp.set("cancelAtPeriodEnd", "false");
   if (params?.staleSyncOnly === true) sp.set("staleSyncOnly", "true");
@@ -69,7 +71,7 @@ function buildSubscriptionQuery(params?: AdminSubscriptionListParams): string {
 }
 
 export async function fetchAdminSubscriptionList(
-  params?: AdminSubscriptionListParams
+  params?: AdminSubscriptionListParams,
 ): Promise<{
   items: AdminSubscriptionListRow[];
   page: number;
@@ -78,7 +80,12 @@ export async function fetchAdminSubscriptionList(
   totalPages: number;
 }> {
   const qs = buildSubscriptionQuery(params);
-  return fetchApi("GET", `/api/admin/subscriptions${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/subscriptions${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminSubscriptionMetrics(): Promise<AdminSubscriptionMetrics> {
@@ -86,13 +93,13 @@ export async function fetchAdminSubscriptionMetrics(): Promise<AdminSubscription
 }
 
 export async function fetchAdminSubscriptionDetail(
-  userId: string
+  userId: string,
 ): Promise<AdminSubscriptionSummary> {
   return fetchApi(
     "GET",
     `/api/admin/subscriptions/${encodeURIComponent(userId)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -104,7 +111,7 @@ export async function postAdminSubscriptionSync(userId: string): Promise<{
     "POST",
     `/api/admin/subscriptions/${encodeURIComponent(userId)}/sync`,
     {},
-    false
+    false,
   );
 }
 
@@ -116,12 +123,12 @@ export type AdminSubscriptionSyncBatchResult = {
 };
 
 export async function postAdminSubscriptionSyncBatch(
-  userIds: string[]
+  userIds: string[],
 ): Promise<AdminSubscriptionSyncBatchResult> {
   return fetchApi(
     "POST",
     "/api/admin/subscriptions/sync-batch",
     { userIds },
-    false
+    false,
   );
 }

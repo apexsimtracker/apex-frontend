@@ -8,7 +8,11 @@ type PlanFeatureListProps = {
   className?: string;
 };
 
-export function PlanFeatureList({ features, variant, className }: PlanFeatureListProps) {
+export function PlanFeatureList({
+  features,
+  variant,
+  className,
+}: PlanFeatureListProps) {
   return (
     <ul className={cn("mt-6 space-y-3", className)}>
       {features.map((feature) => (
@@ -18,7 +22,11 @@ export function PlanFeatureList({ features, variant, className }: PlanFeatureLis
             style={variant === "pro" ? { color: BRAND_RED } : undefined}
             aria-hidden
           />
-          <span className={variant === "pro" ? "text-foreground/90" : undefined}>{feature}</span>
+          <span
+            className={variant === "pro" ? "text-foreground/90" : undefined}
+          >
+            {feature}
+          </span>
         </li>
       ))}
     </ul>

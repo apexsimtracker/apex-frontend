@@ -37,22 +37,30 @@ test.describe("@profile", () => {
     try {
       await gotoAuthenticated(page, auth, "/profile");
       await page.getByRole("button", { name: "Edit Profile" }).click();
-      await expect(page.getByRole("heading", { name: "Edit Profile" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Edit Profile" }),
+      ).toBeVisible();
 
       await page.getByLabel("Display name").fill(updatedName);
       await page.getByLabel("Bio").fill(updatedBio);
 
       const patchMe = page.waitForResponse(
-        (res) => res.url().includes("/api/auth/me") && res.request().method() === "PATCH"
+        (res) =>
+          res.url().includes("/api/auth/me") &&
+          res.request().method() === "PATCH",
       );
       await page.getByRole("button", { name: "Save" }).click();
       const patchRes = await patchMe;
       expect(patchRes.ok()).toBeTruthy();
 
-      await expect(page.getByRole("heading", { name: "Edit Profile" })).toBeHidden({
+      await expect(
+        page.getByRole("heading", { name: "Edit Profile" }),
+      ).toBeHidden({
         timeout: 30_000,
       });
-      await expect(page.getByRole("heading", { name: updatedName, level: 1 })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: updatedName, level: 1 }),
+      ).toBeVisible();
       await expect(page.getByText(updatedBio)).toBeVisible();
 
       const me = await getMeViaApi(request, auth);
@@ -67,7 +75,10 @@ test.describe("@profile", () => {
   });
 
   test("C2 — avatar upload via profile edit", async ({ page, request }) => {
-    test.skip(!isR2Configured(), "R2 env vars must be set on the backend for avatar upload");
+    test.skip(
+      !isR2Configured(),
+      "R2 env vars must be set on the backend for avatar upload",
+    );
     test.setTimeout(120_000);
 
     const auth = await loginPersona(request, "standard");
@@ -78,17 +89,22 @@ test.describe("@profile", () => {
     try {
       await gotoAuthenticated(page, auth, "/profile");
       await page.getByRole("button", { name: "Edit Profile" }).click();
-      await expect(page.getByRole("heading", { name: "Edit Profile" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Edit Profile" }),
+      ).toBeVisible();
 
       await page.locator("#edit-avatar-file").setInputFiles(avatarFixture());
       await expect(page.locator('img[alt="Preview"]')).toBeVisible();
 
       const avatarUpload = page.waitForResponse(
         (res) =>
-          res.url().includes("/api/profile/avatar") && res.request().method() === "POST"
+          res.url().includes("/api/profile/avatar") &&
+          res.request().method() === "POST",
       );
       const patchMe = page.waitForResponse(
-        (res) => res.url().includes("/api/auth/me") && res.request().method() === "PATCH"
+        (res) =>
+          res.url().includes("/api/auth/me") &&
+          res.request().method() === "PATCH",
       );
       await page.getByRole("button", { name: "Save" }).click();
 
@@ -98,9 +114,13 @@ test.describe("@profile", () => {
       }
       if (!uploadRes.ok()) {
         const body = await uploadRes.text();
-        throw new Error(`Avatar upload failed (${uploadRes.status()}): ${body}`);
+        throw new Error(
+          `Avatar upload failed (${uploadRes.status()}): ${body}`,
+        );
       }
-      const uploadBody = (await uploadRes.json()) as { avatarUrl?: string | null };
+      const uploadBody = (await uploadRes.json()) as {
+        avatarUrl?: string | null;
+      };
       expect(uploadBody.avatarUrl?.trim()).toBeTruthy();
       uploadedAvatarUrl = uploadBody.avatarUrl?.trim() ?? null;
 
@@ -113,11 +133,16 @@ test.describe("@profile", () => {
       if (uploadedAvatarUrl && uploadedAvatarUrl !== originalAvatarUrl) {
         deleteAvatarFromR2ByPublicUrl(uploadedAvatarUrl);
       }
-      await patchMeViaApi(request, auth, { avatarUrl: originalAvatarUrl }).catch(() => undefined);
+      await patchMeViaApi(request, auth, {
+        avatarUrl: originalAvatarUrl,
+      }).catch(() => undefined);
     }
   });
 
-  test("C3 — weekly goals: PATCH targets reflected on home", async ({ page, request }) => {
+  test("C3 — weekly goals: PATCH targets reflected on home", async ({
+    page,
+    request,
+  }) => {
     const auth = await loginPersona(request, "standard");
     const customTargets = {
       weeklyRacesTarget: 15,
@@ -126,24 +151,35 @@ test.describe("@profile", () => {
     };
 
     try {
-      const patchBody = await patchWeeklyGoalsViaApi(request, auth, customTargets);
+      const patchBody = await patchWeeklyGoalsViaApi(
+        request,
+        auth,
+        customTargets,
+      );
       expect(patchBody.weeklyGoals.races.target).toBe(15);
       expect(patchBody.weeklyGoals.podiums.target).toBe(8);
       expect(patchBody.weeklyGoals.laps.target).toBe(200);
 
       await gotoAuthenticated(page, auth, "/");
-      await expect(page.getByRole("heading", { name: "Weekly Goals" })).toBeVisible({
+      await expect(
+        page.getByRole("heading", { name: "Weekly Goals" }),
+      ).toBeVisible({
         timeout: 30_000,
       });
       await expect(page.getByText("/15")).toBeVisible();
       await expect(page.getByText("/8")).toBeVisible();
       await expect(page.getByText("/200")).toBeVisible();
     } finally {
-      await patchWeeklyGoalsViaApi(request, auth, DEFAULT_WEEKLY_GOALS).catch(() => undefined);
+      await patchWeeklyGoalsViaApi(request, auth, DEFAULT_WEEKLY_GOALS).catch(
+        () => undefined,
+      );
     }
   });
 
-  test("C4 — privacy profile: follow request and bell accept", async ({ page, request }) => {
+  test("C4 — privacy profile: follow request and bell accept", async ({
+    page,
+    request,
+  }) => {
     const privateAuth = await loginPersona(request, "private");
     const socialBAuth = await loginPersona(request, "socialB");
 
@@ -155,12 +191,14 @@ test.describe("@profile", () => {
       await unfollowUserViaApi(request, socialBAuth, privateAuth.userId);
 
       await gotoAuthenticated(page, socialBAuth, `/user/${privateAuth.userId}`);
-      await expect(page.getByRole("heading", { name: /E2E Private/i })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: /E2E Private/i }),
+      ).toBeVisible();
 
       const followPost = page.waitForResponse(
         (res) =>
           res.url().includes(`/api/users/${privateAuth.userId}/follow`) &&
-          res.request().method() === "POST"
+          res.request().method() === "POST",
       );
       await page.getByRole("button", { name: "Request to follow" }).click();
       const followRes = await followPost;
@@ -170,21 +208,29 @@ test.describe("@profile", () => {
       await page.getByRole("button", { name: "Notifications" }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.getByRole("button", { name: "Follow requests" }).click();
-      await expect(page.getByText(/E2E Social B/i)).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/E2E Social B/i)).toBeVisible({
+        timeout: 30_000,
+      });
 
       const acceptPost = page.waitForResponse(
         (res) =>
           res.url().includes("/api/me/follow-requests/") &&
           res.request().method() === "POST" &&
-          res.url().includes("/accept")
+          res.url().includes("/accept"),
       );
       await page.getByRole("button", { name: "Approve" }).first().click();
       await acceptPost;
 
-      const status = await getFollowStatusViaApi(request, socialBAuth, privateAuth.userId);
+      const status = await getFollowStatusViaApi(
+        request,
+        socialBAuth,
+        privateAuth.userId,
+      );
       expect(status.isFollowing).toBe(true);
     } finally {
-      await unfollowUserViaApi(request, socialBAuth, privateAuth.userId).catch(() => undefined);
+      await unfollowUserViaApi(request, socialBAuth, privateAuth.userId).catch(
+        () => undefined,
+      );
       await patchPrivacyViaApi(request, privateAuth, {
         privateProfile: true,
         manualFollowApproval: true,
@@ -193,7 +239,10 @@ test.describe("@profile", () => {
     }
   });
 
-  test("C5 — session visibility: FOLLOWERS_ONLY gating", async ({ page, request }) => {
+  test("C5 — session visibility: FOLLOWERS_ONLY gating", async ({
+    page,
+    request,
+  }) => {
     const ownerAuth = await loginPersona(request, "standard");
     const followerAuth = await loginPersona(request, "socialB");
     const strangerAuth = await loginPersona(request, "webhookFree");
@@ -202,84 +251,117 @@ test.describe("@profile", () => {
     let sessionId: string | null = null;
 
     try {
-      await patchPrivacyViaApi(request, ownerAuth, { sessionVisibility: "FOLLOWERS_ONLY" });
+      await patchPrivacyViaApi(request, ownerAuth, {
+        sessionVisibility: "FOLLOWERS_ONLY",
+      });
       await unfollowUserViaApi(request, followerAuth, ownerAuth.userId);
       await followUserViaApi(request, followerAuth, ownerAuth.userId);
 
       const upload = await uploadSessionJsonViaApi(
         request,
         ownerAuth,
-        "practice_spa_ferrari-gt3_8laps.json"
+        "practice_spa_ferrari-gt3_8laps.json",
       );
       sessionId = upload.sessionId;
 
       await gotoAuthenticated(page, strangerAuth, `/sessions/${sessionId}`);
       await expect(
-        page.getByText(/limited to the driver's followers|don't have access/i)
+        page.getByText(/limited to the driver's followers|don't have access/i),
       ).toBeVisible({ timeout: 30_000 });
 
       const env = getE2eEnv();
       const strangerRes = await request.get(
         `${env.apiUrl}/api/sessions/${encodeURIComponent(sessionId)}`,
-        { headers: authHeaders(strangerAuth.token, strangerAuth.sessionToken) }
+        { headers: authHeaders(strangerAuth.token, strangerAuth.sessionToken) },
       );
       expect(strangerRes.status()).toBe(403);
 
       await gotoAuthenticated(page, followerAuth, `/sessions/${sessionId}`);
-      await expect(page.getByRole("heading", { name: /Spa/i })).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByText("Total Laps").locator("..").getByText("8")).toBeVisible();
+      await expect(page.getByRole("heading", { name: /Spa/i })).toBeVisible({
+        timeout: 30_000,
+      });
+      await expect(
+        page.getByText("Total Laps").locator("..").getByText("8"),
+      ).toBeVisible();
 
-      const followerDetail = await getSessionDetailViaApi(request, followerAuth, sessionId);
+      const followerDetail = await getSessionDetailViaApi(
+        request,
+        followerAuth,
+        sessionId,
+      );
       expect(followerDetail.lapCount).toBe(8);
     } finally {
       if (sessionId) {
-        await deleteSessionViaAdminApi(request, adminAuth, sessionId).catch(() => undefined);
+        await deleteSessionViaAdminApi(request, adminAuth, sessionId).catch(
+          () => undefined,
+        );
       }
-      await unfollowUserViaApi(request, followerAuth, ownerAuth.userId).catch(() => undefined);
-      await patchPrivacyViaApi(request, ownerAuth, { sessionVisibility: "PUBLIC" }).catch(
-        () => undefined
+      await unfollowUserViaApi(request, followerAuth, ownerAuth.userId).catch(
+        () => undefined,
       );
+      await patchPrivacyViaApi(request, ownerAuth, {
+        sessionVisibility: "PUBLIC",
+      }).catch(() => undefined);
     }
   });
 
-  test("C6 — change password (sacrificial persona)", async ({ page, request }) => {
+  test("C6 — change password (sacrificial persona)", async ({
+    page,
+    request,
+  }) => {
     const env = getE2eEnv();
     const auth = await loginPersona(request, "sacrificial");
     const rotatedPassword = `${env.password}Rotated`;
 
     try {
       await gotoAuthenticated(page, auth, "/settings");
-      await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Settings" }),
+      ).toBeVisible();
 
       await page.getByPlaceholder("Current password").fill(env.password);
       await page.getByPlaceholder("New password").fill(rotatedPassword);
 
       const changePost = page.waitForResponse(
         (res) =>
-          res.url().includes("/api/settings/change-password") && res.request().method() === "POST"
+          res.url().includes("/api/settings/change-password") &&
+          res.request().method() === "POST",
       );
       await page.getByRole("button", { name: "Update password" }).click();
       const changeRes = await changePost;
       expect(changeRes.ok()).toBeTruthy();
       await expect(page.getByText("Password updated.")).toBeVisible();
 
-      await loginViaUi(page, env.personas.sacrificial, rotatedPassword, "/profile");
+      await loginViaUi(
+        page,
+        env.personas.sacrificial,
+        rotatedPassword,
+        "/profile",
+      );
       await expect(page).toHaveURL(/\/profile/, { timeout: 30_000 });
     } finally {
       reseedE2eUsers();
     }
   });
 
-  test("C7 — data export with prior session upload", async ({ page, request }) => {
+  test("C7 — data export with prior session upload", async ({
+    page,
+    request,
+  }) => {
     const auth = await loginPersona(request, "standard");
-    await uploadSessionJsonViaApi(request, auth, "practice_spa_ferrari-gt3_8laps.json");
+    await uploadSessionJsonViaApi(
+      request,
+      auth,
+      "practice_spa_ferrari-gt3_8laps.json",
+    );
 
     await gotoAuthenticated(page, auth, "/settings");
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     const exportGet = page.waitForResponse(
       (res) =>
-        res.url().includes("/api/settings/data-export") && res.request().method() === "GET"
+        res.url().includes("/api/settings/data-export") &&
+        res.request().method() === "GET",
     );
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export data" }).click();
@@ -291,23 +373,31 @@ test.describe("@profile", () => {
     expect(download.suggestedFilename()).toMatch(/apex-data-export-.*\.xlsx$/);
   });
 
-  test("C8 — account deletion (sacrificial persona)", async ({ page, request }) => {
+  test("C8 — account deletion (sacrificial persona)", async ({
+    page,
+    request,
+  }) => {
     const env = getE2eEnv();
     const auth = await loginPersona(request, "sacrificial");
 
     await gotoAuthenticated(page, auth, "/settings");
     await page.getByRole("button", { name: "Delete account" }).click();
     const deleteDialog = page.getByRole("alertdialog");
-    await expect(deleteDialog.getByRole("heading", { name: "Delete account" })).toBeVisible();
+    await expect(
+      deleteDialog.getByRole("heading", { name: "Delete account" }),
+    ).toBeVisible();
 
     await deleteDialog.getByPlaceholder("Current password").fill(env.password);
     await deleteDialog.getByPlaceholder("Type DELETE").fill("DELETE");
 
     const deleteReq = page.waitForResponse(
       (res) =>
-        res.url().includes("/api/settings/account") && res.request().method() === "DELETE"
+        res.url().includes("/api/settings/account") &&
+        res.request().method() === "DELETE",
     );
-    await deleteDialog.getByRole("button", { name: "Delete permanently" }).click();
+    await deleteDialog
+      .getByRole("button", { name: "Delete permanently" })
+      .click();
     const deleteRes = await deleteReq;
     expect(deleteRes.ok()).toBeTruthy();
 

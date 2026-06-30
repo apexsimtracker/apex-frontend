@@ -21,7 +21,9 @@ export function publicSessionUrl(sessionId: string): string {
   return `${SITE_ORIGIN}/sessions/${sessionId}`;
 }
 
-export function absoluteUrlForOg(url: string | null | undefined): string | undefined {
+export function absoluteUrlForOg(
+  url: string | null | undefined,
+): string | undefined {
   if (url == null) return undefined;
   const t = String(url).trim();
   if (!t) return undefined;

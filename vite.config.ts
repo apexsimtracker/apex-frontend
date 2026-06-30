@@ -4,7 +4,7 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 
 const pkg = JSON.parse(
-  readFileSync(path.resolve(__dirname, "package.json"), "utf-8")
+  readFileSync(path.resolve(__dirname, "package.json"), "utf-8"),
 ) as { version?: string };
 const appVersion = pkg.version ?? "1.0.0";
 const gitCommitSha =
@@ -49,7 +49,8 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://127.0.0.1:10000",
+        target:
+          process.env.VITE_DEV_API_PROXY_TARGET ?? "http://127.0.0.1:10000",
         changeOrigin: true,
       },
     },

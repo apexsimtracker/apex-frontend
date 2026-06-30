@@ -15,7 +15,10 @@ function base64UrlToJson(segment: string): Record<string, unknown> | null {
 }
 
 /** Decode JWT payload from storage (no signature verification — UI-only detection). */
-export function parseStoredAccessTokenPayload(): Record<string, unknown> | null {
+export function parseStoredAccessTokenPayload(): Record<
+  string,
+  unknown
+> | null {
   if (typeof localStorage === "undefined") return null;
   const token = localStorage.getItem("apex_token");
   if (!token?.trim()) return null;

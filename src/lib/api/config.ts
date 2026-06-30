@@ -94,7 +94,7 @@ export function getDiscussionAuthorAvatarRaw(author: unknown): string | null {
  */
 export function resolveDiscussionAvatarSrc(
   author: unknown,
-  currentUser: { id: string; avatarUrl?: string | null } | null | undefined
+  currentUser: { id: string; avatarUrl?: string | null } | null | undefined,
 ): string | null {
   const authorId = getDiscussionAuthorId(author);
   if (authorId && currentUser?.id === authorId) {

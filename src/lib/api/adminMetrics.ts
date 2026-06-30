@@ -91,27 +91,57 @@ export type AuthSignalsMetrics = Pick<
 >;
 
 export async function fetchAdminAccountsMetrics(): Promise<AccountsMetrics> {
-  return fetchApi<AccountsMetrics>("GET", "/api/admin/metrics/accounts", undefined, false);
+  return fetchApi<AccountsMetrics>(
+    "GET",
+    "/api/admin/metrics/accounts",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminRacingMetrics(): Promise<RacingMetrics> {
-  return fetchApi<RacingMetrics>("GET", "/api/admin/metrics/racing", undefined, false);
+  return fetchApi<RacingMetrics>(
+    "GET",
+    "/api/admin/metrics/racing",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminAuthSessionsMetrics(): Promise<AuthSessionsMetrics> {
-  return fetchApi<AuthSessionsMetrics>("GET", "/api/admin/metrics/devices", undefined, false);
+  return fetchApi<AuthSessionsMetrics>(
+    "GET",
+    "/api/admin/metrics/devices",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminCommunityMetrics(): Promise<CommunityMetrics> {
-  return fetchApi<CommunityMetrics>("GET", "/api/admin/metrics/community", undefined, false);
+  return fetchApi<CommunityMetrics>(
+    "GET",
+    "/api/admin/metrics/community",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminSocialMetrics(): Promise<SocialMetrics> {
-  return fetchApi<SocialMetrics>("GET", "/api/admin/metrics/social", undefined, false);
+  return fetchApi<SocialMetrics>(
+    "GET",
+    "/api/admin/metrics/social",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminCompetitionMetrics(): Promise<CompetitionMetrics> {
-  return fetchApi<CompetitionMetrics>("GET", "/api/admin/metrics/competition", undefined, false);
+  return fetchApi<CompetitionMetrics>(
+    "GET",
+    "/api/admin/metrics/competition",
+    undefined,
+    false,
+  );
 }
 
 export async function fetchAdminAuthSignalsMetrics(): Promise<AuthSignalsMetrics> {
@@ -119,6 +149,6 @@ export async function fetchAdminAuthSignalsMetrics(): Promise<AuthSignalsMetrics
     "GET",
     "/api/admin/metrics/auth-signals",
     undefined,
-    false
+    false,
   );
 }

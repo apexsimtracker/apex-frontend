@@ -1,4 +1,7 @@
-export type TelemetryEligibilityReason = "MANUAL_SESSION" | "NOT_PRO" | "NO_DATA";
+export type TelemetryEligibilityReason =
+  | "MANUAL_SESSION"
+  | "NOT_PRO"
+  | "NO_DATA";
 
 export type TelemetryLapSummary = {
   lapNumber: number;
@@ -23,7 +26,11 @@ export type TelemetrySummaryResponse = {
     tankCapacityL: number;
     avgFuelPerLapL: number | null;
     projectedLapsFromFull: number | null;
-    perLap: Array<{ lapNumber: number; fuelLevelL: number | null; fuelUsedL: number | null }>;
+    perLap: Array<{
+      lapNumber: number;
+      fuelLevelL: number | null;
+      fuelUsedL: number | null;
+    }>;
   } | null;
   tyres: {
     perLap: Array<{

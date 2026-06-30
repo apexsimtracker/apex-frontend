@@ -29,7 +29,7 @@ export function ProUpgradeCallout({
       size={layout === "banner" ? "sm" : "default"}
       className={cn(
         "shrink-0 text-white hover:opacity-90",
-        layout === "card" && "mt-6"
+        layout === "card" && "mt-6",
       )}
       style={{ backgroundColor: BRAND_RED }}
     >
@@ -45,11 +45,13 @@ export function ProUpgradeCallout({
       <div
         className={cn(
           "rounded-xl border bg-card/50 p-8 text-center sm:p-10",
-          className
+          className,
         )}
         style={PRO_BORDER_STYLE}
       >
-        <p className="text-sm text-muted-foreground sm:text-base">{description}</p>
+        <p className="text-sm text-muted-foreground sm:text-base">
+          {description}
+        </p>
         {ctaButton}
       </div>
     );
@@ -59,7 +61,7 @@ export function ProUpgradeCallout({
     <div
       className={cn(
         "flex flex-col gap-3 rounded-xl border bg-card/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4",
-        className
+        className,
       )}
       style={PRO_BORDER_STYLE}
     >

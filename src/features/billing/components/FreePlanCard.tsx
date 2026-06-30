@@ -24,11 +24,13 @@ export function FreePlanCard({
     <div
       className={cn(
         "flex h-full flex-col rounded-xl border border-white/10 bg-card/50 p-6 sm:p-7",
-        className
+        className,
       )}
     >
       <h2 className="text-lg font-semibold text-foreground">{name}</h2>
-      <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">{priceLabel}</p>
+      <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+        {priceLabel}
+      </p>
       <PlanFeatureList features={features} variant="free" />
       <div className="mt-auto pt-8">
         {!isLoggedIn ? (

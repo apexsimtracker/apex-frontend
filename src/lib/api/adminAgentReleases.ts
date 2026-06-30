@@ -1,5 +1,9 @@
 import { API_BASE } from "./config";
-import { buildApiAuthHeaders, fetchApi, notifyAuthExpired } from "./fetchClient";
+import {
+  buildApiAuthHeaders,
+  fetchApi,
+  notifyAuthExpired,
+} from "./fetchClient";
 import { ApiError } from "./errors";
 
 export type AgentOs = "macos" | "windows" | "linux";
@@ -45,7 +49,9 @@ export type PublishAgentReleaseCallbacks = {
   onUploadComplete?: () => void;
 };
 
-export async function fetchAdminAgentReleaseSummary(): Promise<AdminAgentReleaseSummaryItem[]> {
+export async function fetchAdminAgentReleaseSummary(): Promise<
+  AdminAgentReleaseSummaryItem[]
+> {
   return fetchApi("GET", "/api/admin/agent/releases/summary", undefined, false);
 }
 
@@ -67,7 +73,12 @@ export async function fetchAdminAgentReleases(params?: {
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/agent/releases${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/agent/releases${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 export async function verifyAdminAgentReleases(): Promise<{
@@ -97,7 +108,7 @@ function parsePublishErrorPayload(text: string, _status: number): string {
 
 export async function publishAdminAgentRelease(
   form: FormData,
-  callbacks?: PublishAgentReleaseCallbacks
+  callbacks?: PublishAgentReleaseCallbacks,
 ): Promise<AdminAgentReleaseRow> {
   const authHeaders = buildApiAuthHeaders();
   const url = `${API_BASE}/api/admin/agent/releases`;
@@ -153,12 +164,14 @@ export async function publishAdminAgentRelease(
   });
 }
 
-export async function activateAdminAgentRelease(releaseId: string): Promise<AdminAgentReleaseRow> {
+export async function activateAdminAgentRelease(
+  releaseId: string,
+): Promise<AdminAgentReleaseRow> {
   return fetchApi(
     "PATCH",
     `/api/admin/agent/releases/${encodeURIComponent(releaseId)}/activate`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -180,7 +193,12 @@ export async function fetchAdminAgentDownloadLogs(params?: {
   if (params?.os) sp.set("os", params.os);
   if (params?.outcome) sp.set("outcome", params.outcome);
   const qs = sp.toString();
-  return fetchApi("GET", `/api/admin/agent/downloads${qs ? `?${qs}` : ""}`, undefined, false);
+  return fetchApi(
+    "GET",
+    `/api/admin/agent/downloads${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
 }
 
 /** Expected installer extension per OS (case-insensitive). */
@@ -192,16 +210,19 @@ export const AGENT_INSTALLER_EXTENSION_BY_OS: Record<AgentOs, string> = {
 
 export function validateAgentInstallerFile(
   os: AgentOs,
-  file: File | null | undefined
+  file: File | null | undefined,
 ): { ok: true } | { ok: false; message: string } {
   if (!file) {
     return { ok: false, message: "Choose an installer file." };
   }
   const name = file.name.trim();
-  const ext = name.includes(".") ? name.slice(name.lastIndexOf(".")).toLowerCase() : "";
+  const ext = name.includes(".")
+    ? name.slice(name.lastIndexOf(".")).toLowerCase()
+    : "";
   const expected = AGENT_INSTALLER_EXTENSION_BY_OS[os].toLowerCase();
   if (ext !== expected) {
-    const label = os === "macos" ? "macOS" : os === "windows" ? "Windows" : "Linux";
+    const label =
+      os === "macos" ? "macOS" : os === "windows" ? "Windows" : "Linux";
     return {
       ok: false,
       message: `${label} releases require a ${AGENT_INSTALLER_EXTENSION_BY_OS[os]} file.`,

@@ -12,7 +12,7 @@ import {
 
 /** Stable segment for token-scoped profile queries when /me omits `user.id` briefly. */
 export function ownedProfileUserKey(
-  user: { id?: string | null } | null | undefined
+  user: { id?: string | null } | null | undefined,
 ): string {
   return user?.id?.trim() || "me";
 }
@@ -20,11 +20,13 @@ export function ownedProfileUserKey(
 export const profileKeys = {
   summary: (userKey: string) => ["profile", "summary", userKey] as const,
   homeWeekly: (userKey: string) => ["profile", "homeWeekly", userKey] as const,
-  trendInsight: (userKey: string) => ["profile", "trendInsight", userKey] as const,
+  trendInsight: (userKey: string) =>
+    ["profile", "trendInsight", userKey] as const,
   raceHistory: (userKey: string, page: number) =>
     ["profile", "raceHistory", userKey, page] as const,
   /** GET /api/users/:id — authoritative follow counts for own profile. */
-  publicPreview: (userId: string) => ["profile", "publicPreview", userId] as const,
+  publicPreview: (userId: string) =>
+    ["profile", "publicPreview", userId] as const,
   /**
    * Paginated follower/following modal (GET .../followers|following).
    * Invalidate with prefix `['profile', 'followList', userId]` to clear all pages/searches.
@@ -33,7 +35,7 @@ export const profileKeys = {
     userId: string,
     kind: "followers" | "following",
     page: number,
-    q: string
+    q: string,
   ) => ["profile", "followList", userId, kind, page, q] as const,
   userBundle: (id: string) => ["userProfile", "bundle", id] as const,
   userRaceHistory: (id: string, page: number) =>
@@ -57,7 +59,7 @@ export function invalidateSessionDerivedCaches(
     sessionId?: string;
     /** Pass `true` after DELETE so detail/edit caches are dropped. Omit or `false` after update (refetch only). */
     removeSessionQueries?: boolean;
-  } = {}
+  } = {},
 ): void {
   const { ownerUserId, sessionId, removeSessionQueries } = opts;
   const sid = sessionId?.trim();
@@ -71,7 +73,9 @@ export function invalidateSessionDerivedCaches(
 
   const uid = ownerUserId?.trim();
   if (uid) {
-    void queryClient.invalidateQueries({ queryKey: profileKeys.publicPreview(uid) });
+    void queryClient.invalidateQueries({
+      queryKey: profileKeys.publicPreview(uid),
+    });
   }
 
   if (!sid) return;
@@ -80,7 +84,9 @@ export function invalidateSessionDerivedCaches(
     void queryClient.removeQueries({ queryKey: ["sessions", "detail", sid] });
     void queryClient.removeQueries({ queryKey: ["sessions", "edit", sid] });
   } else {
-    void queryClient.invalidateQueries({ queryKey: ["sessions", "detail", sid] });
+    void queryClient.invalidateQueries({
+      queryKey: ["sessions", "detail", sid],
+    });
     void queryClient.invalidateQueries({ queryKey: ["sessions", "edit", sid] });
   }
 }
@@ -90,7 +96,7 @@ export function invalidateSessionDerivedCaches(
  */
 export function prefetchHomeWeeklyAfterAuth(
   queryClient: QueryClient,
-  user: { id?: string | null } | null | undefined
+  user: { id?: string | null } | null | undefined,
 ): void {
   if (!user) return;
   const userKey = ownedProfileUserKey(user);
@@ -106,7 +112,7 @@ export function prefetchHomeWeeklyAfterAuth(
  */
 export function prefetchOwnProfileQueries(
   queryClient: QueryClient,
-  user: { id?: string | null } | null | undefined
+  user: { id?: string | null } | null | undefined,
 ): void {
   if (!user) return;
   const userKey = ownedProfileUserKey(user);
@@ -135,7 +141,7 @@ export function prefetchOwnProfileQueries(
 export function prefetchFollowList(
   queryClient: QueryClient,
   userId: string,
-  kind: "followers" | "following"
+  kind: "followers" | "following",
 ): void {
   const uid = userId.trim();
   if (!uid) return;
@@ -143,7 +149,15 @@ export function prefetchFollowList(
     queryKey: profileKeys.followList(uid, kind, 1, ""),
     queryFn: () =>
       kind === "followers"
-        ? getFollowersPage(uid, { page: 1, limit: FOLLOW_LIST_PAGE_SIZE, q: "" })
-        : getFollowingPage(uid, { page: 1, limit: FOLLOW_LIST_PAGE_SIZE, q: "" }),
+        ? getFollowersPage(uid, {
+            page: 1,
+            limit: FOLLOW_LIST_PAGE_SIZE,
+            q: "",
+          })
+        : getFollowingPage(uid, {
+            page: 1,
+            limit: FOLLOW_LIST_PAGE_SIZE,
+            q: "",
+          }),
   });
 }

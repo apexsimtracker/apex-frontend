@@ -1,5 +1,8 @@
 import type { Package as RevenueCatPackage } from "@revenuecat/purchases-js";
-import type { BillingInterval, BillingPlansResponse } from "@/lib/api/activityBilling";
+import type {
+  BillingInterval,
+  BillingPlansResponse,
+} from "@/lib/api/activityBilling";
 
 export type ResolvedPackages = {
   monthly: RevenueCatPackage | null;
@@ -21,7 +24,7 @@ export function isMonthlyPackage(rcPackage: RevenueCatPackage): boolean {
 }
 
 export function resolvePackagesByInterval(
-  availablePackages: RevenueCatPackage[]
+  availablePackages: RevenueCatPackage[],
 ): ResolvedPackages {
   let monthly: RevenueCatPackage | null = null;
   let annual: RevenueCatPackage | null = null;
@@ -34,7 +37,9 @@ export function resolvePackagesByInterval(
   return { monthly, annual };
 }
 
-export function pickDefaultInterval(resolved: ResolvedPackages): BillingInterval {
+export function pickDefaultInterval(
+  resolved: ResolvedPackages,
+): BillingInterval {
   if (resolved.annual) return "ANNUAL";
   if (resolved.monthly) return "MONTHLY";
   return "ANNUAL";
@@ -42,13 +47,13 @@ export function pickDefaultInterval(resolved: ResolvedPackages): BillingInterval
 
 export function packageForInterval(
   resolved: ResolvedPackages,
-  interval: BillingInterval
+  interval: BillingInterval,
 ): RevenueCatPackage | null {
   return interval === "ANNUAL" ? resolved.annual : resolved.monthly;
 }
 
 export function computeAnnualSavingsPercent(
-  plans: BillingPlansResponse | undefined
+  plans: BillingPlansResponse | undefined,
 ): number | null {
   if (!plans) return null;
   const monthly = plans.pro.monthly.priceGbp;
@@ -63,9 +68,11 @@ export function computeAnnualSavingsPercent(
 
 export function getPackagePriceLabel(
   rcPackage: RevenueCatPackage,
-  plans: BillingPlansResponse | undefined
+  plans: BillingPlansResponse | undefined,
 ): string {
-  const product = rcPackage.webBillingProduct as unknown as Record<string, unknown> | undefined;
+  const product = rcPackage.webBillingProduct as unknown as
+    | Record<string, unknown>
+    | undefined;
   const priceString =
     typeof product?.priceString === "string"
       ? product.priceString
@@ -88,7 +95,7 @@ export function getPackagePriceLabel(
 
 export function getPackageTitle(
   rcPackage: RevenueCatPackage,
-  plans: BillingPlansResponse | undefined
+  plans: BillingPlansResponse | undefined,
 ): string {
   if (isAnnualPackage(rcPackage)) {
     return plans?.pro.annual.name ?? "Pro Annual";
@@ -106,7 +113,9 @@ export function getPackageTitle(
       .join(" ");
   }
 
-  const product = rcPackage.webBillingProduct as unknown as Record<string, unknown> | undefined;
+  const product = rcPackage.webBillingProduct as unknown as
+    | Record<string, unknown>
+    | undefined;
   const displayName =
     typeof product?.displayName === "string"
       ? product.displayName
@@ -118,8 +127,9 @@ export function getPackageTitle(
 
 export function priceLabelForCatalogInterval(
   interval: BillingInterval,
-  plans: BillingPlansResponse | undefined
+  plans: BillingPlansResponse | undefined,
 ): string {
-  if (interval === "ANNUAL") return plans?.pro.annual.priceLabel ?? "£49.99/year";
+  if (interval === "ANNUAL")
+    return plans?.pro.annual.priceLabel ?? "£49.99/year";
   return plans?.pro.monthly.priceLabel ?? "£5.99/month";
 }

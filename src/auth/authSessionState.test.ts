@@ -59,7 +59,7 @@ describe("resolveAuthLoading", () => {
         isPending: false,
         isFetching: false,
       },
-      false
+      false,
     );
 
     expect(loading).toBe(false);
@@ -75,7 +75,7 @@ describe("resolveAuthLoading", () => {
         isPending: true,
         isFetching: true,
       },
-      false
+      false,
     );
 
     expect(loading).toBe(true);
@@ -91,7 +91,7 @@ describe("resolveAuthLoading", () => {
         isPending: false,
         isFetching: false,
       },
-      false
+      false,
     );
 
     expect(loading).toBe(false);

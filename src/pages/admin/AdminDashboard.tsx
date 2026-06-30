@@ -92,7 +92,7 @@ function msUntilNextStableRefreshSuffix(dataUpdatedAt: number): number {
  */
 function useStableRefreshSuffix(dataUpdatedAt: number): string {
   const [suffix, setSuffix] = useState(() =>
-    dataUpdatedAt ? formatStableRefreshSuffix(Date.now() - dataUpdatedAt) : ""
+    dataUpdatedAt ? formatStableRefreshSuffix(Date.now() - dataUpdatedAt) : "",
   );
 
   useEffect(() => {
@@ -109,7 +109,10 @@ function useStableRefreshSuffix(dataUpdatedAt: number): string {
       const msAgo = Date.now() - dataUpdatedAt;
       setSuffix(formatStableRefreshSuffix(msAgo));
       const wait = msUntilNextStableRefreshSuffix(dataUpdatedAt);
-      timeoutId = window.setTimeout(bump, Math.min(Math.max(wait, 250), 86_400_000 * 366));
+      timeoutId = window.setTimeout(
+        bump,
+        Math.min(Math.max(wait, 250), 86_400_000 * 366),
+      );
     };
 
     bump();
@@ -122,16 +125,32 @@ function useStableRefreshSuffix(dataUpdatedAt: number): string {
   return suffix;
 }
 
-function MetricCard({ label, value }: { label: string; value: string | number }) {
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-card/30 p-4 shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
 
-function SectionHeader({ title, query }: { title: string; query: UseQueryResult<unknown> }) {
+function SectionHeader({
+  title,
+  query,
+}: {
+  title: string;
+  query: UseQueryResult<unknown>;
+}) {
   const refreshSuffix = useStableRefreshSuffix(query.dataUpdatedAt);
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
@@ -165,7 +184,9 @@ function SectionSkeleton({ count }: { count: number }) {
 
 function SectionError({ error }: { error: unknown }) {
   const message =
-    error instanceof ApiError ? error.message : "Could not load this section. Try again later.";
+    error instanceof ApiError
+      ? error.message
+      : "Could not load this section. Try again later.";
   return (
     <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
       {message}
@@ -192,7 +213,9 @@ function MetricsSection<K extends SectionKey>({
       ) : query.isError ? (
         <SectionError error={query.error} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{children(query.data)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {children(query.data)}
+        </div>
       )}
     </section>
   );
@@ -279,7 +302,9 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Dashboard
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Platform metrics and activity at a glance.
             </p>
@@ -291,67 +316,137 @@ export default function AdminDashboard() {
             className="shrink-0"
             disabled={anySectionFetching}
             onClick={() => {
-              void queryClient.invalidateQueries({ queryKey: ["admin", "metrics"] });
+              void queryClient.invalidateQueries({
+                queryKey: ["admin", "metrics"],
+              });
             }}
           >
-            <RefreshCw className={cn("size-4", anySectionFetching && "animate-spin")} aria-hidden />
+            <RefreshCw
+              className={cn("size-4", anySectionFetching && "animate-spin")}
+              aria-hidden
+            />
             Refresh all
           </Button>
         </div>
 
         <div className="space-y-10">
-          <MetricsSection<"accounts"> title="Accounts" cardCount={4} query={accountsQ}>
+          <MetricsSection<"accounts">
+            title="Accounts"
+            cardCount={4}
+            query={accountsQ}
+          >
             {(m) => (
               <>
-                <MetricCard label="Registered users" value={formatInt(m.usersTotal)} />
-                <MetricCard label="Active (non-deleted)" value={formatInt(m.usersActiveNonDeleted)} />
-                <MetricCard label="New signups (7 days)" value={formatInt(m.usersNewLast7Days)} />
-                <MetricCard label="Admin users" value={formatInt(m.usersAdmins)} />
+                <MetricCard
+                  label="Registered users"
+                  value={formatInt(m.usersTotal)}
+                />
+                <MetricCard
+                  label="Active (non-deleted)"
+                  value={formatInt(m.usersActiveNonDeleted)}
+                />
+                <MetricCard
+                  label="New signups (7 days)"
+                  value={formatInt(m.usersNewLast7Days)}
+                />
+                <MetricCard
+                  label="Admin users"
+                  value={formatInt(m.usersAdmins)}
+                />
               </>
             )}
           </MetricsSection>
 
-          <MetricsSection<"racing"> title="Racing data" cardCount={5} query={racingQ}>
+          <MetricsSection<"racing">
+            title="Racing data"
+            cardCount={5}
+            query={racingQ}
+          >
             {(m) => (
               <>
-                <MetricCard label="Sessions" value={formatInt(m.sessionsTotal)} />
+                <MetricCard
+                  label="Sessions"
+                  value={formatInt(m.sessionsTotal)}
+                />
                 <MetricCard label="Laps" value={formatInt(m.lapsTotal)} />
-                <MetricCard label="Personal bests" value={formatInt(m.personalBestsTotal)} />
-                <MetricCard label="Session likes" value={formatInt(m.sessionLikesTotal)} />
-                <MetricCard label="Session comments" value={formatInt(m.sessionCommentsTotal)} />
+                <MetricCard
+                  label="Personal bests"
+                  value={formatInt(m.personalBestsTotal)}
+                />
+                <MetricCard
+                  label="Session likes"
+                  value={formatInt(m.sessionLikesTotal)}
+                />
+                <MetricCard
+                  label="Session comments"
+                  value={formatInt(m.sessionCommentsTotal)}
+                />
               </>
             )}
           </MetricsSection>
 
-          <MetricsSection<"authSessions"> title="Agent & sessions" cardCount={2} query={authSessionsQ}>
+          <MetricsSection<"authSessions">
+            title="Agent & sessions"
+            cardCount={2}
+            query={authSessionsQ}
+          >
             {(m) => (
               <>
-                <MetricCard label="Auth sessions (all)" value={formatInt(m.authSessionsTotal)} />
-                <MetricCard label="Auth sessions (active)" value={formatInt(m.authSessionsActive)} />
+                <MetricCard
+                  label="Auth sessions (all)"
+                  value={formatInt(m.authSessionsTotal)}
+                />
+                <MetricCard
+                  label="Auth sessions (active)"
+                  value={formatInt(m.authSessionsActive)}
+                />
               </>
             )}
           </MetricsSection>
 
-          <MetricsSection<"community"> title="Community" cardCount={4} query={communityQ}>
+          <MetricsSection<"community">
+            title="Community"
+            cardCount={4}
+            query={communityQ}
+          >
             {(m) => (
               <>
-                <MetricCard label="Discussions" value={formatInt(m.discussionsTotal)} />
+                <MetricCard
+                  label="Discussions"
+                  value={formatInt(m.discussionsTotal)}
+                />
                 <MetricCard
                   label="Discussion comments"
                   value={formatInt(m.discussionCommentsTotal)}
                 />
-                <MetricCard label="Discussion likes" value={formatInt(m.discussionLikesTotal)} />
-                <MetricCard label="Discussion views" value={formatInt(m.discussionViewsTotal)} />
+                <MetricCard
+                  label="Discussion likes"
+                  value={formatInt(m.discussionLikesTotal)}
+                />
+                <MetricCard
+                  label="Discussion views"
+                  value={formatInt(m.discussionViewsTotal)}
+                />
               </>
             )}
           </MetricsSection>
 
-          <MetricsSection<"social"> title="Social" cardCount={3} query={socialQ}>
+          <MetricsSection<"social">
+            title="Social"
+            cardCount={3}
+            query={socialQ}
+          >
             {(m) => (
               <>
                 <MetricCard label="Follows" value={formatInt(m.followsTotal)} />
-                <MetricCard label="Follow requests" value={formatInt(m.followRequestsTotal)} />
-                <MetricCard label="Notifications" value={formatInt(m.notificationsTotal)} />
+                <MetricCard
+                  label="Follow requests"
+                  value={formatInt(m.followRequestsTotal)}
+                />
+                <MetricCard
+                  label="Notifications"
+                  value={formatInt(m.notificationsTotal)}
+                />
               </>
             )}
           </MetricsSection>
@@ -363,19 +458,43 @@ export default function AdminDashboard() {
           >
             {(m) => (
               <>
-                <MetricCard label="Pro access (active)" value={formatInt(m.proAccessActive)} />
+                <MetricCard
+                  label="Pro access (active)"
+                  value={formatInt(m.proAccessActive)}
+                />
                 <MetricCard
                   label="Cancel at period end"
                   value={formatInt(m.proCanceledAtPeriodEnd)}
                 />
                 <MetricCard label="Past due" value={formatInt(m.proPastDue)} />
-                <MetricCard label="Expired subscriptions" value={formatInt(m.proExpired)} />
-                <MetricCard label="Pro new (7d)" value={formatInt(m.proNewLast7d)} />
-                <MetricCard label="Churned (7d)" value={formatInt(m.proChurnedLast7d)} />
-                <MetricCard label="Monthly (active)" value={formatInt(m.byIntervalMonthly)} />
-                <MetricCard label="Annual (active)" value={formatInt(m.byIntervalAnnual)} />
-                <MetricCard label="Stale sync (&gt;24h)" value={formatInt(m.staleSyncCount)} />
-                <MetricCard label="Challenge joins" value={formatInt(m.challengeJoinsTotal)} />
+                <MetricCard
+                  label="Expired subscriptions"
+                  value={formatInt(m.proExpired)}
+                />
+                <MetricCard
+                  label="Pro new (7d)"
+                  value={formatInt(m.proNewLast7d)}
+                />
+                <MetricCard
+                  label="Churned (7d)"
+                  value={formatInt(m.proChurnedLast7d)}
+                />
+                <MetricCard
+                  label="Monthly (active)"
+                  value={formatInt(m.byIntervalMonthly)}
+                />
+                <MetricCard
+                  label="Annual (active)"
+                  value={formatInt(m.byIntervalAnnual)}
+                />
+                <MetricCard
+                  label="Stale sync (&gt;24h)"
+                  value={formatInt(m.staleSyncCount)}
+                />
+                <MetricCard
+                  label="Challenge joins"
+                  value={formatInt(m.challengeJoinsTotal)}
+                />
                 <MetricCard
                   label="Challenges with joins"
                   value={formatInt(m.challengesWithJoins)}

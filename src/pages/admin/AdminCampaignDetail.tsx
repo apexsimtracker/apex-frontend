@@ -49,15 +49,26 @@ export default function AdminCampaignDetail() {
     () => ({
       page,
       pageSize: 25,
-      ...(statusFilter ? { status: statusFilter as NotificationDeliveryStatus } : {}),
-      ...(channelFilter ? { channel: channelFilter as NotificationChannel } : {}),
+      ...(statusFilter
+        ? { status: statusFilter as NotificationDeliveryStatus }
+        : {}),
+      ...(channelFilter
+        ? { channel: channelFilter as NotificationChannel }
+        : {}),
       ...(debounced.trim() ? { q: debounced.trim() } : {}),
     }),
-    [page, statusFilter, channelFilter, debounced]
+    [page, statusFilter, channelFilter, debounced],
   );
 
   const deliveriesQuery = useQuery({
-    queryKey: ["admin", "notifications", "campaigns", id, "deliveries", deliveriesParams],
+    queryKey: [
+      "admin",
+      "notifications",
+      "campaigns",
+      id,
+      "deliveries",
+      deliveriesParams,
+    ],
     queryFn: () => fetchCampaignDeliveries(id, deliveriesParams),
     enabled: !!id,
   });
@@ -65,7 +76,9 @@ export default function AdminCampaignDetail() {
   const resendMut = useMutation({
     mutationFn: () => resendFailedCampaignEmails(id),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["admin", "notifications", "campaigns"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "notifications", "campaigns"],
+      });
       await qc.invalidateQueries({
         queryKey: ["admin", "notifications", "campaigns", "detail", id],
       });
@@ -78,8 +91,12 @@ export default function AdminCampaignDetail() {
   const deleteMut = useMutation({
     mutationFn: () => deleteCampaign(id),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["admin", "notifications", "campaigns"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "notifications", "overview"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "notifications", "campaigns"],
+      });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "notifications", "overview"],
+      });
       navigate("/admin/notifications?tab=campaigns");
     },
   });
@@ -145,7 +162,8 @@ export default function AdminCampaignDetail() {
                   >
                     {resendMut.isPending ? (
                       <>
-                        <Loader2 className="mr-2 size-4 animate-spin" /> Retrying…
+                        <Loader2 className="mr-2 size-4 animate-spin" />{" "}
+                        Retrying…
                       </>
                     ) : (
                       `Retry ${detailQuery.data.emailFailedCount} failed email${
@@ -180,11 +198,26 @@ export default function AdminCampaignDetail() {
             )}
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <StatTile label="Recipients" value={detailQuery.data.recipientCount} />
-              <StatTile label="In-app sent" value={detailQuery.data.inAppSentCount} />
-              <StatTile label="Email sent" value={detailQuery.data.emailSentCount} />
-              <StatTile label="Email failed" value={detailQuery.data.emailFailedCount} />
-              <StatTile label="Email skipped" value={detailQuery.data.emailSkippedCount} />
+              <StatTile
+                label="Recipients"
+                value={detailQuery.data.recipientCount}
+              />
+              <StatTile
+                label="In-app sent"
+                value={detailQuery.data.inAppSentCount}
+              />
+              <StatTile
+                label="Email sent"
+                value={detailQuery.data.emailSentCount}
+              />
+              <StatTile
+                label="Email failed"
+                value={detailQuery.data.emailFailedCount}
+              />
+              <StatTile
+                label="Email skipped"
+                value={detailQuery.data.emailSkippedCount}
+              />
             </div>
 
             <div className="mt-6 rounded-xl border border-white/10 bg-card/40 p-4">
@@ -238,7 +271,9 @@ export default function AdminCampaignDetail() {
                   </select>
                 </div>
                 <p className="shrink-0 text-xs text-muted-foreground max-lg:w-full lg:text-right">
-                  {deliveriesQuery.isPending ? "Loading…" : `${total} delivery rows`}
+                  {deliveriesQuery.isPending
+                    ? "Loading…"
+                    : `${total} delivery rows`}
                 </p>
               </div>
 
@@ -265,10 +300,17 @@ export default function AdminCampaignDetail() {
                     </thead>
                     <tbody>
                       {rows.map((r) => (
-                        <tr key={r.id} className="border-b border-white/5 align-top">
+                        <tr
+                          key={r.id}
+                          className="border-b border-white/5 align-top"
+                        >
                           <td className="p-3">
-                            <div className="font-medium text-foreground">{r.userDisplayName}</div>
-                            <div className="text-xs text-muted-foreground">{r.userEmail}</div>
+                            <div className="font-medium text-foreground">
+                              {r.userDisplayName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {r.userEmail}
+                            </div>
                           </td>
                           <td className="p-3 text-muted-foreground">
                             {r.channel === "IN_APP" ? "In-app" : "Email"}
@@ -280,17 +322,24 @@ export default function AdminCampaignDetail() {
                               {r.status}
                             </span>
                           </td>
-                          <td className="p-3 text-muted-foreground">{r.attempts}</td>
+                          <td className="p-3 text-muted-foreground">
+                            {r.attempts}
+                          </td>
                           <td className="p-3 text-xs text-muted-foreground">
                             {new Date(r.updatedAt).toLocaleString()}
                           </td>
                           <td className="p-3 text-xs text-muted-foreground">
                             {r.errorMessage ? (
-                              <span title={r.errorMessage} className="line-clamp-2">
+                              <span
+                                title={r.errorMessage}
+                                className="line-clamp-2"
+                              >
                                 {r.errorMessage}
                               </span>
                             ) : r.providerMessageId ? (
-                              <span className="font-mono">{r.providerMessageId}</span>
+                              <span className="font-mono">
+                                {r.providerMessageId}
+                              </span>
                             ) : (
                               "—"
                             )}
@@ -383,7 +432,9 @@ export default function AdminCampaignDetail() {
 function StatTile({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-white/10 bg-card/50 p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
     </div>
   );

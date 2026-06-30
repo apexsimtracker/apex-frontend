@@ -1,11 +1,18 @@
 import { z } from "zod";
-import { displayNameSchema, newPasswordSchema, PASSWORD_MIN, PASSWORD_MAX } from "@/lib/validation/auth";
+import {
+  displayNameSchema,
+  newPasswordSchema,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} from "@/lib/validation/auth";
 
 export const settingsDisplayNameSchema = z.object({
   displayName: displayNameSchema,
 });
 
-export type SettingsDisplayNameValues = z.infer<typeof settingsDisplayNameSchema>;
+export type SettingsDisplayNameValues = z.infer<
+  typeof settingsDisplayNameSchema
+>;
 
 export const settingsChangePasswordSchema = z
   .object({
@@ -17,7 +24,9 @@ export const settingsChangePasswordSchema = z
     path: ["newPassword"],
   });
 
-export type SettingsChangePasswordValues = z.infer<typeof settingsChangePasswordSchema>;
+export type SettingsChangePasswordValues = z.infer<
+  typeof settingsChangePasswordSchema
+>;
 
 export { PASSWORD_MIN, PASSWORD_MAX };
 
@@ -33,4 +42,6 @@ export function deleteAccountSchema(confirmPhrase: string) {
   });
 }
 
-export type DeleteAccountFormValues = z.infer<ReturnType<typeof deleteAccountSchema>>;
+export type DeleteAccountFormValues = z.infer<
+  ReturnType<typeof deleteAccountSchema>
+>;

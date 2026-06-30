@@ -30,8 +30,11 @@ export default function AppFooter() {
   const productLinks = getFooterProductLinks(isNative);
   const legalLinks = getFooterLegalLinks(isNative);
 
-  const accountLinks =
-    loading ? [] : user ? footerAuthenticatedAccountLinks : footerGuestAccountLinks;
+  const accountLinks = loading
+    ? []
+    : user
+      ? footerAuthenticatedAccountLinks
+      : footerGuestAccountLinks;
   const year = new Date().getFullYear();
 
   return (
@@ -40,7 +43,10 @@ export default function AppFooter() {
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* Brand */}
           <div className="sm:col-span-2 md:col-span-1">
-            <Link to="/" className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70">
+            <Link
+              to="/"
+              className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+            >
               <img
                 src="/logo.png?v=4"
                 alt={`${COMPANY_NAME} logo`}

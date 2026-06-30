@@ -51,7 +51,10 @@ function formatAccessUntil(iso: string | null): string {
 function formatSynced(iso: string | null, stale: boolean): string {
   if (!iso) return stale ? "Never" : "—";
   const d = new Date(iso);
-  const label = d.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+  const label = d.toLocaleString(undefined, {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
   return stale ? `${label} (stale)` : label;
 }
 
@@ -62,7 +65,9 @@ export default function AdminSubscriptions() {
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [planFilter, setPlanFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [intervalFilter, setIntervalFilter] = useState<"" | "MONTHLY" | "ANNUAL">("");
+  const [intervalFilter, setIntervalFilter] = useState<
+    "" | "MONTHLY" | "ANNUAL"
+  >("");
   const [cancelAtEndOnly, setCancelAtEndOnly] = useState(false);
   const [staleSyncOnly, setStaleSyncOnly] = useState(false);
   const [syncingUserId, setSyncingUserId] = useState<string | null>(null);
@@ -70,9 +75,17 @@ export default function AdminSubscriptions() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, planFilter, statusFilter, intervalFilter, cancelAtEndOnly, staleSyncOnly]);
+  }, [
+    debouncedSearch,
+    planFilter,
+    statusFilter,
+    intervalFilter,
+    cancelAtEndOnly,
+    staleSyncOnly,
+  ]);
 
-  const listParams = useMemo((): AdminSubscriptionListParams => ({
+  const listParams = useMemo(
+    (): AdminSubscriptionListParams => ({
       page,
       pageSize: 20,
       ...(debouncedSearch.trim() ? { q: debouncedSearch.trim() } : {}),
@@ -102,7 +115,7 @@ export default function AdminSubscriptions() {
       intervalFilter,
       cancelAtEndOnly,
       staleSyncOnly,
-    ]
+    ],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -129,11 +142,11 @@ export default function AdminSubscriptions() {
     onSuccess: async (result) => {
       if (result.failed === 0) {
         toast.success(
-          `Synced ${result.synced} subscription${result.synced === 1 ? "" : "s"} from RevenueCat`
+          `Synced ${result.synced} subscription${result.synced === 1 ? "" : "s"} from RevenueCat`,
         );
       } else {
         toast.warning(
-          `Synced ${result.synced} of ${result.synced + result.failed}; ${result.failed} failed`
+          `Synced ${result.synced} of ${result.synced + result.failed}; ${result.failed} failed`,
         );
       }
       await qc.invalidateQueries({ queryKey: ["admin", "subscriptions"] });
@@ -179,15 +192,18 @@ export default function AdminSubscriptions() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Subscriptions</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            RevenueCat-backed billing roster. Search by email, user id, or Stripe / RevenueCat
-            identifiers. Sync refreshes the cache from RevenueCat.
+            RevenueCat-backed billing roster. Search by email, user id, or
+            Stripe / RevenueCat identifiers. Sync refreshes the cache from
+            RevenueCat.
           </p>
         </div>
 
         <div className={ADMIN_TABLE_CARD}>
           <div className="flex flex-col gap-3 border-b border-white/10 p-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="min-w-[12rem] flex-1">
-              <label className="mb-1 block text-xs text-muted-foreground">Search</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Search
+              </label>
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
@@ -196,7 +212,9 @@ export default function AdminSubscriptions() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Access</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Access
+              </label>
               <select
                 className={SELECT}
                 value={planFilter}
@@ -208,7 +226,9 @@ export default function AdminSubscriptions() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Status</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Status
+              </label>
               <select
                 className={SELECT}
                 value={statusFilter}
@@ -222,7 +242,9 @@ export default function AdminSubscriptions() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Interval</label>
+              <label className="mb-1 block text-xs text-muted-foreground">
+                Interval
+              </label>
               <select
                 className={SELECT}
                 value={intervalFilter}
@@ -257,13 +279,18 @@ export default function AdminSubscriptions() {
 
           {isError && (
             <p className="p-4 text-sm text-destructive">
-              {error instanceof ApiError ? error.message : "Failed to load subscriptions"}
+              {error instanceof ApiError
+                ? error.message
+                : "Failed to load subscriptions"}
             </p>
           )}
 
           {isPending ? (
             <div className="flex justify-center py-16">
-              <Loader2 className="size-8 animate-spin text-muted-foreground" aria-hidden />
+              <Loader2
+                className="size-8 animate-spin text-muted-foreground"
+                aria-hidden
+              />
             </div>
           ) : rows.length === 0 ? (
             <div className="px-4 py-12 text-center text-sm text-muted-foreground">
@@ -308,10 +335,7 @@ export default function AdminSubscriptions() {
                   </thead>
                   <tbody>
                     {rows.map((r) => (
-                      <tr
-                        key={r.userId}
-                        className="border-b border-white/5"
-                      >
+                      <tr key={r.userId} className="border-b border-white/5">
                         <td className={`min-w-[14rem] ${ADMIN_TD}`}>
                           <Link
                             to={`/admin/users/${r.userId}`}
@@ -323,7 +347,9 @@ export default function AdminSubscriptions() {
                             {r.email}
                           </div>
                           <div className="mt-1 flex flex-wrap gap-1">
-                            <CancelAtPeriodEndBadge active={r.cancelAtPeriodEnd} />
+                            <CancelAtPeriodEndBadge
+                              active={r.cancelAtPeriodEnd}
+                            />
                             <StaleSyncBadge stale={r.isSyncStale} />
                           </div>
                         </td>
@@ -341,10 +367,14 @@ export default function AdminSubscriptions() {
                         <td className={`whitespace-nowrap ${ADMIN_TD}`}>
                           <SubscriptionStatusBadge status={r.status} />
                         </td>
-                        <td className={`whitespace-nowrap tabular-nums ${ADMIN_TD} text-muted-foreground`}>
+                        <td
+                          className={`whitespace-nowrap tabular-nums ${ADMIN_TD} text-muted-foreground`}
+                        >
                           {formatAccessUntil(r.currentPeriodEnd)}
                         </td>
-                        <td className={`whitespace-nowrap text-xs ${ADMIN_TD} text-muted-foreground`}>
+                        <td
+                          className={`whitespace-nowrap text-xs ${ADMIN_TD} text-muted-foreground`}
+                        >
                           {formatSynced(r.lastSyncedAt, r.isSyncStale)}
                         </td>
                         <td className={ADMIN_TD_ACTIONS}>
@@ -362,7 +392,10 @@ export default function AdminSubscriptions() {
                               onClick={() => void handleSync(r)}
                             >
                               {syncingUserId === r.userId && rowSyncBusy ? (
-                                <Loader2 className="size-3 animate-spin" aria-hidden />
+                                <Loader2
+                                  className="size-3 animate-spin"
+                                  aria-hidden
+                                />
                               ) : (
                                 <RefreshCw className="size-3" aria-hidden />
                               )}
@@ -390,9 +423,7 @@ export default function AdminSubscriptions() {
                     ) : (
                       <RefreshCw className="size-3" aria-hidden />
                     )}
-                    <span className="ml-1.5">
-                      Sync page ({rows.length})
-                    </span>
+                    <span className="ml-1.5">Sync page ({rows.length})</span>
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">

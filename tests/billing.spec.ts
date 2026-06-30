@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { authHeaders, clearGuestSession, gotoAuthenticated, loginViaApi, type AuthSession } from "./helpers/auth";
+import {
+  authHeaders,
+  clearGuestSession,
+  gotoAuthenticated,
+  loginViaApi,
+  type AuthSession,
+} from "./helpers/auth";
 import {
   ensureProSeedHasPro,
   fetchEntitlement,
@@ -21,7 +27,7 @@ import { completeStripeCheckout } from "./helpers/stripe";
 async function loginSandboxBillingUser(
   request: import("@playwright/test").APIRequestContext,
   email: string,
-  password: string
+  password: string,
 ): Promise<AuthSession | null> {
   try {
     return await loginViaApi(request, email, password);
@@ -35,23 +41,30 @@ async function loginSandboxBillingUser(
 
 test.describe("@billing", () => {
   test.beforeAll(() => {
-    test.skip(!isBillingConfigured(), "Sandbox billing is not configured on the backend");
+    test.skip(
+      !isBillingConfigured(),
+      "Sandbox billing is not configured on the backend",
+    );
   });
 
   test.describe("B1 — checkout", () => {
     test.describe.configure({ mode: "serial" });
-    test("monthly Stripe checkout grants Pro", async ({ page, context, request }) => {
+    test("monthly Stripe checkout grants Pro", async ({
+      page,
+      context,
+      request,
+    }) => {
       test.setTimeout(180_000);
 
       const env = getE2eEnv();
       const auth = await loginSandboxBillingUser(
         request,
         env.checkoutUserEmail,
-        env.password
+        env.password,
       );
       test.skip(
         !auth,
-        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)",
       );
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
@@ -60,25 +73,38 @@ test.describe("@billing", () => {
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(
         meBeforeBody.hasPro === true,
-        "Checkout user already has Pro — cancel sandbox subscription or use a fresh account"
+        "Checkout user already has Pro — cancel sandbox subscription or use a fresh account",
       );
 
       await gotoAuthenticated(page, auth!, "/pricing");
 
-      if (await page.getByTestId("billing-pro-active").isVisible().catch(() => false)) {
+      if (
+        await page
+          .getByTestId("billing-pro-active")
+          .isVisible()
+          .catch(() => false)
+      ) {
         test.skip(true, "Checkout user already shows Pro on pricing page");
       }
 
-      await expect(page.getByText(/Sandbox billing mode is enabled/i)).toBeVisible();
+      await expect(
+        page.getByText(/Sandbox billing mode is enabled/i),
+      ).toBeVisible();
       await waitForOfferingsReady(page);
       await selectMonthlyInterval(page);
 
       await page.getByTestId("billing-subscribe-pro").click();
       await completeStripeCheckout(page, context);
 
-      await expect(page.getByTestId("billing-pro-active")).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByTestId("billing-pro-active")).toBeVisible({
+        timeout: 60_000,
+      });
       await expect(
-        page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i).first()
+        page
+          .getByText(
+            /Welcome to Apex Pro|subscription is active|Purchase completed/i,
+          )
+          .first(),
       ).toBeVisible({ timeout: 30_000 });
 
       await pollUntilHasPro(request, auth!, true, 60_000);
@@ -95,14 +121,21 @@ test.describe("@billing", () => {
 
   test.describe("B2 — portal", () => {
     test.describe.configure({ mode: "serial" });
-    test("manage subscription opens Stripe billing portal", async ({ page, request }) => {
+    test("manage subscription opens Stripe billing portal", async ({
+      page,
+      request,
+    }) => {
       test.setTimeout(90_000);
 
       const env = getE2eEnv();
-      const auth = await loginSandboxBillingUser(request, env.proUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(
+        request,
+        env.proUserEmail,
+        env.password,
+      );
       test.skip(
         !auth,
-        "Sandbox Pro user not in DB — sign up E2E_PRO_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+        "Sandbox Pro user not in DB — sign up E2E_PRO_USER_EMAIL after migrate reset (see E2E_BILLING.md)",
       );
 
       await gotoAuthenticated(page, auth!, "/pricing");
@@ -111,12 +144,13 @@ test.describe("@billing", () => {
       const hasProUi = await proActive.isVisible().catch(() => false);
       test.skip(
         !hasProUi,
-        "Pro user must have active Pro on /pricing (complete sandbox purchase or sync first)"
+        "Pro user must have active Pro on /pricing (complete sandbox purchase or sync first)",
       );
 
       const portalResponsePromise = page.waitForResponse(
         (res) =>
-          res.url().includes("/api/billing/portal") && res.request().method() === "POST"
+          res.url().includes("/api/billing/portal") &&
+          res.request().method() === "POST",
       );
       const portalNavPromise = page.waitForURL(/billing\.stripe\.com/, {
         timeout: 45_000,
@@ -126,7 +160,9 @@ test.describe("@billing", () => {
       await page.getByTestId("billing-manage-subscription").click();
 
       const portalResponse = await portalResponsePromise;
-      expect(portalResponse.request().headers().authorization ?? "").toMatch(/^Bearer /i);
+      expect(portalResponse.request().headers().authorization ?? "").toMatch(
+        /^Bearer /i,
+      );
       expect(portalResponse.ok()).toBeTruthy();
 
       const body = (await portalResponse.json()) as { url?: string };
@@ -144,14 +180,17 @@ test.describe("@billing", () => {
         {
           event: { id: `e2e-noauth-${Date.now()}`, type: "TEST" },
         },
-        { secret: null }
+        { secret: null },
       );
       expect(status).toBe(401);
     });
 
     test("accepts TEST event with valid secret", async ({ request }) => {
       const env = getE2eEnv();
-      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+      test.skip(
+        !env.revenueCatWebhookSecret,
+        "REVENUECAT_WEBHOOK_SECRET is not set",
+      );
 
       const eventId = `e2e-test-${Date.now()}`;
       const { status, body } = await postRevenueCatWebhook(request, {
@@ -167,9 +206,16 @@ test.describe("@billing", () => {
       request,
     }) => {
       const env = getE2eEnv();
-      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+      test.skip(
+        !env.revenueCatWebhookSecret,
+        "REVENUECAT_WEBHOOK_SECRET is not set",
+      );
 
-      const auth = await loginViaApi(request, env.webhookUserEmail, env.password);
+      const auth = await loginViaApi(
+        request,
+        env.webhookUserEmail,
+        env.password,
+      );
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
         headers: authHeaders(auth.token, auth.sessionToken),
@@ -180,7 +226,7 @@ test.describe("@billing", () => {
         meBeforeBody.hasPro === true,
         `${env.webhookUserEmail} still has active Pro in RevenueCat sandbox. ` +
           "Cancel the sandbox subscription (Stripe/RevenueCat) and wait for sync, or set " +
-          "E2E_WEBHOOK_USER_EMAIL to a verified user with no Pro subscription."
+          "E2E_WEBHOOK_USER_EMAIL to a verified user with no Pro subscription.",
       );
 
       const { status, body } = await postRevenueCatWebhook(request, {
@@ -208,12 +254,19 @@ test.describe("@billing", () => {
       request,
     }) => {
       const env = getE2eEnv();
-      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+      test.skip(
+        !env.revenueCatWebhookSecret,
+        "REVENUECAT_WEBHOOK_SECRET is not set",
+      );
 
-      const auth = await loginSandboxBillingUser(request, env.checkoutUserEmail, env.password);
+      const auth = await loginSandboxBillingUser(
+        request,
+        env.checkoutUserEmail,
+        env.password,
+      );
       test.skip(
         !auth,
-        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)"
+        "Sandbox checkout user not in DB — sign up E2E_CHECKOUT_USER_EMAIL after migrate reset (see E2E_BILLING.md)",
       );
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
@@ -222,7 +275,7 @@ test.describe("@billing", () => {
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(
         meBeforeBody.hasPro !== true,
-        "Checkout user has no Pro — use EXPIRATION revokes Pro test instead"
+        "Checkout user has no Pro — use EXPIRATION revokes Pro test instead",
       );
 
       const { status, body } = await postRevenueCatWebhook(request, {
@@ -255,17 +308,30 @@ test.describe("@billing", () => {
       request,
     }) => {
       const env = getE2eEnv();
-      test.skip(!env.revenueCatWebhookSecret, "REVENUECAT_WEBHOOK_SECRET is not set");
+      test.skip(
+        !env.revenueCatWebhookSecret,
+        "REVENUECAT_WEBHOOK_SECRET is not set",
+      );
 
       // Prefer checkout user (active Stripe/RC sandbox after B1); fall back to pro user.
       const auth =
-        (await loginSandboxBillingUser(request, env.checkoutUserEmail, env.password)) ??
-        (await loginSandboxBillingUser(request, env.proUserEmail, env.password));
+        (await loginSandboxBillingUser(
+          request,
+          env.checkoutUserEmail,
+          env.password,
+        )) ??
+        (await loginSandboxBillingUser(
+          request,
+          env.proUserEmail,
+          env.password,
+        ));
       test.skip(
         !auth,
-        "Sandbox billing user not in DB — sign up E2E_CHECKOUT_USER_EMAIL or E2E_PRO_USER_EMAIL"
+        "Sandbox billing user not in DB — sign up E2E_CHECKOUT_USER_EMAIL or E2E_PRO_USER_EMAIL",
       );
-      const periodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const periodEnd = new Date(
+        Date.now() + 14 * 24 * 60 * 60 * 1000,
+      ).toISOString();
 
       const meBefore = await request.get(`${env.apiUrl}/api/auth/me`, {
         headers: authHeaders(auth!.token, auth!.sessionToken),
@@ -273,7 +339,7 @@ test.describe("@billing", () => {
       const meBeforeBody = (await meBefore.json()) as { hasPro?: boolean };
       test.skip(
         meBeforeBody.hasPro !== true,
-        "User must have active Pro (complete B1 checkout or sync sandbox subscription first)"
+        "User must have active Pro (complete B1 checkout or sync sandbox subscription first)",
       );
 
       const { status } = await postRevenueCatWebhook(request, {
@@ -301,7 +367,8 @@ test.describe("@billing", () => {
       expect(entitlement.effectivePlan).toBe("PRO");
 
       const showsCanceled =
-        entitlement.status === "CANCELED" || entitlement.cancelAtPeriodEnd === true;
+        entitlement.status === "CANCELED" ||
+        entitlement.cancelAtPeriodEnd === true;
       if (!showsCanceled) {
         test.info().annotations.push({
           type: "note",
@@ -317,10 +384,16 @@ test.describe("@billing", () => {
       await clearGuestSession(page);
       await page.goto("/pricing");
 
-      await expect(page.getByRole("heading", { name: "Choose your plan" })).toBeVisible();
-      await expect(page.getByText(/Sandbox billing mode is enabled/i)).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Choose your plan" }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(/Sandbox billing mode is enabled/i),
+      ).toBeVisible();
 
-      const signInCta = page.getByRole("button", { name: "Sign in to subscribe" });
+      const signInCta = page.getByRole("button", {
+        name: "Sign in to subscribe",
+      });
       await expect(signInCta).toBeVisible();
 
       await signInCta.click();
@@ -330,7 +403,10 @@ test.describe("@billing", () => {
   });
 
   test.describe("B5 — pro gate", () => {
-    test("standard gets 403 on personal-bests; proSeed gets 200", async ({ request, page }) => {
+    test("standard gets 403 on personal-bests; proSeed gets 200", async ({
+      request,
+      page,
+    }) => {
       const env = getE2eEnv();
       const standardAuth = await loginPersona(request, "standard");
       const proAuth = await ensureProSeedHasPro(request);
@@ -350,9 +426,13 @@ test.describe("@billing", () => {
       const upload = await uploadSessionJsonViaApi(
         request,
         proAuth,
-        "race_spa_ferrari-gt3_podium.json"
+        "race_spa_ferrari-gt3_podium.json",
       );
-      const detail = await getSessionDetailViaApi(request, proAuth, upload.sessionId);
+      const detail = await getSessionDetailViaApi(
+        request,
+        proAuth,
+        upload.sessionId,
+      );
       expect(detail.proFeaturesLocked).not.toBe(true);
 
       await gotoAuthenticated(page, proAuth, `/sessions/${upload.sessionId}`);

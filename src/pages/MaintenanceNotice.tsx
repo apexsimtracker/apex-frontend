@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, BellRing, CalendarClock, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BellRing,
+  CalendarClock,
+  Wrench,
+} from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import {
   ApiError,
@@ -121,7 +127,9 @@ export default function MaintenanceNotice() {
               <AlertTriangle className="size-5" />
             </div>
             <h1 className="mt-4 text-xl font-semibold text-foreground">
-              {notFound ? "Maintenance notice not found" : "Could not load maintenance details"}
+              {notFound
+                ? "Maintenance notice not found"
+                : "Could not load maintenance details"}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {notFound
@@ -211,7 +219,9 @@ export default function MaintenanceNotice() {
             ) : null}
 
             <section className="rounded-2xl border border-white/10 bg-card/40 p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-foreground">Affected components</h2>
+              <h2 className="text-lg font-semibold text-foreground">
+                Affected components
+              </h2>
               {maintenanceQuery.data.affectedComponents.length > 0 ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {maintenanceQuery.data.affectedComponents.map((component) => (
@@ -225,7 +235,8 @@ export default function MaintenanceNotice() {
                 </div>
               ) : (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  No specific components were listed for this maintenance window.
+                  No specific components were listed for this maintenance
+                  window.
                 </p>
               )}
             </section>

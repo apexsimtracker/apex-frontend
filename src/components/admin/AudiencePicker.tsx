@@ -19,19 +19,43 @@ interface AudiencePickerProps {
   onChange: (next: AudienceDescriptor) => void;
 }
 
-const TYPE_OPTIONS: { id: NotificationAudienceType; label: string; description: string }[] = [
-  { id: "ALL", label: "All users", description: "Every active, non-suspended user" },
+const TYPE_OPTIONS: {
+  id: NotificationAudienceType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "ALL",
+    label: "All users",
+    description: "Every active, non-suspended user",
+  },
   { id: "ROLE", label: "By role", description: "Users with a specific role" },
-  { id: "PLAN", label: "By plan", description: "Users on a specific plan (FREE/PRO)" },
-  { id: "USER_IDS", label: "Specific users", description: "Pick individual users by email" },
-  { id: "FILTER", label: "Advanced filter", description: "Combine multiple criteria" },
+  {
+    id: "PLAN",
+    label: "By plan",
+    description: "Users on a specific plan (FREE/PRO)",
+  },
+  {
+    id: "USER_IDS",
+    label: "Specific users",
+    description: "Pick individual users by email",
+  },
+  {
+    id: "FILTER",
+    label: "Advanced filter",
+    description: "Combine multiple criteria",
+  },
 ];
 
 export function AudiencePicker({ value, onChange }: AudiencePickerProps) {
-  const update = (patch: Partial<AudienceDescriptor>) => onChange({ ...value, ...patch });
+  const update = (patch: Partial<AudienceDescriptor>) =>
+    onChange({ ...value, ...patch });
 
   const updateFilter = (patch: Partial<AdvancedAudienceFilter>) => {
-    const next: AdvancedAudienceFilter = { ...(value.audienceFilter ?? {}), ...patch };
+    const next: AdvancedAudienceFilter = {
+      ...(value.audienceFilter ?? {}),
+      ...patch,
+    };
     onChange({ ...value, audienceFilter: next });
   };
 
@@ -59,8 +83,12 @@ export function AudiencePicker({ value, onChange }: AudiencePickerProps) {
                   : "border-white/10 bg-white/[0.02] hover:bg-white/5"
               }`}
             >
-              <span className="text-sm font-semibold text-foreground">{opt.label}</span>
-              <span className="text-xs text-muted-foreground">{opt.description}</span>
+              <span className="text-sm font-semibold text-foreground">
+                {opt.label}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {opt.description}
+              </span>
             </button>
           );
         })}
@@ -98,12 +126,18 @@ export function AudiencePicker({ value, onChange }: AudiencePickerProps) {
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
         <div className="flex items-center gap-2 text-sm">
           {previewQuery.isPending ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
+            <Loader2
+              className="size-4 animate-spin text-muted-foreground"
+              aria-hidden
+            />
           ) : null}
           <span className="font-semibold text-foreground">
             Audience preview:{" "}
             {previewQuery.data ? (
-              <>{previewQuery.data.count} user{previewQuery.data.count === 1 ? "" : "s"}</>
+              <>
+                {previewQuery.data.count} user
+                {previewQuery.data.count === 1 ? "" : "s"}
+              </>
             ) : previewQuery.isError ? (
               <span className="text-destructive">error</span>
             ) : (
@@ -113,8 +147,14 @@ export function AudiencePicker({ value, onChange }: AudiencePickerProps) {
         </div>
         {previewQuery.data?.sample.length ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            e.g. {previewQuery.data.sample.slice(0, 5).map((u) => u.email).join(", ")}
-            {previewQuery.data.count > 5 ? ` and ${previewQuery.data.count - 5} more` : ""}
+            e.g.{" "}
+            {previewQuery.data.sample
+              .slice(0, 5)
+              .map((u) => u.email)
+              .join(", ")}
+            {previewQuery.data.count > 5
+              ? ` and ${previewQuery.data.count - 5} more`
+              : ""}
           </p>
         ) : null}
       </div>
@@ -219,7 +259,9 @@ function UserPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <Label className="text-sm text-muted-foreground">Search users by email or name</Label>
+      <Label className="text-sm text-muted-foreground">
+        Search users by email or name
+      </Label>
       <Input
         placeholder="Type to search…"
         value={search}
@@ -238,7 +280,9 @@ function UserPicker({
                 <span className="truncate">
                   <span className="font-medium">{u.email}</span>
                   {u.displayName && u.displayName !== u.email ? (
-                    <span className="ml-1 text-muted-foreground">({u.displayName})</span>
+                    <span className="ml-1 text-muted-foreground">
+                      ({u.displayName})
+                    </span>
                   ) : null}
                 </span>
                 <Button
@@ -374,7 +418,9 @@ function FilterFields({
         }
       />
       <div className="flex flex-col gap-1">
-        <Label className="text-sm text-muted-foreground">Min session count</Label>
+        <Label className="text-sm text-muted-foreground">
+          Min session count
+        </Label>
         <Input
           type="number"
           min={0}
@@ -382,7 +428,8 @@ function FilterFields({
           onChange={(e) => {
             const raw = e.target.value;
             onChange({
-              minSessionCount: raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0),
+              minSessionCount:
+                raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0),
             });
           }}
           placeholder="0"

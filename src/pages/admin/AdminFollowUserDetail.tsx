@@ -35,8 +35,18 @@ const LIST_PAGE_SIZE = 10;
 const REASON_MAX = 500;
 
 type RemoveTarget =
-  | { kind: "follow"; id: string; counterpart: AdminFollowUserSide; user: { id: string; displayName: string } }
-  | { kind: "request"; id: string; counterpart: AdminFollowUserSide; user: { id: string; displayName: string } };
+  | {
+      kind: "follow";
+      id: string;
+      counterpart: AdminFollowUserSide;
+      user: { id: string; displayName: string };
+    }
+  | {
+      kind: "request";
+      id: string;
+      counterpart: AdminFollowUserSide;
+      user: { id: string; displayName: string };
+    };
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString();
@@ -49,26 +59,24 @@ function fmtDateTime(iso: string): string {
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-xl border border-white/10 p-4">
-      <p className="text-[11px] uppercase tracking-widest text-white/50">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-[11px] uppercase tracking-widest text-white/50">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
 
-function PrivacyPill({
-  active,
-  label,
-}: {
-  active: boolean;
-  label: string;
-}) {
+function PrivacyPill({ active, label }: { active: boolean; label: string }) {
   return (
     <span
       className={cn(
         "inline-flex rounded-full border px-2 py-0.5 text-xs",
         active
           ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
-          : "border-white/10 bg-white/[0.03] text-muted-foreground"
+          : "border-white/10 bg-white/[0.03] text-muted-foreground",
       )}
     >
       {label}: {active ? "On" : "Off"}
@@ -105,12 +113,14 @@ function ActivitySparkline({
 }) {
   if (daily.length === 0) {
     return (
-      <p className="mt-4 text-sm text-muted-foreground">No data for the last 30 days.</p>
+      <p className="mt-4 text-sm text-muted-foreground">
+        No data for the last 30 days.
+      </p>
     );
   }
   const max = Math.max(
     1,
-    ...daily.map((d) => Math.max(d.followers, d.following))
+    ...daily.map((d) => Math.max(d.followers, d.following)),
   );
   const barWidth = 12;
   const gap = 4;
@@ -177,7 +187,10 @@ function ActivitySparkline({
   );
 }
 
-const LIST_LABELS: Record<AdminUserFollowListKind, { title: string; empty: string }> = {
+const LIST_LABELS: Record<
+  AdminUserFollowListKind,
+  { title: string; empty: string }
+> = {
   followers: { title: "Followers", empty: "No followers." },
   following: { title: "Following", empty: "Not following anyone." },
   "requests-in": {
@@ -215,7 +228,7 @@ function FollowListCard({
       pageSize: LIST_PAGE_SIZE,
       ...(debouncedQ.trim() ? { q: debouncedQ.trim() } : {}),
     }),
-    [page, debouncedQ]
+    [page, debouncedQ],
   );
 
   const { data, isPending } = useQuery({
@@ -246,7 +259,10 @@ function FollowListCard({
       />
       {isPending ? (
         <div className="flex justify-center py-6" aria-busy="true">
-          <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="size-4 animate-spin text-muted-foreground"
+            aria-hidden
+          />
         </div>
       ) : items.length === 0 ? (
         <p className="py-4 text-sm text-muted-foreground">
@@ -314,7 +330,8 @@ function FollowListItem({
             to={`/admin/users/${encodeURIComponent(row.counterpart.id)}`}
             className={cn(
               "min-w-0 truncate text-primary underline-offset-2 hover:underline",
-              (row.counterpart.isDeleted || row.counterpart.isSuspended) && "opacity-70"
+              (row.counterpart.isDeleted || row.counterpart.isSuspended) &&
+                "opacity-70",
             )}
           >
             {row.counterpart.displayName}
@@ -331,16 +348,25 @@ function FollowListItem({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="text-xs text-muted-foreground">{fmtDate(row.createdAt)}</span>
+          <span className="text-xs text-muted-foreground">
+            {fmtDate(row.createdAt)}
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Actions" className="size-7">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Actions"
+                className="size-7"
+              >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link to={`/admin/users/${encodeURIComponent(row.counterpart.id)}`}>
+                <Link
+                  to={`/admin/users/${encodeURIComponent(row.counterpart.id)}`}
+                >
                   Open profile
                 </Link>
               </DropdownMenuItem>
@@ -373,11 +399,7 @@ function FollowListItem({
   );
 }
 
-function AuditCard({
-  rows,
-}: {
-  rows: AdminUserSocialGraph["audit"];
-}) {
+function AuditCard({ rows }: { rows: AdminUserSocialGraph["audit"] }) {
   return (
     <div className="rounded-xl border border-white/10 p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
@@ -479,7 +501,9 @@ export default function AdminFollowUserDetail() {
       await invalidateAll();
     },
     onError: (e) => {
-      setRemoveError(e instanceof ApiError ? e.message : "Could not remove follow");
+      setRemoveError(
+        e instanceof ApiError ? e.message : "Could not remove follow",
+      );
     },
   });
 
@@ -495,12 +519,13 @@ export default function AdminFollowUserDetail() {
     },
     onError: (e) => {
       setRemoveError(
-        e instanceof ApiError ? e.message : "Could not decline follow request"
+        e instanceof ApiError ? e.message : "Could not decline follow request",
       );
     },
   });
 
-  const removeBusy = removeFollowMutation.isPending || removeRequestMutation.isPending;
+  const removeBusy =
+    removeFollowMutation.isPending || removeRequestMutation.isPending;
 
   function confirmRemove() {
     if (!removeTarget) return;
@@ -513,7 +538,10 @@ export default function AdminFollowUserDetail() {
     if (removeTarget.kind === "follow") {
       removeFollowMutation.mutate({ id: removeTarget.id, reason: reasonValue });
     } else {
-      removeRequestMutation.mutate({ id: removeTarget.id, reason: reasonValue });
+      removeRequestMutation.mutate({
+        id: removeTarget.id,
+        reason: reasonValue,
+      });
     }
   }
 
@@ -588,7 +616,10 @@ export default function AdminFollowUserDetail() {
                   {data.user.email} · Joined {fmtDate(data.user.createdAt)}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <PrivacyPill active={data.user.privateProfile} label="Private profile" />
+                  <PrivacyPill
+                    active={data.user.privateProfile}
+                    label="Private profile"
+                  />
                   <PrivacyPill
                     active={data.user.manualFollowApproval}
                     label="Manual approval"
@@ -606,7 +637,10 @@ export default function AdminFollowUserDetail() {
             <StatTile label="Following" value={data.stats.followingCount} />
             <StatTile label="Pending in" value={data.stats.pendingIn} />
             <StatTile label="Pending out" value={data.stats.pendingOut} />
-            <StatTile label="Reciprocity" value={`${data.stats.reciprocityPercent}%`} />
+            <StatTile
+              label="Reciprocity"
+              value={`${data.stats.reciprocityPercent}%`}
+            />
             <StatTile
               label="New followers (7d)"
               value={data.stats.newFollowersLast7d}
@@ -617,7 +651,9 @@ export default function AdminFollowUserDetail() {
             />
             <StatTile
               label="New follows (24h)"
-              value={data.stats.newFollowersLast24h + data.stats.newFollowingLast24h}
+              value={
+                data.stats.newFollowersLast24h + data.stats.newFollowingLast24h
+              }
             />
           </div>
 
@@ -717,22 +753,22 @@ export default function AdminFollowUserDetail() {
             </>
           }
         >
-            <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
-              Reason (optional)
-              <Textarea
-                className="mt-1 min-h-[88px]"
-                value={reason}
-                onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
-                maxLength={REASON_MAX}
-                placeholder="e.g. Resolved support ticket #1234"
-              />
-              <span className="mt-1 block text-right text-[11px] text-muted-foreground">
-                {reason.length}/{REASON_MAX}
-              </span>
-            </label>
-            {removeError && (
-              <p className="mt-3 text-sm text-destructive">{removeError}</p>
-            )}
+          <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
+            Reason (optional)
+            <Textarea
+              className="mt-1 min-h-[88px]"
+              value={reason}
+              onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
+              maxLength={REASON_MAX}
+              placeholder="e.g. Resolved support ticket #1234"
+            />
+            <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+              {reason.length}/{REASON_MAX}
+            </span>
+          </label>
+          {removeError && (
+            <p className="mt-3 text-sm text-destructive">{removeError}</p>
+          )}
         </BaseAlertDialog>
       )}
     </div>

@@ -19,13 +19,13 @@ describe("catalogAdminReviewUrls", () => {
 
   it("reviewCatalogReferenceUrl returns configured URLs", () => {
     expect(reviewCatalogReferenceUrl({ sim: "IRACING", kind: "track" })).toBe(
-      REFERENCE_URLS.IRACING.track
+      REFERENCE_URLS.IRACING.track,
     );
     expect(reviewCatalogReferenceUrl({ sim: "IRACING", kind: "car" })).toBe(
-      REFERENCE_URLS.IRACING.car
+      REFERENCE_URLS.IRACING.car,
     );
     expect(reviewCatalogReferenceUrl({ sim: "LMU", kind: "track" })).toBe(
-      REFERENCE_URLS.LMU.track
+      REFERENCE_URLS.LMU.track,
     );
   });
 

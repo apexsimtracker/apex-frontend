@@ -31,7 +31,7 @@ export type UserDiscoverSearchParams = {
 
 /** GET /api/users/search — discover active users by name or email (auth required). */
 export async function searchUsers(
-  params: UserDiscoverSearchParams
+  params: UserDiscoverSearchParams,
 ): Promise<UserDiscoverPageResult> {
   const sp = new URLSearchParams();
   sp.set("q", params.q.trim());

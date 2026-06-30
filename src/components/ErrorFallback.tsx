@@ -1,5 +1,11 @@
 import { useState, type ErrorInfo } from "react";
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type ErrorFallbackProps = {
@@ -38,7 +44,10 @@ export function ErrorFallback({
             className="flex size-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10"
             aria-hidden
           >
-            <AlertCircle className="size-8 text-red-400/95" strokeWidth={1.75} />
+            <AlertCircle
+              className="size-8 text-red-400/95"
+              strokeWidth={1.75}
+            />
           </div>
         </div>
 
@@ -48,7 +57,10 @@ export function ErrorFallback({
         >
           Something went wrong.
         </h1>
-        <p id="error-fallback-desc" className="mt-3 text-sm leading-relaxed text-white/65">
+        <p
+          id="error-fallback-desc"
+          className="mt-3 text-sm leading-relaxed text-white/65"
+        >
           The application encountered an unexpected error.
         </p>
 
@@ -74,31 +86,37 @@ export function ErrorFallback({
           </Button>
         </div>
 
-        {showDebug && (error?.message || error?.stack || errorInfo?.componentStack) && (
-          <div className="mt-8 border-t border-white/10 pt-6 text-left">
-            <button
-              type="button"
-              onClick={() => setDebugOpen((o) => !o)}
-              className="flex w-full items-center gap-2 rounded-md text-xs text-white/50 hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-expanded={debugOpen}
-              aria-controls="error-fallback-debug"
-            >
-              {debugOpen ? <ChevronUp className="size-4 shrink-0" /> : <ChevronDown className="size-4 shrink-0" />}
-              Technical details
-            </button>
-            {debugOpen && (
-              <pre
-                id="error-fallback-debug"
-                className="mt-3 max-h-48 overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/60"
-                tabIndex={0}
+        {showDebug &&
+          (error?.message || error?.stack || errorInfo?.componentStack) && (
+            <div className="mt-8 border-t border-white/10 pt-6 text-left">
+              <button
+                type="button"
+                onClick={() => setDebugOpen((o) => !o)}
+                className="flex w-full items-center gap-2 rounded-md text-xs text-white/50 hover:text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-expanded={debugOpen}
+                aria-controls="error-fallback-debug"
               >
-                {error?.message && `${error.message}\n\n`}
-                {error?.stack && `Stack:\n${error.stack}`}
-                {errorInfo?.componentStack && `\n\nComponent stack:\n${errorInfo.componentStack}`}
-              </pre>
-            )}
-          </div>
-        )}
+                {debugOpen ? (
+                  <ChevronUp className="size-4 shrink-0" />
+                ) : (
+                  <ChevronDown className="size-4 shrink-0" />
+                )}
+                Technical details
+              </button>
+              {debugOpen && (
+                <pre
+                  id="error-fallback-debug"
+                  className="mt-3 max-h-48 overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/60"
+                  tabIndex={0}
+                >
+                  {error?.message && `${error.message}\n\n`}
+                  {error?.stack && `Stack:\n${error.stack}`}
+                  {errorInfo?.componentStack &&
+                    `\n\nComponent stack:\n${errorInfo.componentStack}`}
+                </pre>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

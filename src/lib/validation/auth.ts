@@ -27,10 +27,13 @@ export const newPasswordSchema = z
 export const displayNameSchema = z
   .string()
   .trim()
-  .min(DISPLAY_NAME_MIN, `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`)
-  .max(DISPLAY_NAME_MAX, `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`);
+  .min(
+    DISPLAY_NAME_MIN,
+    `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`,
+  )
+  .max(
+    DISPLAY_NAME_MAX,
+    `Display name must be between ${DISPLAY_NAME_MIN} and ${DISPLAY_NAME_MAX} characters.`,
+  );
 
-export const optionalNameSchema = z
-  .string()
-  .trim()
-  .optional();
+export const optionalNameSchema = z.string().trim().optional();

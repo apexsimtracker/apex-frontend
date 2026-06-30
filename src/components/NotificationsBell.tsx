@@ -52,7 +52,8 @@ export function NotificationsBell() {
       setOpen(true);
     };
     window.addEventListener("apex:open-notifications", openHandler);
-    return () => window.removeEventListener("apex:open-notifications", openHandler);
+    return () =>
+      window.removeEventListener("apex:open-notifications", openHandler);
   }, []);
 
   const notifQuery = useQuery({
@@ -71,17 +72,22 @@ export function NotificationsBell() {
   const notifications = notifQuery.data?.notifications ?? [];
   const requests = requestsQuery.data?.requests ?? [];
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const showBadge =
-    user?.showNotificationBadge !== false && unreadCount > 0;
-  const activityTotalPages = Math.max(1, Math.ceil(notifications.length / ACTIVITY_PAGE_SIZE));
-  const requestsTotalPages = Math.max(1, Math.ceil(requests.length / REQUESTS_PAGE_SIZE));
+  const showBadge = user?.showNotificationBadge !== false && unreadCount > 0;
+  const activityTotalPages = Math.max(
+    1,
+    Math.ceil(notifications.length / ACTIVITY_PAGE_SIZE),
+  );
+  const requestsTotalPages = Math.max(
+    1,
+    Math.ceil(requests.length / REQUESTS_PAGE_SIZE),
+  );
   const visibleNotifications = notifications.slice(
     (activityPage - 1) * ACTIVITY_PAGE_SIZE,
-    activityPage * ACTIVITY_PAGE_SIZE
+    activityPage * ACTIVITY_PAGE_SIZE,
   );
   const visibleRequests = requests.slice(
     (requestsPage - 1) * REQUESTS_PAGE_SIZE,
-    requestsPage * REQUESTS_PAGE_SIZE
+    requestsPage * REQUESTS_PAGE_SIZE,
   );
 
   useEffect(() => {
@@ -109,7 +115,9 @@ export function NotificationsBell() {
       await queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
       toast.success("Marked all notifications as viewed.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update notifications.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not update notifications.",
+      );
     } finally {
       setMarkingViewed(false);
     }
@@ -121,10 +129,14 @@ export function NotificationsBell() {
       const { deleted } = await clearNotifications();
       await queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
       toast.success(
-        deleted === 0 ? "No notifications to clear." : `Cleared ${deleted} notification${deleted === 1 ? "" : "s"}.`
+        deleted === 0
+          ? "No notifications to clear."
+          : `Cleared ${deleted} notification${deleted === 1 ? "" : "s"}.`,
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not clear notifications.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not clear notifications.",
+      );
     } finally {
       setClearing(false);
     }
@@ -136,7 +148,9 @@ export function NotificationsBell() {
       await acceptFollowRequest(requestId);
       await queryClient.invalidateQueries({ queryKey: FOLLOW_REQUESTS_KEY });
       await queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
-      await queryClient.invalidateQueries({ queryKey: ["profile", "followList"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["profile", "followList"],
+      });
       await queryClient.invalidateQueries({ queryKey: ["userProfile"] });
     } catch (e) {
       const msg =
@@ -229,91 +243,101 @@ export function NotificationsBell() {
           </>
         }
       >
-          <div className="shrink-0 border-b border-border px-0.5 py-3">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTab("activity")}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  tab === "activity"
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Activity
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("requests")}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                  tab === "requests"
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Follow requests
-                {requests.length > 0 && (
-                  <span className="ml-1.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
-                    {requests.length}
-                  </span>
-                )}
-              </button>
-            </div>
+        <div className="shrink-0 border-b border-border px-0.5 py-3">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setTab("activity")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                tab === "activity"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Activity
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("requests")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                tab === "requests"
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Follow requests
+              {requests.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
+                  {requests.length}
+                </span>
+              )}
+            </button>
           </div>
+        </div>
 
-          <div className="flex min-h-0 flex-1 flex-col px-0.5 py-4">
-            {tab === "activity" ? (
-              <>
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
-                  <NotificationList
-                    notifications={visibleNotifications}
-                    loading={notifQuery.isPending}
-                    actionId={actionId}
-                    onAcceptRequest={handleAccept}
-                    onDeclineRequest={handleDecline}
+        <div className="flex min-h-0 flex-1 flex-col px-0.5 py-4">
+          {tab === "activity" ? (
+            <>
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
+                <NotificationList
+                  notifications={visibleNotifications}
+                  loading={notifQuery.isPending}
+                  actionId={actionId}
+                  onAcceptRequest={handleAccept}
+                  onDeclineRequest={handleDecline}
+                />
+              </div>
+              {!notifQuery.isPending && activityTotalPages > 1 ? (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="mb-3 text-center text-xs text-muted-foreground">
+                    {getPageSummary(
+                      activityPage,
+                      ACTIVITY_PAGE_SIZE,
+                      notifications.length,
+                      "notifications",
+                    )}
+                  </p>
+                  <RaceHistoryPagination
+                    page={activityPage}
+                    totalPages={activityTotalPages}
+                    onPageChange={setActivityPage}
                   />
                 </div>
-                {!notifQuery.isPending && activityTotalPages > 1 ? (
-                  <div className="mt-4 border-t border-border pt-3">
-                    <p className="mb-3 text-center text-xs text-muted-foreground">
-                      {getPageSummary(activityPage, ACTIVITY_PAGE_SIZE, notifications.length, "notifications")}
-                    </p>
-                    <RaceHistoryPagination
-                      page={activityPage}
-                      totalPages={activityTotalPages}
-                      onPageChange={setActivityPage}
-                    />
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
-                  <FollowRequestsPanel
-                    loading={requestsQuery.isPending}
-                    requests={visibleRequests}
-                    actionId={actionId}
-                    onAccept={handleAccept}
-                    onDecline={handleDecline}
+              ) : null}
+            </>
+          ) : (
+            <>
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
+                <FollowRequestsPanel
+                  loading={requestsQuery.isPending}
+                  requests={visibleRequests}
+                  actionId={actionId}
+                  onAccept={handleAccept}
+                  onDecline={handleDecline}
+                />
+              </div>
+              {!requestsQuery.isPending && requestsTotalPages > 1 ? (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="mb-3 text-center text-xs text-muted-foreground">
+                    {getPageSummary(
+                      requestsPage,
+                      REQUESTS_PAGE_SIZE,
+                      requests.length,
+                      "requests",
+                    )}
+                  </p>
+                  <RaceHistoryPagination
+                    page={requestsPage}
+                    totalPages={requestsTotalPages}
+                    onPageChange={setRequestsPage}
                   />
                 </div>
-                {!requestsQuery.isPending && requestsTotalPages > 1 ? (
-                  <div className="mt-4 border-t border-border pt-3">
-                    <p className="mb-3 text-center text-xs text-muted-foreground">
-                      {getPageSummary(requestsPage, REQUESTS_PAGE_SIZE, requests.length, "requests")}
-                    </p>
-                    <RaceHistoryPagination
-                      page={requestsPage}
-                      totalPages={requestsTotalPages}
-                      onPageChange={setRequestsPage}
-                    />
-                  </div>
-                ) : null}
-              </>
-            )}
-          </div>
+              ) : null}
+            </>
+          )}
+        </div>
       </BaseModal>
     </>
   );
@@ -341,7 +365,9 @@ function NotificationList({
   }
   if (notifications.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">No notifications yet.</p>
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        No notifications yet.
+      </p>
     );
   }
   return (
@@ -358,7 +384,7 @@ function NotificationList({
             key={n.id}
             className={cn(
               "flex gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3",
-              !n.read && "border-primary/20"
+              !n.read && "border-primary/20",
             )}
           >
             <div className="min-w-0 flex-1">
@@ -366,7 +392,8 @@ function NotificationList({
                 <span className="font-medium">{n.actor.displayName}</span>{" "}
                 {n.type === "FOLLOW" && "started following you."}
                 {n.type === "FOLLOW_REQUEST" && "requested to follow you."}
-                {n.type === "FOLLOW_REQUEST_ACCEPTED" && "approved your follow request."}
+                {n.type === "FOLLOW_REQUEST_ACCEPTED" &&
+                  "approved your follow request."}
                 {n.type === "REPLY" && "replied."}
                 {n.type === "COMMENT" && "commented."}
               </p>
@@ -410,10 +437,18 @@ function NotificationList({
   );
 }
 
-function SystemAnnouncementRow({ notification }: { notification: NotificationItem }) {
+function SystemAnnouncementRow({
+  notification,
+}: {
+  notification: NotificationItem;
+}) {
   const severity = notification.severity ?? "INFO";
   const theme = {
-    INFO: { border: "border-sky-500/30", chip: "bg-sky-500/15 text-sky-300", iconBg: "bg-sky-500/20 text-sky-200" },
+    INFO: {
+      border: "border-sky-500/30",
+      chip: "bg-sky-500/15 text-sky-300",
+      iconBg: "bg-sky-500/20 text-sky-200",
+    },
     SUCCESS: {
       border: "border-emerald-500/30",
       chip: "bg-emerald-500/15 text-emerald-300",
@@ -452,13 +487,13 @@ function SystemAnnouncementRow({ notification }: { notification: NotificationIte
       className={cn(
         "flex gap-3 rounded-lg border bg-white/[0.02] p-3",
         theme.border,
-        !notification.read && "ring-1 ring-primary/20"
+        !notification.read && "ring-1 ring-primary/20",
       )}
     >
       <span
         className={cn(
           "mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full",
-          theme.iconBg
+          theme.iconBg,
         )}
         aria-hidden
       >
@@ -467,21 +502,32 @@ function SystemAnnouncementRow({ notification }: { notification: NotificationIte
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {notification.title ? (
-            <span className="text-sm font-semibold text-foreground">{notification.title}</span>
+            <span className="text-sm font-semibold text-foreground">
+              {notification.title}
+            </span>
           ) : null}
-          <span className={cn("inline-flex rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide", theme.chip)}>
+          <span
+            className={cn(
+              "inline-flex rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
+              theme.chip,
+            )}
+          >
             {severity}
           </span>
         </div>
         {notification.body ? (
-          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">{notification.body}</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">
+            {notification.body}
+          </p>
         ) : null}
         <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
           <span>{new Date(notification.createdAt).toLocaleString()}</span>
           {notification.linkUrl ? (
             <a
               href={notification.linkUrl}
-              target={notification.linkUrl.startsWith("http") ? "_blank" : undefined}
+              target={
+                notification.linkUrl.startsWith("http") ? "_blank" : undefined
+              }
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-primary hover:underline"
             >
@@ -547,7 +593,9 @@ function FollowRequestsPanel({
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">{r.follower.displayName}</p>
+              <p className="truncate font-medium text-foreground">
+                {r.follower.displayName}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {new Date(r.createdAt).toLocaleString()}
               </p>
@@ -561,7 +609,11 @@ function FollowRequestsPanel({
                 disabled={busy}
                 onClick={() => void onAccept(r.id)}
               >
-                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                {busy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Check className="size-3.5" />
+                )}
                 Approve
               </Button>
               <Button
@@ -583,7 +635,12 @@ function FollowRequestsPanel({
   );
 }
 
-function getPageSummary(page: number, pageSize: number, total: number, label: string) {
+function getPageSummary(
+  page: number,
+  pageSize: number,
+  total: number,
+  label: string,
+) {
   if (total === 0) return `Showing 0 of 0 ${label}`;
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);

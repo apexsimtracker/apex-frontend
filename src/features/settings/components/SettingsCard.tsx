@@ -17,10 +17,17 @@ export function SettingsCard({
   return (
     <section
       id={id}
-      className={cn("rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6", className)}
+      className={cn(
+        "rounded-xl border border-white/10 bg-card/50 p-5 sm:p-6",
+        className,
+      )}
     >
-      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-foreground">{title}</h2>
-      {description && <p className="mb-4 text-xs text-muted-foreground">{description}</p>}
+      <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-foreground">
+        {title}
+      </h2>
+      {description && (
+        <p className="mb-4 text-xs text-muted-foreground">{description}</p>
+      )}
       {children}
     </section>
   );

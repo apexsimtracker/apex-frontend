@@ -40,7 +40,7 @@ export function SubscriptionCard() {
           billingInterval: user.billingInterval ?? null,
         }
       : undefined,
-    plans
+    plans,
   );
 
   const billingInterval = user?.billingInterval ?? null;
@@ -54,9 +54,13 @@ export function SubscriptionCard() {
       <div className="space-y-3 text-sm">
         <div>
           <span className="text-muted-foreground">Plan</span>
-          <p className="mt-0.5 font-medium text-foreground">{subscriptionStatusLabel(user)}</p>
+          <p className="mt-0.5 font-medium text-foreground">
+            {subscriptionStatusLabel(user)}
+          </p>
           {hasPro && currentSubscriptionLabel && (
-            <p className="mt-0.5 text-foreground/80">{currentSubscriptionLabel}</p>
+            <p className="mt-0.5 text-foreground/80">
+              {currentSubscriptionLabel}
+            </p>
           )}
         </div>
         {hasPro && billingInterval && (
@@ -69,8 +73,12 @@ export function SubscriptionCard() {
         )}
         {hasPro && accessUntilLabel && (
           <div>
-            <span className="text-muted-foreground">{subscriptionPeriodEndLabel(user)}</span>
-            <p className="mt-0.5 font-medium text-foreground">{accessUntilLabel}</p>
+            <span className="text-muted-foreground">
+              {subscriptionPeriodEndLabel(user)}
+            </span>
+            <p className="mt-0.5 font-medium text-foreground">
+              {accessUntilLabel}
+            </p>
           </div>
         )}
         {hasPro ? (

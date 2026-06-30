@@ -44,7 +44,9 @@ export function pickRandomIndex(length: number, seed?: number): number {
 }
 
 export function pickRandomTip(seed?: number): string {
-  return LOADING_TIPS[pickRandomIndex(LOADING_TIPS.length, seed)] ?? LOADING_TIPS[0];
+  return (
+    LOADING_TIPS[pickRandomIndex(LOADING_TIPS.length, seed)] ?? LOADING_TIPS[0]
+  );
 }
 
 export function pickRandomStatusLine(seed?: number): string {

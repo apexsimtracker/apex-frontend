@@ -85,7 +85,7 @@ export type AdminBroadcastListParams = {
 };
 
 export async function fetchAdminBroadcasts(
-  params?: AdminBroadcastListParams
+  params?: AdminBroadcastListParams,
 ): Promise<AdminPaginated<AdminBroadcastRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -98,7 +98,7 @@ export async function fetchAdminBroadcasts(
     "GET",
     `/api/admin/notifications/broadcasts${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -115,60 +115,60 @@ export type CreateBroadcastInput = AudienceDescriptor & {
 };
 
 export async function createBroadcast(
-  input: CreateBroadcastInput
+  input: CreateBroadcastInput,
 ): Promise<{ id: string }> {
   return fetchApi("POST", "/api/admin/notifications/broadcasts", input);
 }
 
 export async function getAdminBroadcast(
-  id: string
+  id: string,
 ): Promise<AdminBroadcastDetail> {
   return fetchApi(
     "GET",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function updateBroadcast(
   id: string,
-  input: Partial<CreateBroadcastInput>
+  input: Partial<CreateBroadcastInput>,
 ): Promise<{ id: string }> {
   return fetchApi(
     "PATCH",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}`,
-    input
+    input,
   );
 }
 
 export async function publishBroadcast(
-  id: string
+  id: string,
 ): Promise<{ id: string; status: BroadcastStatus }> {
   return fetchApi(
     "POST",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}/publish`,
-    {}
+    {},
   );
 }
 
 export async function pauseBroadcast(
-  id: string
+  id: string,
 ): Promise<{ id: string; status: BroadcastStatus }> {
   return fetchApi(
     "POST",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}/pause`,
-    {}
+    {},
   );
 }
 
 export async function archiveBroadcast(
-  id: string
+  id: string,
 ): Promise<{ id: string; status: BroadcastStatus }> {
   return fetchApi(
     "POST",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}/archive`,
-    {}
+    {},
   );
 }
 
@@ -177,17 +177,17 @@ export async function deleteBroadcast(id: string): Promise<{ ok: boolean }> {
     "DELETE",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}`,
     undefined,
-    false
+    false,
   );
 }
 
 export async function unarchiveBroadcast(
-  id: string
+  id: string,
 ): Promise<{ id: string; status: BroadcastStatus }> {
   return fetchApi(
     "POST",
     `/api/admin/notifications/broadcasts/${encodeURIComponent(id)}/unarchive`,
-    {}
+    {},
   );
 }
 
@@ -228,7 +228,7 @@ export type AdminCampaignsListParams = {
 };
 
 export async function fetchAdminCampaigns(
-  params?: AdminCampaignsListParams
+  params?: AdminCampaignsListParams,
 ): Promise<AdminPaginated<AdminCampaignRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -240,7 +240,7 @@ export async function fetchAdminCampaigns(
     "GET",
     `/api/admin/notifications/campaigns${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -254,19 +254,19 @@ export type CreateCampaignInput = AudienceDescriptor & {
 };
 
 export async function createCampaign(
-  input: CreateCampaignInput
+  input: CreateCampaignInput,
 ): Promise<{ id: string }> {
   return fetchApi("POST", "/api/admin/notifications/campaigns", input);
 }
 
 export async function getAdminCampaign(
-  id: string
+  id: string,
 ): Promise<AdminCampaignDetail> {
   return fetchApi(
     "GET",
     `/api/admin/notifications/campaigns/${encodeURIComponent(id)}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -294,7 +294,7 @@ export type AdminCampaignDeliveriesParams = {
 
 export async function fetchCampaignDeliveries(
   campaignId: string,
-  params?: AdminCampaignDeliveriesParams
+  params?: AdminCampaignDeliveriesParams,
 ): Promise<AdminPaginated<AdminDeliveryRow>> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
@@ -307,7 +307,7 @@ export async function fetchCampaignDeliveries(
     "GET",
     `/api/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/deliveries${qs ? `?${qs}` : ""}`,
     undefined,
-    false
+    false,
   );
 }
 
@@ -316,13 +316,11 @@ export async function deleteCampaign(id: string): Promise<{ ok: boolean }> {
     "DELETE",
     `/api/admin/notifications/campaigns/${encodeURIComponent(id)}`,
     undefined,
-    false
+    false,
   );
 }
 
-export async function resendFailedCampaignEmails(
-  campaignId: string
-): Promise<{
+export async function resendFailedCampaignEmails(campaignId: string): Promise<{
   retried: number;
   succeeded: number;
   failed: number;
@@ -331,7 +329,7 @@ export async function resendFailedCampaignEmails(
   return fetchApi(
     "POST",
     `/api/admin/notifications/campaigns/${encodeURIComponent(campaignId)}/resend-failed`,
-    {}
+    {},
   );
 }
 
@@ -344,12 +342,12 @@ export type AudiencePreviewResponse = {
 };
 
 export async function previewAudience(
-  descriptor: AudienceDescriptor
+  descriptor: AudienceDescriptor,
 ): Promise<AudiencePreviewResponse> {
   return fetchApi(
     "POST",
     "/api/admin/notifications/audience/preview",
-    descriptor
+    descriptor,
   );
 }
 
@@ -366,10 +364,5 @@ export type AdminNotificationsOverview = {
 };
 
 export async function fetchAdminNotificationsOverview(): Promise<AdminNotificationsOverview> {
-  return fetchApi(
-    "GET",
-    "/api/admin/notifications/overview",
-    undefined,
-    false
-  );
+  return fetchApi("GET", "/api/admin/notifications/overview", undefined, false);
 }

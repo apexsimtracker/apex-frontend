@@ -1,6 +1,11 @@
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
-import { buildApiAuthHeaders, fetchApi, notifyAuthExpired, emitProRequiredEvent } from "./fetchClient";
+import {
+  buildApiAuthHeaders,
+  fetchApi,
+  notifyAuthExpired,
+  emitProRequiredEvent,
+} from "./fetchClient";
 import { apiGet, apiPost } from "./httpVerbs";
 
 // Manual session upload
@@ -48,7 +53,7 @@ export type ManualActivityResponse = {
  * When laps are present, also sends `bestLapMs` (min) for server convenience.
  */
 export function buildManualActivityRequestBody(
-  data: ManualActivityRequest
+  data: ManualActivityRequest,
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {
     sim: data.sim,
@@ -80,7 +85,7 @@ export function buildManualActivityRequestBody(
           (l) =>
             l &&
             typeof l.lapTimeMs === "number" &&
-            Number.isFinite(l.lapTimeMs)
+            Number.isFinite(l.lapTimeMs),
         )
         .map((l) => ({ lapTimeMs: Math.round(l.lapTimeMs) }))
     : [];
@@ -98,29 +103,29 @@ export function buildManualActivityRequestBody(
 }
 
 export async function createManualActivity(
-  data: ManualActivityRequest
+  data: ManualActivityRequest,
 ): Promise<ManualActivityResponse> {
   return apiPost<ManualActivityResponse>(
     "/api/sessions/manual-activity",
-    buildManualActivityRequestBody(data)
+    buildManualActivityRequestBody(data),
   );
 }
 
 /** Owner session update (manual + telemetry); canonical route is PUT /api/sessions/:id. */
 export async function updateActivity(
   sessionId: string,
-  data: ManualActivityRequest
+  data: ManualActivityRequest,
 ): Promise<ManualActivityResponse> {
   return fetchApi<ManualActivityResponse>(
     "PUT",
     `/api/sessions/${encodeURIComponent(sessionId)}`,
-    buildManualActivityRequestBody(data)
+    buildManualActivityRequestBody(data),
   );
 }
 
 export async function updateManualActivity(
   sessionId: string,
-  data: ManualActivityRequest
+  data: ManualActivityRequest,
 ): Promise<ManualActivityResponse> {
   return updateActivity(sessionId, data);
 }
@@ -129,7 +134,11 @@ export async function deleteManualActivity(sessionId: string): Promise<void> {
   return fetchApi<void>("DELETE", `/api/sessions/manual-activity/${sessionId}`);
 }
 
-export type CatalogTrack = { id: string; name: string; lengthKm?: number | null };
+export type CatalogTrack = {
+  id: string;
+  name: string;
+  lengthKm?: number | null;
+};
 export type CatalogCar = { id: string; name: string };
 export type CatalogsResponse = {
   tracks: CatalogTrack[];
@@ -159,7 +168,8 @@ function parseXhrErrorPayload(text: string): {
       message;
     if (typeof json.code === "string") code = json.code;
     const retryRaw = json.retryAfterMs;
-    if (typeof retryRaw === "number" && Number.isFinite(retryRaw)) retryAfterMs = retryRaw;
+    if (typeof retryRaw === "number" && Number.isFinite(retryRaw))
+      retryAfterMs = retryRaw;
   } catch {
     message = text;
   }
@@ -169,7 +179,7 @@ function parseXhrErrorPayload(text: string): {
 export async function uploadSessionFile(
   file: File,
   callbacks?: UploadSessionFileCallbacks,
-  options?: { challengeId?: string }
+  options?: { challengeId?: string },
 ): Promise<ManualUploadResponse> {
   const formData = new FormData();
   formData.append("file", file);

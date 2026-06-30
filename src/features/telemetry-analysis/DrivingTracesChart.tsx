@@ -21,7 +21,8 @@ function buildChartData(traces: TelemetryTracesResponse) {
       brake: traces.brakePct[i],
       gear: traces.gear[i],
       steering: traces.steeringDeg?.[i],
-      deltaSec: traces.deltaMs?.[i] != null ? traces.deltaMs[i]! / 1000 : undefined,
+      deltaSec:
+        traces.deltaMs?.[i] != null ? traces.deltaMs[i]! / 1000 : undefined,
     });
   }
   return rows;
@@ -32,15 +33,29 @@ type DrivingTracesChartProps = {
   compareLapNumber?: number | null;
 };
 
-export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesChartProps) {
+export function DrivingTracesChart({
+  traces,
+  compareLapNumber,
+}: DrivingTracesChartProps) {
   const data = buildChartData(traces);
 
   return (
     <div className="space-y-6">
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: compareLapNumber != null ? 48 : 8, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+          <ComposedChart
+            data={data}
+            margin={{
+              top: 8,
+              right: compareLapNumber != null ? 48 : 8,
+              left: 0,
+              bottom: 0,
+            }}
+          >
+            <CartesianGrid
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="distanceKm"
               tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }}
@@ -69,7 +84,9 @@ export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesCh
               }}
               labelFormatter={(v) => `${Number(v).toFixed(2)} km`}
             />
-            <Legend wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }} />
+            <Legend
+              wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}
+            />
             <Line
               yAxisId="speed"
               type="monotone"
@@ -97,8 +114,14 @@ export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesCh
 
       <div className="h-52 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+          <ComposedChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="distanceKm"
               tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }}
@@ -115,7 +138,9 @@ export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesCh
                 borderRadius: 8,
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }} />
+            <Legend
+              wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}
+            />
             <Line
               type="monotone"
               dataKey="throttle"
@@ -138,8 +163,14 @@ export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesCh
 
       <div className="h-40 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+          <ComposedChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              stroke="rgba(255,255,255,0.06)"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="distanceKm"
               tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 11 }}
@@ -153,7 +184,9 @@ export function DrivingTracesChart({ traces, compareLapNumber }: DrivingTracesCh
                 borderRadius: 8,
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }} />
+            <Legend
+              wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}
+            />
             <Line
               type="stepAfter"
               dataKey="gear"

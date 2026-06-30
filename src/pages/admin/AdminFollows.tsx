@@ -40,7 +40,10 @@ import {
   ADMIN_TH,
   adminTable,
 } from "@/pages/admin/adminTableLayout";
-import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
+import {
+  ADMIN_TABS_CONTENT,
+  ADMIN_TABS_LIST,
+} from "@/pages/admin/adminTabsLayout";
 import { toast } from "sonner";
 
 const TITLE = `Admin · Follow graph | ${COMPANY_NAME}`;
@@ -51,7 +54,12 @@ const REASON_MAX = 500;
 type TabKey = "edges" | "requests" | "anomalies";
 
 type RemoveTarget =
-  | { kind: "follow"; id: string; follower: AdminFollowUserSide; following: AdminFollowUserSide }
+  | {
+      kind: "follow";
+      id: string;
+      follower: AdminFollowUserSide;
+      following: AdminFollowUserSide;
+    }
   | {
       kind: "request";
       id: string;
@@ -76,7 +84,9 @@ function relativeAge(iso: string): string {
 }
 
 function ageDays(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000));
+  return Math.floor(
+    (Date.now() - new Date(iso).getTime()) / (24 * 60 * 60 * 1000),
+  );
 }
 
 function UserCell({ user }: { user: AdminFollowUserSide }) {
@@ -86,7 +96,7 @@ function UserCell({ user }: { user: AdminFollowUserSide }) {
         to={`/admin/users/${encodeURIComponent(user.id)}`}
         className={cn(
           "min-w-0 truncate text-primary underline-offset-2 hover:underline",
-          (user.isDeleted || user.isSuspended) && "opacity-70"
+          (user.isDeleted || user.isSuspended) && "opacity-70",
         )}
       >
         {user.displayName}
@@ -121,8 +131,12 @@ function StatCard({
 }) {
   return (
     <div className="rounded-xl border border-white/10 p-4">
-      <p className="text-[11px] uppercase tracking-widest text-white/50">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
+      <p className="text-[11px] uppercase tracking-widest text-white/50">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -132,7 +146,7 @@ function rangeLabelFor(
   total: number,
   page: number,
   pageSize: number,
-  noun: { one: string; many: string }
+  noun: { one: string; many: string },
 ): string {
   if (total === 0) return `Showing 0 ${noun.many}`;
   const start = (page - 1) * pageSize + 1;
@@ -175,7 +189,9 @@ export default function AdminFollows() {
       await invalidateAll();
     },
     onError: (e) => {
-      setRemoveError(e instanceof ApiError ? e.message : "Could not remove follow");
+      setRemoveError(
+        e instanceof ApiError ? e.message : "Could not remove follow",
+      );
     },
   });
 
@@ -191,12 +207,13 @@ export default function AdminFollows() {
     },
     onError: (e) => {
       setRemoveError(
-        e instanceof ApiError ? e.message : "Could not decline follow request"
+        e instanceof ApiError ? e.message : "Could not decline follow request",
       );
     },
   });
 
-  const removeBusy = removeFollowMutation.isPending || removeRequestMutation.isPending;
+  const removeBusy =
+    removeFollowMutation.isPending || removeRequestMutation.isPending;
 
   function confirmRemove() {
     if (!removeTarget) return;
@@ -209,7 +226,10 @@ export default function AdminFollows() {
     if (removeTarget.kind === "follow") {
       removeFollowMutation.mutate({ id: removeTarget.id, reason: reasonValue });
     } else {
-      removeRequestMutation.mutate({ id: removeTarget.id, reason: reasonValue });
+      removeRequestMutation.mutate({
+        id: removeTarget.id,
+        reason: reasonValue,
+      });
     }
   }
 
@@ -227,8 +247,8 @@ export default function AdminFollows() {
             Follow graph
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Monitor follow edges and follow requests across the social graph, and resolve
-            abuse cases.
+            Monitor follow edges and follow requests across the social graph,
+            and resolve abuse cases.
           </p>
         </div>
 
@@ -343,22 +363,22 @@ export default function AdminFollows() {
               </>
             }
           >
-              <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
-                Reason (optional)
-                <Textarea
-                  className="mt-1 min-h-[88px]"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
-                  maxLength={REASON_MAX}
-                  placeholder="e.g. Brigading from a throwaway account"
-                />
-                <span className="mt-1 block text-right text-[11px] text-muted-foreground">
-                  {reason.length}/{REASON_MAX}
-                </span>
-              </label>
-              {removeError && (
-                <p className="mt-3 text-sm text-destructive">{removeError}</p>
-              )}
+            <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">
+              Reason (optional)
+              <Textarea
+                className="mt-1 min-h-[88px]"
+                value={reason}
+                onChange={(e) => setReason(e.target.value.slice(0, REASON_MAX))}
+                maxLength={REASON_MAX}
+                placeholder="e.g. Brigading from a throwaway account"
+              />
+              <span className="mt-1 block text-right text-[11px] text-muted-foreground">
+                {reason.length}/{REASON_MAX}
+              </span>
+            </label>
+            {removeError && (
+              <p className="mt-3 text-sm text-destructive">{removeError}</p>
+            )}
           </BaseAlertDialog>
         )}
       </div>
@@ -387,7 +407,7 @@ function EdgesTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
         ? { createdSince: new Date(createdSince).toISOString() }
         : {}),
     }),
-    [page, sort, debouncedQ, createdSince]
+    [page, sort, debouncedQ, createdSince],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -431,23 +451,33 @@ function EdgesTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
         <p className="shrink-0 text-xs text-muted-foreground max-lg:w-full lg:text-right">
           {isPending
             ? "Loading…"
-            : rangeLabelFor(total, page, PAGE_SIZE, { one: "edge", many: "edges" })}
+            : rangeLabelFor(total, page, PAGE_SIZE, {
+                one: "edge",
+                many: "edges",
+              })}
         </p>
       </div>
 
       {isError ? (
         <div className="px-6 py-12 text-center">
           <p className="text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load follows."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load follows."}
           </p>
         </div>
       ) : isPending ? (
         <div className="flex justify-center px-4 py-12" aria-busy="true">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="size-6 animate-spin text-muted-foreground"
+            aria-hidden
+          />
         </div>
       ) : items.length === 0 ? (
         <div className="px-6 py-16 text-center">
-          <p className="text-sm font-medium text-foreground">No follow edges match</p>
+          <p className="text-sm font-medium text-foreground">
+            No follow edges match
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Try a different search or clear filters.
           </p>
@@ -526,18 +556,27 @@ function EdgeRow({
       <td className={ADMIN_TD_ACTIONS}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Actions" className="size-7">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Actions"
+              className="size-7"
+            >
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={`/admin/follows/users/${encodeURIComponent(row.follower.id)}`}>
+              <Link
+                to={`/admin/follows/users/${encodeURIComponent(row.follower.id)}`}
+              >
                 View follower&apos;s graph
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={`/admin/follows/users/${encodeURIComponent(row.following.id)}`}>
+              <Link
+                to={`/admin/follows/users/${encodeURIComponent(row.following.id)}`}
+              >
                 View target&apos;s graph
               </Link>
             </DropdownMenuItem>
@@ -637,23 +676,33 @@ function RequestsTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
         <p className="shrink-0 text-xs text-muted-foreground max-lg:w-full lg:text-right">
           {isPending
             ? "Loading…"
-            : rangeLabelFor(total, page, PAGE_SIZE, { one: "request", many: "requests" })}
+            : rangeLabelFor(total, page, PAGE_SIZE, {
+                one: "request",
+                many: "requests",
+              })}
         </p>
       </div>
 
       {isError ? (
         <div className="px-6 py-12 text-center">
           <p className="text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load follow requests."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load follow requests."}
           </p>
         </div>
       ) : isPending ? (
         <div className="flex justify-center px-4 py-12" aria-busy="true">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="size-6 animate-spin text-muted-foreground"
+            aria-hidden
+          />
         </div>
       ) : items.length === 0 ? (
         <div className="px-6 py-16 text-center">
-          <p className="text-sm font-medium text-foreground">No follow requests match</p>
+          <p className="text-sm font-medium text-foreground">
+            No follow requests match
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Try a different search or clear filters.
           </p>
@@ -732,7 +781,7 @@ function RequestRow({
         <span
           className={cn(
             "tabular-nums",
-            stale ? "text-red-300" : "text-muted-foreground"
+            stale ? "text-red-300" : "text-muted-foreground",
           )}
         >
           {relativeAge(row.createdAt)}
@@ -741,18 +790,27 @@ function RequestRow({
       <td className={ADMIN_TD_ACTIONS}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Actions" className="size-7">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Actions"
+              className="size-7"
+            >
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={`/admin/follows/users/${encodeURIComponent(row.follower.id)}`}>
+              <Link
+                to={`/admin/follows/users/${encodeURIComponent(row.follower.id)}`}
+              >
                 View requester&apos;s graph
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={`/admin/follows/users/${encodeURIComponent(row.following.id)}`}>
+              <Link
+                to={`/admin/follows/users/${encodeURIComponent(row.following.id)}`}
+              >
                 View target&apos;s graph
               </Link>
             </DropdownMenuItem>
@@ -797,15 +855,23 @@ function AnomaliesTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
   if (isError) {
     return (
       <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-        {error instanceof ApiError ? error.message : "Could not load abuse signals."}
+        {error instanceof ApiError
+          ? error.message
+          : "Could not load abuse signals."}
       </div>
     );
   }
 
   if (isPending || !data) {
     return (
-      <div className="flex justify-center rounded-xl border border-white/10 px-4 py-16" aria-busy="true">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+      <div
+        className="flex justify-center rounded-xl border border-white/10 px-4 py-16"
+        aria-busy="true"
+      >
+        <Loader2
+          className="size-6 animate-spin text-muted-foreground"
+          aria-hidden
+        />
       </div>
     );
   }
@@ -825,15 +891,9 @@ function AnomaliesTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
         emptyText="No inbound brigading detected."
       />
 
-      <StalePendingCard
-        rows={data.stalePending}
-        onRemove={onRemove}
-      />
+      <StalePendingCard rows={data.stalePending} onRemove={onRemove} />
 
-      <SuspendedInGraphCard
-        rows={data.suspendedInGraph}
-        onRemove={onRemove}
-      />
+      <SuspendedInGraphCard rows={data.suspendedInGraph} onRemove={onRemove} />
 
       <HighPendingQueueCard rows={data.highPendingQueues} />
 
@@ -904,7 +964,9 @@ function StalePendingCard({
         Oldest pending follow requests. Surface support cases here.
       </p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No pending requests.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          No pending requests.
+        </p>
       ) : (
         <ul className="mt-4 space-y-1 text-sm">
           {rows.map((row) => (
@@ -914,14 +976,19 @@ function StalePendingCard({
             >
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <UserCell user={row.follower} />
-                <ArrowRight className="size-3 text-muted-foreground" aria-hidden />
+                <ArrowRight
+                  className="size-3 text-muted-foreground"
+                  aria-hidden
+                />
                 <UserCell user={row.following} />
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span
                   className={cn(
                     "text-xs tabular-nums",
-                    row.ageDays >= 14 ? "text-red-300" : "text-muted-foreground"
+                    row.ageDays >= 14
+                      ? "text-red-300"
+                      : "text-muted-foreground",
                   )}
                 >
                   {row.ageDays}d
@@ -977,7 +1044,10 @@ function SuspendedInGraphCard({
             >
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <UserCell user={row.follower} />
-                <ArrowRight className="size-3 text-muted-foreground" aria-hidden />
+                <ArrowRight
+                  className="size-3 text-muted-foreground"
+                  aria-hidden
+                />
                 <UserCell user={row.following} />
               </div>
               <button
@@ -1013,10 +1083,13 @@ function HighPendingQueueCard({
         Private accounts with biggest pending queue
       </h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Operator hint — these users may need to review and approve/decline requests.
+        Operator hint — these users may need to review and approve/decline
+        requests.
       </p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No private-account backlogs.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          No private-account backlogs.
+        </p>
       ) : (
         <ul className="mt-4 space-y-1 text-sm">
           {rows.map((row) => (
@@ -1055,10 +1128,13 @@ function RatioOutliersCard({
         Follow-ratio outliers
       </h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Mass-follower candidates (high following count, low followers, ratio descending).
+        Mass-follower candidates (high following count, low followers, ratio
+        descending).
       </p>
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No outliers detected.</p>
+        <p className="mt-4 text-sm text-muted-foreground">
+          No outliers detected.
+        </p>
       ) : (
         <ul className="mt-4 space-y-1 text-sm">
           {rows.map((row) => (

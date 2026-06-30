@@ -11,11 +11,15 @@ type AgentPlatformSelectorProps = {
 };
 
 function platformIcon(os: AgentOs) {
-  if (os === "macos") return <Apple className="size-3.5 shrink-0" aria-hidden />;
+  if (os === "macos")
+    return <Apple className="size-3.5 shrink-0" aria-hidden />;
   return <Monitor className="size-3.5 shrink-0" aria-hidden />;
 }
 
-export function AgentPlatformSelector({ selectedOs, onSelect }: AgentPlatformSelectorProps) {
+export function AgentPlatformSelector({
+  selectedOs,
+  onSelect,
+}: AgentPlatformSelectorProps) {
   return (
     <div
       className="inline-flex w-full rounded-lg border border-white/10 bg-muted/40 p-1"
@@ -32,7 +36,7 @@ export function AgentPlatformSelector({ selectedOs, onSelect }: AgentPlatformSel
             "flex flex-1 items-center justify-center gap-1.5 rounded-md p-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm",
             selectedOs === os
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {platformIcon(os)}

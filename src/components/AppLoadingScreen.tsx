@@ -16,15 +16,23 @@ function useLoadingExtendedContent() {
   const [extendedVisible, setExtendedVisible] = useState(
     () => Date.now() - startedAt >= LOADING_EXTENDED_DELAY_MS,
   );
-  const [tipIndex, setTipIndex] = useState(() => pickRandomIndex(LOADING_TIPS.length));
+  const [tipIndex, setTipIndex] = useState(() =>
+    pickRandomIndex(LOADING_TIPS.length),
+  );
   const [statusIndex, setStatusIndex] = useState(() =>
     pickRandomIndex(LOADING_STATUS_LINES.length),
   );
 
   useEffect(() => {
     if (extendedVisible) return;
-    const remaining = Math.max(0, LOADING_EXTENDED_DELAY_MS - (Date.now() - startedAt));
-    const timeoutId = window.setTimeout(() => setExtendedVisible(true), remaining);
+    const remaining = Math.max(
+      0,
+      LOADING_EXTENDED_DELAY_MS - (Date.now() - startedAt),
+    );
+    const timeoutId = window.setTimeout(
+      () => setExtendedVisible(true),
+      remaining,
+    );
     return () => window.clearTimeout(timeoutId);
   }, [extendedVisible, startedAt]);
 
@@ -37,7 +45,8 @@ function useLoadingExtendedContent() {
     return () => window.clearInterval(intervalId);
   }, [extendedVisible]);
 
-  const statusLine = LOADING_STATUS_LINES[statusIndex] ?? LOADING_STATUS_LINES[0];
+  const statusLine =
+    LOADING_STATUS_LINES[statusIndex] ?? LOADING_STATUS_LINES[0];
   const tip = LOADING_TIPS[tipIndex] ?? LOADING_TIPS[0];
 
   return { extendedVisible, statusLine, tip, tipIndex };
@@ -73,14 +82,18 @@ function LoadingGlowBackground() {
 
 function LoadingProgressBar() {
   return (
-    <div className="h-1 w-48 overflow-hidden rounded-full bg-white/10" aria-hidden>
+    <div
+      className="h-1 w-48 overflow-hidden rounded-full bg-white/10"
+      aria-hidden
+    >
       <div className="loading-shimmer-bar h-full w-1/3 rounded-full bg-gradient-to-r from-[rgb(240,28,28)]/80 to-[rgb(240,28,28)]" />
     </div>
   );
 }
 
 function LoadingScreenContent() {
-  const { extendedVisible, statusLine, tip, tipIndex } = useLoadingExtendedContent();
+  const { extendedVisible, statusLine, tip, tipIndex } =
+    useLoadingExtendedContent();
 
   return (
     <div className="relative z-10 flex w-full max-w-md flex-col items-center px-6">

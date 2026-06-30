@@ -54,13 +54,13 @@ describe("packageMapping", () => {
       pickDefaultInterval({
         monthly: mockPackage("$rc_monthly"),
         annual: mockPackage("$rc_annual"),
-      })
+      }),
     ).toBe("ANNUAL");
     expect(
       pickDefaultInterval({
         monthly: mockPackage("$rc_monthly"),
         annual: null,
-      })
+      }),
     ).toBe("MONTHLY");
   });
 

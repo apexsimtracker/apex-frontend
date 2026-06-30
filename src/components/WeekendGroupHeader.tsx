@@ -13,7 +13,13 @@ type WeekendGroupHeaderProps = {
   className?: string;
 };
 
-function SessionPill({ label, kind }: { label: string; kind: keyof typeof PILL_STYLES }) {
+function SessionPill({
+  label,
+  kind,
+}: {
+  label: string;
+  kind: keyof typeof PILL_STYLES;
+}) {
   const style = PILL_STYLES[kind];
   return (
     <span
@@ -24,7 +30,11 @@ function SessionPill({ label, kind }: { label: string; kind: keyof typeof PILL_S
         border: `1px solid ${style.color}44`,
       }}
       aria-label={
-        kind === "P" ? "Practice session" : kind === "Q" ? "Qualifying session" : "Race session"
+        kind === "P"
+          ? "Practice session"
+          : kind === "Q"
+            ? "Qualifying session"
+            : "Race session"
       }
     >
       {label}
@@ -32,14 +42,17 @@ function SessionPill({ label, kind }: { label: string; kind: keyof typeof PILL_S
   );
 }
 
-export default function WeekendGroupHeader({ group, className = "" }: WeekendGroupHeaderProps) {
+export default function WeekendGroupHeader({
+  group,
+  className = "",
+}: WeekendGroupHeaderProps) {
   const trackDisplay = formatTrackName(group.trackName);
 
   return (
     <div
       className={cn(
         "border-white/8 mb-3 rounded-lg border px-4 py-3 sm:px-5",
-        className
+        className,
       )}
       aria-label={`Race weekend at ${trackDisplay}`}
     >
@@ -50,7 +63,10 @@ export default function WeekendGroupHeader({ group, className = "" }: WeekendGro
           </h3>
           <p className="mt-0.5 text-xs text-white/50">{group.date}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5" aria-hidden={!group.weekendSummary}>
+        <div
+          className="flex shrink-0 items-center gap-1.5"
+          aria-hidden={!group.weekendSummary}
+        >
           {group.hasPractice && <SessionPill label="P" kind="P" />}
           {group.hasQualifying && <SessionPill label="Q" kind="Q" />}
           {group.hasRace && <SessionPill label="R" kind="R" />}

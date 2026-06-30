@@ -43,7 +43,10 @@ import {
   ADMIN_TH,
   adminTable,
 } from "@/pages/admin/adminTableLayout";
-import { ADMIN_TABS_CONTENT, ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
+import {
+  ADMIN_TABS_CONTENT,
+  ADMIN_TABS_LIST,
+} from "@/pages/admin/adminTabsLayout";
 
 const TITLE = `Admin · Notifications | ${COMPANY_NAME}`;
 const SEARCH_DEBOUNCE_MS = 200;
@@ -97,13 +100,21 @@ export default function AdminNotifications() {
 
   return (
     <>
-      <PageMeta path="/admin/notifications" title={TITLE} description="Manage notifications." noindex />
+      <PageMeta
+        path="/admin/notifications"
+        title={TITLE}
+        description="Manage notifications."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Notifications</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Notifications
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Broadcast site-wide banners and send targeted notifications to user segments.
+              Broadcast site-wide banners and send targeted notifications to
+              user segments.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -196,9 +207,13 @@ function StatCard({
         onClick ? "transition hover:border-white/30" : ""
       }`}
     >
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
       <span className="text-2xl font-bold text-foreground">{value}</span>
-      {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
+      {sub ? (
+        <span className="text-xs text-muted-foreground">{sub}</span>
+      ) : null}
     </Wrapper>
   );
 }
@@ -213,7 +228,10 @@ function OverviewTab({ onJumpToFailed }: { onJumpToFailed: () => void }) {
   if (isPending) {
     return (
       <div className="flex justify-center px-4 py-16" aria-busy="true">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+        <Loader2
+          className="size-6 animate-spin text-muted-foreground"
+          aria-hidden
+        />
       </div>
     );
   }
@@ -238,7 +256,9 @@ function OverviewTab({ onJumpToFailed }: { onJumpToFailed: () => void }) {
       />
       <StatCard
         label="Email success rate"
-        value={data.emailSuccessRate == null ? "—" : `${data.emailSuccessRate}%`}
+        value={
+          data.emailSuccessRate == null ? "—" : `${data.emailSuccessRate}%`
+        }
         sub={`${data.emailSent} sent · ${data.emailSkipped} skipped`}
       />
       <StatCard
@@ -261,7 +281,9 @@ function BroadcastsTab() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<AdminBroadcastRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminBroadcastRow | null>(
+    null,
+  );
   const debounced = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => setPage(1), [debounced, statusFilter, severityFilter]);
 
@@ -269,13 +291,15 @@ function BroadcastsTab() {
     () => ({
       page,
       pageSize: 20,
-      ...(statusFilter.trim() ? { status: statusFilter.trim() as BroadcastStatus } : {}),
+      ...(statusFilter.trim()
+        ? { status: statusFilter.trim() as BroadcastStatus }
+        : {}),
       ...(severityFilter.trim()
         ? { severity: severityFilter.trim() as AdminBroadcastRow["severity"] }
         : {}),
       ...(debounced.trim() ? { q: debounced.trim() } : {}),
     }),
-    [page, statusFilter, severityFilter, debounced]
+    [page, statusFilter, severityFilter, debounced],
   );
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["admin", "notifications", "broadcasts", params],
@@ -334,7 +358,9 @@ function BroadcastsTab() {
     <>
       {isError && (
         <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error instanceof ApiError ? error.message : "Could not load broadcasts."}
+          {error instanceof ApiError
+            ? error.message
+            : "Could not load broadcasts."}
         </div>
       )}
       <div className={ADMIN_TABLE_CARD}>
@@ -377,11 +403,16 @@ function BroadcastsTab() {
         </div>
         {isPending ? (
           <div className="flex justify-center px-4 py-12" aria-busy="true">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+            <Loader2
+              className="size-6 animate-spin text-muted-foreground"
+              aria-hidden
+            />
           </div>
         ) : rows.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-muted-foreground">
-            No broadcasts yet. Click <span className="text-foreground">New broadcast</span> to create one.
+            No broadcasts yet. Click{" "}
+            <span className="text-foreground">New broadcast</span> to create
+            one.
           </div>
         ) : (
           <div className={ADMIN_TABLE_SCROLL}>
@@ -418,10 +449,16 @@ function BroadcastsTab() {
                         {b.severity}
                       </span>
                     </td>
-                    <td className={`${ADMIN_TD} text-muted-foreground`}>{b.audienceSummary}</td>
+                    <td className={`${ADMIN_TD} text-muted-foreground`}>
+                      {b.audienceSummary}
+                    </td>
                     <td className={`${ADMIN_TD} text-xs text-muted-foreground`}>
                       <div>{new Date(b.startsAt).toLocaleString()}</div>
-                      <div>{b.endsAt ? new Date(b.endsAt).toLocaleString() : "(no end)"}</div>
+                      <div>
+                        {b.endsAt
+                          ? new Date(b.endsAt).toLocaleString()
+                          : "(no end)"}
+                      </div>
                     </td>
                     <td className={ADMIN_TD}>
                       <span
@@ -430,8 +467,12 @@ function BroadcastsTab() {
                         {STATUS_LABEL[b.status]}
                       </span>
                     </td>
-                    <td className={`${ADMIN_TD} tabular-nums`}>{b.viewCount}</td>
-                    <td className={`${ADMIN_TD} tabular-nums`}>{b.dismissalCount}</td>
+                    <td className={`${ADMIN_TD} tabular-nums`}>
+                      {b.viewCount}
+                    </td>
+                    <td className={`${ADMIN_TD} tabular-nums`}>
+                      {b.dismissalCount}
+                    </td>
                     <td className={ADMIN_TD_ACTIONS}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -441,26 +482,38 @@ function BroadcastsTab() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/admin/notifications/broadcasts/${b.id}`}>View</Link>
+                            <Link
+                              to={`/admin/notifications/broadcasts/${b.id}`}
+                            >
+                              View
+                            </Link>
                           </DropdownMenuItem>
                           {(b.status === "DRAFT" ||
                             b.status === "PAUSED" ||
                             b.status === "SCHEDULED") && (
-                            <DropdownMenuItem onClick={() => publishMut.mutate(b.id)}>
+                            <DropdownMenuItem
+                              onClick={() => publishMut.mutate(b.id)}
+                            >
                               Publish
                             </DropdownMenuItem>
                           )}
                           {b.status === "ACTIVE" && (
-                            <DropdownMenuItem onClick={() => pauseMut.mutate(b.id)}>
+                            <DropdownMenuItem
+                              onClick={() => pauseMut.mutate(b.id)}
+                            >
                               Pause
                             </DropdownMenuItem>
                           )}
                           {b.status === "ARCHIVED" ? (
-                            <DropdownMenuItem onClick={() => unarchiveMut.mutate(b.id)}>
+                            <DropdownMenuItem
+                              onClick={() => unarchiveMut.mutate(b.id)}
+                            >
                               Unarchive
                             </DropdownMenuItem>
                           ) : (
-                            <DropdownMenuItem onClick={() => archiveMut.mutate(b.id)}>
+                            <DropdownMenuItem
+                              onClick={() => archiveMut.mutate(b.id)}
+                            >
                               Archive
                             </DropdownMenuItem>
                           )}
@@ -571,7 +624,9 @@ function CampaignsTab() {
   const [page, setPage] = useState(1);
   const [channelFilter, setChannelFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<AdminCampaignRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminCampaignRow | null>(
+    null,
+  );
   const debounced = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   useEffect(() => setPage(1), [debounced, channelFilter]);
 
@@ -580,11 +635,14 @@ function CampaignsTab() {
       page,
       pageSize: 20,
       ...(channelFilter.trim()
-        ? { channel: channelFilter.trim() as AdminCampaignRow["channels"][number] }
+        ? {
+            channel:
+              channelFilter.trim() as AdminCampaignRow["channels"][number],
+          }
         : {}),
       ...(debounced.trim() ? { q: debounced.trim() } : {}),
     }),
-    [page, channelFilter, debounced]
+    [page, channelFilter, debounced],
   );
 
   const { data, isPending, isError } = useQuery({
@@ -660,7 +718,10 @@ function CampaignsTab() {
         </div>
         {isPending ? (
           <div className="flex justify-center px-4 py-12" aria-busy="true">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+            <Loader2
+              className="size-6 animate-spin text-muted-foreground"
+              aria-hidden
+            />
           </div>
         ) : rows.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-muted-foreground">
@@ -705,17 +766,27 @@ function CampaignsTab() {
                         ))}
                       </div>
                     </td>
-                    <td className={`${ADMIN_TD} text-muted-foreground`}>{c.audienceSummary}</td>
-                    <td className={`${ADMIN_TD} tabular-nums`}>{c.inAppSentCount}</td>
-                    <td className={`${ADMIN_TD} tabular-nums`}>{c.emailSentCount}</td>
+                    <td className={`${ADMIN_TD} text-muted-foreground`}>
+                      {c.audienceSummary}
+                    </td>
+                    <td className={`${ADMIN_TD} tabular-nums`}>
+                      {c.inAppSentCount}
+                    </td>
+                    <td className={`${ADMIN_TD} tabular-nums`}>
+                      {c.emailSentCount}
+                    </td>
                     <td className={`${ADMIN_TD} tabular-nums`}>
                       {c.emailFailedCount > 0 ? (
-                        <span className="text-red-400">{c.emailFailedCount}</span>
+                        <span className="text-red-400">
+                          {c.emailFailedCount}
+                        </span>
                       ) : (
                         c.emailFailedCount
                       )}
                     </td>
-                    <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                    <td
+                      className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                    >
                       {c.emailSkippedCount}
                     </td>
                     <td className={`${ADMIN_TD} text-xs text-muted-foreground`}>
@@ -730,10 +801,14 @@ function CampaignsTab() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/admin/notifications/campaigns/${c.id}`}>View deliveries</Link>
+                            <Link to={`/admin/notifications/campaigns/${c.id}`}>
+                              View deliveries
+                            </Link>
                           </DropdownMenuItem>
                           {c.emailFailedCount > 0 && (
-                            <DropdownMenuItem onClick={() => resendMut.mutate(c.id)}>
+                            <DropdownMenuItem
+                              onClick={() => resendMut.mutate(c.id)}
+                            >
                               Resend failed emails
                             </DropdownMenuItem>
                           )}

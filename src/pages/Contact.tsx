@@ -59,7 +59,9 @@ export default function Contact() {
     },
     onError: (err: unknown) => {
       let description =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
       if (err instanceof ApiError && err.status === 503) {
         description = `${description} You can also reach us at ${SUPPORT_EMAIL}.`;
       }
@@ -88,10 +90,13 @@ export default function Contact() {
               <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground">
                 Support
               </p>
-              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Contact us</h1>
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+                Contact us
+              </h1>
               <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                Questions about your account, Apex Pro, or the product? Send a message and we’ll reply by
-                email. We typically respond within a few business days.
+                Questions about your account, Apex Pro, or the product? Send a
+                message and we’ll reply by email. We typically respond within a
+                few business days.
               </p>
             </header>
 
@@ -109,7 +114,8 @@ export default function Contact() {
                     <div className="text-sm text-foreground">
                       <p className="font-medium">We received your message</p>
                       <p className="mt-1 text-muted-foreground">
-                        Support has been notified. Someone will follow up by email shortly.
+                        Support has been notified. Someone will follow up by
+                        email shortly.
                       </p>
                     </div>
                   </div>
@@ -123,7 +129,10 @@ export default function Contact() {
                 </div>
               )}
               <div className="mb-6 flex items-start gap-3 rounded-lg border border-white/10 bg-background/80 px-4 py-3 text-sm text-muted-foreground">
-                <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Mail
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
                 <p>
                   Prefer email directly?{" "}
                   <a
@@ -137,7 +146,10 @@ export default function Contact() {
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-5"
+                >
                   <FormField
                     control={form.control}
                     name="name"
@@ -184,7 +196,10 @@ export default function Contact() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Subject <span className="font-normal text-muted-foreground">(optional)</span>
+                          Subject{" "}
+                          <span className="font-normal text-muted-foreground">
+                            (optional)
+                          </span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -216,7 +231,9 @@ export default function Contact() {
                             {...field}
                           />
                         </FormControl>
-                        <p className="text-xs text-muted-foreground">Minimum 20 characters.</p>
+                        <p className="text-xs text-muted-foreground">
+                          Minimum 20 characters.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -231,7 +248,10 @@ export default function Contact() {
                     >
                       {pending ? (
                         <>
-                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                          <Loader2
+                            className="size-4 animate-spin"
+                            aria-hidden
+                          />
                           Sending…
                         </>
                       ) : (
@@ -239,13 +259,22 @@ export default function Contact() {
                       )}
                     </Button>
                     <p className="text-center text-xs text-muted-foreground sm:text-right">
-                      <Link to="/faq" className="underline underline-offset-2 hover:text-foreground">
+                      <Link
+                        to="/faq"
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
                         FAQ
                       </Link>
-                      <span className="mx-1.5 text-muted-foreground/50" aria-hidden>
+                      <span
+                        className="mx-1.5 text-muted-foreground/50"
+                        aria-hidden
+                      >
                         ·
                       </span>
-                      <Link to="/about" className="underline underline-offset-2 hover:text-foreground">
+                      <Link
+                        to="/about"
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
                         About us
                       </Link>
                     </p>

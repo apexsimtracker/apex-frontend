@@ -36,7 +36,8 @@ export default function Pricing() {
   const [message, setMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [billingInterval, setBillingInterval] = useState<BillingInterval>("ANNUAL");
+  const [billingInterval, setBillingInterval] =
+    useState<BillingInterval>("ANNUAL");
   const [showAgentCta, setShowAgentCta] = useState(false);
 
   const { data: plans, isPending: plansLoading } = useQuery({
@@ -64,7 +65,7 @@ export default function Pricing() {
           billingInterval: user.billingInterval ?? null,
         }
       : undefined,
-    plans
+    plans,
   );
   const userBillingInterval = user?.billingInterval ?? null;
   const isCanceled = isSubscriptionCanceled(user);
@@ -72,17 +73,17 @@ export default function Pricing() {
 
   const resolvedPackages = useMemo(
     () => resolvePackagesByInterval(availablePackages),
-    [availablePackages]
+    [availablePackages],
   );
 
   const annualSavingsPercent = useMemo(
     () => computeAnnualSavingsPercent(plans),
-    [plans]
+    [plans],
   );
 
   const selectedPackage = useMemo(
     () => packageForInterval(resolvedPackages, billingInterval),
-    [resolvedPackages, billingInterval]
+    [resolvedPackages, billingInterval],
   );
 
   useEffect(() => {
@@ -139,7 +140,9 @@ export default function Pricing() {
       setError(null);
       await openBillingPortal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not open billing portal.");
+      setError(
+        err instanceof Error ? err.message : "Could not open billing portal.",
+      );
     }
   }
 
@@ -161,8 +164,8 @@ export default function Pricing() {
               <div>
                 <p className="font-medium text-green-400">{message}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Download the Apex Agent and sign in with your website email and password to start
-                  automatic telemetry uploads.
+                  Download the Apex Agent and sign in with your website email
+                  and password to start automatic telemetry uploads.
                 </p>
               </div>
               <Button

@@ -5,7 +5,7 @@
 export type ManualSessionKindForm = "PRACTICE" | "QUALIFY" | "RACE";
 
 export function telemetrySessionTypeToFormKind(
-  sessionType: string | null | undefined
+  sessionType: string | null | undefined,
 ): ManualSessionKindForm {
   const u = (sessionType ?? "").toUpperCase().trim();
   if (u === "RACE" || u === "SPRINT") return "RACE";

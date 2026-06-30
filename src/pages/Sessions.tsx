@@ -82,7 +82,11 @@ function EmptyManual() {
             Log Manual Activity
           </Link>
         </Button>
-        <Button variant="outline" asChild className="border-white/10 text-white/80 hover:bg-white/10">
+        <Button
+          variant="outline"
+          asChild
+          className="border-white/10 text-white/80 hover:bg-white/10"
+        >
           <Link to="/upload">
             <Upload className="mr-2 size-4" />
             Upload Session
@@ -106,7 +110,11 @@ function EmptyTelemetry() {
           </Link>
         </Button>
         {isPro ? (
-          <Button variant="outline" asChild className="border-white/10 text-white/80 hover:bg-white/10">
+          <Button
+            variant="outline"
+            asChild
+            className="border-white/10 text-white/80 hover:bg-white/10"
+          >
             <Link to="/agent">
               <Cpu className="mr-2 size-4" />
               Get the Agent
@@ -119,9 +127,7 @@ function EmptyTelemetry() {
             className="border-white/15 text-foreground hover:bg-muted/30"
             style={{ color: BRAND_RED }}
           >
-            <Link to="/pricing">
-              Upgrade for Agent
-            </Link>
+            <Link to="/pricing">Upgrade for Agent</Link>
           </Button>
         )}
       </div>
@@ -141,8 +147,11 @@ export default function Sessions() {
   const { user } = useAuth();
   const isPro = useIsProUser();
   const [searchParams, setSearchParams] = useSearchParams();
-  const sessionsType = (searchParams.get("sessionsType") as SessionsFilterType) || "all";
-  const validType = TAB_VALUES.some((t) => t.value === sessionsType) ? sessionsType : "all";
+  const sessionsType =
+    (searchParams.get("sessionsType") as SessionsFilterType) || "all";
+  const validType = TAB_VALUES.some((t) => t.value === sessionsType)
+    ? sessionsType
+    : "all";
 
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
@@ -163,12 +172,15 @@ export default function Sessions() {
         limit: ACTIVITY_FEED_DEFAULT_LIMIT,
       }),
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.page + 1 : undefined,
   });
 
   const activity = useMemo(
-    () => (activityPages?.pages.flatMap((p) => p.items) ?? []) as ActivityFeedItem[],
-    [activityPages]
+    () =>
+      (activityPages?.pages.flatMap((p) => p.items) ??
+        []) as ActivityFeedItem[],
+    [activityPages],
   );
 
   const error = useMemo(() => {
@@ -203,7 +215,7 @@ export default function Sessions() {
       const next = value as SessionsFilterType;
       setSearchParams({ sessionsType: next }, { replace: true });
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const isEmpty = !loading && activity.length === 0;
@@ -302,11 +314,7 @@ export default function Sessions() {
           Sessions
         </h1>
 
-        <Tabs
-          value={validType}
-          onValueChange={setTab}
-          className="w-full"
-        >
+        <Tabs value={validType} onValueChange={setTab} className="w-full">
           <TabsList className="h-auto rounded-lg border border-white/10 bg-white/5 p-0.5">
             {TAB_VALUES.map((tab) => (
               <TabsTrigger
@@ -346,10 +354,21 @@ export default function Sessions() {
                     linkCards
                     currentUser={user ?? null}
                     onSessionPatch={(id, patch) => {
-                      queryClient.setQueryData<InfiniteData<ActivityFeedPageResult>>(
-                        ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
+                      queryClient.setQueryData<
+                        InfiniteData<ActivityFeedPageResult>
+                      >(
+                        [
+                          "activity",
+                          "feed",
+                          validType,
+                          ACTIVITY_FEED_DEFAULT_LIMIT,
+                        ],
                         (prev) =>
-                          patchActivityFeedInfiniteData(prev, id, patch as Record<string, unknown>)
+                          patchActivityFeedInfiniteData(
+                            prev,
+                            id,
+                            patch as Record<string, unknown>,
+                          ),
                       );
                     }}
                   />

@@ -21,7 +21,9 @@ type UserSearchModalProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-function followStatusLabel(relationship: UserDiscoverHit["followRelationship"]): string | null {
+function followStatusLabel(
+  relationship: UserDiscoverHit["followRelationship"],
+): string | null {
   if (relationship === "following") return "Following";
   if (relationship === "pending") return "Requested";
   return null;
@@ -61,16 +63,24 @@ function DiscoverRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-foreground">{name}</p>
+            <p className="truncate text-sm font-medium text-foreground">
+              {name}
+            </p>
             {statusLabel ? (
-              <span className="shrink-0 text-xs text-muted-foreground">{statusLabel}</span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {statusLabel}
+              </span>
             ) : null}
           </div>
           {user.email ? (
-            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user.email}
+            </p>
           ) : null}
           {user.bio ? (
-            <p className="truncate text-xs text-muted-foreground/80">{user.bio}</p>
+            <p className="truncate text-xs text-muted-foreground/80">
+              {user.bio}
+            </p>
           ) : null}
         </div>
       </Link>
@@ -84,7 +94,7 @@ export function UserSearchModal({ open, onOpenChange }: UserSearchModalProps) {
   const debouncedSearch = useDebouncedValue(
     searchInput,
     SEARCH_DEBOUNCE_MS,
-    open ? "user-search-open" : undefined
+    open ? "user-search-open" : undefined,
   );
 
   useEffect(() => {
@@ -101,7 +111,8 @@ export function UserSearchModal({ open, onOpenChange }: UserSearchModalProps) {
     setPage(1);
   }, [debouncedSearch]);
 
-  const queryReady = debouncedSearch.trim().length >= USER_DISCOVER_MIN_QUERY_LEN;
+  const queryReady =
+    debouncedSearch.trim().length >= USER_DISCOVER_MIN_QUERY_LEN;
 
   const { data, isPending, error } = useQuery({
     queryKey: ["users", "discover", debouncedSearch.trim(), page],
@@ -159,7 +170,9 @@ export function UserSearchModal({ open, onOpenChange }: UserSearchModalProps) {
         ) : errMsg ? (
           <p className="py-4 text-sm text-destructive">{errMsg}</p>
         ) : items.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">No users match your search.</p>
+          <p className="py-4 text-sm text-muted-foreground">
+            No users match your search.
+          </p>
         ) : (
           <ul className="space-y-2">
             {items.map((user) => (

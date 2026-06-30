@@ -180,7 +180,9 @@ export const formatLapDelta = (ms: number | null | undefined): string => {
 };
 
 /** Average finish for profile stats: one decimal place (e.g. 3.5). */
-export function formatAvgFinishOneDecimal(v: number | null | undefined): string {
+export function formatAvgFinishOneDecimal(
+  v: number | null | undefined,
+): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return "—";
   return Math.round(v).toString();
 }
@@ -204,7 +206,7 @@ export function timeAgo(createdAt: string | Date): string {
 
 /**
  * Formats raw car identifiers into human-readable titles.
- * 
+ *
  * Handles concatenated identifiers like "mercedesw12" → "Mercedes W12"
  * Preserves already well-formatted names (e.g., "Ferrari 488 GT3").
  * Handles null/undefined safely.
@@ -214,28 +216,96 @@ export function formatCarName(car: string | null | undefined): string {
 
   // Known model codes to detect and extract (longer patterns first)
   const modelCodes = [
-    "W15", "W14", "W13", "W12", "W11", "W10", "W09", "W08", "W07", "W06", "W05",
-    "RB20", "RB19", "RB18", "RB17", "RB16", "RB15",
-    "SF-24", "SF-23", "SF-22", "SF-21", "SF24", "SF23", "SF22", "SF21",
-    "VF-24", "VF-23", "VF-22", "VF24", "VF23", "VF22",
-    "MCL38", "MCL37", "MCL36", "MCL35",
-    "AMR24", "AMR23", "AMR22", "AMR21",
-    "A523", "A522", "A521", "A520",
-    "GT3RS", "GT2RS", "GT4RS", "GT3R", "GT2R",
-    "LMP1", "LMP2", "LMP3",
-    "GTR", "GT-R", "GT1", "GT2", "GT3", "GT4", "GTE",
-    "RSR", "RS", "AMG", "BMW", "LMS",
-    "GTE", "GTLM", "GTP",
-    "DBR9", "M6", "M4", "M3", "M8",
-    "R8", "C8", "C7", "C6",
-    "P1", "488", "458", "911", "991", "992",
-    "650S", "720S", "765LT",
+    "W15",
+    "W14",
+    "W13",
+    "W12",
+    "W11",
+    "W10",
+    "W09",
+    "W08",
+    "W07",
+    "W06",
+    "W05",
+    "RB20",
+    "RB19",
+    "RB18",
+    "RB17",
+    "RB16",
+    "RB15",
+    "SF-24",
+    "SF-23",
+    "SF-22",
+    "SF-21",
+    "SF24",
+    "SF23",
+    "SF22",
+    "SF21",
+    "VF-24",
+    "VF-23",
+    "VF-22",
+    "VF24",
+    "VF23",
+    "VF22",
+    "MCL38",
+    "MCL37",
+    "MCL36",
+    "MCL35",
+    "AMR24",
+    "AMR23",
+    "AMR22",
+    "AMR21",
+    "A523",
+    "A522",
+    "A521",
+    "A520",
+    "GT3RS",
+    "GT2RS",
+    "GT4RS",
+    "GT3R",
+    "GT2R",
+    "LMP1",
+    "LMP2",
+    "LMP3",
+    "GTR",
+    "GT-R",
+    "GT1",
+    "GT2",
+    "GT3",
+    "GT4",
+    "GTE",
+    "RSR",
+    "RS",
+    "AMG",
+    "BMW",
+    "LMS",
+    "GTE",
+    "GTLM",
+    "GTP",
+    "DBR9",
+    "M6",
+    "M4",
+    "M3",
+    "M8",
+    "R8",
+    "C8",
+    "C7",
+    "C6",
+    "P1",
+    "488",
+    "458",
+    "911",
+    "991",
+    "992",
+    "650S",
+    "720S",
+    "765LT",
   ];
-  
-  const acronyms = new Set(modelCodes.map(c => c.toUpperCase()));
+
+  const acronyms = new Set(modelCodes.map((c) => c.toUpperCase()));
 
   let result = car;
-  
+
   // If no spaces, try to extract known model codes from the end
   if (!car.includes(" ")) {
     for (const code of modelCodes) {
@@ -249,37 +319,40 @@ export function formatCarName(car: string | null | undefined): string {
 
   // Split and process words
   const words = result.split(/\s+/);
-  
+
   const processed = words.map((word) => {
     if (!word) return "";
-    
+
     const upper = word.toUpperCase();
 
     // e.g. "rb19" → "RB19" when attached to manufacturer name
     const modelMatch = /^rb\d{2}$/i.test(word);
     if (modelMatch) return upper;
-    
+
     // Pure numbers stay as-is
     if (/^\d+$/.test(word)) return word;
-    
+
     // Known acronym/code - uppercase it
     if (acronyms.has(upper)) return upper;
-    
+
     // Check for hyphenated words like "SF-24"
     if (word.includes("-")) {
-      return word.split("-").map(part => {
-        const partUpper = part.toUpperCase();
-        if (acronyms.has(partUpper)) return partUpper;
-        if (/^\d+$/.test(part)) return part;
-        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-      }).join("-");
+      return word
+        .split("-")
+        .map((part) => {
+          const partUpper = part.toUpperCase();
+          if (acronyms.has(partUpper)) return partUpper;
+          if (/^\d+$/.test(part)) return part;
+          return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+        })
+        .join("-");
     }
-    
+
     // Standard capitalization (preserve existing case if it looks intentional)
     if (word === word.toUpperCase() && word.length <= 4) {
       return word;
     }
-    
+
     return word.charAt(0).toUpperCase() + word.slice(1);
   });
 

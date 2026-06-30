@@ -4,12 +4,12 @@ Playwright suites for the Apex web app. All backend commands below run from **`a
 
 ## What lives in the database
 
-| Layer | Created by | Contents |
-|-------|------------|----------|
-| **Catalog** | `npx prisma db seed` (auto after `migrate reset`) | `CatalogTrack` / `CatalogCar` only — **no users** |
-| **E2E personas** | `npm run seed:e2e` | 12 `@example.com` users + active challenge |
-| **Billing sandbox** | Manual signup in the app | Real Gmail accounts from `.env.e2e.local` — **not** re-created by seed scripts |
-| **Test artifacts** | `pnpm test:e2e` | Sessions, laps, follows, discussions, etc. |
+| Layer               | Created by                                        | Contents                                                                       |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Catalog**         | `npx prisma db seed` (auto after `migrate reset`) | `CatalogTrack` / `CatalogCar` only — **no users**                              |
+| **E2E personas**    | `npm run seed:e2e`                                | 12 `@example.com` users + active challenge                                     |
+| **Billing sandbox** | Manual signup in the app                          | Real Gmail accounts from `.env.e2e.local` — **not** re-created by seed scripts |
+| **Test artifacts**  | `pnpm test:e2e`                                   | Sessions, laps, follows, discussions, etc.                                     |
 
 `prisma db seed` no longer creates `admin@example.com` or `seed@example.com`. Use `seed:e2e` for test users. If your DB still has those legacy rows from an older seed, run `prisma:migrate:reset` once to clear them.
 
@@ -75,12 +75,12 @@ On an existing DB (no wipe), use `npm run prisma:migrate:deploy` instead of `mig
 
 All run from `apex`.
 
-| Command | Creates | When to use |
-|---------|---------|-------------|
-| `npm run prisma:migrate:reset -- --force` | Drops DB → migrations → **catalog only** | Full dev wipe (destroys all data) |
-| `npx prisma db seed` | Catalog tracks/cars only | After deploy, or to refresh catalog |
-| `npm run seed:catalog` | Same as `prisma db seed` | Standalone catalog refresh |
-| `E2E_SEED_PASSWORD='…' npm run seed:e2e` | 12 personas + E2E challenge + catalog upsert | Before first E2E run, or after `purge:e2e` |
+| Command                                   | Creates                                      | When to use                                |
+| ----------------------------------------- | -------------------------------------------- | ------------------------------------------ |
+| `npm run prisma:migrate:reset -- --force` | Drops DB → migrations → **catalog only**     | Full dev wipe (destroys all data)          |
+| `npx prisma db seed`                      | Catalog tracks/cars only                     | After deploy, or to refresh catalog        |
+| `npm run seed:catalog`                    | Same as `prisma db seed`                     | Standalone catalog refresh                 |
+| `E2E_SEED_PASSWORD='…' npm run seed:e2e`  | 12 personas + E2E challenge + catalog upsert | Before first E2E run, or after `purge:e2e` |
 
 `seed:e2e` requires `E2E_SEED_PASSWORD` or `E2E_USER_PASSWORD` and `SECRET_PEPPER` in `apex/.env`.
 
@@ -135,10 +135,10 @@ Deletes mutable artifacts (sessions, laps, follows, discussions, challenge entri
 npm run reset:e2e
 ```
 
-| Flag | Effect |
-|------|--------|
-| `--dry-run` | Print row counts only |
-| `--skip-reseed` | Delete data without running `seed:e2e` |
+| Flag                | Effect                                  |
+| ------------------- | --------------------------------------- |
+| `--dry-run`         | Print row counts only                   |
+| `--skip-reseed`     | Delete data without running `seed:e2e`  |
 | `--include-billing` | Also reset Gmail sandbox users from env |
 
 ### `purge:e2e` — remove E2E users entirely
@@ -150,11 +150,11 @@ npm run purge:e2e                              # delete only
 npm run purge:e2e -- --reseed                  # delete + recreate personas
 ```
 
-| Flag | Effect |
-|------|--------|
-| `--dry-run` | Print row counts only |
-| `--reseed` | Run `seed:e2e` after purge |
-| `--include-billing` | Also remove Gmail sandbox users |
+| Flag                        | Effect                                                         |
+| --------------------------- | -------------------------------------------------------------- |
+| `--dry-run`                 | Print row counts only                                          |
+| `--reseed`                  | Run `seed:e2e` after purge                                     |
+| `--include-billing`         | Also remove Gmail sandbox users                                |
 | `--skip-anonymized-deletes` | Keep `deleted_*@deleted.local` rows (C8 account-deletion test) |
 
 ### Full database reset
@@ -168,13 +168,13 @@ E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run seed:e2e   # if running E2E again
 
 ### Which cleanup to use?
 
-| Goal | Command |
-|------|---------|
-| Clean slate before next E2E run (fast) | `reset:e2e` |
-| Remove all E2E users from DB (including dynamic signup users) | `purge:e2e` |
-| Remove E2E users then recreate personas | `purge:e2e -- --reseed` |
-| Wipe entire database + catalog only | `prisma:migrate:reset -- --force` |
-| Preview what would be deleted | `reset:e2e -- --dry-run` or `purge:e2e -- --dry-run` |
+| Goal                                                          | Command                                              |
+| ------------------------------------------------------------- | ---------------------------------------------------- |
+| Clean slate before next E2E run (fast)                        | `reset:e2e`                                          |
+| Remove all E2E users from DB (including dynamic signup users) | `purge:e2e`                                          |
+| Remove E2E users then recreate personas                       | `purge:e2e -- --reseed`                              |
+| Wipe entire database + catalog only                           | `prisma:migrate:reset -- --force`                    |
+| Preview what would be deleted                                 | `reset:e2e -- --dry-run` or `purge:e2e -- --dry-run` |
 
 **Reset vs purge for dynamic users:** `reset:e2e` clears their sessions/subscriptions but keeps the user row; `purge:e2e` deletes the user row entirely.
 
@@ -184,19 +184,19 @@ E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run seed:e2e   # if running E2E again
 
 All `@example.com` users are **email-verified** in the database except `e2e-unverified@example.com` (known code `12345678`).
 
-| Key | Default email | Notes |
-|-----|---------------|-------|
-| admin | e2e-admin@example.com | ADMIN + seeded PRO |
-| checkout | e2e-checkout@example.com | Free (non-billing) |
-| pro | e2e-pro@example.com | Seeded PRO subscription row |
-| webhookFree | e2e-webhook-free@example.com | Webhook revoke tests |
-| standard | e2e-standard@example.com | Sessions, settings |
-| socialA / socialB | e2e-social-a/b@example.com | B already follows A |
-| private | e2e-private@example.com | privateProfile + manual approval |
-| sacrificial | e2e-sacrificial@example.com | Account delete tests |
-| suspended | e2e-suspended@example.com | Login blocked |
-| unverified | e2e-unverified@example.com | Code `12345678` |
-| challenge | e2e-challenge@example.com | Joined E2E challenge |
+| Key               | Default email                | Notes                            |
+| ----------------- | ---------------------------- | -------------------------------- |
+| admin             | e2e-admin@example.com        | ADMIN + seeded PRO               |
+| checkout          | e2e-checkout@example.com     | Free (non-billing)               |
+| pro               | e2e-pro@example.com          | Seeded PRO subscription row      |
+| webhookFree       | e2e-webhook-free@example.com | Webhook revoke tests             |
+| standard          | e2e-standard@example.com     | Sessions, settings               |
+| socialA / socialB | e2e-social-a/b@example.com   | B already follows A              |
+| private           | e2e-private@example.com      | privateProfile + manual approval |
+| sacrificial       | e2e-sacrificial@example.com  | Account delete tests             |
+| suspended         | e2e-suspended@example.com    | Login blocked                    |
+| unverified        | e2e-unverified@example.com   | Code `12345678`                  |
+| challenge         | e2e-challenge@example.com    | Joined E2E challenge             |
 
 **Billing suites** use `E2E_CHECKOUT_USER_EMAIL` / `E2E_PRO_USER_EMAIL` (real sandbox Gmail) — see [E2E_BILLING.md](./E2E_BILLING.md).
 
@@ -215,12 +215,12 @@ Challenge ID (stable): `e2e-challenge-road-atlanta-gt3` (`E2E_CHALLENGE_ID` in e
 
 ## Fixtures
 
-| Path | Purpose |
-|------|---------|
-| `apex/tests/fixtures/ibt/*.ibt` | Symlinks to `.ibt-files/` (gitignored) |
-| `apex/tests/fixtures/sessions/*.json` | Race/qualify/warmup JSON uploads |
-| `apex/tests/fixtures/avatar-e2e.png` | Profile avatar upload |
-| `apex-frontend/tests/helpers/fixtures.ts` | Path resolvers for Playwright |
+| Path                                      | Purpose                                |
+| ----------------------------------------- | -------------------------------------- |
+| `apex/tests/fixtures/ibt/*.ibt`           | Symlinks to `.ibt-files/` (gitignored) |
+| `apex/tests/fixtures/sessions/*.json`     | Race/qualify/warmup JSON uploads       |
+| `apex/tests/fixtures/avatar-e2e.png`      | Profile avatar upload                  |
+| `apex-frontend/tests/helpers/fixtures.ts` | Path resolvers for Playwright          |
 
 **IBT fixture inspection (dev):** `cd apex && npm run inspect:ibt-fixtures -- <path-to.ibt>`
 

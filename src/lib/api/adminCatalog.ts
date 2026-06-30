@@ -34,7 +34,9 @@ export type AdminCatalogListParams = {
   includeRetired?: boolean;
 };
 
-export async function fetchAdminCatalogList(params?: AdminCatalogListParams): Promise<
+export async function fetchAdminCatalogList(
+  params?: AdminCatalogListParams,
+): Promise<
   | {
       kind: "track";
       items: AdminCatalogTrackRow[];
@@ -80,9 +82,14 @@ export async function patchAdminCatalogTrack(
     lengthKm?: number;
     sortOrder?: number;
     retired?: boolean;
-  }
+  },
 ): Promise<AdminCatalogTrackRow> {
-  return fetchApi("PATCH", `/api/admin/catalog/tracks/${encodeURIComponent(id)}`, body, false);
+  return fetchApi(
+    "PATCH",
+    `/api/admin/catalog/tracks/${encodeURIComponent(id)}`,
+    body,
+    false,
+  );
 }
 
 export async function createAdminCatalogCar(body: {
@@ -100,9 +107,14 @@ export async function patchAdminCatalogCar(
     displayName?: string;
     sortOrder?: number;
     retired?: boolean;
-  }
+  },
 ): Promise<AdminCatalogCarRow> {
-  return fetchApi("PATCH", `/api/admin/catalog/cars/${encodeURIComponent(id)}`, body, false);
+  return fetchApi(
+    "PATCH",
+    `/api/admin/catalog/cars/${encodeURIComponent(id)}`,
+    body,
+    false,
+  );
 }
 
 export type AdminCatalogConsistency = {

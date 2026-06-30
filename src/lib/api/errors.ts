@@ -6,7 +6,12 @@ export class ApiError extends Error {
   retryAfterMs?: number;
   /** Set when login is rejected for a suspended account (optional admin note). */
   suspensionReason?: string | null;
-  constructor(status: number, message: string, code?: string, retryAfterMs?: number) {
+  constructor(
+    status: number,
+    message: string,
+    code?: string,
+    retryAfterMs?: number,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;

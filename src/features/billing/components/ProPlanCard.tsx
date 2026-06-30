@@ -1,6 +1,10 @@
 import type { Package as RevenueCatPackage } from "@revenuecat/purchases-js";
 import { Loader2, Sparkles } from "lucide-react";
-import type { BillingConfigResponse, BillingInterval, BillingPlansResponse } from "@/lib/api/activityBilling";
+import type {
+  BillingConfigResponse,
+  BillingInterval,
+  BillingPlansResponse,
+} from "@/lib/api/activityBilling";
 import { Button } from "@/components/ui/button";
 import { BRAND_RED } from "@/lib/appConfig";
 import { cn } from "@/lib/utils";
@@ -70,8 +74,11 @@ export function ProPlanCard({
   onSignInToSubscribe,
   className,
 }: ProPlanCardProps) {
-  const hasPackages = Boolean(resolvedPackages.monthly || resolvedPackages.annual);
-  const showCatalogPricing = !isPro && (!isLoggedIn || !hasPackages) && Boolean(plans);
+  const hasPackages = Boolean(
+    resolvedPackages.monthly || resolvedPackages.annual,
+  );
+  const showCatalogPricing =
+    !isPro && (!isLoggedIn || !hasPackages) && Boolean(plans);
 
   const displayPrice =
     selectedPackage && !showCatalogPricing
@@ -81,7 +88,10 @@ export function ProPlanCard({
   const showIntervalToggle =
     !isPro &&
     (showCatalogPricing ||
-      (isLoggedIn && billingConfig?.enabled && !offeringsPending && hasPackages));
+      (isLoggedIn &&
+        billingConfig?.enabled &&
+        !offeringsPending &&
+        hasPackages));
 
   const monthlyToggleAvailable = showCatalogPricing
     ? true
@@ -94,9 +104,11 @@ export function ProPlanCard({
     <div
       className={cn(
         "relative flex h-full flex-col rounded-xl border bg-card/50 p-6 sm:p-7",
-        className
+        className,
       )}
-      style={{ borderColor: "color-mix(in srgb, rgb(240, 28, 28) 35%, transparent)" }}
+      style={{
+        borderColor: "color-mix(in srgb, rgb(240, 28, 28) 35%, transparent)",
+      }}
     >
       <div
         className="absolute -top-3 left-6 flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-medium text-white"
@@ -110,9 +122,13 @@ export function ProPlanCard({
 
       {isPro ? (
         <div className="mt-3 space-y-1" data-testid="billing-pro-active">
-          <p className="text-sm font-medium text-foreground">You&apos;re on Apex Pro</p>
+          <p className="text-sm font-medium text-foreground">
+            You&apos;re on Apex Pro
+          </p>
           {currentSubscriptionLabel && (
-            <p className="text-sm text-muted-foreground">Current plan: {currentSubscriptionLabel}</p>
+            <p className="text-sm text-muted-foreground">
+              Current plan: {currentSubscriptionLabel}
+            </p>
           )}
           {(isCanceled || accessUntilLabel) && (
             <p className="text-sm text-muted-foreground">
@@ -124,7 +140,9 @@ export function ProPlanCard({
             </p>
           )}
           {isRefreshingSubscription && (
-            <p className="text-xs text-muted-foreground">Updating subscription status…</p>
+            <p className="text-xs text-muted-foreground">
+              Updating subscription status…
+            </p>
           )}
         </div>
       ) : (
@@ -140,7 +158,9 @@ export function ProPlanCard({
               />
             </div>
           )}
-          <p className="mt-4 text-3xl font-bold tracking-tight text-foreground">{displayPrice}</p>
+          <p className="mt-4 text-3xl font-bold tracking-tight text-foreground">
+            {displayPrice}
+          </p>
           {billingInterval === "ANNUAL" && annualSavingsPercent != null && (
             <p className="mt-1 text-xs text-muted-foreground">
               Billed annually · save {annualSavingsPercent}% vs paying monthly
@@ -160,7 +180,10 @@ export function ProPlanCard({
           <>
             {entitlementBillingInterval && (
               <p className="text-center text-xs text-muted-foreground">
-                Billing: {entitlementBillingInterval === "MONTHLY" ? "Monthly" : "Annual"}
+                Billing:{" "}
+                {entitlementBillingInterval === "MONTHLY"
+                  ? "Monthly"
+                  : "Annual"}
               </p>
             )}
             <Button
@@ -217,7 +240,8 @@ export function ProPlanCard({
           </Button>
         ) : (
           <p className="rounded-lg border border-white/10 bg-muted/30 p-3 text-sm text-muted-foreground">
-            No active RevenueCat packages are available for this account right now.
+            No active RevenueCat packages are available for this account right
+            now.
           </p>
         )}
 

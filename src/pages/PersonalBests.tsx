@@ -23,7 +23,8 @@ export default function PersonalBests() {
     queryKey: ["personal-bests"],
     queryFn: getPersonalBests,
     enabled: isPro,
-    retry: (count, err) => !(err instanceof ApiError && err.status === 403) && count < 1,
+    retry: (count, err) =>
+      !(err instanceof ApiError && err.status === 403) && count < 1,
   });
 
   const locked =
@@ -46,8 +47,8 @@ export default function PersonalBests() {
               Personal bests
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your fastest qualifying laps by track and car, updated automatically from telemetry
-              uploads.
+              Your fastest qualifying laps by track and car, updated
+              automatically from telemetry uploads.
             </p>
           </div>
         </div>
@@ -66,13 +67,18 @@ export default function PersonalBests() {
           </div>
         ) : error && !isProRequiredError(error) ? (
           <p className="mt-10 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
-            {error instanceof Error ? error.message : "Could not load personal bests."}
+            {error instanceof Error
+              ? error.message
+              : "Could not load personal bests."}
           </p>
         ) : !data?.personalBests?.length ? (
           <div className="mt-10 rounded-xl border border-white/10 bg-card/50 p-8 text-center">
-            <p className="text-muted-foreground">No personal bests recorded yet.</p>
+            <p className="text-muted-foreground">
+              No personal bests recorded yet.
+            </p>
             <p className="mt-2 text-sm text-muted-foreground/80">
-              Upload a qualifying session with sector data to start tracking PBs.
+              Upload a qualifying session with sector data to start tracking
+              PBs.
             </p>
             <Button asChild variant="outline" className="mt-6 border-white/15">
               <Link to="/upload">Upload session</Link>
@@ -86,12 +92,17 @@ export default function PersonalBests() {
                   <th className="px-4 py-3">Track</th>
                   <th className="px-4 py-3">Car</th>
                   <th className="px-4 py-3 text-right">Best lap</th>
-                  <th className="hidden px-4 py-3 text-right sm:table-cell">Updated</th>
+                  <th className="hidden px-4 py-3 text-right sm:table-cell">
+                    Updated
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {data.personalBests.map((pb) => (
-                  <tr key={pb.id} className="border-b border-white/5 last:border-0">
+                  <tr
+                    key={pb.id}
+                    className="border-b border-white/5 last:border-0"
+                  >
                     <td className="px-4 py-3 text-foreground">
                       {pb.trackName ?? formatTrackName(pb.track)}
                     </td>

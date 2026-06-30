@@ -104,7 +104,9 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
 ];
 
-export function groupFaqByCategory(items: FaqItem[]): { category: string; items: FaqItem[] }[] {
+export function groupFaqByCategory(
+  items: FaqItem[],
+): { category: string; items: FaqItem[] }[] {
   const orderedCategories = new Set<string>(FAQ_CATEGORY_ORDER);
   const byCategory = new Map<string, FaqItem[]>();
   for (const item of items) {

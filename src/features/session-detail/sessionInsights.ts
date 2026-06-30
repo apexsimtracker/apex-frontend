@@ -2,7 +2,11 @@ import type { LucideIcon } from "lucide-react";
 import { CheckCircle, Timer, Zap, Flag } from "lucide-react";
 import { formatLapDelta } from "@/lib/utils";
 
-export type SessionInsight = { title: string; description: string; icon: LucideIcon };
+export type SessionInsight = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
 
 export function buildSessionInsights(session: {
   lapCount?: number | null;

@@ -100,7 +100,7 @@ export function ProfileView({
   };
   const raw = (user.displayName ?? user.name)?.trim();
   const isPlaceholder = raw && /^Local\s+(Driver|user)$/i.test(raw);
-  const displayName = (raw && !isPlaceholder) ? raw : (user.email?.trim() || "—");
+  const displayName = raw && !isPlaceholder ? raw : user.email?.trim() || "—";
   const avatarSrc = resolveApiUrl(avatarUrl);
   const bioText =
     bio?.trim() || user.bio?.trim() || user.tagline?.trim() || "No bio yet.";
@@ -117,7 +117,10 @@ export function ProfileView({
       ? null
       : {
           start: (raceHistoryPage - 1) * raceHistoryPageSize + 1,
-          end: Math.min(raceHistoryPage * raceHistoryPageSize, raceHistoryTotal),
+          end: Math.min(
+            raceHistoryPage * raceHistoryPageSize,
+            raceHistoryTotal,
+          ),
         };
 
   const raceHistoryEmptyMessage = (() => {

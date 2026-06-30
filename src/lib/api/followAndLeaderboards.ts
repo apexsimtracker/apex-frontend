@@ -35,7 +35,7 @@ function followListParamsToSearch(params?: {
 function normalizeFollowListPageResult(
   raw: FollowListPageResult | null | undefined,
   fallbackPage: number,
-  fallbackLimit: number
+  fallbackLimit: number,
 ): FollowListPageResult {
   if (raw && typeof raw === "object" && Array.isArray(raw.items)) {
     return raw;
@@ -54,28 +54,28 @@ function normalizeFollowListPageResult(
 export async function followUser(userId: string): Promise<UserPublicProfile> {
   return apiPost<UserPublicProfile>(
     `/api/users/${encodeURIComponent(userId)}/follow`,
-    {}
+    {},
   );
 }
 
 /** DELETE usually returns updated preview; may return `{ message }` when target vanished. */
 export async function unfollowUser(
-  userId: string
+  userId: string,
 ): Promise<UserPublicProfile | { message: string }> {
   return apiDelete<UserPublicProfile | { message: string }>(
-    `/api/users/${encodeURIComponent(userId)}/follow`
+    `/api/users/${encodeURIComponent(userId)}/follow`,
   );
 }
 
 /** GET /api/users/:id/followers — paginated. */
 export async function getFollowersPage(
   userId: string,
-  params?: { page?: number; limit?: number; q?: string }
+  params?: { page?: number; limit?: number; q?: string },
 ): Promise<FollowListPageResult> {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
   const raw = await apiGet<FollowListPageResult>(
-    `/api/users/${encodeURIComponent(userId)}/followers${followListParamsToSearch(params)}`
+    `/api/users/${encodeURIComponent(userId)}/followers${followListParamsToSearch(params)}`,
   );
   return normalizeFollowListPageResult(raw, page, limit);
 }
@@ -83,19 +83,21 @@ export async function getFollowersPage(
 /** GET /api/users/:id/following — paginated. */
 export async function getFollowingPage(
   userId: string,
-  params?: { page?: number; limit?: number; q?: string }
+  params?: { page?: number; limit?: number; q?: string },
 ): Promise<FollowListPageResult> {
   const page = params?.page ?? 1;
   const limit = params?.limit ?? FOLLOW_LIST_PAGE_SIZE;
   const raw = await apiGet<FollowListPageResult>(
-    `/api/users/${encodeURIComponent(userId)}/following${followListParamsToSearch(params)}`
+    `/api/users/${encodeURIComponent(userId)}/following${followListParamsToSearch(params)}`,
   );
   return normalizeFollowListPageResult(raw, page, limit);
 }
 
-export async function getFollowStatus(userId: string): Promise<FollowRelationshipStatus> {
+export async function getFollowStatus(
+  userId: string,
+): Promise<FollowRelationshipStatus> {
   return apiGet<FollowRelationshipStatus>(
-    `/api/users/${encodeURIComponent(userId)}/follow-status`
+    `/api/users/${encodeURIComponent(userId)}/follow-status`,
   );
 }
 
@@ -110,11 +112,12 @@ export type LeaderboardRow = {
 
 export async function getLeaderboards(
   metric: string,
-  limit = 10
+  limit = 10,
 ): Promise<LeaderboardRow[]> {
-  const raw = await apiGet<LeaderboardRow[] | { rows?: LeaderboardRow[]; leaderboard?: LeaderboardRow[] }>(
-    `/api/leaderboards?metric=${encodeURIComponent(metric)}&limit=${limit}`
-  );
+  const raw = await apiGet<
+    | LeaderboardRow[]
+    | { rows?: LeaderboardRow[]; leaderboard?: LeaderboardRow[] }
+  >(`/api/leaderboards?metric=${encodeURIComponent(metric)}&limit=${limit}`);
   if (Array.isArray(raw)) return raw;
   const rows = raw?.rows ?? raw?.leaderboard ?? [];
   return Array.isArray(rows) ? rows : [];

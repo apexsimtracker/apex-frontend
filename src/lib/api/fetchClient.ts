@@ -6,12 +6,17 @@ import { ApiError, ProRequiredError } from "./errors";
 // Auth expiry handler registration (e.g. AuthProvider: re-fetch /api/auth/me or clear user).
 let authExpiredHandler: (() => void | Promise<void>) | null = null;
 
-export function registerAuthExpiredHandler(handler: () => void | Promise<void>): void {
+export function registerAuthExpiredHandler(
+  handler: () => void | Promise<void>,
+): void {
   authExpiredHandler = handler;
 }
 
 /** Invoked on HTTP 401 from fetchApi (unless skipAuthExpiredCheck). Not exported — use registerAuthExpiredHandler. */
-export async function notifyAuthExpired(skipAuthExpiredCheck: boolean, status: number): Promise<void> {
+export async function notifyAuthExpired(
+  skipAuthExpiredCheck: boolean,
+  status: number,
+): Promise<void> {
   if (skipAuthExpiredCheck || status !== 401 || !authExpiredHandler) return;
   try {
     await Promise.resolve(authExpiredHandler());
@@ -59,7 +64,9 @@ export function buildApiAuthHeaders(): Record<string, string> {
   return headers;
 }
 
-export async function extractErrorInfo(res: Response): Promise<ErrorParseResult> {
+export async function extractErrorInfo(
+  res: Response,
+): Promise<ErrorParseResult> {
   try {
     const text = await res.text();
     if (!text) return { message: "Request failed" };
@@ -67,7 +74,9 @@ export async function extractErrorInfo(res: Response): Promise<ErrorParseResult>
       const json = JSON.parse(text) as Record<string, unknown>;
       const retryRaw = json.retryAfterMs;
       const retryAfterMs =
-        typeof retryRaw === "number" && Number.isFinite(retryRaw) ? retryRaw : undefined;
+        typeof retryRaw === "number" && Number.isFinite(retryRaw)
+          ? retryRaw
+          : undefined;
       const sr = json.suspensionReason;
       const suspensionReason =
         sr === null ? null : typeof sr === "string" ? sr : undefined;
@@ -93,7 +102,7 @@ export async function fetchApi<T>(
   path: string,
   body?: unknown,
   /** When true, skip calling the auth-expired handler on 401 (login, register, authMe, etc.). */
-  skipAuthExpiredCheck = false
+  skipAuthExpiredCheck = false,
 ): Promise<T> {
   const hasJsonBody = body !== undefined;
   const headers: Record<string, string> = {
@@ -102,10 +111,9 @@ export async function fetchApi<T>(
     ...buildApiAuthHeaders(),
   };
 
-  const url =
-    path.startsWith("http")
-      ? path
-      : `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
+  const url = path.startsWith("http")
+    ? path
+    : `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
 
   let res: Response;
   try {
@@ -128,7 +136,8 @@ export async function fetchApi<T>(
     }
   }
 
-  const { message, code, retryAfterMs, suspensionReason } = await extractErrorInfo(res);
+  const { message, code, retryAfterMs, suspensionReason } =
+    await extractErrorInfo(res);
 
   // Handle PRO_REQUIRED error code - throw specific error type
   if (code === "PRO_REQUIRED") {

@@ -38,15 +38,21 @@ function SkeletonBlock({
             : "rounded-md";
   return (
     <div
-      className={cn(
-        "animate-pulse bg-white/10",
-        roundedClass,
-        className
-      )}
+      className={cn("animate-pulse bg-white/10", roundedClass, className)}
       style={{
         ...style,
-        height: height != null ? (typeof height === "number" ? `${height}px` : height) : undefined,
-        width: width != null ? (typeof width === "number" ? `${width}px` : width) : undefined,
+        height:
+          height != null
+            ? typeof height === "number"
+              ? `${height}px`
+              : height
+            : undefined,
+        width:
+          width != null
+            ? typeof width === "number"
+              ? `${width}px`
+              : width
+            : undefined,
       }}
       {...props}
     />

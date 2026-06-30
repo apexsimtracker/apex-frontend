@@ -94,7 +94,10 @@ export function ProfileRaceHistory({
           <tbody>
             {raceHistoryLoading && raceHistory.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                <td
+                  colSpan={7}
+                  className="py-10 text-center text-sm text-muted-foreground"
+                >
                   Loading race history…
                 </td>
               </tr>
@@ -120,7 +123,9 @@ export function ProfileRaceHistory({
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatCarName(race.car)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">{formatTrackName(race.track)}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {formatTrackName(race.track)}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
@@ -137,7 +142,9 @@ export function ProfileRaceHistory({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-sm font-bold text-foreground">{race.qualiPos ?? "—"}</span>
+                    <span className="text-sm font-bold text-foreground">
+                      {race.qualiPos ?? "—"}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                     {formatLapMs(race.bestLapMs)}
@@ -151,9 +158,13 @@ export function ProfileRaceHistory({
 
       <div className="space-y-4 lg:hidden">
         {raceHistoryLoading && raceHistory.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">Loading race history…</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">
+            Loading race history…
+          </div>
         ) : raceHistory.length === 0 ? (
-          <div className="py-10 text-center text-sm text-neutral-400">{emptyMessage}</div>
+          <div className="py-10 text-center text-sm text-neutral-400">
+            {emptyMessage}
+          </div>
         ) : (
           raceHistory.map((race) => (
             <div
@@ -166,7 +177,9 @@ export function ProfileRaceHistory({
                   <div className="mb-1">
                     <RaceSessionBadges race={race} />
                   </div>
-                  <p className="text-xs text-muted-foreground sm:text-sm">{new Date(race.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground sm:text-sm">
+                    {new Date(race.date).toLocaleDateString()}
+                  </p>
                 </div>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
@@ -183,13 +196,19 @@ export function ProfileRaceHistory({
                 </span>
               </div>
               <div className="mb-3">
-                <p className="text-sm font-semibold text-foreground">{formatTrackName(race.track)}</p>
-                <p className="text-xs text-muted-foreground">{formatCarName(race.car)}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {formatTrackName(race.track)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatCarName(race.car)}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs min-[480px]:grid-cols-3">
                 <div>
                   <p className="text-muted-foreground">Quali</p>
-                  <p className="font-bold text-foreground">{race.qualiPos ?? "—"}</p>
+                  <p className="font-bold text-foreground">
+                    {race.qualiPos ?? "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Best Lap</p>
@@ -198,7 +217,9 @@ export function ProfileRaceHistory({
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{race.source === "MANUAL_ACTIVITY" ? "Manual" : "Status"}</p>
+                  <p className="text-muted-foreground">
+                    {race.source === "MANUAL_ACTIVITY" ? "Manual" : "Status"}
+                  </p>
                   <p className="font-bold text-foreground">
                     {race.source === "MANUAL_ACTIVITY" ? (
                       "—"

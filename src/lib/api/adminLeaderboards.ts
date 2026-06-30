@@ -30,11 +30,11 @@ export type AdminLeaderboardsParams = {
  * GET /api/admin/leaderboards — global derived leaderboards (admin-only, higher row cap than public).
  */
 export async function fetchAdminLeaderboards(
-  params: AdminLeaderboardsParams
+  params: AdminLeaderboardsParams,
 ): Promise<AdminGlobalLeaderboardsResponse> {
   const limit = Math.min(
     ADMIN_LEADERBOARD_MAX_LIMIT,
-    Math.max(1, params.limit ?? 50)
+    Math.max(1, params.limit ?? 50),
   );
   const sp = new URLSearchParams();
   sp.set("metric", params.metric);
@@ -46,6 +46,6 @@ export async function fetchAdminLeaderboards(
     sp.set("userFilter", params.userFilter);
   }
   return apiGet<AdminGlobalLeaderboardsResponse>(
-    `/api/admin/leaderboards?${sp.toString()}`
+    `/api/admin/leaderboards?${sp.toString()}`,
   );
 }

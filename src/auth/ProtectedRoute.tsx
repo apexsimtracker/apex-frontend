@@ -9,7 +9,10 @@ type ProtectedRouteProps = {
   message?: string;
 };
 
-export default function ProtectedRoute({ children, message }: ProtectedRouteProps) {
+export default function ProtectedRoute({
+  children,
+  message,
+}: ProtectedRouteProps) {
   const { user } = useAuth();
   const location = useLocation();
 

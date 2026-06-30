@@ -1,4 +1,8 @@
-import { type BrowserContext, type FrameLocator, type Page } from "@playwright/test";
+import {
+  type BrowserContext,
+  type FrameLocator,
+  type Page,
+} from "@playwright/test";
 
 const STRIPE_TEST_CARD = "4242424242424242";
 const STRIPE_TEST_EXP = "12 / 28";
@@ -9,7 +13,7 @@ const STRIPE_TEST_CVC = "123";
  */
 export async function completeStripeCheckout(
   page: Page,
-  context: BrowserContext
+  context: BrowserContext,
 ): Promise<void> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -25,7 +29,7 @@ export async function completeStripeCheckout(
 
 async function completeStripeCheckoutOnce(
   page: Page,
-  context: BrowserContext
+  context: BrowserContext,
 ): Promise<void> {
   const checkoutRoot = await resolveCheckoutRoot(page, context);
   await fillStripeCheckout(checkoutRoot);
@@ -35,9 +39,11 @@ async function completeStripeCheckoutOnce(
 
 async function resolveCheckoutRoot(
   page: Page,
-  context: BrowserContext
+  context: BrowserContext,
 ): Promise<Page | FrameLocator> {
-  const popup = await context.waitForEvent("page", { timeout: 5_000 }).catch(() => null);
+  const popup = await context
+    .waitForEvent("page", { timeout: 5_000 })
+    .catch(() => null);
   if (popup) {
     await popup.waitForLoadState("domcontentloaded");
     if (/checkout\.stripe\.com/.test(popup.url())) {
@@ -49,7 +55,10 @@ async function resolveCheckoutRoot(
     return page;
   }
 
-  await page.locator("iframe").first().waitFor({ state: "attached", timeout: 45_000 });
+  await page
+    .locator("iframe")
+    .first()
+    .waitFor({ state: "attached", timeout: 45_000 });
 
   const iframeCount = await page.locator("iframe").count();
   for (let i = iframeCount - 1; i >= 0; i -= 1) {
@@ -70,7 +79,9 @@ async function resolveCheckoutRoot(
   return lastFrame;
 }
 
-async function fillStripeCheckout(checkoutRoot: Page | FrameLocator): Promise<void> {
+async function fillStripeCheckout(
+  checkoutRoot: Page | FrameLocator,
+): Promise<void> {
   const gbpButton = checkoutRoot.getByRole("button", { name: /^GB\s*GBP$/i });
   if (await gbpButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
     if (await gbpButton.isEnabled().catch(() => false)) {
@@ -78,7 +89,9 @@ async function fillStripeCheckout(checkoutRoot: Page | FrameLocator): Promise<vo
     }
   }
 
-  const cardNumber = checkoutRoot.getByRole("textbox", { name: /card number/i });
+  const cardNumber = checkoutRoot.getByRole("textbox", {
+    name: /card number/i,
+  });
   await cardNumber.waitFor({ state: "visible", timeout: 20_000 });
   await cardNumber.fill(STRIPE_TEST_CARD);
 
@@ -92,7 +105,9 @@ async function fillStripeCheckout(checkoutRoot: Page | FrameLocator): Promise<vo
     await cvc.fill(STRIPE_TEST_CVC);
   }
 
-  const cardholder = checkoutRoot.getByRole("textbox", { name: /cardholder name/i });
+  const cardholder = checkoutRoot.getByRole("textbox", {
+    name: /cardholder name/i,
+  });
   if (await cardholder.isVisible().catch(() => false)) {
     await cardholder.fill("E2E Test User");
   }
@@ -100,12 +115,14 @@ async function fillStripeCheckout(checkoutRoot: Page | FrameLocator): Promise<vo
 
 async function submitStripeCheckout(
   page: Page,
-  checkoutRoot: Page | FrameLocator
+  checkoutRoot: Page | FrameLocator,
 ): Promise<void> {
   const subscribe = checkoutRoot.getByRole("button", { name: /^Subscribe$/i });
   await subscribe.click({ timeout: 15_000 });
 
-  await page.getByText("Payment complete").waitFor({ state: "visible", timeout: 90_000 });
+  await page
+    .getByText("Payment complete")
+    .waitFor({ state: "visible", timeout: 90_000 });
 
   const continueButton = page.getByRole("button", { name: /^Continue$/i });
   await continueButton.click({ timeout: 15_000 });
@@ -114,7 +131,11 @@ async function submitStripeCheckout(
 async function waitForReturnToApp(page: Page): Promise<void> {
   await page
     .getByTestId("billing-pro-active")
-    .or(page.getByText(/Welcome to Apex Pro|subscription is active|Purchase completed/i))
+    .or(
+      page.getByText(
+        /Welcome to Apex Pro|subscription is active|Purchase completed/i,
+      ),
+    )
     .first()
     .waitFor({ state: "visible", timeout: 90_000 });
 }

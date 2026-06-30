@@ -37,7 +37,10 @@ import {
   adminTable,
 } from "@/pages/admin/adminTableLayout";
 import { ADMIN_TABS_LIST } from "@/pages/admin/adminTabsLayout";
-import { MANUAL_ACTIVITY_SIMS, type ManualActivitySim } from "@/lib/manualActivityData";
+import {
+  MANUAL_ACTIVITY_SIMS,
+  type ManualActivitySim,
+} from "@/lib/manualActivityData";
 import {
   catalogSimKeyToManualActivitySim,
   reviewCatalogOrphanSearchUrl,
@@ -87,7 +90,7 @@ export default function AdminTracks() {
       ...(debouncedSearch.trim() ? { q: debouncedSearch.trim() } : {}),
       ...(includeRetired ? { includeRetired: true } : {}),
     }),
-    [page, kind, simFilter, debouncedSearch, includeRetired]
+    [page, kind, simFilter, debouncedSearch, includeRetired],
   );
 
   const { data, isPending, isError, error } = useQuery({
@@ -102,25 +105,35 @@ export default function AdminTracks() {
   });
 
   const patchTrackMu = useMutation({
-    mutationFn: (payload: { id: string; body: Parameters<typeof patchAdminCatalogTrack>[1] }) =>
-      patchAdminCatalogTrack(payload.id, payload.body),
+    mutationFn: (payload: {
+      id: string;
+      body: Parameters<typeof patchAdminCatalogTrack>[1];
+    }) => patchAdminCatalogTrack(payload.id, payload.body),
     onSuccess: async () => {
       setEditTrack(null);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
-    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Update failed"),
+    onError: (e) =>
+      setFormError(e instanceof ApiError ? e.message : "Update failed"),
   });
 
   const patchCarMu = useMutation({
-    mutationFn: (payload: { id: string; body: Parameters<typeof patchAdminCatalogCar>[1] }) =>
-      patchAdminCatalogCar(payload.id, payload.body),
+    mutationFn: (payload: {
+      id: string;
+      body: Parameters<typeof patchAdminCatalogCar>[1];
+    }) => patchAdminCatalogCar(payload.id, payload.body),
     onSuccess: async () => {
       setEditCar(null);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
-    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Update failed"),
+    onError: (e) =>
+      setFormError(e instanceof ApiError ? e.message : "Update failed"),
   });
 
   const createTrackMu = useMutation({
@@ -128,9 +141,12 @@ export default function AdminTracks() {
     onSuccess: async () => {
       setCreateOpen(false);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
-    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Create failed"),
+    onError: (e) =>
+      setFormError(e instanceof ApiError ? e.message : "Create failed"),
   });
 
   const createCarMu = useMutation({
@@ -138,9 +154,12 @@ export default function AdminTracks() {
     onSuccess: async () => {
       setCreateOpen(false);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
-    onError: (e) => setFormError(e instanceof ApiError ? e.message : "Create failed"),
+    onError: (e) =>
+      setFormError(e instanceof ApiError ? e.message : "Create failed"),
   });
 
   const resolveTrackMu = useMutation({
@@ -149,10 +168,14 @@ export default function AdminTracks() {
       setResolveOrphan(null);
       setResolveError(null);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
     onError: (e) =>
-      setResolveError(e instanceof ApiError ? e.message : "Could not add track to catalog"),
+      setResolveError(
+        e instanceof ApiError ? e.message : "Could not add track to catalog",
+      ),
   });
 
   const resolveCarMu = useMutation({
@@ -161,10 +184,14 @@ export default function AdminTracks() {
       setResolveOrphan(null);
       setResolveError(null);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
-      await qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] });
+      await qc.invalidateQueries({
+        queryKey: ["admin", "catalog", "consistency"],
+      });
     },
     onError: (e) =>
-      setResolveError(e instanceof ApiError ? e.message : "Could not add car to catalog"),
+      setResolveError(
+        e instanceof ApiError ? e.message : "Could not add car to catalog",
+      ),
   });
 
   const rows =
@@ -186,17 +213,28 @@ export default function AdminTracks() {
     return `Showing ${start}–${end} of ${total} ${noun}`;
   }, [total, currentPage, pageSize]);
 
-  const orphanTotal = useMemo(() => countConsistencyOrphans(consistency), [consistency]);
+  const orphanTotal = useMemo(
+    () => countConsistencyOrphans(consistency),
+    [consistency],
+  );
 
   return (
     <>
-      <PageMeta path="/admin/tracks" title={TITLE} description="Manage track and car catalogs." noindex />
+      <PageMeta
+        path="/admin/tracks"
+        title={TITLE}
+        description="Manage track and car catalogs."
+        noindex
+      />
       <div className={ADMIN_PAGE}>
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Tracks & catalogs</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Tracks & catalogs
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add, edit, retire, and audit catalog entries used across manual logging and challenges.
+              Add, edit, retire, and audit catalog entries used across manual
+              logging and challenges.
             </p>
           </div>
           <Button
@@ -213,7 +251,9 @@ export default function AdminTracks() {
 
         {isError && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error instanceof ApiError ? error.message : "Could not load catalog."}
+            {error instanceof ApiError
+              ? error.message
+              : "Could not load catalog."}
           </div>
         )}
 
@@ -277,13 +317,23 @@ export default function AdminTracks() {
               </div>
 
               {isPending ? (
-                <div className="flex justify-center px-4 py-12" aria-busy="true">
-                  <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+                <div
+                  className="flex justify-center px-4 py-12"
+                  aria-busy="true"
+                >
+                  <Loader2
+                    className="size-6 animate-spin text-muted-foreground"
+                    aria-hidden
+                  />
                 </div>
               ) : rows.length === 0 ? (
                 <div className="px-6 py-16 text-center">
-                  <p className="text-sm font-medium text-foreground">No entries match</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Try clearing filters or create a new entry.</p>
+                  <p className="text-sm font-medium text-foreground">
+                    No entries match
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Try clearing filters or create a new entry.
+                  </p>
                 </div>
               ) : (
                 <div className={ADMIN_TABLE_SCROLL}>
@@ -293,7 +343,9 @@ export default function AdminTracks() {
                         <th className={ADMIN_TH}>Sim</th>
                         <th className={ADMIN_TH}>Slug</th>
                         <th className={ADMIN_TH}>Display name</th>
-                        {kind === "track" ? <th className={ADMIN_TH}>Length (km)</th> : null}
+                        {kind === "track" ? (
+                          <th className={ADMIN_TH}>Length (km)</th>
+                        ) : null}
                         <th className={ADMIN_TH}>Status</th>
                         <th className="w-12 whitespace-nowrap p-3" />
                       </tr>
@@ -305,9 +357,15 @@ export default function AdminTracks() {
                               <td className={ADMIN_TD}>
                                 <SimBadge sim={r.sim} size="md" />
                               </td>
-                              <td className={`${ADMIN_TD} font-mono text-xs text-foreground`}>{r.slug}</td>
+                              <td
+                                className={`${ADMIN_TD} font-mono text-xs text-foreground`}
+                              >
+                                {r.slug}
+                              </td>
                               <td className={ADMIN_TD}>{r.displayName}</td>
-                              <td className={`${ADMIN_TD} tabular-nums text-muted-foreground`}>
+                              <td
+                                className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
+                              >
                                 {r.lengthKm != null ? r.lengthKm : "—"}
                               </td>
                               <td className={ADMIN_TD}>
@@ -316,13 +374,20 @@ export default function AdminTracks() {
                                     Retired
                                   </span>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">Active</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Active
+                                  </span>
                                 )}
                               </td>
                               <td className={ADMIN_TD_ACTIONS}>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="size-8" aria-label="Actions">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8"
+                                      aria-label="Actions"
+                                    >
                                       <MoreHorizontal className="size-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -339,7 +404,9 @@ export default function AdminTracks() {
                                       onClick={() =>
                                         patchTrackMu.mutate({
                                           id: r.id,
-                                          body: { retired: r.retiredAt == null },
+                                          body: {
+                                            retired: r.retiredAt == null,
+                                          },
                                         })
                                       }
                                     >
@@ -355,7 +422,11 @@ export default function AdminTracks() {
                               <td className={ADMIN_TD}>
                                 <SimBadge sim={r.sim} size="md" />
                               </td>
-                              <td className={`${ADMIN_TD} font-mono text-xs text-foreground`}>{r.slug}</td>
+                              <td
+                                className={`${ADMIN_TD} font-mono text-xs text-foreground`}
+                              >
+                                {r.slug}
+                              </td>
                               <td className={ADMIN_TD}>{r.displayName}</td>
                               <td className={ADMIN_TD}>
                                 {r.retiredAt ? (
@@ -363,13 +434,20 @@ export default function AdminTracks() {
                                     Retired
                                   </span>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">Active</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Active
+                                  </span>
                                 )}
                               </td>
                               <td className={ADMIN_TD_ACTIONS}>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="size-8" aria-label="Actions">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8"
+                                      aria-label="Actions"
+                                    >
                                       <MoreHorizontal className="size-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -386,7 +464,9 @@ export default function AdminTracks() {
                                       onClick={() =>
                                         patchCarMu.mutate({
                                           id: r.id,
-                                          body: { retired: r.retiredAt == null },
+                                          body: {
+                                            retired: r.retiredAt == null,
+                                          },
                                         })
                                       }
                                     >
@@ -436,9 +516,12 @@ export default function AdminTracks() {
                 onClick={() => setConsistencyOpen((o) => !o)}
               >
                 <div>
-                  <h2 className="text-sm font-semibold text-foreground">Catalog consistency</h2>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Catalog consistency
+                  </h2>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Tokens stored on sessions or challenges that do not resolve to the current catalog.
+                    Tokens stored on sessions or challenges that do not resolve
+                    to the current catalog.
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -450,7 +533,9 @@ export default function AdminTracks() {
                 <ConsistencyPanel
                   data={consistency}
                   onRefresh={() =>
-                    void qc.invalidateQueries({ queryKey: ["admin", "catalog", "consistency"] })
+                    void qc.invalidateQueries({
+                      queryKey: ["admin", "catalog", "consistency"],
+                    })
                   }
                   onOpenResolve={(p) => {
                     setResolveError(null);
@@ -537,18 +622,22 @@ function reviewHrefForOrphan(
   catalogKind: AdminCatalogKind,
   simKey: string | undefined,
   token: string,
-  pbSimSelected: ManualActivitySim | ""
+  pbSimSelected: ManualActivitySim | "",
 ): string {
   const crKind: CatalogReviewKind = catalogKind === "track" ? "track" : "car";
   const manual =
-    (simKey && catalogSimKeyToManualActivitySim(simKey)) || pbSimSelected || null;
+    (simKey && catalogSimKeyToManualActivitySim(simKey)) ||
+    pbSimSelected ||
+    null;
   if (manual) {
     return reviewCatalogReferenceUrl({ sim: manual, kind: crKind });
   }
   return reviewCatalogOrphanSearchUrl(token, crKind);
 }
 
-function countConsistencyOrphans(c: AdminCatalogConsistency | undefined): number {
+function countConsistencyOrphans(
+  c: AdminCatalogConsistency | undefined,
+): number {
   if (!c) return 0;
   return (
     c.sessionTracks.length +
@@ -574,13 +663,15 @@ function ConsistencyPanel({
     simLocked: boolean;
   }) => void;
 }) {
-  const [pbSim, setPbSim] = useState<Record<string, ManualActivitySim | "">>({});
+  const [pbSim, setPbSim] = useState<Record<string, ManualActivitySim | "">>(
+    {},
+  );
 
   function renderBlock(
     title: string,
     kind: AdminCatalogKind,
     rows: Array<{ sim?: string; token: string; count: number }>,
-    hasSimOnRow: boolean
+    hasSimOnRow: boolean,
   ) {
     if (!rows.length) return null;
 
@@ -597,7 +688,7 @@ function ConsistencyPanel({
               kind,
               row.sim,
               row.token,
-              hasSimOnRow ? "" : pbPick
+              hasSimOnRow ? "" : pbPick,
             );
 
             return (
@@ -606,13 +697,17 @@ function ConsistencyPanel({
                 className="flex flex-col gap-2 border-b border-white/5 p-3 last:border-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                  <span className="break-all font-mono text-xs text-foreground">{row.token}</span>
+                  <span className="break-all font-mono text-xs text-foreground">
+                    {row.token}
+                  </span>
                   {hasSimOnRow && row.sim ? (
                     <SimBadge sim={row.sim} size="sm" />
                   ) : null}
                   {!hasSimOnRow ? (
                     <label className="flex max-w-xs flex-col gap-1 text-[10px] text-muted-foreground sm:inline-flex sm:flex-row sm:items-center">
-                      <span className="whitespace-nowrap">Sim for review / add</span>
+                      <span className="whitespace-nowrap">
+                        Sim for review / add
+                      </span>
                       <select
                         className={`rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white ${SELECT_MANUAL_LIKE}`}
                         value={pbPick}
@@ -634,7 +729,9 @@ function ConsistencyPanel({
                   ) : null}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <span className="text-xs tabular-nums text-muted-foreground">{row.count}×</span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {row.count}×
+                  </span>
                   <a
                     href={reviewHref}
                     target="_blank"
@@ -650,7 +747,8 @@ function ConsistencyPanel({
                     variant="secondary"
                     onClick={() => {
                       if (hasSimOnRow && row.sim) {
-                        const initial = catalogSimKeyToManualActivitySim(row.sim) ?? "";
+                        const initial =
+                          catalogSimKeyToManualActivitySim(row.sim) ?? "";
                         onOpenResolve({
                           kind,
                           token: row.token,
@@ -698,42 +796,63 @@ function ConsistencyPanel({
       {renderBlock(
         "Session tracks",
         "track",
-        data.sessionTracks.map((x) => ({ sim: x.sim, token: x.token, count: x.count })),
-        true
+        data.sessionTracks.map((x) => ({
+          sim: x.sim,
+          token: x.token,
+          count: x.count,
+        })),
+        true,
       )}
       {renderBlock(
         "Session cars",
         "car",
-        data.sessionCars.map((x) => ({ sim: x.sim, token: x.token, count: x.count })),
-        true
+        data.sessionCars.map((x) => ({
+          sim: x.sim,
+          token: x.token,
+          count: x.count,
+        })),
+        true,
       )}
       {renderBlock(
         "Challenge tracks",
         "track",
-        data.challengeTracks.map((x) => ({ sim: x.sim, token: x.token, count: x.count })),
-        true
+        data.challengeTracks.map((x) => ({
+          sim: x.sim,
+          token: x.token,
+          count: x.count,
+        })),
+        true,
       )}
       {renderBlock(
         "Challenge cars",
         "car",
-        data.challengeCars.map((x) => ({ sim: x.sim, token: x.token, count: x.count })),
-        true
+        data.challengeCars.map((x) => ({
+          sim: x.sim,
+          token: x.token,
+          count: x.count,
+        })),
+        true,
       )}
       {renderBlock(
         "Personal best tracks (no sim on row)",
         "track",
-        data.personalBestTracks.map((x) => ({ token: x.token, count: x.count })),
-        false
+        data.personalBestTracks.map((x) => ({
+          token: x.token,
+          count: x.count,
+        })),
+        false,
       )}
       {renderBlock(
         "Personal best cars",
         "car",
         data.personalBestCars.map((x) => ({ token: x.token, count: x.count })),
-        false
+        false,
       )}
 
       {!anyRows && (
-        <p className="text-sm text-muted-foreground">No orphan tokens detected.</p>
+        <p className="text-sm text-muted-foreground">
+          No orphan tokens detected.
+        </p>
       )}
     </div>
   );
@@ -801,67 +920,83 @@ function ResolveOrphanCatalogModal({
       mobileVariant="fullscreen"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={submit}
+            disabled={submitting}
+          >
             {submitting ? "Saving…" : "Add to catalog"}
           </Button>
         </>
       }
     >
-        {errorMessage && (
-          <p className="text-sm text-red-500" role="alert">
-            {errorMessage}
-            {/already exists/i.test(errorMessage) ? (
-              <span className="block pt-1 text-xs text-muted-foreground">
-                Retire or edit the existing catalog row if this slug should stay unique per sim.
-              </span>
-            ) : null}
-          </p>
-        )}
-        <div className="space-y-3">
+      {errorMessage && (
+        <p className="text-sm text-red-500" role="alert">
+          {errorMessage}
+          {/already exists/i.test(errorMessage) ? (
+            <span className="block pt-1 text-xs text-muted-foreground">
+              Retire or edit the existing catalog row if this slug should stay
+              unique per sim.
+            </span>
+          ) : null}
+        </p>
+      )}
+      <div className="space-y-3">
+        <label className="block text-xs text-muted-foreground">
+          Sim <span className="text-red-400">*</span>
+          <select
+            className={`mt-1 ${SELECT_MANUAL_LIKE}`}
+            value={sim}
+            onChange={(e) => setSim(e.target.value as ManualActivitySim | "")}
+            disabled={submitting || simLocked}
+          >
+            <option value="">Select sim…</option>
+            {MANUAL_ACTIVITY_SIMS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Slug (token) <span className="text-red-400">*</span>
+          <Input
+            className="mt-1 font-mono text-sm"
+            value={token}
+            readOnly
+            disabled
+          />
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Display name <span className="text-red-400">*</span>
+          <Input
+            className="mt-1"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Official name from vendor reference"
+          />
+        </label>
+        {kind === "track" && (
           <label className="block text-xs text-muted-foreground">
-            Sim <span className="text-red-400">*</span>
-            <select
-              className={`mt-1 ${SELECT_MANUAL_LIKE}`}
-              value={sim}
-              onChange={(e) => setSim(e.target.value as ManualActivitySim | "")}
-              disabled={submitting || simLocked}
-            >
-              <option value="">Select sim…</option>
-              {MANUAL_ACTIVITY_SIMS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Slug (token) <span className="text-red-400">*</span>
-            <Input className="mt-1 font-mono text-sm" value={token} readOnly disabled />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Display name <span className="text-red-400">*</span>
+            Length (km) <span className="text-red-400">*</span>
             <Input
               className="mt-1"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Official name from vendor reference"
+              inputMode="decimal"
+              value={lengthKm}
+              onChange={(e) => setLengthKm(e.target.value)}
             />
           </label>
-          {kind === "track" && (
-            <label className="block text-xs text-muted-foreground">
-              Length (km) <span className="text-red-400">*</span>
-              <Input
-                className="mt-1"
-                inputMode="decimal"
-                value={lengthKm}
-                onChange={(e) => setLengthKm(e.target.value)}
-              />
-            </label>
-          )}
-        </div>
+        )}
+      </div>
     </BaseModal>
   );
 }
@@ -916,57 +1051,75 @@ function CreateCatalogModal({
       mobileVariant="fullscreen"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button type="button" variant="destructive" onClick={submit} disabled={submitting}>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={submit}
+            disabled={submitting}
+          >
             {submitting ? "Saving…" : "Create"}
           </Button>
         </>
       }
     >
-        {errorMessage && (
-          <p className="text-sm text-red-500" role="alert">
-            {errorMessage}
-          </p>
+      {errorMessage && (
+        <p className="text-sm text-red-500" role="alert">
+          {errorMessage}
+        </p>
+      )}
+      <div className="space-y-3">
+        <label className="block text-xs text-muted-foreground">
+          Sim <span className="text-red-400">*</span>
+          <select
+            className={`mt-1 ${SELECT_MANUAL_LIKE}`}
+            value={sim}
+            onChange={(e) => setSim(e.target.value)}
+            disabled={submitting}
+          >
+            <option value="">Select sim…</option>
+            {MANUAL_ACTIVITY_SIMS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Slug <span className="text-red-400">*</span>
+          <Input
+            className="mt-1 font-mono text-sm"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+          />
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Display name <span className="text-red-400">*</span>
+          <Input
+            className="mt-1"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+        {kind === "track" && (
+          <label className="block text-xs text-muted-foreground">
+            Length (km) <span className="text-red-400">*</span>
+            <Input
+              className="mt-1"
+              inputMode="decimal"
+              value={lengthKm}
+              onChange={(e) => setLengthKm(e.target.value)}
+            />
+          </label>
         )}
-        <div className="space-y-3">
-          <label className="block text-xs text-muted-foreground">
-            Sim <span className="text-red-400">*</span>
-            <select
-              className={`mt-1 ${SELECT_MANUAL_LIKE}`}
-              value={sim}
-              onChange={(e) => setSim(e.target.value)}
-              disabled={submitting}
-            >
-              <option value="">Select sim…</option>
-              {MANUAL_ACTIVITY_SIMS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Slug <span className="text-red-400">*</span>
-            <Input className="mt-1 font-mono text-sm" value={slug} onChange={(e) => setSlug(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Display name <span className="text-red-400">*</span>
-            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          {kind === "track" && (
-            <label className="block text-xs text-muted-foreground">
-              Length (km) <span className="text-red-400">*</span>
-              <Input
-                className="mt-1"
-                inputMode="decimal"
-                value={lengthKm}
-                onChange={(e) => setLengthKm(e.target.value)}
-              />
-            </label>
-          )}
-        </div>
+      </div>
     </BaseModal>
   );
 }
@@ -985,7 +1138,9 @@ function EditTrackModal({
   errorMessage: string | null;
 }) {
   const [displayName, setDisplayName] = useState(row.displayName);
-  const [lengthKm, setLengthKm] = useState(row.lengthKm != null ? String(row.lengthKm) : "");
+  const [lengthKm, setLengthKm] = useState(
+    row.lengthKm != null ? String(row.lengthKm) : "",
+  );
   const [sortOrder, setSortOrder] = useState(String(row.sortOrder));
 
   return (
@@ -998,7 +1153,12 @@ function EditTrackModal({
       mobileVariant="fullscreen"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button
@@ -1022,30 +1182,39 @@ function EditTrackModal({
         </>
       }
     >
-        {errorMessage && (
-          <p className="text-sm text-red-500" role="alert">
-            {errorMessage}
-          </p>
-        )}
-        <div className="space-y-3">
-          <label className="block text-xs text-muted-foreground">
-            Display name
-            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Length (km) <span className="text-red-400">*</span>
-            <Input
-              className="mt-1"
-              inputMode="decimal"
-              value={lengthKm}
-              onChange={(e) => setLengthKm(e.target.value)}
-            />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Sort order
-            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
-          </label>
-        </div>
+      {errorMessage && (
+        <p className="text-sm text-red-500" role="alert">
+          {errorMessage}
+        </p>
+      )}
+      <div className="space-y-3">
+        <label className="block text-xs text-muted-foreground">
+          Display name
+          <Input
+            className="mt-1"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Length (km) <span className="text-red-400">*</span>
+          <Input
+            className="mt-1"
+            inputMode="decimal"
+            value={lengthKm}
+            onChange={(e) => setLengthKm(e.target.value)}
+          />
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Sort order
+          <Input
+            className="mt-1"
+            inputMode="numeric"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+          />
+        </label>
+      </div>
     </BaseModal>
   );
 }
@@ -1076,7 +1245,12 @@ function EditCarModal({
       mobileVariant="fullscreen"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button
@@ -1096,21 +1270,30 @@ function EditCarModal({
         </>
       }
     >
-        {errorMessage && (
-          <p className="text-sm text-red-500" role="alert">
-            {errorMessage}
-          </p>
-        )}
-        <div className="space-y-3">
-          <label className="block text-xs text-muted-foreground">
-            Display name
-            <Input className="mt-1" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          <label className="block text-xs text-muted-foreground">
-            Sort order
-            <Input className="mt-1" inputMode="numeric" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />
-          </label>
-        </div>
+      {errorMessage && (
+        <p className="text-sm text-red-500" role="alert">
+          {errorMessage}
+        </p>
+      )}
+      <div className="space-y-3">
+        <label className="block text-xs text-muted-foreground">
+          Display name
+          <Input
+            className="mt-1"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+        <label className="block text-xs text-muted-foreground">
+          Sort order
+          <Input
+            className="mt-1"
+            inputMode="numeric"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+          />
+        </label>
+      </div>
     </BaseModal>
   );
 }

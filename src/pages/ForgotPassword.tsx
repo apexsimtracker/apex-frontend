@@ -55,9 +55,12 @@ function EmailStepForm({
         })}
         className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Forgot password</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Forgot password
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Enter your email and we&apos;ll send you a verification code to reset your password.
+          Enter your email and we&apos;ll send you a verification code to reset
+          your password.
         </p>
 
         <FormField
@@ -129,9 +132,15 @@ function CodeStepForm({
         })}
         className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email</h1>
-        <p className="text-sm text-muted-foreground">We sent a 6‑digit verification code to:</p>
-        <p className="break-all text-sm font-medium text-foreground">{emailDisplay}</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Check your email
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          We sent a 6‑digit verification code to:
+        </p>
+        <p className="break-all text-sm font-medium text-foreground">
+          {emailDisplay}
+        </p>
 
         <FormField
           control={form.control}
@@ -206,8 +215,12 @@ function ResetStepForm({
         })}
         className="w-full space-y-4"
       >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Reset password</h1>
-        <p className="text-sm text-muted-foreground">Choose a new password for your Apex account.</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Reset password
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Choose a new password for your Apex account.
+        </p>
 
         <FormField
           control={form.control}
@@ -315,7 +328,8 @@ export default function ForgotPassword() {
     } catch (err) {
       emailForm.setError("root", {
         type: "server",
-        message: err instanceof Error ? err.message : "Failed to request reset.",
+        message:
+          err instanceof Error ? err.message : "Failed to request reset.",
       });
     } finally {
       setLoading(false);
@@ -385,7 +399,8 @@ export default function ForgotPassword() {
     } catch (err) {
       resetForm.setError("root", {
         type: "server",
-        message: err instanceof Error ? err.message : "Failed to reset password.",
+        message:
+          err instanceof Error ? err.message : "Failed to reset password.",
       });
     } finally {
       setLoading(false);
@@ -455,9 +470,12 @@ export default function ForgotPassword() {
   } else {
     content = (
       <div className="w-full space-y-4 text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Password reset</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Password reset
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Your password has been updated. You can now sign in with your new password.
+          Your password has been updated. You can now sign in with your new
+          password.
         </p>
         <AuthPrimaryButton type="button" onClick={() => navigate("/login")}>
           Back to sign in

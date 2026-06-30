@@ -5,14 +5,17 @@ import {
   type ManualActivityFormValues,
 } from "@/lib/validation/manualActivity";
 
-type InitialData = {
-  catalogTrackId?: string | null;
-  trackId?: string | null;
-  trackNameHint?: string | null;
-  catalogCarId?: string | null;
-  carId?: string | null;
-  carNameHint?: string | null;
-} | null | undefined;
+type InitialData =
+  | {
+      catalogTrackId?: string | null;
+      trackId?: string | null;
+      trackNameHint?: string | null;
+      catalogCarId?: string | null;
+      carId?: string | null;
+      carNameHint?: string | null;
+    }
+  | null
+  | undefined;
 
 export function useManualActivityFormSync(options: {
   initialData?: InitialData;
@@ -28,22 +31,24 @@ export function useManualActivityFormSync(options: {
     carToken: string;
     carName: string;
   } | null;
-  setPendingRecent: (v: {
-    trackToken: string;
-    trackName: string;
-    carToken: string;
-    carName: string;
-  } | null) => void;
+  setPendingRecent: (
+    v: {
+      trackToken: string;
+      trackName: string;
+      carToken: string;
+      carName: string;
+    } | null,
+  ) => void;
   buildDefaults: (data?: any) => any;
   resolveCatalogTrackId: (
     catalog: { id: string; name: string }[],
     storedToken: string,
-    nameHint: string | null | undefined
+    nameHint: string | null | undefined,
   ) => string;
   resolveCatalogCarId: (
     catalog: { id: string; name: string }[],
     storedToken: string,
-    nameHint: string | null | undefined
+    nameHint: string | null | undefined,
   ) => string;
 }) {
   const {
@@ -93,11 +98,7 @@ export function useManualActivityFormSync(options: {
     if (!sim || tracks.length === 0) return;
     const current = form.getValues("trackId") as string;
     if (current && tracks.some((t) => t.id === current)) return;
-    const resolved = resolveCatalogTrackId(
-      tracks,
-      trackToken,
-      trackNameHint
-    );
+    const resolved = resolveCatalogTrackId(tracks, trackToken, trackNameHint);
     if (resolved) {
       form.setValue("trackId", resolved, { shouldValidate: true });
       return;
@@ -108,24 +109,13 @@ export function useManualActivityFormSync(options: {
     if (current) {
       form.setValue("trackId", "", { shouldValidate: true });
     }
-  }, [
-    sim,
-    tracks,
-    trackToken,
-    trackNameHint,
-    form,
-    resolveCatalogTrackId,
-  ]);
+  }, [sim, tracks, trackToken, trackNameHint, form, resolveCatalogTrackId]);
 
   useEffect(() => {
     if (!sim || cars.length === 0) return;
     const current = form.getValues("carId") as string;
     if (current && cars.some((c) => c.id === current)) return;
-    const resolved = resolveCatalogCarId(
-      cars,
-      carToken,
-      carNameHint
-    );
+    const resolved = resolveCatalogCarId(cars, carToken, carNameHint);
     if (resolved) {
       form.setValue("carId", resolved, { shouldValidate: true });
       return;
@@ -135,28 +125,21 @@ export function useManualActivityFormSync(options: {
     if (current) {
       form.setValue("carId", "", { shouldValidate: true });
     }
-  }, [
-    sim,
-    cars,
-    carToken,
-    carNameHint,
-    form,
-    resolveCatalogCarId,
-  ]);
+  }, [sim, cars, carToken, carNameHint, form, resolveCatalogCarId]);
 
   useEffect(() => {
     if (!pendingRecent || tracks.length === 0) return;
     const trackResolved = resolveCatalogTrackId(
       tracks,
       pendingRecent.trackToken,
-      pendingRecent.trackName
+      pendingRecent.trackName,
     );
     if (trackResolved) form.setValue("trackId", trackResolved);
     if (cars.length > 0) {
       const carResolved = resolveCatalogCarId(
         cars,
         pendingRecent.carToken,
-        pendingRecent.carName !== "—" ? pendingRecent.carName : null
+        pendingRecent.carName !== "—" ? pendingRecent.carName : null,
       );
       if (carResolved) form.setValue("carId", carResolved);
     }
@@ -171,4 +154,3 @@ export function useManualActivityFormSync(options: {
     resolveCatalogCarId,
   ]);
 }
-

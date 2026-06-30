@@ -86,11 +86,13 @@ export default function Challenges() {
         simFilter,
         carClassFilter,
       ] as const,
-    [user?.id, tab, page, debouncedQ, simFilter, carClassFilter]
+    [user?.id, tab, page, debouncedQ, simFilter, carClassFilter],
   );
 
   const listQueryKeySerialized = JSON.stringify(listQueryKey);
-  const [settledListQueryKey, setSettledListQueryKey] = useState(listQueryKeySerialized);
+  const [settledListQueryKey, setSettledListQueryKey] = useState(
+    listQueryKeySerialized,
+  );
 
   const {
     data: listData,
@@ -112,7 +114,7 @@ export default function Challenges() {
 
   const challengeIds = useMemo(
     () => (listData?.items ?? []).map((c) => c.id),
-    [listData?.items]
+    [listData?.items],
   );
 
   const { data: socialData } = useQuery({
@@ -133,7 +135,9 @@ export default function Challenges() {
     mutationFn: (challengeId: string) => joinChallenge(challengeId),
     onSuccess: (_, challengeId) => {
       void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "social"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "social"],
+      });
       void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
       void queryClient.invalidateQueries({
         queryKey: ["challenges", "detail", challengeId],
@@ -144,7 +148,7 @@ export default function Challenges() {
       setJoinError(
         typeof (e as Error)?.message === "string"
           ? (e as Error).message
-          : "Join failed"
+          : "Join failed",
       );
     },
   });
@@ -162,7 +166,9 @@ export default function Challenges() {
     joinMutation.mutate(challengeId);
   }
 
-  const joiningId = joinMutation.isPending ? joinMutation.variables ?? null : null;
+  const joiningId = joinMutation.isPending
+    ? (joinMutation.variables ?? null)
+    : null;
 
   const error = listFailed
     ? listError instanceof Error
@@ -191,11 +197,17 @@ export default function Challenges() {
     !joinedTabLoggedOut && !listFailed && (listLoading || listQueryStale);
 
   const yourRank =
-    meta?.yourRank != null && Number.isFinite(meta.yourRank) ? meta.yourRank : null;
+    meta?.yourRank != null && Number.isFinite(meta.yourRank)
+      ? meta.yourRank
+      : null;
 
   return (
     <>
-      <PageMeta title={challengesTitle} description={challengesDescription} path={CHALLENGES_PATH} />
+      <PageMeta
+        title={challengesTitle}
+        description={challengesDescription}
+        path={CHALLENGES_PATH}
+      />
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mb-10">
@@ -203,9 +215,9 @@ export default function Challenges() {
               Challenges
             </h1>
             <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
-              Time-limited competitions: set your best lap at a specific track and car class, climb the
-              leaderboard, and earn badges. Manual entries show as unverified; .ibt uploads are verified
-              telemetry.
+              Time-limited competitions: set your best lap at a specific track
+              and car class, climb the leaderboard, and earn badges. Manual
+              entries show as unverified; .ibt uploads are verified telemetry.
             </p>
           </div>
 
@@ -275,7 +287,9 @@ export default function Challenges() {
             <div className="mb-4 text-sm text-neutral-400">{joinError}</div>
           )}
 
-          {showListSkeleton && <ChallengeBrowseGridSkeleton count={SKELETON_COUNT} />}
+          {showListSkeleton && (
+            <ChallengeBrowseGridSkeleton count={SKELETON_COUNT} />
+          )}
 
           {error && !showListSkeleton && (
             <div className="flex min-h-[240px] items-center justify-center py-16">
@@ -346,8 +360,12 @@ export default function Challenges() {
                   <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
                     Open challenges
                   </p>
-                  <p className="text-2xl font-bold text-white">{meta?.activeChallenges ?? "—"}</p>
-                  <p className="mt-1 text-xs text-white/60">Upcoming + active</p>
+                  <p className="text-2xl font-bold text-white">
+                    {meta?.activeChallenges ?? "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/60">
+                    Upcoming + active
+                  </p>
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
@@ -355,19 +373,29 @@ export default function Challenges() {
                   </p>
                   <p
                     className={
-                      yourRank != null ? "text-2xl font-bold" : "text-2xl font-bold text-white"
+                      yourRank != null
+                        ? "text-2xl font-bold"
+                        : "text-2xl font-bold text-white"
                     }
-                    style={yourRank != null ? { color: "rgb(240, 28, 28)" } : undefined}
+                    style={
+                      yourRank != null
+                        ? { color: "rgb(240, 28, 28)" }
+                        : undefined
+                    }
                   >
                     {yourRank != null ? `#${yourRank}` : "Unranked"}
                   </p>
-                  <p className="mt-1 text-xs text-white/60">Overall wins leaderboard</p>
+                  <p className="mt-1 text-xs text-white/60">
+                    Overall wins leaderboard
+                  </p>
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-white/50">
                     Joined
                   </p>
-                  <p className="text-2xl font-bold text-white">{meta?.joinedThisSeason ?? "—"}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {meta?.joinedThisSeason ?? "—"}
+                  </p>
                   <p className="mt-1 text-xs text-white/60">Challenge joins</p>
                 </div>
               </div>

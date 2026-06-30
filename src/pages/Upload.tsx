@@ -41,7 +41,9 @@ export default function UploadPage() {
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("bytes");
   const [uploadPercent, setUploadPercent] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [challengeAttachWarning, setChallengeAttachWarning] = useState<string | null>(null);
+  const [challengeAttachWarning, setChallengeAttachWarning] = useState<
+    string | null
+  >(null);
   const [successSessionId, setSuccessSessionId] = useState<string | null>(null);
   const postSuccessNavRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -82,7 +84,7 @@ export default function UploadPage() {
 
     if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
       setErrorMessage(
-        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`
+        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`,
       );
       setUploadState("error");
       return;
@@ -101,7 +103,7 @@ export default function UploadPage() {
       const droppedFile = e.dataTransfer.files[0];
       handleFileSelect(droppedFile);
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -119,7 +121,7 @@ export default function UploadPage() {
       const selectedFile = e.target.files?.[0] ?? null;
       handleFileSelect(selectedFile);
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleUpload = useCallback(async () => {
@@ -127,7 +129,7 @@ export default function UploadPage() {
 
     if (file.size > MAX_MANUAL_UPLOAD_BYTES) {
       setErrorMessage(
-        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(file.size)}).`
+        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(file.size)}).`,
       );
       setUploadState("error");
       return;
@@ -153,11 +155,12 @@ export default function UploadPage() {
             setUploadPercent(100);
           },
         },
-        challengeId ? { challengeId } : undefined
+        challengeId ? { challengeId } : undefined,
       );
 
       const attachWarn =
-        typeof result.challengeAttachWarning === "string" && result.challengeAttachWarning.trim()
+        typeof result.challengeAttachWarning === "string" &&
+        result.challengeAttachWarning.trim()
           ? result.challengeAttachWarning.trim()
           : null;
       setChallengeAttachWarning(attachWarn);
@@ -204,7 +207,12 @@ export default function UploadPage() {
 
   return (
     <>
-      <PageMeta title={uploadTitle} description={uploadDescription} path={UPLOAD_PATH} noindex />
+      <PageMeta
+        title={uploadTitle}
+        description={uploadDescription}
+        path={UPLOAD_PATH}
+        noindex
+      />
       <div className="min-h-[calc(100vh-4rem)] bg-background">
         <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6 sm:py-12 lg:max-w-xl">
           <div className="mb-8">
@@ -214,9 +222,11 @@ export default function UploadPage() {
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-white/60">
                 iRacing{" "}
-                <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">.ibt</code>{" "}
-                telemetry is processed automatically — session type, positions, and distance when
-                available (max {MAX_MB_LABEL} MB).
+                <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">
+                  .ibt
+                </code>{" "}
+                telemetry is processed automatically — session type, positions,
+                and distance when available (max {MAX_MB_LABEL} MB).
               </p>
             </div>
           </div>
@@ -224,9 +234,13 @@ export default function UploadPage() {
           <div className="rounded-xl border border-white/10 bg-card/20 p-5 shadow-sm backdrop-blur-lg sm:p-7">
             {challengeId && uploadState !== "success" && (
               <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                <Trophy className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden />
+                <Trophy
+                  className="mt-0.5 size-4 shrink-0 text-amber-400"
+                  aria-hidden
+                />
                 <p className="text-sm text-amber-100/90">
-                  This upload will count toward your active challenge when processed.
+                  This upload will count toward your active challenge when
+                  processed.
                 </p>
               </div>
             )}
@@ -238,7 +252,9 @@ export default function UploadPage() {
                     <CheckCircle className="size-7 text-green-500" />
                   </div>
                 </div>
-                <p className="text-lg font-medium text-white">Session uploaded</p>
+                <p className="text-lg font-medium text-white">
+                  Session uploaded
+                </p>
                 {challengeAttachWarning ? (
                   <>
                     <div className="mt-5 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-left">
@@ -247,14 +263,18 @@ export default function UploadPage() {
                         <p className="text-sm font-medium text-amber-200">
                           Not counted toward this challenge
                         </p>
-                        <p className="mt-1 text-sm text-amber-100/90">{challengeAttachWarning}</p>
+                        <p className="mt-1 text-sm text-amber-100/90">
+                          {challengeAttachWarning}
+                        </p>
                         <p className="mt-2 text-xs text-amber-200/70">
-                          Your laps are saved on the session, but this run did not qualify for the
-                          challenge leaderboard.
+                          Your laps are saved on the session, but this run did
+                          not qualify for the challenge leaderboard.
                         </p>
                       </div>
                     </div>
-                    <p className="mt-4 text-sm text-white/50">Opening session in a few seconds…</p>
+                    <p className="mt-4 text-sm text-white/50">
+                      Opening session in a few seconds…
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
@@ -265,14 +285,17 @@ export default function UploadPage() {
                           clearTimeout(postSuccessNavRef.current);
                           postSuccessNavRef.current = null;
                         }
-                        if (successSessionId) navigate(`/sessions/${successSessionId}`);
+                        if (successSessionId)
+                          navigate(`/sessions/${successSessionId}`);
                       }}
                     >
                       Continue to session
                     </Button>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-white/50">Redirecting to your session…</p>
+                  <p className="mt-2 text-sm text-white/50">
+                    Redirecting to your session…
+                  </p>
                 )}
               </div>
             ) : uploadState === "uploading" ? (
@@ -281,7 +304,9 @@ export default function UploadPage() {
                   <Loader2 className="size-10 animate-spin text-white/60" />
                 </div>
                 <p className="text-center text-lg font-medium text-white">
-                  {uploadPhase === "bytes" ? "Uploading…" : "Processing telemetry…"}
+                  {uploadPhase === "bytes"
+                    ? "Uploading…"
+                    : "Processing telemetry…"}
                 </p>
                 <p className="mt-2 text-center text-sm text-white/50">
                   {uploadPhase === "bytes"
@@ -292,7 +317,7 @@ export default function UploadPage() {
                   <div
                     className={cn(
                       "h-full rounded-full bg-white/70 transition-[width] duration-150 ease-out",
-                      uploadPhase === "processing" && "animate-pulse"
+                      uploadPhase === "processing" && "animate-pulse",
                     )}
                     style={{
                       width:
@@ -303,14 +328,18 @@ export default function UploadPage() {
                   />
                 </div>
                 <p className="mt-2 text-center text-xs text-white/40">
-                  {uploadPhase === "bytes" ? `${uploadPercent}%` : "Hang tight…"}
+                  {uploadPhase === "bytes"
+                    ? `${uploadPercent}%`
+                    : "Hang tight…"}
                 </p>
               </div>
             ) : (
               <div className="space-y-5">
                 <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
                   <header className="mb-4 border-b border-white/5 pb-3">
-                    <h2 className="text-sm font-semibold text-white">Telemetry file</h2>
+                    <h2 className="text-sm font-semibold text-white">
+                      Telemetry file
+                    </h2>
                     <p className="mt-1 text-xs leading-relaxed text-white/50">
                       Drag and drop or browse for an iRacing replay file.
                     </p>
@@ -324,7 +353,7 @@ export default function UploadPage() {
                       "relative cursor-pointer rounded-xl border-2 border-dashed p-8 transition-colors sm:p-10",
                       isDragOver
                         ? "border-white/40 bg-white/5"
-                        : "border-white/10 hover:border-white/25 hover:bg-white/[0.03]"
+                        : "border-white/10 hover:border-white/25 hover:bg-white/[0.03]",
                     )}
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -345,15 +374,21 @@ export default function UploadPage() {
                           <p className="max-w-full truncate text-sm font-medium text-white">
                             {file.name}
                           </p>
-                          <p className="mt-1 text-xs text-white/50">{formatFileSize(file.size)}</p>
-                          <p className="mt-3 text-xs text-white/40">Click or drop to replace</p>
+                          <p className="mt-1 text-xs text-white/50">
+                            {formatFileSize(file.size)}
+                          </p>
+                          <p className="mt-3 text-xs text-white/40">
+                            Click or drop to replace
+                          </p>
                         </>
                       ) : (
                         <>
                           <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
                             <UploadIcon className="size-6 text-white/60" />
                           </div>
-                          <p className="text-sm text-white/70">Drag & drop your .ibt file here</p>
+                          <p className="text-sm text-white/70">
+                            Drag & drop your .ibt file here
+                          </p>
                           <p className="mt-1 text-xs text-white/50">
                             or click to browse (max {MAX_MB_LABEL} MB)
                           </p>
@@ -389,7 +424,7 @@ export default function UploadPage() {
                     disabled={!file}
                     className={cn(
                       "bg-white text-black hover:bg-white/90 disabled:bg-white/20 disabled:text-white/40",
-                      file ? "flex-1" : "w-full"
+                      file ? "flex-1" : "w-full",
                     )}
                   >
                     Upload session

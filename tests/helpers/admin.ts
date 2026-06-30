@@ -23,7 +23,7 @@ export type SystemFeatureKey = "MANUAL_UPLOAD";
 export async function fetchAdminUserListViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  params?: { q?: string; page?: number; pageSize?: number; status?: string }
+  params?: { q?: string; page?: number; pageSize?: number; status?: string },
 ): Promise<{ items: AdminUserRow[]; total: number }> {
   const { apiUrl } = getE2eEnv();
   const search = new URLSearchParams();
@@ -33,9 +33,12 @@ export async function fetchAdminUserListViaApi(
   if (params?.status?.trim()) search.set("status", params.status.trim());
   const qs = search.toString();
 
-  const res = await request.get(`${apiUrl}/api/admin/users${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-  });
+  const res = await request.get(
+    `${apiUrl}/api/admin/users${qs ? `?${qs}` : ""}`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+    },
+  );
   if (!res.ok()) {
     const body = await res.text();
     throw new Error(`GET /api/admin/users failed (${res.status()}): ${body}`);
@@ -51,24 +54,33 @@ export async function fetchAdminUserListViaApi(
 export async function lookupAdminUserByEmail(
   request: APIRequestContext,
   auth: AuthSession,
-  email: string
+  email: string,
 ): Promise<AdminUserRow | null> {
   const normalized = email.trim().toLowerCase();
-  const data = await fetchAdminUserListViaApi(request, auth, { q: email, pageSize: 50 });
-  return data.items.find((row) => row.email.trim().toLowerCase() === normalized) ?? null;
+  const data = await fetchAdminUserListViaApi(request, auth, {
+    q: email,
+    pageSize: 50,
+  });
+  return (
+    data.items.find((row) => row.email.trim().toLowerCase() === normalized) ??
+    null
+  );
 }
 
 export async function patchUserStatusViaAdminApi(
   request: APIRequestContext,
   auth: AuthSession,
   userId: string,
-  body: { suspended: boolean; reason?: string }
+  body: { suspended: boolean; reason?: string },
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.patch(`${apiUrl}/api/admin/users/${encodeURIComponent(userId)}/status`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-    data: body,
-  });
+  const res = await request.patch(
+    `${apiUrl}/api/admin/users/${encodeURIComponent(userId)}/status`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+      data: body,
+    },
+  );
   if (!res.ok()) {
     const text = await res.text();
     throw new Error(`PATCH user status failed (${res.status()}): ${text}`);
@@ -79,7 +91,11 @@ export async function patchSystemFeatureViaAdminApi(
   request: APIRequestContext,
   auth: AuthSession,
   featureKey: SystemFeatureKey,
-  body: { enabled: boolean; environment?: "ALL" | "DEVELOPMENT" | "PRODUCTION"; reason?: string }
+  body: {
+    enabled: boolean;
+    environment?: "ALL" | "DEVELOPMENT" | "PRODUCTION";
+    reason?: string;
+  },
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.patch(
@@ -87,7 +103,7 @@ export async function patchSystemFeatureViaAdminApi(
     {
       headers: authHeaders(auth.token, auth.sessionToken),
       data: body,
-    }
+    },
   );
   if (!res.ok()) {
     const text = await res.text();
@@ -98,7 +114,7 @@ export async function patchSystemFeatureViaAdminApi(
 export async function fetchAdminSubscriptionListViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  params?: { q?: string; page?: number; pageSize?: number }
+  params?: { q?: string; page?: number; pageSize?: number },
 ): Promise<{ items: AdminSubscriptionRow[] }> {
   const { apiUrl } = getE2eEnv();
   const search = new URLSearchParams();
@@ -107,12 +123,17 @@ export async function fetchAdminSubscriptionListViaApi(
   if (params?.pageSize != null) search.set("pageSize", String(params.pageSize));
   const qs = search.toString();
 
-  const res = await request.get(`${apiUrl}/api/admin/subscriptions${qs ? `?${qs}` : ""}`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-  });
+  const res = await request.get(
+    `${apiUrl}/api/admin/subscriptions${qs ? `?${qs}` : ""}`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+    },
+  );
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`GET /api/admin/subscriptions failed (${res.status()}): ${body}`);
+    throw new Error(
+      `GET /api/admin/subscriptions failed (${res.status()}): ${body}`,
+    );
   }
 
   const data = (await res.json()) as { items?: AdminSubscriptionRow[] };
@@ -122,8 +143,11 @@ export async function fetchAdminSubscriptionListViaApi(
 export async function syncSubscriptionViaAdminApi(
   request: APIRequestContext,
   auth: AuthSession,
-  userId: string
-): Promise<{ success?: boolean; subscription?: { lastSyncedAt?: string | null } }> {
+  userId: string,
+): Promise<{
+  success?: boolean;
+  subscription?: { lastSyncedAt?: string | null };
+}> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(
     `${apiUrl}/api/admin/subscriptions/${encodeURIComponent(userId)}/sync`,
@@ -133,7 +157,7 @@ export async function syncSubscriptionViaAdminApi(
         "X-Apex-Session": auth.sessionToken,
       },
       data: {},
-    }
+    },
   );
   if (!res.ok()) {
     const body = await res.text();
@@ -148,29 +172,31 @@ export async function syncSubscriptionViaAdminApi(
 export async function resolveModerationFlagViaAdminApi(
   request: APIRequestContext,
   auth: AuthSession,
-  flagId: string
+  flagId: string,
 ): Promise<void> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(
     `${apiUrl}/api/admin/community/moderation-flags/${encodeURIComponent(flagId)}/resolve`,
     {
       headers: authHeaders(auth.token, auth.sessionToken),
-    }
+    },
   );
   if (!res.ok()) {
     const body = await res.text();
-    throw new Error(`POST resolve moderation flag failed (${res.status()}): ${body}`);
+    throw new Error(
+      `POST resolve moderation flag failed (${res.status()}): ${body}`,
+    );
   }
 }
 
 export async function fetchOpenModerationFlagsViaAdminApi(
   request: APIRequestContext,
-  auth: AuthSession
+  auth: AuthSession,
 ): Promise<Array<{ id: string; discussionId: string | null }>> {
   const { apiUrl } = getE2eEnv();
   const res = await request.get(
     `${apiUrl}/api/admin/community/moderation-flags?page=1&pageSize=50&unresolvedOnly=true`,
-    { headers: authHeaders(auth.token, auth.sessionToken) }
+    { headers: authHeaders(auth.token, auth.sessionToken) },
   );
   if (!res.ok()) {
     const body = await res.text();
@@ -185,7 +211,7 @@ export async function fetchOpenModerationFlagsViaAdminApi(
 export async function postManualUploadJsonViaApi(
   request: APIRequestContext,
   auth: AuthSession,
-  filename: string
+  filename: string,
 ): Promise<{ status: number; body: unknown }> {
   const { apiUrl } = getE2eEnv();
   const res = await request.post(`${apiUrl}/api/sessions/manual-upload`, {

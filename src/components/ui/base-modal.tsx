@@ -1,9 +1,4 @@
-import {
-  Children,
-  Fragment,
-  isValidElement,
-  type ReactNode,
-} from "react";
+import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -56,7 +51,9 @@ function hasModalBodyContent(node: ReactNode): boolean {
     if (typeof child === "number") return true;
     if (!isValidElement(child)) return false;
     if (child.type === Fragment) {
-      return hasModalBodyContent((child.props as { children?: ReactNode }).children);
+      return hasModalBodyContent(
+        (child.props as { children?: ReactNode }).children,
+      );
     }
     return true;
   });
@@ -94,21 +91,25 @@ export function BaseModal({
             className={cn(
               modalHeaderClassName,
               !hasBody && footer && "border-b-0",
-              headerClassName
+              headerClassName,
             )}
           >
             <DialogTitle>{title}</DialogTitle>
-            {description ? <DialogDescription>{description}</DialogDescription> : null}
+            {description ? (
+              <DialogDescription>{description}</DialogDescription>
+            ) : null}
           </DialogHeader>
           {hasBody ? (
-            <div className={cn(modalBodyClassName, bodyClassName)}>{children}</div>
+            <div className={cn(modalBodyClassName, bodyClassName)}>
+              {children}
+            </div>
           ) : null}
           {footer ? (
             <DialogFooter
               className={cn(
                 modalFooterClassName,
                 !hasBody && "border-t-0 pt-0",
-                footerClassName
+                footerClassName,
               )}
             >
               {footer}
@@ -150,7 +151,7 @@ export function BaseAlertDialog({
             className={cn(
               modalHeaderClassName,
               !hasBody && footer && "border-b-0",
-              headerClassName
+              headerClassName,
             )}
           >
             <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -159,14 +160,16 @@ export function BaseAlertDialog({
             ) : null}
           </AlertDialogHeader>
           {hasBody ? (
-            <div className={cn(modalBodyClassName, bodyClassName)}>{children}</div>
+            <div className={cn(modalBodyClassName, bodyClassName)}>
+              {children}
+            </div>
           ) : null}
           {footer ? (
             <AlertDialogFooter
               className={cn(
                 modalFooterClassName,
                 !hasBody && "border-t-0 pt-0",
-                footerClassName
+                footerClassName,
               )}
             >
               {footer}

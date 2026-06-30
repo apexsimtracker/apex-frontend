@@ -4,7 +4,12 @@ import { cn } from "@/lib/utils";
 function FeatureRowSkeleton() {
   return (
     <div className="flex items-start gap-3">
-      <SkeletonBlock height={16} width={16} rounded="full" className="mt-0.5 shrink-0" />
+      <SkeletonBlock
+        height={16}
+        width={16}
+        rounded="full"
+        className="mt-0.5 shrink-0"
+      />
       <SkeletonBlock height={14} className="flex-1" />
     </div>
   );
@@ -33,7 +38,9 @@ function ProPlanCardSkeleton() {
       className={cn(
         "relative flex h-full flex-col rounded-xl border bg-card/50 p-6 sm:p-7",
       )}
-      style={{ borderColor: "color-mix(in srgb, rgb(240, 28, 28) 35%, transparent)" }}
+      style={{
+        borderColor: "color-mix(in srgb, rgb(240, 28, 28) 35%, transparent)",
+      }}
     >
       <SkeletonBlock
         height={24}

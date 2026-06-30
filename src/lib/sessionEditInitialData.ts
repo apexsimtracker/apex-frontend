@@ -33,7 +33,9 @@ export type PublicSessionDetailForEdit = {
  * Maps API/sim keys (`iracing`, `IRACING`, `f1_25`, `lmu`, …) to ManualActivityForm sim values.
  * Must cover every {@link ManualActivitySim}; unknown keys default to iRacing for backwards compatibility.
  */
-export function simKeyToFormSim(k: string | undefined | null): ManualActivitySim {
+export function simKeyToFormSim(
+  k: string | undefined | null,
+): ManualActivitySim {
   const u = (k ?? "").toLowerCase().replace(/-/g, "_");
   if (u === "f1_25" || u === "f125") return "F1_25";
   if (u === "lmu") return "LMU";
@@ -42,7 +44,7 @@ export function simKeyToFormSim(k: string | undefined | null): ManualActivitySim
 }
 
 export function manualActivityInitialFromPublicDetail(
-  data: PublicSessionDetailForEdit
+  data: PublicSessionDetailForEdit,
 ): ManualActivityInitialData {
   const lapsRaw = Array.isArray(data.laps) ? data.laps : [];
   const lapsMs = [...lapsRaw]
@@ -96,15 +98,14 @@ export function manualActivityInitialFromPublicDetail(
 }
 
 export function manualActivityInitialFromAdminDetail(
-  d: AdminSessionDetail
+  d: AdminSessionDetail,
 ): ManualActivityInitialData {
   const lapsMs = d.laps
     .slice()
     .sort((a, b) => a.lapNumber - b.lapNumber)
     .map((l) => l.lapTimeMs);
 
-  const telemetryMinLapRows =
-    d.laps.length > 0 ? d.laps.length : undefined;
+  const telemetryMinLapRows = d.laps.length > 0 ? d.laps.length : undefined;
 
   const st = String(d.sessionType ?? "").toUpperCase();
 

@@ -28,7 +28,7 @@ export const REFERENCE_URLS: Record<
 
 /** API/catalog consistency uses lowercase keys ({@link VALID_SIMS} style). */
 export function catalogSimKeyToManualActivitySim(
-  key: string | null | undefined
+  key: string | null | undefined,
 ): ManualActivitySim | null {
   if (!key?.trim()) return null;
   const k = key.trim().toLowerCase();
@@ -54,11 +54,11 @@ export function reviewCatalogSearchUrl(query: string): string {
 /** When sim is unknown (e.g. personal-best orphans before picking a sim). */
 export function reviewCatalogOrphanSearchUrl(
   token: string,
-  kind: CatalogReviewKind
+  kind: CatalogReviewKind,
 ): string {
   const label = kind === "track" ? "track" : "car";
   const safe = token.trim() || label;
   return reviewCatalogSearchUrl(
-    `"${safe}" sim racing ${label} iRacing OR Le Mans Ultimate OR F1 25`
+    `"${safe}" sim racing ${label} iRacing OR Le Mans Ultimate OR F1 25`,
   );
 }

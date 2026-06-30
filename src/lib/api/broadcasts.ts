@@ -23,7 +23,7 @@ export async function dismissBroadcast(id: string): Promise<{ ok: boolean }> {
     "POST",
     `/api/broadcasts/${encodeURIComponent(id)}/dismiss`,
     {},
-    true
+    true,
   );
 }
 
@@ -32,6 +32,6 @@ export async function pingBroadcastView(id: string): Promise<{ ok: boolean }> {
     "POST",
     `/api/broadcasts/${encodeURIComponent(id)}/view`,
     {},
-    true
+    true,
   );
 }

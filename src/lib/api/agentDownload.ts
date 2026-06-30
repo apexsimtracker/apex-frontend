@@ -42,7 +42,10 @@ function isJsonContentType(contentType: string | null): boolean {
   return base === "application/json" || base.endsWith("+json");
 }
 
-async function triggerBlobDownload(blob: Blob, filename: string): Promise<void> {
+async function triggerBlobDownload(
+  blob: Blob,
+  filename: string,
+): Promise<void> {
   const objectUrl = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
@@ -63,7 +66,9 @@ async function triggerBlobDownload(blob: Blob, filename: string): Promise<void> 
  * - R2 presigned JSON: `{ url, expiresAt, filename, os }` → navigate to `url`
  * - Dev local file: `application/octet-stream` → blob download
  */
-export async function getAgentDownloadLink(os: AgentOs): Promise<AgentDownloadResponse> {
+export async function getAgentDownloadLink(
+  os: AgentOs,
+): Promise<AgentDownloadResponse> {
   let res: Response;
   try {
     res = await fetch(agentDownloadEndpoint(os), {
