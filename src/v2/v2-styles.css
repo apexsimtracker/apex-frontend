@@ -30,3 +30,90 @@
 .v2-theme .v2-red-accent-border {
   border-left: 3px solid #eb0000;
 }
+
+/* Profile V2 — scoped retokening of reused ProfileView subcomponents */
+.v2-theme .profile-v2-view h1,
+.v2-theme .profile-v2-view h2 {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.v2-theme .profile-v2-view .rounded-lg.border.bg-card\/20,
+.v2-theme .profile-v2-view .rounded-lg.border.bg-card\/40 {
+  border-color: hsl(var(--v2-outline-variant) / 0.15);
+  background-color: hsl(var(--v2-surface-container-low));
+}
+
+.v2-theme .profile-v2-view .border-white\/10,
+.v2-theme .profile-v2-view .border-white\/5,
+.v2-theme .profile-v2-view .border-white\/6 {
+  border-color: hsl(var(--v2-outline-variant) / 0.15);
+}
+
+.v2-theme .profile-v2-view .bg-white\/\[0\.02\] {
+  background-color: hsl(var(--v2-surface-container-low));
+  border-color: hsl(var(--v2-outline-variant) / 0.15);
+}
+
+.v2-theme .profile-v2-view .bg-white\/\[0\.02\]:hover {
+  background-color: hsl(var(--v2-surface-container));
+}
+
+.v2-theme .profile-v2-view .text-muted-foreground,
+.v2-theme .profile-v2-view .text-muted-foreground\/50,
+.v2-theme .profile-v2-view .text-muted-foreground\/60,
+.v2-theme .profile-v2-view .text-muted-foreground\/70,
+.v2-theme .profile-v2-view .text-muted-foreground\/80 {
+  color: hsl(var(--v2-on-surface-variant));
+}
+
+.v2-theme .profile-v2-view .text-foreground {
+  color: hsl(var(--v2-on-surface));
+}
+
+.v2-theme .profile-v2-view .text-neutral-400,
+.v2-theme .profile-v2-view .text-neutral-500,
+.v2-theme .profile-v2-view .text-neutral-200 {
+  color: hsl(var(--v2-on-surface-variant));
+}
+
+.v2-theme .profile-v2-view button[class*="underline"] {
+  border: 1px solid hsl(var(--v2-primary) / 0.4);
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: hsl(var(--v2-primary));
+  transition: background-color 0.15s ease;
+}
+
+.v2-theme .profile-v2-view button[class*="underline"]:hover {
+  background-color: hsl(var(--v2-primary) / 0.1);
+  color: hsl(var(--v2-primary));
+}
+
+.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 {
+  border-top: 1px solid hsl(var(--v2-outline-variant) / 0.15);
+  border-bottom: 1px solid hsl(var(--v2-outline-variant) / 0.15);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 p.text-sm.font-semibold,
+.v2-theme
+  .profile-v2-view
+  .grid.grid-cols-3.gap-3
+  p.text-sm.font-semibold.sm\:text-base {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 2.25rem;
+  color: hsl(var(--v2-on-surface));
+}
+
+.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 p.text-xs.uppercase {
+  font-size: 0.625rem;
+  letter-spacing: 0.05em;
+}

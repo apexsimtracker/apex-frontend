@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Clock, Users, UserRound } from "lucide-react";
 import SimBadge from "@/components/SimBadge";
-import { formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
+import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import {
   formatChallengeDateTime,
   formatChallengeTimeRemaining,
@@ -28,6 +28,8 @@ interface ChallengeBrowseCardProps {
   isLoggedIn: boolean;
   onJoin?: (id: string) => void;
   joiningId?: string | null;
+  detailTo?: string;
+  className?: string;
 }
 
 export default function ChallengeBrowseCard({
@@ -35,6 +37,8 @@ export default function ChallengeBrowseCard({
   isLoggedIn,
   onJoin,
   joiningId,
+  detailTo,
+  className,
 }: ChallengeBrowseCardProps) {
   const label = statusLabel(item.status);
   const statusStyle = {
@@ -60,12 +64,16 @@ export default function ChallengeBrowseCard({
   const isJoining = joiningId === item.id;
   const canJoin = onJoin && label !== "Finished" && item.status !== "ENDED";
 
+  const linkTo = detailTo ?? `/challenge/${item.id}`;
+
   return (
-    <div className="border-white/6 group relative flex h-full flex-col overflow-hidden rounded-lg border bg-card/20 backdrop-blur-lg transition-all duration-300 hover:bg-card/30 hover:shadow-lg hover:shadow-black/20">
-      <Link
-        to={`/challenge/${item.id}`}
-        className="flex min-h-0 flex-1 flex-col p-4 sm:p-5"
-      >
+    <div
+      className={cn(
+        "border-white/6 group relative flex h-full flex-col overflow-hidden rounded-lg border bg-card/20 backdrop-blur-lg transition-all duration-300 hover:bg-card/30 hover:shadow-lg hover:shadow-black/20",
+        className,
+      )}
+    >
+      <Link to={linkTo} className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-2">
           <h3 className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-primary">
             {item.title}

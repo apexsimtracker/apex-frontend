@@ -7,6 +7,7 @@ import {
   getDiscussionAuthorDisplay,
   getDiscussionAuthorInitials,
   formatCompactCount,
+  cn,
 } from "@/lib/utils";
 import {
   getDiscussionCategoryLabel,
@@ -28,6 +29,7 @@ interface DiscussionCardProps {
   views: number;
   isPinned?: boolean;
   wasEdited?: boolean;
+  className?: string;
 }
 
 export default function DiscussionCard({
@@ -41,6 +43,7 @@ export default function DiscussionCard({
   views,
   isPinned,
   wasEdited,
+  className,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -57,7 +60,12 @@ export default function DiscussionCard({
 
   return (
     <Link to={`/discussion/${id}`}>
-      <div className="border-white/6 mb-6 cursor-pointer overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm active:bg-card/30 active:shadow-md">
+      <div
+        className={cn(
+          "border-white/6 mb-6 cursor-pointer overflow-hidden rounded-lg border bg-card/20 shadow-none backdrop-blur-lg transition-all duration-300 hover:shadow-sm active:bg-card/30 active:shadow-md",
+          className,
+        )}
+      >
         {/* Header */}
         <div className="border-white/3 border-b px-4 py-3 sm:px-5 sm:py-3.5">
           <div className="flex items-start justify-between gap-2 sm:gap-3">

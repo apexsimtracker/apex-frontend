@@ -14,6 +14,7 @@ import { ProfileWeeklyStats } from "@/components/profile/ProfileWeeklyStats";
 import { ProfileMostPlayed } from "@/components/profile/ProfileMostPlayed";
 import { ProfileRaceHistory } from "@/components/profile/ProfileRaceHistory";
 import { ProfileStatsByGame } from "@/components/profile/ProfileStatsByGame";
+import { cn } from "@/lib/utils";
 
 type ProfileViewProps = {
   profile: ProfileSummary;
@@ -62,6 +63,10 @@ type ProfileViewProps = {
     tier: string;
     awardedAt: string;
   }[];
+  /** Override root wrapper classes (default preserves V1 layout). */
+  rootClassName?: string;
+  /** Override inner container classes (default preserves V1 layout). */
+  containerClassName?: string;
 };
 
 export function ProfileView({
@@ -87,6 +92,8 @@ export function ProfileView({
   raceHistoryForbiddenCode,
   isPro = false,
   challengeBadges,
+  rootClassName,
+  containerClassName,
 }: ProfileViewProps) {
   const navigate = useNavigate();
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
@@ -177,8 +184,13 @@ export function ProfileView({
   })();
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-4 lg:px-8">
+    <div className={cn("min-h-screen bg-background", rootClassName)}>
+      <div
+        className={cn(
+          "mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-4 lg:px-8",
+          containerClassName,
+        )}
+      >
         {onBack && (
           <button
             onClick={onBack}

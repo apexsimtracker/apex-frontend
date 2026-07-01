@@ -70,9 +70,28 @@ import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import V2Layout from "./components/v2/V2Layout";
-import V2IndexPlaceholder from "./pages/v2/V2IndexPlaceholder";
+import DashboardV2 from "./pages/v2/DashboardV2";
+import DashboardTopBarV2 from "./pages/v2/dashboard/DashboardTopBarV2";
+import DashboardBottomNavV2 from "./pages/v2/dashboard/DashboardBottomNavV2";
 import AgentV2 from "./pages/v2/AgentV2";
 import AgentTopBarV2 from "./pages/v2/agent/AgentTopBarV2";
+import LeaderboardsV2 from "./pages/v2/LeaderboardsV2";
+import LeaderboardsTopBarV2 from "./pages/v2/leaderboards/LeaderboardsTopBarV2";
+import LeaderboardsBottomNavV2 from "./pages/v2/leaderboards/LeaderboardsBottomNavV2";
+import ChallengesV2 from "./pages/v2/ChallengesV2";
+import ChallengesTopBarV2 from "./pages/v2/challenges/ChallengesTopBarV2";
+import ChallengesBottomNavV2 from "./pages/v2/challenges/ChallengesBottomNavV2";
+import CommunityV2 from "./pages/v2/CommunityV2";
+import CommunityTopBarV2 from "./pages/v2/community/CommunityTopBarV2";
+import CommunityBottomNavV2 from "./pages/v2/community/CommunityBottomNavV2";
+import ChallengeDetailV2 from "./pages/v2/ChallengeDetailV2";
+import ChallengeDetailTopBarV2 from "./pages/v2/challenges/ChallengeDetailTopBarV2";
+import SettingsV2 from "./pages/v2/SettingsV2";
+import SettingsTopBarV2 from "./pages/v2/settings/SettingsTopBarV2";
+import SettingsBottomNavV2 from "./pages/v2/settings/SettingsBottomNavV2";
+import ProfileV2 from "./pages/v2/ProfileV2";
+import ProfileTopBarV2 from "./pages/v2/profile/ProfileTopBarV2";
+import ProfileBottomNavV2 from "./pages/v2/profile/ProfileBottomNavV2";
 import { isGuestAuthPath } from "./auth/guestAuthRoutes";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -382,10 +401,19 @@ export default function App() {
                       <Route
                         index
                         element={
-                          <V2Layout>
-                            <V2IndexPlaceholder />
-                          </V2Layout>
+                          <ProtectedRoute message="Sign in to view your home feed.">
+                            <V2Layout
+                              topBar={<DashboardTopBarV2 />}
+                              bottomBar={<DashboardBottomNavV2 />}
+                            >
+                              <DashboardV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
                         }
+                      />
+                      <Route
+                        path="home"
+                        element={<Navigate to="/v2" replace />}
                       />
                       <Route
                         path="agent"
@@ -393,6 +421,73 @@ export default function App() {
                           <V2Layout topBar={<AgentTopBarV2 />}>
                             <AgentV2 />
                           </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="leaderboards"
+                        element={
+                          <V2Layout
+                            topBar={<LeaderboardsTopBarV2 />}
+                            bottomBar={<LeaderboardsBottomNavV2 />}
+                          >
+                            <LeaderboardsV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="challenges"
+                        element={
+                          <V2Layout
+                            topBar={<ChallengesTopBarV2 />}
+                            bottomBar={<ChallengesBottomNavV2 />}
+                          >
+                            <ChallengesV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="community"
+                        element={
+                          <V2Layout
+                            topBar={<CommunityTopBarV2 />}
+                            bottomBar={<CommunityBottomNavV2 />}
+                          >
+                            <CommunityV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="challenge/:id"
+                        element={
+                          <V2Layout topBar={<ChallengeDetailTopBarV2 />}>
+                            <ChallengeDetailV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="settings"
+                        element={
+                          <ProtectedRoute message="Sign in to manage your account settings.">
+                            <V2Layout
+                              topBar={<SettingsTopBarV2 />}
+                              bottomBar={<SettingsBottomNavV2 />}
+                            >
+                              <SettingsV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="profile"
+                        element={
+                          <ProtectedRoute message="Sign in to view your profile and stats.">
+                            <V2Layout
+                              topBar={<ProfileTopBarV2 />}
+                              bottomBar={<ProfileBottomNavV2 />}
+                            >
+                              <ProfileV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
                         }
                       />
                     </Routes>
