@@ -24,7 +24,7 @@ const NAV_ITEMS: BottomNavItem[] = [
   },
 ];
 
-export default function ProfileBottomNavV2() {
+export default function V2BottomNavV2() {
   const { pathname } = useLocation();
 
   return (
