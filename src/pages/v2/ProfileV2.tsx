@@ -523,6 +523,7 @@ export default function ProfileV2() {
         onOpenChange={(open) => !open && setOpenList(null)}
         userId={followsUserId}
         listKind={openList}
+        profileLinkBase="/v2/user"
       />
 
       <BaseModal

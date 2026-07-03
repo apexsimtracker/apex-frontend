@@ -91,7 +91,16 @@ import SettingsTopBarV2 from "./pages/v2/settings/SettingsTopBarV2";
 import SettingsBottomNavV2 from "./pages/v2/settings/SettingsBottomNavV2";
 import ProfileV2 from "./pages/v2/ProfileV2";
 import ProfileTopBarV2 from "./pages/v2/profile/ProfileTopBarV2";
+import UserProfileV2 from "./pages/v2/UserProfileV2";
+import UserProfileTopBarV2 from "./pages/v2/user/UserProfileTopBarV2";
 import ProfileBottomNavV2 from "./pages/v2/profile/ProfileBottomNavV2";
+import UploadV2 from "./pages/v2/UploadV2";
+import UploadTopBarV2 from "./pages/v2/upload/UploadTopBarV2";
+import ManualActivityV2 from "./pages/v2/ManualActivityV2";
+import ManualEntryTopBarV2 from "./pages/v2/manual/ManualEntryTopBarV2";
+import EditActivityV2 from "./pages/v2/EditActivityV2";
+import EditActivityTopBarV2 from "./pages/v2/session/EditActivityTopBarV2";
+import SessionDetailV2 from "./pages/v2/SessionDetailV2";
 import { isGuestAuthPath } from "./auth/guestAuthRoutes";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -465,6 +474,44 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="upload"
+                        element={
+                          <ProtectedRoute message="Sign in to upload sessions.">
+                            <V2Layout topBar={<UploadTopBarV2 />}>
+                              <UploadV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="manual"
+                        element={
+                          <ProtectedRoute message="Sign in to log a session.">
+                            <V2Layout topBar={<ManualEntryTopBarV2 />}>
+                              <ManualActivityV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="sessions/:id/edit"
+                        element={
+                          <ProtectedRoute message="Sign in to edit your session.">
+                            <V2Layout topBar={<EditActivityTopBarV2 />}>
+                              <EditActivityV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="sessions/:id"
+                        element={
+                          <V2Layout>
+                            <SessionDetailV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
                         path="settings"
                         element={
                           <ProtectedRoute message="Sign in to manage your account settings.">
@@ -488,6 +535,14 @@ export default function App() {
                               <ProfileV2 />
                             </V2Layout>
                           </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="user/:userId"
+                        element={
+                          <V2Layout topBar={<UserProfileTopBarV2 />}>
+                            <UserProfileV2 />
+                          </V2Layout>
                         }
                       />
                     </Routes>

@@ -164,7 +164,7 @@ export default function LeaderboardsV2() {
                     type="button"
                     onClick={() => {
                       if (uid) {
-                        navigate(`/user/${encodeURIComponent(uid)}`);
+                        navigate(`/v2/user/${encodeURIComponent(uid)}`);
                       }
                     }}
                     className={cn(

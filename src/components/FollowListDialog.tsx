@@ -23,6 +23,7 @@ type FollowListDialogProps = {
   onOpenChange: (open: boolean) => void;
   userId: string;
   listKind: "followers" | "following" | null;
+  profileLinkBase?: string;
 };
 
 function FollowRowSkeleton() {
@@ -40,9 +41,11 @@ function FollowRowSkeleton() {
 function FollowRow({
   f,
   onNavigate,
+  profileLinkBase,
 }: {
   f: FollowUser;
   onNavigate: () => void;
+  profileLinkBase: string;
 }) {
   const name = f.displayName?.trim() || "—";
   const initials =
@@ -53,7 +56,7 @@ function FollowRow({
   return (
     <li>
       <Link
-        to={`/user/${encodeURIComponent(f.id)}`}
+        to={`${profileLinkBase}/${encodeURIComponent(f.id)}`}
         onClick={onNavigate}
         className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2 transition-colors hover:bg-card/60"
       >
@@ -84,6 +87,7 @@ export function FollowListDialog({
   onOpenChange,
   userId,
   listKind,
+  profileLinkBase = "/user",
 }: FollowListDialogProps) {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
@@ -201,6 +205,7 @@ export function FollowListDialog({
                 key={f.id}
                 f={f}
                 onNavigate={() => onOpenChange(false)}
+                profileLinkBase={profileLinkBase}
               />
             ))}
           </ul>
