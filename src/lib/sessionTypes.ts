@@ -42,4 +42,6 @@ export type SessionItem = {
   iRatingChange?: number | null;
   incidentCount?: number | null;
   totalTimeMs?: number | null;
+  /** Gated Apex Analysis insights from home feed (Pro viewers only). */
+  apexAnalysis?: { locked: false; insights: string[] } | null;
 };

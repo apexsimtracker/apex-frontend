@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useForm, useFormState, useFieldArray } from "react-hook-form";
+import type { ControllerRenderProps, FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, AlertCircle, Plus, Trash2, History } from "lucide-react";
+import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +39,12 @@ import {
   MANUAL_V2_CONDITIONS,
   type ManualActivityV2FormValues,
 } from "./manualActivityV2Schema";
+import V2NativeSelect from "@/components/v2/ui/V2NativeSelect";
+import {
+  v2ManualInputClassName,
+  v2ManualTextareaClassName,
+  v2PrimaryButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
 
 // Loveable "Manual Entry" (loveable-ui/public/screens/manual-entry.html) styling
 // mapped to v2- tokens: apex-red = --v2-primary, brand-card ≈ surface-container,
@@ -48,13 +55,12 @@ const LABEL_CLASS =
 const SECTION_LABEL_CLASS =
   "font-v2-headline text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant";
 
-const INPUT_CLASS =
-  "h-12 w-full rounded-lg border border-v2-outline-variant/40 bg-v2-surface-container px-4 font-v2-headline text-sm text-v2-on-surface placeholder:text-v2-on-surface-variant/50 transition-colors focus:border-v2-primary focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50";
+const INPUT_CLASS = v2ManualInputClassName;
 
 // Loveable pill: bordered, uppercase, red-tinted (not solid) when active.
 function pillClass(active: boolean): string {
   return cn(
-    "rounded-lg border py-3 font-v2-headline text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50",
+    "rounded-[0.5rem] border py-3 font-v2-headline text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50",
     active
       ? "border-v2-primary bg-v2-primary/10 text-v2-on-surface"
       : "border-v2-outline-variant/40 bg-v2-surface-container text-v2-on-surface-variant hover:border-v2-outline-variant hover:text-v2-on-surface",
@@ -67,9 +73,92 @@ const SESSION_KIND_OPTIONS = [
   { value: "RACE" as const, label: "Race" },
 ];
 
-// Borderless monospace input used inside the Loveable-style lap table cells.
+// Borderless monospace input — Loveable lap table: only the time text is visible.
 const CELL_INPUT_CLASS =
-  "w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-1.5 text-center font-mono text-xs transition-colors placeholder:text-v2-on-surface-variant/40 focus:border-v2-primary/60 focus:bg-v2-surface-container-high focus:outline-none disabled:opacity-50";
+  "manual-lap-cell !m-0 !h-auto !min-h-0 !w-full !min-w-0 !appearance-none !border-0 !bg-transparent !p-0 text-center font-mono text-xs !shadow-none !outline-none !ring-0 [color-scheme:dark] placeholder:text-v2-outline-variant/60 focus:!border-0 focus:!bg-transparent focus:!shadow-none focus:!outline-none focus:!ring-0 focus-visible:!border-0 focus-visible:!bg-transparent focus-visible:!shadow-none focus-visible:!outline-none focus-visible:!ring-0 disabled:opacity-50";
+
+const CELL_SECTOR_CLASS = "manual-lap-cell-sector text-v2-on-surface-variant";
+const CELL_TOTAL_CLASS = "manual-lap-cell-total text-v2-primary";
+
+type LapFieldPath = FieldPath<WithRootError<ManualActivityV2FormValues>>;
+
+function LapTableCellField({
+  field,
+  displayClassName,
+  placeholder,
+  ariaLabel,
+  disabled,
+  align = "center",
+  invalid = false,
+}: {
+  field: ControllerRenderProps<
+    WithRootError<ManualActivityV2FormValues>,
+    LapFieldPath
+  >;
+  displayClassName: string;
+  placeholder: string;
+  ariaLabel: string;
+  disabled?: boolean;
+  align?: "center" | "right";
+  invalid?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const value = String(field.value ?? "");
+  const hasValue = value.trim().length > 0;
+  const showInput = editing || !hasValue;
+
+  if (!showInput) {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={cn(
+          "w-full border-0 bg-transparent p-0 font-mono text-xs",
+          align === "right" ? "text-right font-bold" : "text-center",
+          invalid ? "manual-lap-cell-invalid text-v2-error" : displayClassName,
+        )}
+        onClick={() => {
+          setEditing(true);
+          requestAnimationFrame(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+          });
+        }}
+      >
+        {value}
+      </button>
+    );
+  }
+
+  return (
+    <input
+      {...field}
+      ref={(el) => {
+        field.ref(el);
+        inputRef.current = el;
+      }}
+      value={value}
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      disabled={disabled}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      className={cn(
+        CELL_INPUT_CLASS,
+        align === "right" && "text-right font-bold",
+        invalid ? "manual-lap-cell-invalid text-v2-error" : displayClassName,
+      )}
+      onFocus={() => setEditing(true)}
+      onBlur={() => {
+        field.onBlur();
+        setEditing(false);
+      }}
+    />
+  );
+}
 
 function FormBlock({
   title,
@@ -365,7 +454,8 @@ export default function ManualActivityFormV2({
 
   const showRecent =
     !recentLoading && recentItems.length > 0 && !catalogsLoading;
-  const showQuickFill = showRecent || prefilledFromPrevious;
+  const showRecentSection =
+    recentLoading || showRecent || prefilledFromPrevious;
 
   const lapsRootError = form.getFieldState("laps", formState).error;
   const lapsRootMessage =
@@ -376,39 +466,37 @@ export default function ManualActivityFormV2({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleValid)} className="space-y-5">
-        {showQuickFill && (
-          <FormBlock
-            title="Recent combos"
-            description="Reuse sim, track, and car from a recent session."
-          >
+        {showRecentSection && (
+          <section className="mb-2">
+            <h2 className={SECTION_LABEL_CLASS}>Recent Combos</h2>
             {prefilledFromPrevious && (
-              <p className="rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-high/50 px-3 py-2 text-xs text-v2-on-surface-variant">
+              <p className="mt-3 rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-high/50 px-3 py-2 text-xs text-v2-on-surface-variant">
                 Pre-filled from your last log on this page.
               </p>
             )}
+            {recentLoading && (
+              <p className="mt-3 flex items-center gap-2 text-xs text-v2-on-surface-variant">
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                Loading recent sessions…
+              </p>
+            )}
             {showRecent && (
-              <div>
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-v2-on-surface-variant">
-                  <History className="size-3.5 shrink-0" aria-hidden />
-                  Recent sessions
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {recentItems.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => handleRecentChipClick(item)}
-                      disabled={isSubmitting}
-                      title={getRecentChipLabel(item)}
-                      className="max-w-full truncate rounded-full border border-v2-outline-variant/40 bg-v2-surface-container px-4 py-2 font-v2-headline text-xs font-medium text-v2-on-surface transition-colors hover:border-v2-primary disabled:opacity-50 sm:max-w-[14rem]"
-                    >
-                      {getRecentChipLabel(item)}
-                    </button>
-                  ))}
-                </div>
+              <div className="hide-scrollbar mt-3 flex gap-2 overflow-x-auto">
+                {recentItems.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleRecentChipClick(item)}
+                    disabled={isSubmitting}
+                    title={getRecentChipLabel(item)}
+                    className="whitespace-nowrap rounded-full border border-v2-outline-variant/40 bg-v2-surface-container px-4 py-2 font-v2-headline text-xs font-medium text-v2-on-surface transition-colors hover:border-v2-primary disabled:opacity-50"
+                  >
+                    {getRecentChipLabel(item)}
+                  </button>
+                ))}
               </div>
             )}
-          </FormBlock>
+          </section>
         )}
 
         <FormBlock
@@ -424,7 +512,7 @@ export default function ManualActivityFormV2({
                   Sim / Game <span className="text-v2-primary">*</span>
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <V2NativeSelect
                     id="sim"
                     value={field.value}
                     onChange={(e) => {
@@ -435,7 +523,6 @@ export default function ManualActivityFormV2({
                       setPendingRecent(null);
                     }}
                     disabled={isSubmitting}
-                    className={INPUT_CLASS}
                   >
                     <option value="">Select sim…</option>
                     {MANUAL_ACTIVITY_SIMS.map((s) => (
@@ -443,7 +530,7 @@ export default function ManualActivityFormV2({
                         {s.label}
                       </option>
                     ))}
-                  </select>
+                  </V2NativeSelect>
                 </FormControl>
                 <FormMessage className="text-xs text-v2-error" />
               </FormItem>
@@ -480,12 +567,11 @@ export default function ManualActivityFormV2({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <V2NativeSelect
                     id="track"
                     value={field.value}
                     onChange={field.onChange}
                     disabled={isSubmitting || !sim || catalogsLoading}
-                    className={INPUT_CLASS}
                   >
                     <option value="">
                       {!sim
@@ -505,7 +591,7 @@ export default function ManualActivityFormV2({
                         {t.name}
                       </option>
                     ))}
-                  </select>
+                  </V2NativeSelect>
                 </FormControl>
                 <FormMessage className="text-xs text-v2-error" />
               </FormItem>
@@ -530,12 +616,11 @@ export default function ManualActivityFormV2({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <V2NativeSelect
                     id="car"
                     value={field.value}
                     onChange={field.onChange}
                     disabled={isSubmitting || !sim || catalogsLoading}
-                    className={INPUT_CLASS}
                   >
                     <option value="">
                       {!sim
@@ -555,7 +640,7 @@ export default function ManualActivityFormV2({
                         {c.name}
                       </option>
                     ))}
-                  </select>
+                  </V2NativeSelect>
                 </FormControl>
                 <FormMessage className="text-xs text-v2-error" />
               </FormItem>
@@ -761,7 +846,7 @@ export default function ManualActivityFormV2({
           description="Add at least one valid lap time. Sector splits are optional."
         >
           {/* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */}
-          <div className="overflow-hidden rounded-xl border border-v2-outline-variant/30">
+          <div className="overflow-hidden rounded-xl border border-v2-outline-variant/30 bg-v2-surface-container">
             <table className="w-full table-fixed border-collapse text-left">
               <thead className="border-b border-v2-outline-variant/30 bg-white/5">
                 <tr className="font-v2-headline text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
@@ -791,7 +876,7 @@ export default function ManualActivityFormV2({
                       key={fieldItem.id}
                       className="border-b border-v2-outline-variant/15 last:border-b-0"
                     >
-                      <td className="px-2 py-1.5 align-middle font-v2-headline text-sm font-bold text-v2-on-surface">
+                      <td className="p-3 align-middle font-v2-headline text-sm font-bold text-v2-on-surface">
                         {String(index + 1).padStart(2, "0")}
                       </td>
                       {(["s1", "s2", "s3"] as const).map((sector) => {
@@ -799,37 +884,39 @@ export default function ManualActivityFormV2({
                         const sInvalid =
                           sRaw.trim() !== "" && !isValidSectorTimeFormat(sRaw);
                         return (
-                          <td key={sector} className="px-0.5 py-1 align-middle">
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              disabled={isSubmitting}
-                              placeholder="--.---"
-                              aria-label={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
-                              className={cn(
-                                CELL_INPUT_CLASS,
-                                sInvalid
-                                  ? "text-v2-error"
-                                  : "text-v2-on-surface-variant",
+                          <td key={sector} className="p-3 align-middle">
+                            <FormField
+                              control={form.control}
+                              name={`laps.${index}.${sector}`}
+                              render={({ field }) => (
+                                <LapTableCellField
+                                  field={field}
+                                  displayClassName={CELL_SECTOR_CLASS}
+                                  placeholder="--.---"
+                                  ariaLabel={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
+                                  disabled={isSubmitting}
+                                  invalid={sInvalid}
+                                />
                               )}
-                              {...form.register(`laps.${index}.${sector}`)}
                             />
                           </td>
                         );
                       })}
-                      <td className="px-0.5 py-1 align-middle">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          disabled={isSubmitting}
-                          placeholder="0:00.000"
-                          aria-label={`Lap ${index + 1} total time`}
-                          className={cn(
-                            CELL_INPUT_CLASS,
-                            "text-right font-bold",
-                            totalInvalid ? "text-v2-error" : "text-v2-primary",
+                      <td className="p-3 align-middle">
+                        <FormField
+                          control={form.control}
+                          name={`laps.${index}.lapTime`}
+                          render={({ field }) => (
+                            <LapTableCellField
+                              field={field}
+                              displayClassName={CELL_TOTAL_CLASS}
+                              placeholder="0:00.000"
+                              ariaLabel={`Lap ${index + 1} total time`}
+                              disabled={isSubmitting}
+                              align="right"
+                              invalid={totalInvalid}
+                            />
                           )}
-                          {...form.register(`laps.${index}.lapTime`)}
                         />
                       </td>
                       {canRemoveLap && (
@@ -915,9 +1002,7 @@ export default function ManualActivityFormV2({
                     disabled={isSubmitting}
                     placeholder="Setup changes, weather, incidents, strategy…"
                     rows={4}
-                    className={cn(
-                      "min-h-[7rem] w-full resize-none rounded-lg border border-v2-outline-variant/40 bg-v2-surface-container px-4 py-3 text-sm text-v2-on-surface transition-colors placeholder:text-v2-on-surface-variant/50 focus:border-v2-primary focus:outline-none focus:ring-0 disabled:opacity-50",
-                    )}
+                    className={v2ManualTextareaClassName}
                     {...field}
                   />
                 </FormControl>
@@ -937,8 +1022,7 @@ export default function ManualActivityFormV2({
         <Button
           type="submit"
           disabled={isSubmitting}
-          size="lg"
-          className="h-14 w-full rounded-lg bg-v2-primary font-v2-headline text-sm font-bold uppercase tracking-[0.2em] text-white shadow-lg shadow-v2-primary/20 transition-transform hover:bg-v2-primary/90 active:scale-[0.99] disabled:bg-v2-surface-container-highest disabled:text-v2-on-surface-variant disabled:shadow-none"
+          className={cn(v2PrimaryButtonClassName, "w-full rounded-[0.5rem]")}
         >
           {isSubmitting ? (
             <>

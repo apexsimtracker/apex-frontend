@@ -88,76 +88,69 @@ export default function ManualActivityV2() {
         path={MANUAL_PATH}
         noindex
       />
-      <div className="flex-1 overflow-y-auto bg-v2-background">
-        <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6 sm:py-12 lg:max-w-xl">
-          <div className="mb-8">
-            <div className="min-w-0">
-              <h1 className="font-v2-headline text-2xl font-semibold tracking-tight text-v2-on-surface sm:text-[1.65rem]">
-                Log manual activity
-              </h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-v2-on-surface-variant">
-                Record a session without telemetry. Add lap times to appear on
-                fastest-lap leaderboards.
-              </p>
-            </div>
-          </div>
-
-          <div className="v2-kinetic-glass rounded-lg border border-v2-outline-variant/10 bg-v2-surface-container-low p-5 shadow-sm sm:p-7">
-            {challengeId && formState !== "success" && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                <Trophy
-                  className="mt-0.5 size-4 shrink-0 text-amber-400"
-                  aria-hidden
-                />
-                <p className="text-sm text-amber-100/90">
-                  This session will count toward your active challenge when
-                  saved.
-                </p>
-              </div>
-            )}
-
-            {formState === "success" ? (
-              <div className="py-10 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-v2-success/10 ring-1 ring-v2-success/20">
-                    <CheckCircle className="size-7 text-v2-success" />
-                  </div>
-                </div>
-                <p className="text-lg font-medium text-v2-on-surface">
-                  Activity logged
-                </p>
-                <p className="mt-2 text-sm text-v2-on-surface-variant">
-                  Redirecting to your session…
-                </p>
-              </div>
-            ) : (
-              <ManualActivityFormV2
-                initialData={initialData}
-                prefilledFromPrevious={prefilledFromPrevious}
-                onSubmit={handleSubmit}
-                submitLabel="Save session"
-                submittingLabel="Saving…"
-                isSubmitting={formState === "submitting"}
-                errorMessage={errorMessage}
-              />
-            )}
-          </div>
-
-          <p className="mt-6 text-center text-sm text-v2-on-surface-variant">
-            Have an iRacing{" "}
-            <code className="rounded bg-v2-surface-container-highest px-1.5 py-0.5 text-xs text-v2-on-surface">
-              .ibt
-            </code>{" "}
-            file?{" "}
-            <Link
-              to="/v2/upload"
-              className="inline-flex items-center gap-1 font-medium text-v2-on-surface transition-colors hover:text-v2-primary"
-            >
-              <UploadIcon className="size-3.5" aria-hidden />
-              Upload telemetry
-            </Link>
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="mb-10">
+          <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
+            Manual Entry
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-v2-on-surface-variant">
+            Record a session without telemetry. Add lap times to appear on
+            fastest-lap leaderboards.
           </p>
         </div>
+
+        {challengeId && formState !== "success" && (
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+            <Trophy
+              className="mt-0.5 size-4 shrink-0 text-amber-400"
+              aria-hidden
+            />
+            <p className="text-sm text-amber-100/90">
+              This session will count toward your active challenge when saved.
+            </p>
+          </div>
+        )}
+
+        {formState === "success" ? (
+          <div className="rounded-lg bg-v2-surface-container-low py-10 text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex size-14 items-center justify-center rounded-full bg-v2-success/10 ring-1 ring-v2-success/20">
+                <CheckCircle className="size-7 text-v2-success" />
+              </div>
+            </div>
+            <p className="text-lg font-medium text-v2-on-surface">
+              Activity logged
+            </p>
+            <p className="mt-2 text-sm text-v2-on-surface-variant">
+              Redirecting to your session…
+            </p>
+          </div>
+        ) : (
+          <ManualActivityFormV2
+            initialData={initialData}
+            prefilledFromPrevious={prefilledFromPrevious}
+            onSubmit={handleSubmit}
+            submitLabel="Save session"
+            submittingLabel="Saving…"
+            isSubmitting={formState === "submitting"}
+            errorMessage={errorMessage}
+          />
+        )}
+
+        <p className="mt-6 text-center text-sm text-v2-on-surface-variant">
+          Have an iRacing{" "}
+          <code className="rounded bg-v2-surface-container-highest px-1.5 py-0.5 text-xs text-v2-on-surface">
+            .ibt
+          </code>{" "}
+          file?{" "}
+          <Link
+            to="/v2/upload"
+            className="inline-flex items-center gap-1 font-medium text-v2-on-surface transition-colors hover:text-v2-primary"
+          >
+            <UploadIcon className="size-3.5" aria-hidden />
+            Upload telemetry
+          </Link>
+        </p>
       </div>
     </>
   );

@@ -7,11 +7,9 @@ import {
 } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
-import ActivityFeedList from "@/components/ActivityFeedList";
-import DiscussionCard from "@/components/DiscussionCard";
-import { DiscussionCardSkeleton } from "@/components/DiscussionCardSkeleton";
-import ApexAnalysisTrendCard from "@/components/ApexAnalysisTrendCard";
-import OnboardingEmptyState from "@/components/OnboardingEmptyState";
+import ActivityFeedListV2 from "@/components/v2/dashboard/ActivityFeedListV2";
+import ApexAnalysisTrendCardV2 from "@/components/v2/dashboard/ApexAnalysisTrendCardV2";
+import OnboardingEmptyStateV2 from "@/components/v2/dashboard/OnboardingEmptyStateV2";
 import PageMeta from "@/components/PageMeta";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,8 +19,6 @@ import {
 } from "@/lib/activityFeedCache";
 import {
   isNetworkError,
-  getDiscussionsPage,
-  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   getActivityHomeFeedPage,
   ACTIVITY_FEED_DEFAULT_LIMIT,
   ACTIVITY_FEED_INITIAL_MAX_SESSIONS,
@@ -30,7 +26,6 @@ import {
   getProfileTrendInsight,
   type ActivityFeedPageResult,
   type ActivityFeedItem,
-  type Discussion,
 } from "@/lib/api";
 import { ownedProfileUserKey, profileKeys } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
@@ -48,12 +43,6 @@ type HomeActivityFeedPageParam = {
   groupOffset: number;
   maxSessions?: number;
 };
-
-const HOME_DISCUSSIONS_QUERY_KEY = [
-  "discussions",
-  "home",
-  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
-] as const;
 
 type RawActivityItem = SessionItem & {
   type?: "session";
@@ -80,65 +69,125 @@ function getAccountDisplayName(
   return user.email?.trim() || "Driver";
 }
 
-function timeAgo(createdAt: string | Date): string {
-  const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
-  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (sec < 60) return "just now";
-  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  if (sec < 2592000) return `${Math.floor(sec / 86400)}d ago`;
-  return date.toLocaleDateString();
-}
-
 function FeedSkeletonCardV2() {
+  const blockClassName = "bg-v2-surface-container-high/80";
   return (
-    <div className="mb-6 overflow-hidden rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container-low">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <SkeletonBlock
-          height={36}
-          width={36}
-          rounded="full"
-          className="bg-v2-surface-container-high"
-        />
-        <div className="min-w-0 flex-1 space-y-1.5">
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container-low shadow-sm">
+      <div className="space-y-5 p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <SkeletonBlock
+              height={36}
+              width={36}
+              rounded="full"
+              className={blockClassName}
+            />
+            <div className="space-y-2">
+              <SkeletonBlock
+                height={12}
+                width={96}
+                className={blockClassName}
+                rounded="sm"
+              />
+              <SkeletonBlock
+                height={10}
+                width={52}
+                className={blockClassName}
+                rounded="sm"
+              />
+            </div>
+          </div>
           <SkeletonBlock
-            height={14}
-            width={80}
-            className="bg-v2-surface-container-high"
-          />
-          <SkeletonBlock
-            height={12}
+            height={28}
             width={56}
-            className="bg-v2-surface-container-high"
+            className={blockClassName}
+            rounded="sm"
           />
         </div>
-      </div>
-      <div className="px-4 pb-4 pt-1.5">
-        <SkeletonBlock
-          height={12}
-          width={64}
-          className="mb-2 bg-v2-surface-container-high"
-        />
-        <SkeletonBlock
-          height={20}
-          width="75%"
-          className="mb-3 bg-v2-surface-container-high"
-        />
-        <SkeletonBlock
-          height={14}
-          width={96}
-          className="mb-4 bg-v2-surface-container-high"
-        />
-        <div className="flex gap-4">
+
+        <div className="space-y-2.5">
+          <div className="flex gap-2">
+            <SkeletonBlock
+              height={16}
+              width={40}
+              className={blockClassName}
+              rounded="sm"
+            />
+            <SkeletonBlock
+              height={16}
+              width={44}
+              className={blockClassName}
+              rounded="sm"
+            />
+          </div>
           <SkeletonBlock
-            height={64}
-            className="flex-1 bg-v2-surface-container-high"
-            rounded="lg"
+            height={10}
+            width={80}
+            className={blockClassName}
+            rounded="sm"
           />
           <SkeletonBlock
-            height={64}
-            className="flex-1 bg-v2-surface-container-high"
-            rounded="lg"
+            height={28}
+            width="72%"
+            className={blockClassName}
+            rounded="sm"
+          />
+        </div>
+
+        <div className="space-y-2 border-t border-v2-outline-variant/10 pt-4">
+          <SkeletonBlock
+            height={10}
+            width={48}
+            className={blockClassName}
+            rounded="sm"
+          />
+          <SkeletonBlock
+            height={32}
+            width={112}
+            className={blockClassName}
+            rounded="sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 border-t border-v2-outline-variant/10 pt-4">
+          {([0, 1, 2] as const).map((i) => (
+            <div key={i} className="space-y-2">
+              <SkeletonBlock
+                height={9}
+                width={40}
+                className={blockClassName}
+                rounded="sm"
+              />
+              <SkeletonBlock
+                height={14}
+                width="80%"
+                className={blockClassName}
+                rounded="sm"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-v2-outline-variant/10 pt-3">
+          <div className="flex gap-5">
+            <SkeletonBlock
+              height={18}
+              width={44}
+              className={blockClassName}
+              rounded="sm"
+            />
+            <SkeletonBlock
+              height={18}
+              width={36}
+              className={blockClassName}
+              rounded="sm"
+            />
+          </div>
+          <SkeletonBlock
+            height={18}
+            width={18}
+            className={blockClassName}
+            rounded="sm"
           />
         </div>
       </div>
@@ -172,9 +221,8 @@ function GoalCircularProgress({
           cy={size / 2}
           r={radius}
           fill="transparent"
-          stroke="currentColor"
+          stroke="#262626"
           strokeWidth={strokeWidth}
-          className="text-v2-surface-variant"
         />
         <circle
           cx={size / 2}
@@ -271,7 +319,6 @@ export default function DashboardV2() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [showUploadBanner, setShowUploadBanner] = useState(false);
-  const [homeDiscussionsEnabled, setHomeDiscussionsEnabled] = useState(false);
   const [homeTrendEnabled, setHomeTrendEnabled] = useState(false);
 
   const homeActivityFeedQueryKey = useMemo(
@@ -351,33 +398,6 @@ export default function DashboardV2() {
     enabled: Boolean(user) && homeTrendEnabled,
   });
 
-  const {
-    data: discussionPages,
-    isLoading: discussionsLoading,
-    fetchNextPage: fetchNextDiscussionsPage,
-    hasNextPage: discussionsHasNextPage,
-    isFetchingNextPage: isFetchingNextDiscussionsPage,
-  } = useInfiniteQuery({
-    queryKey: HOME_DISCUSSIONS_QUERY_KEY,
-    queryFn: ({ pageParam }) =>
-      getDiscussionsPage({
-        page: pageParam as number,
-        limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
-        includeTotal: false,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.hasMore ? lastPage.page + 1 : undefined,
-    enabled: homeDiscussionsEnabled,
-    placeholderData: (previousData) => previousData,
-  });
-
-  const discussions = useMemo(
-    () =>
-      (discussionPages?.pages.flatMap((p) => p.items) ?? []) as Discussion[],
-    [discussionPages],
-  );
-
   const feedError = useMemo(() => {
     if (!activityError) return null;
     return isNetworkError(activityError)
@@ -391,27 +411,6 @@ export default function DashboardV2() {
       ? activityError.message
       : "Failed to load activity";
   }, [activityError, feedError]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = () => {
-      if (!cancelled) setHomeDiscussionsEnabled(true);
-    };
-    let idleId: number | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (typeof requestIdleCallback !== "undefined") {
-      idleId = requestIdleCallback(run, { timeout: 2000 });
-    } else {
-      timeoutId = setTimeout(run, 1);
-    }
-    return () => {
-      cancelled = true;
-      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
-        cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-    };
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -602,10 +601,7 @@ export default function DashboardV2() {
       !activityLoading &&
       !feedError &&
       !error &&
-      homeDiscussionsEnabled &&
-      !discussionsLoading &&
-      activity.length === 0 &&
-      discussions.length === 0
+      activity.length === 0
     );
   }, [
     user?.id,
@@ -613,10 +609,7 @@ export default function DashboardV2() {
     activityLoading,
     feedError,
     error,
-    homeDiscussionsEnabled,
-    discussionsLoading,
     activity.length,
-    discussions.length,
   ]);
 
   const displayName = user ? getAccountDisplayName(user) : "Driver";
@@ -632,7 +625,7 @@ export default function DashboardV2() {
         path={DASHBOARD_V2_PATH}
         noindex
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col space-y-5 overflow-y-auto px-4 pb-4 pt-5">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-5 px-6 py-8">
         <DashboardStatGridV2
           loading={weeklySnapshotLoading}
           displayName={displayName}
@@ -645,16 +638,20 @@ export default function DashboardV2() {
           trackTimeDelta={weeklyStats.trackTimeDelta}
         />
 
-        {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
-          <ApexAnalysisTrendCard trend={profileTrendInsight.apexTrendInsight} />
-        )}
-
         <DashboardGoalsSectionV2
           loading={weeklySnapshotLoading}
           goals={weeklyGoals}
         />
 
+        {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
+          <ApexAnalysisTrendCardV2 trend={profileTrendInsight.apexTrendInsight} />
+        )}
+
         <section className="space-y-3">
+          <h2 className="font-v2-headline text-lg font-semibold text-v2-on-surface">
+            Latest session
+          </h2>
+
           {showUploadBanner && (
             <div className="mb-4 flex items-center gap-3 rounded-lg border border-v2-success/30 bg-v2-success/10 px-4 py-3">
               <CheckCircle className="size-5 shrink-0 text-v2-success" />
@@ -673,8 +670,8 @@ export default function DashboardV2() {
           )}
 
           {activityLoading ? (
-            <div className="space-y-0">
-              <p className="mb-3 font-v2-body text-sm text-v2-on-surface-variant">
+            <div className="space-y-6">
+              <p className="font-v2-body text-sm text-v2-on-surface-variant">
                 Loading activity...
               </p>
               <FeedSkeletonCardV2 />
@@ -684,7 +681,7 @@ export default function DashboardV2() {
           ) : (
             <>
               {feedError && (
-                <div className="mb-3 rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container-low p-3 font-v2-body text-sm text-v2-on-surface-variant">
+                <div className="rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container-low p-3 font-v2-body text-sm text-v2-on-surface-variant">
                   <div>
                     Can&apos;t reach Apex backend. Check it&apos;s running.
                   </div>
@@ -698,17 +695,17 @@ export default function DashboardV2() {
                 </div>
               )}
               {error && !feedError && (
-                <p className="mb-6 font-v2-body text-sm text-v2-error">
+                <p className="font-v2-body text-sm text-v2-error">
                   Failed to load activity
                 </p>
               )}
               {showEmptyFeedOnboarding && (
                 <div className="py-4">
-                  <OnboardingEmptyState />
+                  <OnboardingEmptyStateV2 />
                 </div>
               )}
-              {!error && !feedError && (
-                <ActivityFeedList
+              {!error && !feedError && activity.length > 0 && (
+                <ActivityFeedListV2
                   items={activity}
                   currentUser={user ?? null}
                   onSessionPatch={(id, patch) => {
@@ -738,54 +735,6 @@ export default function DashboardV2() {
               )}
             </>
           )}
-
-          {homeDiscussionsEnabled &&
-            (discussionsLoading ? (
-              <div className="mt-6 border-t border-v2-outline-variant/15 py-6">
-                <DiscussionCardSkeleton count={3} />
-              </div>
-            ) : (
-              <>
-                {discussions.map((d) => (
-                  <DiscussionCard
-                    key={d.id}
-                    id={d.id}
-                    title={d.title}
-                    excerpt={
-                      d.excerpt ??
-                      (() => {
-                        const body = d.description ?? d.content ?? "";
-                        return body
-                          ? body.slice(0, 160) + (body.length > 160 ? "…" : "")
-                          : "";
-                      })()
-                    }
-                    author={d.author}
-                    categoryKey={d.category ?? "general"}
-                    timestamp={timeAgo(d.createdAt)}
-                    replies={
-                      d.replies ?? d.commentCount ?? d.commentsCount ?? 0
-                    }
-                    views={d.views ?? 0}
-                    isPinned={d.isPinned}
-                  />
-                ))}
-                {discussionsHasNextPage && (
-                  <div className="flex justify-center py-6">
-                    <button
-                      type="button"
-                      onClick={() => void fetchNextDiscussionsPage()}
-                      disabled={isFetchingNextDiscussionsPage}
-                      className="rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container px-4 py-2 font-v2-body text-sm text-v2-on-surface transition-colors hover:bg-v2-surface-container-high disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      {isFetchingNextDiscussionsPage
-                        ? "Loading…"
-                        : "Load more discussions"}
-                    </button>
-                  </div>
-                )}
-              </>
-            ))}
         </section>
       </div>
     </>

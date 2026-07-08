@@ -87,6 +87,8 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
         v2: "var(--v2-radius)",
+        "v2-sm": "0.125rem",
+        "v2-lg": "0.25rem",
       },
       fontFamily: {
         "v2-headline": ["Space Grotesk", "sans-serif"],

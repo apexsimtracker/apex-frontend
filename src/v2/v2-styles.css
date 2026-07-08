@@ -23,97 +23,122 @@
   backdrop-filter: blur(16px);
 }
 
+/* Log Session sheet — Loveable telemetry.html uses bg-[#0e0e0e] (portal renders outside V2Layout). */
+.v2-theme .v2-log-session-sheet {
+  background-color: #0e0e0e;
+}
+
+.v2-theme .v2-log-session-overlay {
+  background-color: hsl(var(--v2-background) / 0.6);
+  backdrop-filter: blur(4px);
+}
+
 .v2-theme .v2-primary-gradient {
   background: linear-gradient(135deg, #ff8e7d 0%, #ff7763 100%);
+}
+
+/** Indeterminate upload progress — position slide only (no opacity pulse). */
+.v2-theme .v2-upload-indeterminate-track {
+  position: relative;
+  overflow: hidden;
+}
+
+.v2-theme .v2-upload-indeterminate-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #ff8e7d 0%, #ff7763 100%);
+  animation: v2-upload-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes v2-upload-indeterminate {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-theme .v2-upload-indeterminate-bar {
+    animation: none;
+    left: 30%;
+    width: 40%;
+  }
 }
 
 .v2-theme .v2-red-accent-border {
   border-left: 3px solid #eb0000;
 }
 
-/* Profile V2 — scoped retokening of reused ProfileView subcomponents */
-.v2-theme .profile-v2-view h1,
-.v2-theme .profile-v2-view h2 {
-  font-family: "Space Grotesk", sans-serif;
+/* V2 inputs: single red border on focus — no ring/outline double stroke */
+.v2-theme input:focus,
+.v2-theme input:focus-visible,
+.v2-theme select:focus,
+.v2-theme select:focus-visible,
+.v2-theme textarea:focus,
+.v2-theme textarea:focus-visible {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  box-shadow: none !important;
 }
 
-.v2-theme .profile-v2-view .rounded-lg.border.bg-card\/20,
-.v2-theme .profile-v2-view .rounded-lg.border.bg-card\/40 {
-  border-color: hsl(var(--v2-outline-variant) / 0.15);
-  background-color: hsl(var(--v2-surface-container-low));
+/* Lap table cells — borderless inline entry (Loveable manual-entry.html) */
+.v2-theme input.manual-lap-cell,
+.v2-theme input.manual-lap-cell:hover,
+.v2-theme input.manual-lap-cell:focus,
+.v2-theme input.manual-lap-cell:focus-visible,
+.v2-theme input.manual-lap-cell:active {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  color-scheme: dark;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
 }
 
-.v2-theme .profile-v2-view .border-white\/10,
-.v2-theme .profile-v2-view .border-white\/5,
-.v2-theme .profile-v2-view .border-white\/6 {
-  border-color: hsl(var(--v2-outline-variant) / 0.15);
+.v2-theme input.manual-lap-cell-sector {
+  color: hsl(var(--v2-on-surface-variant)) !important;
+  -webkit-text-fill-color: hsl(var(--v2-on-surface-variant)) !important;
 }
 
-.v2-theme .profile-v2-view .bg-white\/\[0\.02\] {
-  background-color: hsl(var(--v2-surface-container-low));
-  border-color: hsl(var(--v2-outline-variant) / 0.15);
+.v2-theme input.manual-lap-cell-total {
+  color: hsl(var(--v2-primary)) !important;
+  -webkit-text-fill-color: hsl(var(--v2-primary)) !important;
 }
 
-.v2-theme .profile-v2-view .bg-white\/\[0\.02\]:hover {
-  background-color: hsl(var(--v2-surface-container));
+.v2-theme input.manual-lap-cell-invalid,
+.v2-theme button.manual-lap-cell-invalid {
+  color: hsl(var(--v2-error)) !important;
+  -webkit-text-fill-color: hsl(var(--v2-error)) !important;
 }
 
-.v2-theme .profile-v2-view .text-muted-foreground,
-.v2-theme .profile-v2-view .text-muted-foreground\/50,
-.v2-theme .profile-v2-view .text-muted-foreground\/60,
-.v2-theme .profile-v2-view .text-muted-foreground\/70,
-.v2-theme .profile-v2-view .text-muted-foreground\/80 {
-  color: hsl(var(--v2-on-surface-variant));
+.v2-theme input.manual-lap-cell:-webkit-autofill,
+.v2-theme input.manual-lap-cell:-webkit-autofill:hover,
+.v2-theme input.manual-lap-cell:-webkit-autofill:focus,
+.v2-theme input.manual-lap-cell:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  transition: background-color 99999s ease-out 0s;
 }
 
-.v2-theme .profile-v2-view .text-foreground {
-  color: hsl(var(--v2-on-surface));
+.v2-theme .hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.v2-theme .profile-v2-view .text-neutral-400,
-.v2-theme .profile-v2-view .text-neutral-500,
-.v2-theme .profile-v2-view .text-neutral-200 {
-  color: hsl(var(--v2-on-surface-variant));
-}
-
-.v2-theme .profile-v2-view button[class*="underline"] {
-  border: 1px solid hsl(var(--v2-primary) / 0.4);
-  border-radius: 9999px;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: hsl(var(--v2-primary));
-  transition: background-color 0.15s ease;
-}
-
-.v2-theme .profile-v2-view button[class*="underline"]:hover {
-  background-color: hsl(var(--v2-primary) / 0.1);
-  color: hsl(var(--v2-primary));
-}
-
-.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 {
-  border-top: 1px solid hsl(var(--v2-outline-variant) / 0.15);
-  border-bottom: 1px solid hsl(var(--v2-outline-variant) / 0.15);
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-
-.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 p.text-sm.font-semibold,
-.v2-theme
-  .profile-v2-view
-  .grid.grid-cols-3.gap-3
-  p.text-sm.font-semibold.sm\:text-base {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.875rem;
-  font-weight: 700;
-  line-height: 2.25rem;
-  color: hsl(var(--v2-on-surface));
-}
-
-.v2-theme .profile-v2-view .grid.grid-cols-3.gap-3 p.text-xs.uppercase {
-  font-size: 0.625rem;
-  letter-spacing: 0.05em;
+.v2-theme .hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

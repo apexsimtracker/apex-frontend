@@ -13,9 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { DeleteAccountFormValues } from "@/lib/validation/settingsForms";
-
-const v2InputClassName =
-  "w-full rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 text-sm text-v2-on-surface placeholder:text-v2-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50";
+import { v2InputClassName } from "@/components/v2/ui/v2ButtonClasses";
 
 type SettingsDeleteDialogV2Props = {
   open: boolean;

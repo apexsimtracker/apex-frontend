@@ -1,15 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
-import { clearToken } from "@/auth/token";
 import {
   resolveApiUrl,
   authMe,
-  authLogout,
   getProfileSummary,
   getProfileRaceHistory,
   getUserPublicProfile,
@@ -38,7 +35,7 @@ import {
   profileEditFormSchema,
   type ProfileEditFormValues,
 } from "@/lib/validation/profileEdit";
-import { ProfileView } from "@/components/ProfileView";
+import { ProfileViewV2 } from "@/components/v2/profile/ProfileViewV2";
 import { FollowListDialog } from "@/components/FollowListDialog";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -262,18 +259,6 @@ export default function ProfileV2() {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   }, [avatarPreview]);
 
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    try {
-      await authLogout();
-    } catch {
-      // Server revoke is best-effort; always clear local credentials.
-    }
-    clearToken();
-    navigate("/login", { replace: true });
-  };
-
   const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
     if (!user || profileSaveInFlightRef.current) return;
     const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
@@ -398,23 +383,25 @@ export default function ProfileV2() {
           path={PROFILE_V2_PATH}
           noindex
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto p-6">
-          <SkeletonBlock
-            height={80}
-            className="mb-6 rounded-full bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={120}
-            className="mb-6 rounded-lg bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={200}
-            className="mb-6 rounded-lg bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={280}
-            className="rounded-lg bg-v2-surface-container-highest"
-          />
+        <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+          <div className="w-full space-y-6">
+            <SkeletonBlock
+              height={80}
+              className="rounded-lg bg-v2-surface-container-highest"
+            />
+            <SkeletonBlock
+              height={120}
+              className="rounded-lg bg-v2-surface-container-highest"
+            />
+            <SkeletonBlock
+              height={200}
+              className="rounded-lg bg-v2-surface-container-highest"
+            />
+            <SkeletonBlock
+              height={280}
+              className="rounded-lg bg-v2-surface-container-highest"
+            />
+          </div>
         </div>
       </>
     );
@@ -425,19 +412,6 @@ export default function ProfileV2() {
   const displayProfile: ProfileSummary = profile
     ? { ...profile, user: { ...profile.user, displayName: accountName } }
     : profileSummaryFromMe(me);
-
-  const memberSince =
-    user.createdAt &&
-    (() => {
-      try {
-        const d = new Date(user.createdAt);
-        return isNaN(d.getTime())
-          ? null
-          : d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
-      } catch {
-        return null;
-      }
-    })();
 
   const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
   const bioForDisplay =
@@ -464,57 +438,36 @@ export default function ProfileV2() {
         image={avatarUrl}
         noindex
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto">
-        <div className="profile-v2-view">
-          <ProfileView
-            profile={displayProfile}
-            avatarUrl={avatarUrl || undefined}
-            bio={bioForDisplay}
-            followersCount={publicPreview?.followersCount ?? 0}
-            followingCount={publicPreview?.followingCount ?? 0}
-            isCurrentUser
-            isPro={user.hasPro === true}
-            challengeBadges={publicPreview?.challengeBadges}
-            onOpenFollowers={() => setOpenList("followers")}
-            onOpenFollowing={() => setOpenList("following")}
-            onPrefetchFollowers={() =>
-              prefetchFollowList(queryClient, followsUserId, "followers")
-            }
-            onPrefetchFollowing={() =>
-              prefetchFollowList(queryClient, followsUserId, "following")
-            }
-            onEditProfile={openEditProfile}
-            raceHistoryPagination={{
-              page: raceHistoryData?.page ?? raceHistoryPage,
-              limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
-              totalPages: raceHistoryData?.totalPages ?? 1,
-              total: raceHistoryData?.total ?? 0,
-              items: raceHistoryData?.items ?? [],
-              loading: raceHistoryLoading,
-              fetching: raceHistoryFetching,
-              onPageChange: setRaceHistoryPage,
-            }}
-            rootClassName="min-h-0 bg-transparent"
-            containerClassName="mx-auto w-full max-w-2xl space-y-6 px-6 py-6"
-          />
-        </div>
-
-        <div className="px-6 pb-6">
-          <div className="flex flex-col items-end gap-2">
-            {memberSince && (
-              <p className="font-v2-body text-sm text-v2-on-surface-variant">
-                Member since {memberSince}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-lg bg-v2-primary px-4 py-2 font-v2-body text-sm font-medium text-white transition-opacity hover:opacity-90"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <ProfileViewV2
+          profile={displayProfile}
+          avatarUrl={avatarUrl || undefined}
+          bio={bioForDisplay}
+          followersCount={publicPreview?.followersCount ?? 0}
+          followingCount={publicPreview?.followingCount ?? 0}
+          isCurrentUser
+          isPro={user.hasPro === true}
+          challengeBadges={publicPreview?.challengeBadges}
+          onOpenFollowers={() => setOpenList("followers")}
+          onOpenFollowing={() => setOpenList("following")}
+          onPrefetchFollowers={() =>
+            prefetchFollowList(queryClient, followsUserId, "followers")
+          }
+          onPrefetchFollowing={() =>
+            prefetchFollowList(queryClient, followsUserId, "following")
+          }
+          onEditProfile={openEditProfile}
+          raceHistoryPagination={{
+            page: raceHistoryData?.page ?? raceHistoryPage,
+            limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+            totalPages: raceHistoryData?.totalPages ?? 1,
+            total: raceHistoryData?.total ?? 0,
+            items: raceHistoryData?.items ?? [],
+            loading: raceHistoryLoading,
+            fetching: raceHistoryFetching,
+            onPageChange: setRaceHistoryPage,
+          }}
+        />
       </div>
 
       <FollowListDialog

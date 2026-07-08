@@ -14,10 +14,11 @@ import type { WithRootError } from "@/lib/formWithRootError";
 import type { SettingsDisplayNameValues } from "@/lib/validation/settingsForms";
 import type { AuthUser } from "@/lib/api";
 import { SettingsSectionChromeV2 } from "./SettingsSectionChromeV2";
-import { cn } from "@/lib/utils";
-
-const v2InputClassName =
-  "w-full rounded-md border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 font-v2-headline text-xl font-bold text-v2-on-surface placeholder:text-v2-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50";
+import {
+  v2AccountInputClassName,
+  v2AccountFieldValueClassName,
+  v2PrimaryButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
 
 type SettingsAccountSectionV2Props = {
   user: AuthUser;
@@ -62,7 +63,7 @@ export default function SettingsAccountSectionV2({
                     <Input
                       placeholder="Enter display name"
                       disabled={saving}
-                      className={v2InputClassName}
+                      className={v2AccountInputClassName}
                       {...field}
                       onChange={(e) => {
                         field.onChange(e);
@@ -78,7 +79,7 @@ export default function SettingsAccountSectionV2({
               <label className="font-v2-body text-[10px] uppercase text-v2-on-surface-variant">
                 Email Address
               </label>
-              <p className="font-v2-headline text-xl font-bold text-v2-on-surface">
+              <p className={v2AccountFieldValueClassName}>
                 {user.email ?? "—"}
               </p>
             </div>
@@ -86,7 +87,7 @@ export default function SettingsAccountSectionV2({
               <label className="font-v2-body text-[10px] uppercase text-v2-on-surface-variant">
                 Member Since
               </label>
-              <p className="font-v2-headline text-xl font-bold text-v2-on-surface">
+              <p className={v2AccountFieldValueClassName}>
                 {formatCreatedAt(createdAt)}
               </p>
             </div>
@@ -96,11 +97,7 @@ export default function SettingsAccountSectionV2({
             <Button
               type="submit"
               disabled={saveDisabled}
-              className={cn(
-                "px-8 py-2.5 font-v2-headline text-sm font-bold uppercase tracking-widest",
-                !saveDisabled &&
-                  "bg-v2-primary text-white hover:bg-v2-primary/90",
-              )}
+              className={v2PrimaryButtonClassName}
             >
               {saving ? (
                 <>

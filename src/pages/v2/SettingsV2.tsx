@@ -2,21 +2,11 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import {
-  Download,
-  Loader2,
-  LogOut,
-  RefreshCw,
-  Terminal,
-  Trash2,
-} from "lucide-react";
 import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
 import {
-  authMe,
   authLogout,
   updateMe,
-  getApiBase,
   changePassword,
   deleteAccount,
   downloadUserDataExport,
@@ -27,8 +17,6 @@ import {
   type SessionVisibility,
 } from "@/lib/api";
 import { getApexSettings, type ApexSettings } from "@/lib/settingsStorage";
-import { SettingsRow } from "@/features/settings/components/SettingsRow";
-import { SubscriptionCard } from "@/features/settings/components/SubscriptionCard";
 import {
   settingsTitle,
   settingsDescription,
@@ -45,18 +33,7 @@ import {
   usePersistApexToStorageEffect,
 } from "@/features/settings/hooks/useSettingsUserEffects";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   type SettingsDisplayNameValues,
   type SettingsChangePasswordValues,
@@ -65,18 +42,20 @@ import {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/settingsForms";
-import { authPrimarySolidButtonClassName } from "@/lib/authUi";
-import { cn } from "@/lib/utils";
+import {
+  v2PrimaryButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
 import PageMeta from "@/components/PageMeta";
 import SettingsAccountSectionV2 from "./settings/SettingsAccountSectionV2";
 import SettingsPrivacySectionV2 from "./settings/SettingsPrivacySectionV2";
 import SettingsDeleteDialogV2 from "./settings/SettingsDeleteDialogV2";
+import SettingsPasswordSectionV2 from "./settings/SettingsPasswordSectionV2";
+import SettingsNotificationsSectionV2 from "./settings/SettingsNotificationsSectionV2";
+import SettingsAccountActionsSectionV2 from "./settings/SettingsAccountActionsSectionV2";
 import { SettingsSectionChromeV2 } from "./settings/SettingsSectionChromeV2";
+import { SubscriptionCardV2 } from "./settings/SubscriptionCardV2";
 
 const SETTINGS_V2_PATH = "/v2/settings";
-
-const v2InputClassName =
-  "w-full rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 text-sm text-v2-on-surface placeholder:text-v2-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50";
 
 export default function SettingsV2() {
   const navigate = useNavigate();
@@ -90,10 +69,6 @@ export default function SettingsV2() {
   const [displayNameSuccess, setDisplayNameSuccess] = useState(false);
   const [changePwSubmitting, setChangePwSubmitting] = useState(false);
   const [changePwSuccess, setChangePwSuccess] = useState(false);
-  const [testApiStatus, setTestApiStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
-  const [testApiMessage, setTestApiMessage] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -390,19 +365,6 @@ export default function SettingsV2() {
     [deleteAccountForm, deleteSubmitting, navigate, resetDeleteDialog, setUser],
   );
 
-  const handleTestApi = useCallback(async () => {
-    setTestApiStatus("loading");
-    setTestApiMessage("");
-    try {
-      await authMe();
-      setTestApiStatus("success");
-      setTestApiMessage("API is reachable.");
-    } catch (e) {
-      setTestApiStatus("error");
-      setTestApiMessage(e instanceof Error ? e.message : "Request failed.");
-    }
-  }, []);
-
   const changePwWatch = changePasswordForm.watch();
   const trimmedNewPw = changePwWatch.newPassword?.trim() ?? "";
   const currentPasswordValid = (changePwWatch.currentPassword?.length ?? 0) > 0;
@@ -445,17 +407,10 @@ export default function SettingsV2() {
     [changePasswordForm, changePwSubmitting],
   );
 
-  const showDevSystemStatus =
-    import.meta.env.VITE_ENABLE_DEV_SYSTEM_STATUS === "true";
-  const envLabel =
-    import.meta.env.MODE === "production" ? "production" : "development";
-  const apiHost = (() => {
-    try {
-      return new URL(getApiBase()).host;
-    } catch {
-      return getApiBase();
-    }
-  })();
+  const handlePasswordFieldChange = useCallback(() => {
+    changePasswordForm.clearErrors("root");
+    setChangePwSuccess(false);
+  }, [changePasswordForm]);
 
   const handleManageFollowRequests = useCallback(() => {
     window.dispatchEvent(new CustomEvent("apex:open-notifications"));
@@ -485,21 +440,21 @@ export default function SettingsV2() {
             <div className="space-y-8 lg:col-span-7">
               <SkeletonBlock
                 height={200}
-                className="rounded-lg bg-v2-surface-container-highest"
+                className="rounded-v2-lg bg-v2-surface-container-highest"
               />
               <SkeletonBlock
                 height={280}
-                className="rounded-lg bg-v2-surface-container-highest"
+                className="rounded-v2-lg bg-v2-surface-container-highest"
               />
             </div>
             <div className="space-y-8 lg:col-span-5">
               <SkeletonBlock
                 height={160}
-                className="rounded-lg bg-v2-surface-container-highest"
+                className="rounded-v2-lg bg-v2-surface-container-highest"
               />
               <SkeletonBlock
                 height={200}
-                className="rounded-lg bg-v2-surface-container-highest"
+                className="rounded-v2-lg bg-v2-surface-container-highest"
               />
             </div>
           </div>
@@ -518,17 +473,17 @@ export default function SettingsV2() {
           noindex
         />
         <div className="flex flex-1 items-center justify-center px-6 py-12">
-          <div className="v2-kinetic-glass w-full max-w-sm rounded-lg border border-v2-outline-variant/10 bg-v2-surface-container-low p-6 text-center">
+          <div className="w-full max-w-sm rounded-v2-lg bg-v2-surface-container-low p-6 text-center">
             <p className="mb-2 font-v2-headline font-bold text-v2-on-surface">
               Not signed in
             </p>
-            <p className="mb-4 font-v2-body text-sm text-v2-on-surface-variant">
+            <p className="mb-4 text-sm text-v2-on-surface-variant">
               Sign in to manage your settings.
             </p>
             <Button
               type="button"
               onClick={() => navigate("/login", { replace: true })}
-              className="text-white focus-visible:ring-v2-primary"
+              className={v2PrimaryButtonClassName}
               style={{ backgroundColor: PRIMARY_RED }}
             >
               Log in
@@ -547,12 +502,12 @@ export default function SettingsV2() {
         path={SETTINGS_V2_PATH}
         noindex
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-y-auto px-6 py-8">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
         <div className="mb-10">
           <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
             Driver Settings
           </h1>
-          <p className="mt-2 font-v2-headline text-[10px] font-semibold uppercase tracking-[0.2em] text-v2-on-surface-variant">
+          <p className="mt-2 text-sm tracking-wide text-v2-on-surface-variant">
             Configure your kinetic profile and telemetry preferences
           </p>
         </div>
@@ -578,331 +533,42 @@ export default function SettingsV2() {
               onManageFollowRequests={handleManageFollowRequests}
             />
 
-            <SettingsSectionChromeV2 title="Password & security">
-              <p className="mb-4 font-v2-body text-xs text-v2-on-surface-variant">
-                Enter your current password and a new password ({PASSWORD_MIN}–
-                {PASSWORD_MAX} characters).
-              </p>
-              <Form {...changePasswordForm}>
-                <form
-                  id="change-password"
-                  onSubmit={changePasswordForm.handleSubmit(onChangePassword)}
-                  className="max-w-md space-y-3"
-                >
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            autoComplete="current-password"
-                            placeholder="Current password"
-                            disabled={changePwSubmitting}
-                            className={v2InputClassName}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              changePasswordForm.clearErrors("root");
-                              setChangePwSuccess(false);
-                            }}
-                          />
-                        </FormControl>
-                        {!currentPasswordValid &&
-                          changePwWatch.currentPassword?.length === 0 &&
-                          (changePwWatch.newPassword?.length ?? 0) > 0 && (
-                            <p className="text-xs text-amber-500">
-                              Current password is required.
-                            </p>
-                          )}
-                        <FormMessage className="text-xs text-v2-error" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            autoComplete="new-password"
-                            placeholder="New password"
-                            disabled={changePwSubmitting}
-                            className={v2InputClassName}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              changePasswordForm.clearErrors("root");
-                              setChangePwSuccess(false);
-                            }}
-                          />
-                        </FormControl>
-                        {(changePwWatch.newPassword?.length ?? 0) > 0 &&
-                          trimmedNewPw.length < PASSWORD_MIN && (
-                            <p className="text-xs text-amber-500">
-                              New password must be at least {PASSWORD_MIN}{" "}
-                              characters.
-                            </p>
-                          )}
-                        {newPasswordTooLong && (
-                          <p className="text-xs text-amber-500">
-                            New password must be at most {PASSWORD_MAX}{" "}
-                            characters.
-                          </p>
-                        )}
-                        {passwordsSameAsCurrent &&
-                          newPasswordValid &&
-                          currentPasswordValid && (
-                            <p className="text-xs text-amber-500">
-                              New password must be different from your current
-                              password.
-                            </p>
-                          )}
-                        <FormMessage className="text-xs text-v2-error" />
-                      </FormItem>
-                    )}
-                  />
-                  <FormRootMessage className="text-xs text-v2-error" />
-                  {changePwSuccess && (
-                    <p className="text-xs text-v2-success">Password updated.</p>
-                  )}
-                  <Button
-                    type="submit"
-                    variant="default"
-                    disabled={updatePasswordDisabled}
-                    aria-busy={changePwSubmitting}
-                    className={cn(
-                      authPrimarySolidButtonClassName,
-                      updatePasswordDisabled && "cursor-not-allowed opacity-60",
-                    )}
-                  >
-                    {changePwSubmitting ? (
-                      <>
-                        <Loader2
-                          className="mr-2 size-4 animate-spin"
-                          aria-hidden
-                        />
-                        Updating…
-                      </>
-                    ) : (
-                      "Update password"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </SettingsSectionChromeV2>
+            <SettingsNotificationsSectionV2
+              settings={settings}
+              notificationSaving={notificationSaving}
+              applyNotificationToggle={applyNotificationToggle}
+              onResetDefaults={handleResetNotificationDefaults}
+            />
           </div>
 
           <div className="space-y-10 lg:col-span-5">
-            <section className="v2-red-accent-border pl-6">
-              <h2 className="mb-4 font-v2-headline text-[10px] uppercase tracking-[0.2em] text-v2-on-surface-variant">
-                Subscription
-              </h2>
-              <div className="v2-kinetic-glass rounded-lg border border-v2-outline-variant/10 bg-v2-surface-container-low p-2">
-                <SubscriptionCard />
-              </div>
-            </section>
-
-            <SettingsSectionChromeV2 title="Notifications">
-              <p className="mb-4 font-v2-body text-xs text-v2-on-surface-variant">
-                Preferences are saved to your account. Security emails
-                (verification, password reset) always send.
-              </p>
-              <div className="-mx-1 divide-y divide-v2-outline-variant/10">
-                <SettingsRow
-                  label="Email notifications"
-                  description="Optional updates and announcements by email. Does not affect verification, password reset, or Pro welcome emails."
-                >
-                  <Switch
-                    checked={settings.emailNotifications}
-                    disabled={notificationSaving}
-                    onCheckedChange={(v) =>
-                      void applyNotificationToggle("emailNotifications", v)
-                    }
-                  />
-                </SettingsRow>
-                <SettingsRow
-                  label="In-app notification alerts"
-                  description="Unread count on the bell in the navigation bar. You can still open notifications and follow requests when this is off."
-                >
-                  <Switch
-                    checked={settings.showNotificationBadge}
-                    disabled={notificationSaving}
-                    onCheckedChange={(v) =>
-                      void applyNotificationToggle("showNotificationBadge", v)
-                    }
-                  />
-                </SettingsRow>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="hover:bg-v2-surface-variant mt-4 border-v2-outline-variant/20 text-v2-on-surface"
-                disabled={notificationSaving}
-                onClick={() => void handleResetNotificationDefaults()}
-              >
-                Reset to defaults
-              </Button>
+            <SettingsSectionChromeV2 title="Subscription">
+              <SubscriptionCardV2 />
             </SettingsSectionChromeV2>
 
-            <SettingsSectionChromeV2 title="Account actions">
-              <div className="space-y-4">
-                <div className="rounded-lg bg-v2-surface-container-low p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-v2-headline font-bold text-v2-on-surface">
-                      Export data
-                    </h3>
-                    <Download
-                      className="size-5 text-v2-on-surface-variant"
-                      aria-hidden
-                    />
-                  </div>
-                  <Label
-                    htmlFor="v2-export-format"
-                    className="mb-1.5 block font-v2-body text-[10px] uppercase text-v2-on-surface-variant"
-                  >
-                    File format
-                  </Label>
-                  <select
-                    id="v2-export-format"
-                    value={exportFormat}
-                    onChange={(e) =>
-                      setExportFormat(e.target.value as DataExportFormat)
-                    }
-                    disabled={exportLoading}
-                    className="mb-3 w-full rounded-md border border-v2-outline-variant/20 bg-v2-surface-container-highest px-4 py-3 font-v2-body text-sm text-v2-on-surface focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50"
-                  >
-                    <option value="xlsx">
-                      Excel workbook (.xlsx) — full data
-                    </option>
-                    <option value="pdf">
-                      Summary PDF (.pdf) — printable overview
-                    </option>
-                  </select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "hover:bg-v2-surface-variant w-full border-v2-outline-variant/20 text-v2-on-surface",
-                      exportLoading && "cursor-not-allowed opacity-60",
-                    )}
-                    onClick={handleExportData}
-                    disabled={exportLoading}
-                    aria-busy={exportLoading}
-                  >
-                    {exportLoading ? (
-                      <>
-                        <Loader2
-                          className="mr-2 size-4 animate-spin"
-                          aria-hidden
-                        />
-                        Exporting…
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 size-4" aria-hidden />
-                        Export data
-                      </>
-                    )}
-                  </Button>
-                </div>
+            <SettingsPasswordSectionV2
+              changePasswordForm={changePasswordForm}
+              onChangePassword={onChangePassword}
+              changePwWatch={changePwWatch}
+              trimmedNewPw={trimmedNewPw}
+              currentPasswordValid={currentPasswordValid}
+              newPasswordValid={newPasswordValid}
+              newPasswordTooLong={newPasswordTooLong}
+              passwordsSameAsCurrent={passwordsSameAsCurrent}
+              updatePasswordDisabled={updatePasswordDisabled}
+              changePwSubmitting={changePwSubmitting}
+              changePwSuccess={changePwSuccess}
+              onFieldChange={handlePasswordFieldChange}
+            />
 
-                <button
-                  type="button"
-                  onClick={() => void handleLogout()}
-                  className="flex w-full items-center justify-between rounded-lg bg-v2-surface-container-low p-6 transition-colors hover:bg-v2-surface-container"
-                >
-                  <span className="font-v2-headline font-bold text-v2-on-surface">
-                    Log out
-                  </span>
-                  <LogOut
-                    className="size-5 text-v2-on-surface-variant"
-                    aria-hidden
-                  />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="flex w-full items-center justify-between rounded-lg border border-v2-error/20 bg-v2-error/10 p-6 transition-colors hover:bg-v2-error/20"
-                >
-                  <div className="text-left">
-                    <span className="block font-v2-headline font-bold text-v2-error">
-                      Delete account
-                    </span>
-                    <span className="mt-1 block text-[10px] uppercase tracking-tighter text-v2-error/60">
-                      This action is permanent and irreversible
-                    </span>
-                  </div>
-                  <Trash2 className="size-5 text-v2-error" aria-hidden />
-                </button>
-              </div>
-            </SettingsSectionChromeV2>
-
-            {showDevSystemStatus && (
-              <div className="v2-kinetic-glass rounded-lg border border-v2-outline-variant/10 bg-v2-surface-container-low p-6">
-                <div className="mb-4 flex items-center gap-3">
-                  <Terminal className="size-5 text-v2-primary" aria-hidden />
-                  <h4 className="font-v2-headline text-sm font-bold text-v2-primary">
-                    System status
-                  </h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between font-v2-body text-xs">
-                    <span className="uppercase text-v2-on-surface-variant">
-                      Environment
-                    </span>
-                    <span className="font-bold text-v2-primary">
-                      {envLabel.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-v2-body text-xs">
-                    <span className="uppercase text-v2-on-surface-variant">
-                      API host
-                    </span>
-                    <span className="font-mono font-bold text-v2-primary">
-                      {apiHost}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="border-v2-outline-variant/20"
-                      onClick={handleTestApi}
-                      disabled={testApiStatus === "loading"}
-                    >
-                      {testApiStatus === "loading" ? (
-                        "Testing…"
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-1.5 size-3.5" aria-hidden />
-                          Test API
-                        </>
-                      )}
-                    </Button>
-                    {testApiStatus === "success" && (
-                      <span className="text-xs text-v2-success">
-                        {testApiMessage}
-                      </span>
-                    )}
-                    {testApiStatus === "error" && (
-                      <span className="text-xs text-v2-error">
-                        {testApiMessage}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-4 h-1 w-full overflow-hidden bg-v2-surface-container-highest">
-                    <div className="v2-primary-gradient h-full w-3/4 shadow-[0_0_8px_rgba(255,142,125,0.5)]" />
-                  </div>
-                </div>
-              </div>
-            )}
+            <SettingsAccountActionsSectionV2
+              exportFormat={exportFormat}
+              onExportFormatChange={setExportFormat}
+              exportLoading={exportLoading}
+              onExportData={handleExportData}
+              onLogout={handleLogout}
+              onDeleteAccount={() => setDeleteDialogOpen(true)}
+            />
           </div>
         </div>
       </div>

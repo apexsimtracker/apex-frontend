@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, Plus } from "lucide-react";
+import { Bell } from "lucide-react";
 import { ApexLogo } from "@/components/ApexLogo";
 import UserAvatar from "@/components/UserAvatar";
+import CreateMenuV2 from "@/components/v2/CreateMenuV2";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -40,13 +41,7 @@ export default function CommunityTopBarV2() {
       </Link>
 
       <div className="flex items-center gap-4">
-        <Link
-          to="/v2/manual"
-          className="flex size-8 items-center justify-center rounded-full border border-v2-outline-variant/30 bg-v2-primary text-white transition-colors hover:bg-v2-primary/90"
-          aria-label="Add activity"
-        >
-          <Plus className="size-5" aria-hidden />
-        </Link>
+        <CreateMenuV2 />
 
         <button
           type="button"

@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { BarChart2, Home, Trophy, User, Users } from "lucide-react";
+import { BarChart2, Home, Menu, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useV2Nav } from "@/components/v2/v2NavContext";
 
 type BottomNavItem = {
   to: string;
@@ -15,17 +16,12 @@ const NAV_ITEMS: BottomNavItem[] = [
   { to: "/v2/leaderboards", label: "Leaderboards", icon: BarChart2 },
   { to: "/v2/challenges", label: "Challenges", icon: Trophy },
   { to: "/v2/community", label: "Community", icon: Users },
-  {
-    to: "/v2/profile",
-    label: "Profile",
-    icon: User,
-    isActiveOverride: (pathname) =>
-      pathname === "/v2/profile" || pathname === "/v2/settings",
-  },
 ];
 
-export default function ProfileBottomNavV2() {
+export default function V2BottomNavV2() {
   const { pathname } = useLocation();
+  const v2Nav = useV2Nav();
+  const menuOpen = v2Nav?.mobileNavOpen ?? false;
 
   return (
     <nav
@@ -52,12 +48,29 @@ export default function ProfileBottomNavV2() {
             )}
           >
             <Icon className="size-6 shrink-0" aria-hidden />
-            <span className="mt-1 font-v2-body text-[10px] font-semibold uppercase tracking-widest">
+            <span className="mt-1 font-v2-body text-[8px] font-semibold uppercase tracking-widest max-[390px]:text-[8px] min-[391px]:text-[10px]">
               {label}
             </span>
           </NavLink>
         );
       })}
+
+      <button
+        type="button"
+        onClick={() => v2Nav?.setMobileNavOpen(true)}
+        className={cn(
+          "flex flex-col items-center justify-center transition-transform",
+          menuOpen ? "scale-110 text-v2-primary" : "text-v2-on-surface-variant",
+        )}
+        aria-expanded={menuOpen}
+        aria-controls="v2-mobile-nav-drawer"
+        aria-label="Open menu"
+      >
+        <Menu className="size-6 shrink-0" aria-hidden />
+        <span className="mt-1 font-v2-body text-[8px] font-semibold uppercase tracking-widest max-[390px]:text-[8px] min-[391px]:text-[10px]">
+          Menu
+        </span>
+      </button>
     </nav>
   );
 }

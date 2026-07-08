@@ -31,6 +31,61 @@ export const primaryNavItems: NavLinkItem[] = [
   { label: "Sessions", to: "/sessions", audience: "authenticated" },
 ];
 
+/** Hub header / mobile drawer primary links for V2 shell pages. */
+export const primaryNavItemsV2: NavLinkItem[] = [
+  { label: "Home", to: "/v2", audience: "both", end: true },
+  { label: "Leaderboards", to: "/v2/leaderboards", audience: "both" },
+  { label: "Challenges", to: "/v2/challenges", audience: "both" },
+  { label: "Community", to: "/v2/community", audience: "both" },
+  { label: "Pricing", to: "/v2/pricing", audience: "both" },
+];
+
+export type LogSessionMenuIcon = "agent" | "manual" | "upload";
+
+export type LogSessionMenuItemV2 = {
+  id: string;
+  title: string;
+  subtitle: string;
+  to: string;
+  icon: LogSessionMenuIcon;
+  featured?: boolean;
+  proBadge?: boolean;
+};
+
+/** Log a Session chooser — sheet (mobile/tablet) and create dropdown (desktop). */
+export const logSessionMenuItemsV2: LogSessionMenuItemV2[] = [
+  {
+    id: "agent",
+    title: "Auto-track",
+    subtitle: "Apex Agent uploads as you drive — iRacing, F1 25, LMU",
+    to: "/v2/agent",
+    icon: "agent",
+    featured: true,
+    proBadge: true,
+  },
+  {
+    id: "manual",
+    title: "Log manually",
+    subtitle: "Add session details by hand",
+    to: "/v2/manual",
+    icon: "manual",
+  },
+  {
+    id: "upload",
+    title: "Import from file",
+    subtitle: "LMU .duckdb · F1 25 telemetry · iRacing .ibt",
+    to: "/v2/upload",
+    icon: "upload",
+  },
+];
+
+/** @deprecated Use logSessionMenuItemsV2 */
+export const createMenuItemsV2 = logSessionMenuItemsV2.map((item) => ({
+  label: item.title,
+  to: item.to,
+  icon: item.icon === "agent" ? ("upload" as const) : item.icon,
+}));
+
 export type AccountMenuItem = {
   label: string;
   to: string;
@@ -104,6 +159,24 @@ export function getPrimaryNavItems(isAuthenticated: boolean): NavLinkItem[] {
   });
 }
 
+export function getPrimaryNavItemsV2(isAuthenticated: boolean): NavLinkItem[] {
+  return primaryNavItemsV2.filter((item) => {
+    if (item.audience === "both") return true;
+    if (item.audience === "authenticated") return isAuthenticated;
+    return !isAuthenticated;
+  });
+}
+
+/** Map V1 account paths to V2 where a V2 route exists. */
+export function toV2AccountPath(to: string): string {
+  const map: Record<string, string> = {
+    "/profile": "/v2/profile",
+    "/settings": "/v2/settings",
+    "/agent": "/v2/agent",
+  };
+  return map[to] ?? to;
+}
+
 export function getAccountMenuItemsForUser(
   isAdmin: boolean,
   isNative = false,
@@ -126,6 +199,7 @@ export function isNavPathActive(
   end?: boolean,
 ): boolean {
   if (path === "/") return pathname === "/";
+  if (path === "/v2") return pathname === "/v2";
   if (end) return pathname === path;
   return pathname === path || pathname.startsWith(`${path}/`);
 }

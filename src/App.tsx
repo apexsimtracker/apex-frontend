@@ -70,34 +70,31 @@ import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import V2Layout from "./components/v2/V2Layout";
+import V2BottomNavV2 from "./components/v2/V2BottomNavV2";
 import DashboardV2 from "./pages/v2/DashboardV2";
 import DashboardTopBarV2 from "./pages/v2/dashboard/DashboardTopBarV2";
-import DashboardBottomNavV2 from "./pages/v2/dashboard/DashboardBottomNavV2";
 import AgentV2 from "./pages/v2/AgentV2";
 import AgentTopBarV2 from "./pages/v2/agent/AgentTopBarV2";
 import LeaderboardsV2 from "./pages/v2/LeaderboardsV2";
 import LeaderboardsTopBarV2 from "./pages/v2/leaderboards/LeaderboardsTopBarV2";
-import LeaderboardsBottomNavV2 from "./pages/v2/leaderboards/LeaderboardsBottomNavV2";
 import ChallengesV2 from "./pages/v2/ChallengesV2";
 import ChallengesTopBarV2 from "./pages/v2/challenges/ChallengesTopBarV2";
-import ChallengesBottomNavV2 from "./pages/v2/challenges/ChallengesBottomNavV2";
 import CommunityV2 from "./pages/v2/CommunityV2";
 import CommunityTopBarV2 from "./pages/v2/community/CommunityTopBarV2";
-import CommunityBottomNavV2 from "./pages/v2/community/CommunityBottomNavV2";
 import ChallengeDetailV2 from "./pages/v2/ChallengeDetailV2";
 import ChallengeDetailTopBarV2 from "./pages/v2/challenges/ChallengeDetailTopBarV2";
+import TeamV2 from "./pages/v2/TeamV2";
+import TeamTopBarV2 from "./pages/v2/team/TeamTopBarV2";
 import SettingsV2 from "./pages/v2/SettingsV2";
 import SettingsTopBarV2 from "./pages/v2/settings/SettingsTopBarV2";
-import SettingsBottomNavV2 from "./pages/v2/settings/SettingsBottomNavV2";
 import ProfileV2 from "./pages/v2/ProfileV2";
 import ProfileTopBarV2 from "./pages/v2/profile/ProfileTopBarV2";
 import UserProfileV2 from "./pages/v2/UserProfileV2";
 import UserProfileTopBarV2 from "./pages/v2/user/UserProfileTopBarV2";
-import ProfileBottomNavV2 from "./pages/v2/profile/ProfileBottomNavV2";
 import UploadV2 from "./pages/v2/UploadV2";
 import UploadTopBarV2 from "./pages/v2/upload/UploadTopBarV2";
 import ManualActivityV2 from "./pages/v2/ManualActivityV2";
-import ManualEntryTopBarV2 from "./pages/v2/manual/ManualEntryTopBarV2";
+import ManualTopBarV2 from "./pages/v2/manual/ManualTopBarV2";
 import EditActivityV2 from "./pages/v2/EditActivityV2";
 import EditActivityTopBarV2 from "./pages/v2/session/EditActivityTopBarV2";
 import SessionDetailV2 from "./pages/v2/SessionDetailV2";
@@ -413,7 +410,7 @@ export default function App() {
                           <ProtectedRoute message="Sign in to view your home feed.">
                             <V2Layout
                               topBar={<DashboardTopBarV2 />}
-                              bottomBar={<DashboardBottomNavV2 />}
+                              bottomBar={<V2BottomNavV2 />}
                             >
                               <DashboardV2 />
                             </V2Layout>
@@ -427,7 +424,10 @@ export default function App() {
                       <Route
                         path="agent"
                         element={
-                          <V2Layout topBar={<AgentTopBarV2 />}>
+                          <V2Layout
+                            topBar={<AgentTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
                             <AgentV2 />
                           </V2Layout>
                         }
@@ -437,7 +437,7 @@ export default function App() {
                         element={
                           <V2Layout
                             topBar={<LeaderboardsTopBarV2 />}
-                            bottomBar={<LeaderboardsBottomNavV2 />}
+                            bottomBar={<V2BottomNavV2 />}
                           >
                             <LeaderboardsV2 />
                           </V2Layout>
@@ -448,7 +448,7 @@ export default function App() {
                         element={
                           <V2Layout
                             topBar={<ChallengesTopBarV2 />}
-                            bottomBar={<ChallengesBottomNavV2 />}
+                            bottomBar={<V2BottomNavV2 />}
                           >
                             <ChallengesV2 />
                           </V2Layout>
@@ -459,7 +459,7 @@ export default function App() {
                         element={
                           <V2Layout
                             topBar={<CommunityTopBarV2 />}
-                            bottomBar={<CommunityBottomNavV2 />}
+                            bottomBar={<V2BottomNavV2 />}
                           >
                             <CommunityV2 />
                           </V2Layout>
@@ -474,10 +474,21 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="team"
+                        element={
+                          <V2Layout topBar={<TeamTopBarV2 />}>
+                            <TeamV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
                         path="upload"
                         element={
                           <ProtectedRoute message="Sign in to upload sessions.">
-                            <V2Layout topBar={<UploadTopBarV2 />}>
+                            <V2Layout
+                              topBar={<UploadTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
                               <UploadV2 />
                             </V2Layout>
                           </ProtectedRoute>
@@ -487,7 +498,10 @@ export default function App() {
                         path="manual"
                         element={
                           <ProtectedRoute message="Sign in to log a session.">
-                            <V2Layout topBar={<ManualEntryTopBarV2 />}>
+                            <V2Layout
+                              topBar={<ManualTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
                               <ManualActivityV2 />
                             </V2Layout>
                           </ProtectedRoute>
@@ -517,7 +531,7 @@ export default function App() {
                           <ProtectedRoute message="Sign in to manage your account settings.">
                             <V2Layout
                               topBar={<SettingsTopBarV2 />}
-                              bottomBar={<SettingsBottomNavV2 />}
+                              bottomBar={<V2BottomNavV2 />}
                             >
                               <SettingsV2 />
                             </V2Layout>
@@ -530,7 +544,7 @@ export default function App() {
                           <ProtectedRoute message="Sign in to view your profile and stats.">
                             <V2Layout
                               topBar={<ProfileTopBarV2 />}
-                              bottomBar={<ProfileBottomNavV2 />}
+                              bottomBar={<V2BottomNavV2 />}
                             >
                               <ProfileV2 />
                             </V2Layout>

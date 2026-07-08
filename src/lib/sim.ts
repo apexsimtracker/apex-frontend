@@ -180,6 +180,7 @@ export function getSimLogoSrc(sim: string | null | undefined): string | null {
   if (key === "F1_25" || key === "F1_24" || key.startsWith("F1_"))
     return "/sims/f1.svg";
   if (key === "F1") return "/sims/f1.svg";
+  if (key === "LMU") return "/sims/lmu.svg";
   return null;
 }
 
