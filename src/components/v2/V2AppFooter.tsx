@@ -39,9 +39,20 @@ function toV2FooterPath(to: string): string {
     "/community": "/v2/community",
     "/challenges": "/v2/challenges",
     "/leaderboards": "/v2/leaderboards",
+    "/pricing": "/v2/pricing",
     "/agent": "/v2/agent",
     "/profile": "/v2/profile",
+    "/sessions": "/v2/sessions",
     "/settings": "/v2/settings",
+    "/about": "/v2/about",
+    "/faq": "/v2/faq",
+    "/contact": "/v2/contact",
+    "/terms-and-conditions": "/v2/terms-and-conditions",
+    "/privacy-policy": "/v2/privacy-policy",
+    "/cookie-policy": "/v2/cookie-policy",
+    "/eula": "/v2/eula",
+    "/login": "/v2/login",
+    "/signup": "/v2/signup",
   };
   return v2Map[to] ?? to;
 }
@@ -60,8 +71,10 @@ export default function V2AppFooter() {
   }
 
   const productLinks = mapFooterLinks(getFooterProductLinks(isNative));
-  const legalLinks = getFooterLegalLinks(isNative);
-  const companyLinks = footerCompanyLinks.filter((link) => link.to !== "/contact");
+  const legalLinks = mapFooterLinks(getFooterLegalLinks(isNative));
+  const companyLinks = mapFooterLinks(
+    footerCompanyLinks.filter((link) => link.to !== "/contact"),
+  );
 
   const accountLinks = loading
     ? []
@@ -126,7 +139,7 @@ export default function V2AppFooter() {
                   </a>
                 </li>
                 <li>
-                  <Link to="/contact" className={footerLinkClass}>
+                  <Link to="/v2/contact" className={footerLinkClass}>
                     Contact us
                   </Link>
                 </li>

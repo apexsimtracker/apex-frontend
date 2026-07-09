@@ -106,7 +106,11 @@ export function SubscriptionCardV2() {
           )}
         </>
       ) : (
-        <Button asChild variant="outline" className={cn("mt-2", v2OutlineButtonClassName)}>
+        <Button
+          asChild
+          variant="outline"
+          className={cn("mt-2", v2OutlineButtonClassName)}
+        >
           <Link to="/pricing">Upgrade to Pro</Link>
         </Button>
       )}

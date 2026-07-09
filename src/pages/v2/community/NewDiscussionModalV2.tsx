@@ -17,9 +17,6 @@ import type { WithRootError } from "@/lib/formWithRootError";
 import type { NewDiscussionFormValues } from "@/lib/validation/community";
 import { cn } from "@/lib/utils";
 
-const v2InputClassName =
-  "w-full rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 text-sm text-v2-on-surface placeholder:text-v2-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50";
-
 const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
 
 type NewDiscussionModalV2Props = {
@@ -77,14 +74,14 @@ export default function NewDiscussionModalV2({
           id="create-discussion-form-v2"
           onSubmit={form.handleSubmit(onSubmit)}
         >
-          <FormRootMessage className="mb-4 text-xs text-v2-error" />
+          <FormRootMessage className="mb-4 text-xs" />
 
           <FormField
             control={form.control}
             name="category"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-3 block text-sm font-medium text-v2-on-surface">
+                <FormLabel className="mb-3 block text-sm font-medium text-foreground">
                   Category
                 </FormLabel>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -98,15 +95,15 @@ export default function NewDiscussionModalV2({
                       className={cn(
                         "rounded-lg border p-3 text-sm font-medium transition-all",
                         field.value === cat.value
-                          ? "border-v2-primary/60 bg-v2-primary/10 text-v2-on-surface"
-                          : "border-v2-outline-variant/20 text-v2-on-surface hover:border-v2-outline-variant/40",
+                          ? "border-primary/60 bg-primary/10 text-foreground"
+                          : "text-foreground hover:border-border",
                       )}
                     >
                       {cat.label}
                     </button>
                   ))}
                 </div>
-                <FormMessage className="text-xs text-v2-error" />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -116,18 +113,17 @@ export default function NewDiscussionModalV2({
             name="title"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-0.5 block text-sm font-medium text-v2-on-surface">
+                <FormLabel className="mb-0.5 block text-sm font-medium text-foreground">
                   Discussion Title
                 </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="What's your question or topic?"
                     disabled={creating}
-                    className={v2InputClassName}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-xs text-v2-error" />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -137,18 +133,18 @@ export default function NewDiscussionModalV2({
             name="description"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-0.5 block text-sm font-medium text-v2-on-surface">
+                <FormLabel className="mb-0.5 block text-sm font-medium text-foreground">
                   Description
                 </FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Describe your discussion in detail..."
                     disabled={creating}
-                    className={cn(v2InputClassName, "h-32 resize-none")}
+                    className="h-32 resize-none"
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-xs text-v2-error" />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />

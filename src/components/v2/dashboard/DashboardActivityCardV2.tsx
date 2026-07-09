@@ -241,11 +241,7 @@ function DashboardStatsRowV2({
         />
       )}
       {showCar && (
-        <StatCell
-          label="Car"
-          value={carLabel}
-          className="truncate pl-3"
-        />
+        <StatCell label="Car" value={carLabel} className="truncate pl-3" />
       )}
     </div>
   );
@@ -330,9 +326,7 @@ export default function DashboardActivityCardV2(
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const embeddedInsight =
-    isPro && apexAnalysis?.insights?.length
-      ? apexAnalysis.insights[0]
-      : null;
+    isPro && apexAnalysis?.insights?.length ? apexAnalysis.insights[0] : null;
 
   const shareUrl = useMemo(() => publicSessionUrl(id), [id]);
   const shareText = useMemo(
@@ -347,16 +341,7 @@ export default function DashboardActivityCardV2(
         sim,
         source,
       }),
-    [
-      sessionType,
-      track,
-      car,
-      vehicleDisplay,
-      lapCount,
-      bestLapMs,
-      sim,
-      source,
-    ],
+    [sessionType, track, car, vehicleDisplay, lapCount, bestLapMs, sim, source],
   );
 
   useEffect(() => {
@@ -518,9 +503,7 @@ export default function DashboardActivityCardV2(
                   className="flex min-w-0 items-center gap-3 text-left"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(
-                      `/v2/user/${encodeURIComponent(profileUserId)}`,
-                    );
+                    navigate(`/v2/user/${encodeURIComponent(profileUserId)}`);
                   }}
                 >
                   {avatarSrc && avatarSrc.trim().length > 0 ? (

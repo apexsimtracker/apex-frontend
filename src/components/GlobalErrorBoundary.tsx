@@ -1,8 +1,19 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { ErrorFallback } from "@/components/ErrorFallback";
+import {
+  Component,
+  type ComponentType,
+  type ErrorInfo,
+  type ReactNode,
+} from "react";
+import {
+  ErrorFallback,
+  type ErrorFallbackProps,
+} from "@/components/ErrorFallback";
 
 export type GlobalErrorBoundaryProps = {
   children: ReactNode;
+  fallback?: ComponentType<ErrorFallbackProps>;
+  /** When this value changes, clears a caught error (e.g. react-router pathname). */
+  resetKey?: string;
 };
 
 type GlobalErrorBoundaryState = {
@@ -44,6 +55,16 @@ export default class GlobalErrorBoundary extends Component<
     console.error("GlobalErrorBoundary caught an error:", error, errorInfo);
   }
 
+  componentDidUpdate(prevProps: GlobalErrorBoundaryProps): void {
+    if (
+      this.state.hasError &&
+      this.props.resetKey !== undefined &&
+      prevProps.resetKey !== this.props.resetKey
+    ) {
+      this.resetBoundary();
+    }
+  }
+
   resetBoundary = (): void => {
     this.setState({ hasError: false, error: null, errorInfo: null });
   };
@@ -51,8 +72,9 @@ export default class GlobalErrorBoundary extends Component<
   render() {
     if (this.state.hasError && this.state.error) {
       const isDev = import.meta.env.DEV;
+      const Fallback = this.props.fallback ?? ErrorFallback;
       return (
-        <ErrorFallback
+        <Fallback
           error={this.state.error}
           errorInfo={this.state.errorInfo}
           showDebug={isDev}

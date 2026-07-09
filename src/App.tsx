@@ -71,8 +71,7 @@ import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import V2Layout from "./components/v2/V2Layout";
 import V2BottomNavV2 from "./components/v2/V2BottomNavV2";
-import DashboardV2 from "./pages/v2/DashboardV2";
-import DashboardTopBarV2 from "./pages/v2/dashboard/DashboardTopBarV2";
+import HomeRouteV2 from "./pages/v2/HomeRouteV2";
 import AgentV2 from "./pages/v2/AgentV2";
 import AgentTopBarV2 from "./pages/v2/agent/AgentTopBarV2";
 import LeaderboardsV2 from "./pages/v2/LeaderboardsV2";
@@ -98,6 +97,37 @@ import ManualTopBarV2 from "./pages/v2/manual/ManualTopBarV2";
 import EditActivityV2 from "./pages/v2/EditActivityV2";
 import EditActivityTopBarV2 from "./pages/v2/session/EditActivityTopBarV2";
 import SessionDetailV2 from "./pages/v2/SessionDetailV2";
+import SessionsV2 from "./pages/v2/SessionsV2";
+import SessionsTopBarV2 from "./pages/v2/sessions/SessionsTopBarV2";
+import PersonalBestsV2 from "./pages/v2/PersonalBestsV2";
+import PersonalBestsTopBarV2 from "./pages/v2/personal-bests/PersonalBestsTopBarV2";
+import PricingV2 from "./pages/v2/PricingV2";
+import PricingTopBarV2 from "./pages/v2/pricing/PricingTopBarV2";
+import AboutV2 from "./pages/v2/AboutV2";
+import AboutTopBarV2 from "./pages/v2/about/AboutTopBarV2";
+import ContactV2 from "./pages/v2/ContactV2";
+import ContactTopBarV2 from "./pages/v2/contact/ContactTopBarV2";
+import TermsAndConditionsV2 from "./pages/v2/TermsAndConditionsV2";
+import TermsAndConditionsTopBarV2 from "./pages/v2/legal/TermsAndConditionsTopBarV2";
+import PrivacyPolicyV2 from "./pages/v2/PrivacyPolicyV2";
+import PrivacyPolicyTopBarV2 from "./pages/v2/legal/PrivacyPolicyTopBarV2";
+import CookiePolicyV2 from "./pages/v2/CookiePolicyV2";
+import CookiePolicyTopBarV2 from "./pages/v2/legal/CookiePolicyTopBarV2";
+import EULAV2 from "./pages/v2/EULAV2";
+import EULATopBarV2 from "./pages/v2/legal/EULATopBarV2";
+import FAQV2 from "./pages/v2/FAQV2";
+import FAQTopBarV2 from "./pages/v2/faq/FAQTopBarV2";
+import LoginV2 from "./pages/v2/LoginV2";
+import LoginTopBarV2 from "./pages/v2/login/LoginTopBarV2";
+import SignupV2 from "./pages/v2/SignupV2";
+import SignupTopBarV2 from "./pages/v2/signup/SignupTopBarV2";
+import ForgotPasswordV2 from "./pages/v2/ForgotPasswordV2";
+import ForgotPasswordTopBarV2 from "./pages/v2/forgot-password/ForgotPasswordTopBarV2";
+import VerifyEmailV2 from "./pages/v2/VerifyEmailV2";
+import VerifyEmailTopBarV2 from "./pages/v2/verify-email/VerifyEmailTopBarV2";
+import NotFoundV2 from "./pages/v2/NotFoundV2";
+import NotFoundTopBarV2 from "./pages/v2/not-found/NotFoundTopBarV2";
+import V2ErrorBoundaryFallback from "./components/v2/V2ErrorBoundaryFallback";
 import { isGuestAuthPath } from "./auth/guestAuthRoutes";
 
 const Profile = lazy(() => import("./pages/Profile"));
@@ -127,7 +157,10 @@ function V2RouteShell({ children }: { children: ReactNode }) {
     <>
       <ScrollToTop />
       <ImpersonationExitFab />
-      <GlobalErrorBoundary>
+      <GlobalErrorBoundary
+        fallback={V2ErrorBoundaryFallback}
+        resetKey={location.pathname}
+      >
         <Suspense fallback={<RouteFallback />}>{children}</Suspense>
       </GlobalErrorBoundary>
     </>
@@ -404,19 +437,7 @@ export default function App() {
                 element={
                   <V2RouteShell>
                     <Routes>
-                      <Route
-                        index
-                        element={
-                          <ProtectedRoute message="Sign in to view your home feed.">
-                            <V2Layout
-                              topBar={<DashboardTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
-                            >
-                              <DashboardV2 />
-                            </V2Layout>
-                          </ProtectedRoute>
-                        }
-                      />
+                      <Route index element={<HomeRouteV2 />} />
                       <Route
                         path="home"
                         element={<Navigate to="/v2" replace />}
@@ -466,6 +487,146 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="pricing"
+                        element={
+                          <V2Layout
+                            topBar={<PricingTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <PricingV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="faq"
+                        element={
+                          <V2Layout
+                            topBar={<FAQTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <FAQV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="about"
+                        element={
+                          <V2Layout
+                            topBar={<AboutTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <AboutV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="contact"
+                        element={
+                          <V2Layout
+                            topBar={<ContactTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <ContactV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="login"
+                        element={
+                          <GuestOnlyRoute redirectTo="/v2/profile">
+                            <V2Layout
+                              topBar={<LoginTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <LoginV2 />
+                            </V2Layout>
+                          </GuestOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="signup"
+                        element={
+                          <GuestOnlyRoute redirectTo="/v2/profile">
+                            <V2Layout
+                              topBar={<SignupTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <SignupV2 />
+                            </V2Layout>
+                          </GuestOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="forgot-password"
+                        element={
+                          <GuestOnlyRoute redirectTo="/v2/profile">
+                            <V2Layout
+                              topBar={<ForgotPasswordTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <ForgotPasswordV2 />
+                            </V2Layout>
+                          </GuestOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="verify-email"
+                        element={
+                          <GuestOnlyRoute redirectTo="/v2/profile">
+                            <V2Layout
+                              topBar={<VerifyEmailTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <VerifyEmailV2 />
+                            </V2Layout>
+                          </GuestOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="terms-and-conditions"
+                        element={
+                          <V2Layout
+                            topBar={<TermsAndConditionsTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <TermsAndConditionsV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="privacy-policy"
+                        element={
+                          <V2Layout
+                            topBar={<PrivacyPolicyTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <PrivacyPolicyV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="cookie-policy"
+                        element={
+                          <V2Layout
+                            topBar={<CookiePolicyTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <CookiePolicyV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="eula"
+                        element={
+                          <V2Layout
+                            topBar={<EULATopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <EULAV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
                         path="challenge/:id"
                         element={
                           <V2Layout topBar={<ChallengeDetailTopBarV2 />}>
@@ -508,6 +669,19 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="sessions"
+                        element={
+                          <ProtectedRoute message="Sign in to view your sessions.">
+                            <V2Layout
+                              topBar={<SessionsTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <SessionsV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
                         path="sessions/:id/edit"
                         element={
                           <ProtectedRoute message="Sign in to edit your session.">
@@ -539,6 +713,19 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="personal-bests"
+                        element={
+                          <ProtectedRoute message="Sign in to view your personal bests.">
+                            <V2Layout
+                              topBar={<PersonalBestsTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
+                              <PersonalBestsV2 />
+                            </V2Layout>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
                         path="profile"
                         element={
                           <ProtectedRoute message="Sign in to view your profile and stats.">
@@ -556,6 +743,17 @@ export default function App() {
                         element={
                           <V2Layout topBar={<UserProfileTopBarV2 />}>
                             <UserProfileV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="*"
+                        element={
+                          <V2Layout
+                            topBar={<NotFoundTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <NotFoundV2 />
                           </V2Layout>
                         }
                       />

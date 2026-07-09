@@ -644,7 +644,9 @@ export default function DashboardV2() {
         />
 
         {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
-          <ApexAnalysisTrendCardV2 trend={profileTrendInsight.apexTrendInsight} />
+          <ApexAnalysisTrendCardV2
+            trend={profileTrendInsight.apexTrendInsight}
+          />
         )}
 
         <section className="space-y-3">

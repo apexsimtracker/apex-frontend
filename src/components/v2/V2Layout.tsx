@@ -10,7 +10,7 @@ export type V2LayoutProps = {
   topBar?: ReactNode;
   bottomBar?: ReactNode;
   className?: string;
-  /** Show desktop site footer when bottom nav is present. Default true. */
+  /** Show the desktop site footer (V2AppFooter, lg+ only). Default true. */
   showSiteFooter?: boolean;
 };
 
@@ -69,7 +69,7 @@ export default function V2Layout({
         {bottomBar ? (
           <V2MobileNavDrawer open={mobileNavOpen} onClose={closeMobileNav} />
         ) : null}
-        {showSiteFooter && bottomBar ? <V2AppFooter /> : null}
+        {showSiteFooter ? <V2AppFooter /> : null}
       </div>
     </V2NavContext.Provider>
   );

@@ -352,10 +352,59 @@ export type PersonalBestRow = {
   updatedAt: string;
 };
 
-export async function getPersonalBests(): Promise<{
+export type PersonalBestsStats = {
+  totalPbs: number;
+  uniqueTracks: number;
+  uniqueCars: number;
+};
+
+export type PersonalBestsParams = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  track?: string;
+  car?: string;
+};
+
+export type PersonalBestsResponse = {
   personalBests: PersonalBestRow[];
-}> {
-  return apiGet<{ personalBests: PersonalBestRow[] }>("/api/personal-bests");
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+  stats?: PersonalBestsStats;
+};
+
+export type PersonalBestsFilterOptions = {
+  tracks: string[];
+  cars: string[];
+};
+
+function personalBestsQueryString(params?: PersonalBestsParams): string {
+  if (!params) return "";
+  const search = new URLSearchParams();
+  if (params.page != null) search.set("page", String(params.page));
+  if (params.limit != null) search.set("limit", String(params.limit));
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  if (params.track?.trim()) search.set("track", params.track.trim());
+  if (params.car?.trim()) search.set("car", params.car.trim());
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/** List personal bests. Pass page/limit/q/track/car for paginated + filtered V2 list. */
+export async function getPersonalBests(
+  params?: PersonalBestsParams,
+): Promise<PersonalBestsResponse> {
+  return apiGet<PersonalBestsResponse>(
+    `/api/personal-bests${personalBestsQueryString(params)}`,
+  );
+}
+
+export async function getPersonalBestsFilterOptions(): Promise<PersonalBestsFilterOptions> {
+  return apiGet<PersonalBestsFilterOptions>(
+    "/api/personal-bests/filter-options",
+  );
 }
 
 export type SystemStatusResponse = {

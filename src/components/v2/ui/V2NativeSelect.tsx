@@ -11,7 +11,7 @@ const V2NativeSelect = forwardRef<HTMLSelectElement, V2NativeSelectProps>(
       <div className="relative">
         <select
           ref={ref}
-          className={cn(v2ManualSelectClassName, className)}
+          className={cn(v2ManualSelectClassName, "cursor-pointer", className)}
           {...props}
         >
           {children}

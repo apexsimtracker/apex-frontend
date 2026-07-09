@@ -75,7 +75,9 @@ export default function SettingsPrivacySectionV2({
           </label>
           <V2RadioGroup
             value={settings.sessionVisibility}
-            onValueChange={(v) => void applySessionVisibility(v as SessionVisibility)}
+            onValueChange={(v) =>
+              void applySessionVisibility(v as SessionVisibility)
+            }
             disabled={privacySaving}
           >
             {sessionVisibilityOptions.map((opt) => (

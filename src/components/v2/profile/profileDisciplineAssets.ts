@@ -17,11 +17,7 @@ export function resolveDisciplineFamily(sim: string): DisciplineFamily {
   const key = simKey(sim);
   const lower = sim.trim().toLowerCase();
 
-  if (
-    key === "IRACING" ||
-    key === "I_RACING" ||
-    lower === "iracing"
-  ) {
+  if (key === "IRACING" || key === "I_RACING" || lower === "iracing") {
     return "IRACING";
   }
 
@@ -94,7 +90,8 @@ export function getDisciplineWinColorClass(sim: string): string {
 
 export function sortDisciplineRows<T extends { sim: string }>(rows: T[]): T[] {
   return rows.slice().sort((a, b) => {
-    const orderDiff = getDisciplineSortOrder(a.sim) - getDisciplineSortOrder(b.sim);
+    const orderDiff =
+      getDisciplineSortOrder(a.sim) - getDisciplineSortOrder(b.sim);
     if (orderDiff !== 0) return orderDiff;
     return a.sim.localeCompare(b.sim);
   });

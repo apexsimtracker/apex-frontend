@@ -1,8 +1,5 @@
 import { useState } from "react";
-import type {
-  WeeklyGoalsSummary,
-  ProfileSummary,
-} from "@/lib/api";
+import type { WeeklyGoalsSummary, ProfileSummary } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type WeeklyBuckets = {
@@ -111,7 +108,8 @@ function WeeklyActivityChart({
                   aria-label={`${day}: ${value} races`}
                   className={cn(
                     "group relative w-full cursor-pointer rounded-v2-sm transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-v2-primary/50",
-                    value === 0 && "min-h-[2px] bg-v2-surface-container-highest/60",
+                    value === 0 &&
+                      "min-h-[2px] bg-v2-surface-container-highest/60",
                   )}
                   style={
                     value > 0

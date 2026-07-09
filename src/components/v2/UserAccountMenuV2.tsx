@@ -93,12 +93,22 @@ export default function UserAccountMenuV2() {
           className="overflow-hidden rounded-full border border-v2-outline-variant/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v2-primary/70"
           aria-label="Account menu"
         >
-          <UserAvatar name={name} avatarUrl={user.avatarUrl} size="sm" className="ring-0" />
+          <UserAvatar
+            name={name}
+            avatarUrl={user.avatarUrl}
+            size="sm"
+            className="ring-0"
+          />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className={v2ProfileDropdownContentClassName}>
+      <DropdownMenuContent
+        align="end"
+        className={v2ProfileDropdownContentClassName}
+      >
         <DropdownMenuLabel className="p-2 font-normal">
-          <p className="truncate text-sm font-medium text-v2-on-surface">{name}</p>
+          <p className="truncate text-sm font-medium text-v2-on-surface">
+            {name}
+          </p>
           <p className={v2DropdownEmailClassName}>{user.email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className={v2DropdownSeparatorClassName} />
@@ -133,7 +143,10 @@ export default function UserAccountMenuV2() {
           }}
         >
           {isSigningOut ? (
-            <Loader2 className="mr-2 size-4 shrink-0 animate-spin" aria-hidden />
+            <Loader2
+              className="mr-2 size-4 shrink-0 animate-spin"
+              aria-hidden
+            />
           ) : (
             <LogOut className="mr-2 size-4 shrink-0" aria-hidden />
           )}

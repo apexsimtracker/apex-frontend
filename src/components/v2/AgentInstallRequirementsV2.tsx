@@ -78,7 +78,9 @@ type AgentInstallRequirementsV2Props = {
   os: AgentOs;
 };
 
-export function AgentInstallRequirementsV2({ os }: AgentInstallRequirementsV2Props) {
+export function AgentInstallRequirementsV2({
+  os,
+}: AgentInstallRequirementsV2Props) {
   const requirements = requirementsForOs(os);
   const scopeNote = platformScopeNote(os);
 

@@ -38,6 +38,7 @@ export const primaryNavItemsV2: NavLinkItem[] = [
   { label: "Challenges", to: "/v2/challenges", audience: "both" },
   { label: "Community", to: "/v2/community", audience: "both" },
   { label: "Pricing", to: "/v2/pricing", audience: "both" },
+  { label: "Sessions", to: "/v2/sessions", audience: "authenticated" },
 ];
 
 export type LogSessionMenuIcon = "agent" | "manual" | "upload";
@@ -173,6 +174,7 @@ export function toV2AccountPath(to: string): string {
     "/profile": "/v2/profile",
     "/settings": "/v2/settings",
     "/agent": "/v2/agent",
+    "/personal-bests": "/v2/personal-bests",
   };
   return map[to] ?? to;
 }

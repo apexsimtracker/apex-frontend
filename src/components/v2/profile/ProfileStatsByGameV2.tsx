@@ -94,8 +94,7 @@ export function ProfileStatsByGameV2({ rows }: { rows: StatsByGameRow[] }) {
                   <StatRow
                     label="Podium %"
                     value={
-                      game.podiumPct != null &&
-                      Number.isFinite(game.podiumPct)
+                      game.podiumPct != null && Number.isFinite(game.podiumPct)
                         ? `${game.podiumPct.toFixed(1)}%`
                         : "—"
                     }

@@ -68,7 +68,7 @@ export const v2AccountFieldValueClassName =
   "font-v2-headline text-sm font-bold text-v2-on-surface break-words";
 
 export const v2DropdownContentClassName = cn(
-  "!rounded-md !border-[#484847]/35 !bg-[#0e0e0e] text-white shadow-md",
+  "!rounded-md !border-[#484847]/65 !bg-[#0e0e0e] text-white shadow-md",
 );
 
 /** Default item hover — light red highlight (no bold/icon stroke). */
@@ -93,7 +93,7 @@ export const v2DropdownDangerItemClassName = cn(
 export const v2DropdownSeparatorClassName = "bg-[#484847]/20";
 
 export const v2DropdownEmailClassName =
-  "truncate text-xs text-[#adaaaa]/40";
+  "truncate text-xs text-v2-on-surface-variant";
 
 /** Loveable tertiary accent — download icons, highlights */
 export const v2TertiaryIconClassName = "text-[#8ff5ff]";

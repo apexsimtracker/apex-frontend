@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const createPlusButtonClassName = cn(
-  "flex size-8 items-center justify-center rounded-full border border-v2-outline-variant/30 bg-v2-primary text-white transition-colors hover:bg-v2-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v2-primary/70",
+  "flex size-8 items-center justify-center rounded-xl border border-v2-outline-variant/30 bg-v2-primary text-white transition-colors hover:bg-v2-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v2-primary/70",
 );
 
 const CreatePlusButton = forwardRef<

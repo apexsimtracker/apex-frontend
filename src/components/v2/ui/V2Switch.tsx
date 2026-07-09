@@ -27,7 +27,9 @@ export function V2Switch({
       className={cn(
         "relative flex h-6 w-12 shrink-0 items-center rounded-full px-1 transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v2-primary/70",
-        checked ? "justify-end bg-[#eb0000]" : "justify-start bg-v2-surface-container-highest",
+        checked
+          ? "justify-end bg-[#eb0000]"
+          : "justify-start bg-v2-surface-container-highest",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >

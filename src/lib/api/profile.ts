@@ -217,6 +217,17 @@ export async function getUserPublicProfile(
   return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
 }
 
+/** GET /api/users/founder — public founder profile (avatar + display name), no auth. */
+export type FounderPublicProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export async function getFounderPublicProfile(): Promise<FounderPublicProfile> {
+  return apiGet<FounderPublicProfile>("/api/users/founder");
+}
+
 /** PATCH /api/settings/privacy — Bearer session */
 export type PrivacySettingsPayload = {
   privateProfile: boolean;

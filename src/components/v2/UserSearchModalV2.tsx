@@ -89,7 +89,10 @@ function DiscoverRowV2({
   );
 }
 
-export function UserSearchModalV2({ open, onOpenChange }: UserSearchModalV2Props) {
+export function UserSearchModalV2({
+  open,
+  onOpenChange,
+}: UserSearchModalV2Props) {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(

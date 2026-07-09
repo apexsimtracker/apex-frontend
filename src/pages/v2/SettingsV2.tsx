@@ -42,9 +42,7 @@ import {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/settingsForms";
-import {
-  v2PrimaryButtonClassName,
-} from "@/components/v2/ui/v2ButtonClasses";
+import { v2PrimaryButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 import PageMeta from "@/components/PageMeta";
 import SettingsAccountSectionV2 from "./settings/SettingsAccountSectionV2";
 import SettingsPrivacySectionV2 from "./settings/SettingsPrivacySectionV2";

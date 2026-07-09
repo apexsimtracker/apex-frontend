@@ -81,7 +81,11 @@ export function V2RadioGroupControlled({
   options: { value: string; id: string; label: ReactNode }[];
 }) {
   return (
-    <V2RadioGroup value={value} onValueChange={onValueChange} disabled={disabled}>
+    <V2RadioGroup
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       {options.map((opt) => (
         <V2RadioItem
           key={opt.value}

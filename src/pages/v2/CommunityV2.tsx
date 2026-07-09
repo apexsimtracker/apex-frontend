@@ -9,8 +9,8 @@ import {
 } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import DiscussionCard from "@/components/DiscussionCard";
-import { DiscussionCardSkeleton } from "@/components/DiscussionCardSkeleton";
+import DiscussionCardV2 from "@/pages/v2/community/DiscussionCardV2";
+import { DiscussionCardSkeletonV2 } from "@/pages/v2/community/DiscussionCardSkeletonV2";
 import {
   getDiscussionsPage,
   getDiscussionCategoryCounts,
@@ -21,7 +21,7 @@ import {
   type DiscussionCategory,
 } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,9 +53,6 @@ const emptyCategoryCounts = {
   guides: 0,
   general: 0,
 } as const;
-
-const DISCUSSION_CARD_CLASS =
-  "mb-3 rounded-xl border-l-2 border-l-v2-primary/50 bg-v2-surface-container-low";
 
 function getCategoryChipLabel(value: DiscussionCategory): string {
   if (value === "all") return "All Posts";
@@ -102,6 +99,7 @@ export default function CommunityV2() {
   } = useQuery({
     queryKey: ["discussions", "category-counts"],
     queryFn: getDiscussionCategoryCounts,
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -132,6 +130,7 @@ export default function CommunityV2() {
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
     placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
   });
 
   const discussions = useMemo(
@@ -213,14 +212,24 @@ export default function CommunityV2() {
         description={communityDescription}
         path={COMMUNITY_V2_PATH}
       />
-      <div className="relative mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto px-6 pb-28 pt-5">
-        <section className="mb-5">
-          <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
-            Sim Racing Community
-          </h1>
-          <p className="mt-1 font-v2-body text-sm text-v2-on-surface-variant">
-            Connect with drivers, share setups, and discuss racing strategies.
-          </p>
+      <div className="relative mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 pb-28 pt-8 lg:pb-8">
+        <section className="mb-5 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
+              Sim Racing Community
+            </h1>
+            <p className="mt-1 font-v2-body text-sm text-v2-on-surface-variant">
+              Connect with drivers, share setups, and discuss racing strategies.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openNewDiscussion}
+            className="hidden shrink-0 items-center gap-2 rounded-xl bg-v2-primary px-4 py-2.5 font-v2-body text-sm font-bold text-white transition-colors hover:bg-v2-primary/90 lg:inline-flex"
+          >
+            <Plus className="size-4" aria-hidden />
+            New Discussion
+          </button>
         </section>
 
         <div className="relative mb-5">
@@ -246,27 +255,27 @@ export default function CommunityV2() {
                 type="button"
                 onClick={() => setSelectedCategory(cat.value)}
                 className={cn(
-                  "rounded p-2 font-v2-body text-[10px] font-bold uppercase transition-colors",
+                  "flex items-center justify-center gap-1 rounded p-2 font-v2-body text-[10px] font-bold uppercase transition-colors",
                   isActive
                     ? "bg-v2-primary text-white"
                     : "bg-v2-surface-container-low text-v2-on-surface-variant",
                 )}
               >
-                <span className="block truncate">
+                <span className="truncate">
                   {getCategoryChipLabel(cat.value)}
                 </span>
                 <span
                   className={cn(
-                    "mt-0.5 block text-[9px] font-semibold tabular-nums",
+                    "shrink-0 font-semibold tabular-nums",
                     isActive
                       ? "text-white/80"
                       : "text-v2-on-surface-variant/60",
                   )}
                 >
                   {categoryCountsPending ? (
-                    <SkeletonBlock className="mx-auto h-2.5 w-4 rounded" />
+                    <SkeletonBlock className="h-2.5 w-4 rounded" />
                   ) : (
-                    categoryCounts[cat.value]
+                    `(${categoryCounts[cat.value]})`
                   )}
                 </span>
               </button>
@@ -280,10 +289,10 @@ export default function CommunityV2() {
 
         <div className="space-y-3">
           {listRefetching && (
-            <DiscussionCardSkeleton count={2} className="mb-2 space-y-3" />
+            <DiscussionCardSkeletonV2 count={2} className="mb-2 space-y-3" />
           )}
           {loading ? (
-            <DiscussionCardSkeleton count={4} />
+            <DiscussionCardSkeletonV2 count={4} />
           ) : error ? (
             <div className="py-12 text-center">
               <p className="font-v2-body text-sm text-v2-on-surface-variant">
@@ -305,7 +314,7 @@ export default function CommunityV2() {
               aria-busy={listRefetching || undefined}
             >
               {discussions.map((d) => (
-                <DiscussionCard
+                <DiscussionCardV2
                   key={d.id}
                   id={d.id}
                   title={d.title}
@@ -315,12 +324,11 @@ export default function CommunityV2() {
                   }
                   author={d.author}
                   categoryKey={d.category ?? "general"}
-                  timestamp={timeAgo(d.createdAt)}
+                  likes={d.likeCount ?? 0}
                   replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
                   views={d.views ?? 0}
                   isPinned={d.isPinned}
                   wasEdited={Boolean(d.wasEdited || d.editedAt)}
-                  className={DISCUSSION_CARD_CLASS}
                 />
               ))}
               {hasNextPage && (
@@ -342,7 +350,7 @@ export default function CommunityV2() {
         <button
           type="button"
           onClick={openNewDiscussion}
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+1rem)] right-6 z-40 flex size-14 items-center justify-center rounded-full bg-v2-primary text-white shadow-2xl transition-colors hover:bg-v2-primary/90"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+1rem)] right-6 z-40 flex size-14 items-center justify-center rounded-xl bg-v2-primary text-white shadow-2xl transition-colors hover:bg-v2-primary/90 lg:hidden"
           aria-label="New discussion"
         >
           <Plus className="size-6" aria-hidden />

@@ -21,7 +21,7 @@ export default function PersonalBests() {
 
   const { data, isPending, error } = useQuery({
     queryKey: ["personal-bests"],
-    queryFn: getPersonalBests,
+    queryFn: () => getPersonalBests(),
     enabled: isPro,
     retry: (count, err) =>
       !(err instanceof ApiError && err.status === 403) && count < 1,

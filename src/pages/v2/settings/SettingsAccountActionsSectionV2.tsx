@@ -34,7 +34,10 @@ export default function SettingsAccountActionsSectionV2({
             <h3 className="font-v2-headline text-sm font-bold text-v2-on-surface">
               Export data
             </h3>
-            <Download className={cn("size-5", v2TertiaryIconClassName)} aria-hidden />
+            <Download
+              className={cn("size-5", v2TertiaryIconClassName)}
+              aria-hidden
+            />
           </div>
           <div className="relative">
             <select
@@ -47,7 +50,9 @@ export default function SettingsAccountActionsSectionV2({
               className="w-full appearance-none rounded-v2-sm border border-transparent bg-v2-surface-container-highest px-4 py-3 font-v2-body text-sm text-v2-on-surface shadow-none focus:border-v2-primary focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
             >
               <option value="xlsx">Excel workbook (.xlsx) — full data</option>
-              <option value="pdf">Summary PDF (.pdf) — printable overview</option>
+              <option value="pdf">
+                Summary PDF (.pdf) — printable overview
+              </option>
             </select>
             <ChevronDown
               className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-v2-on-surface-variant"
@@ -73,7 +78,10 @@ export default function SettingsAccountActionsSectionV2({
               </>
             ) : (
               <>
-                <Download className={cn("mr-2 size-4", v2TertiaryIconClassName)} aria-hidden />
+                <Download
+                  className={cn("mr-2 size-4", v2TertiaryIconClassName)}
+                  aria-hidden
+                />
                 Export data
               </>
             )}
@@ -97,7 +105,10 @@ export default function SettingsAccountActionsSectionV2({
         <button
           type="button"
           onClick={onDeleteAccount}
-          className={cn("group flex w-full items-center justify-between", v2DangerCardClassName)}
+          className={cn(
+            "group flex w-full items-center justify-between",
+            v2DangerCardClassName,
+          )}
         >
           <div className="text-left">
             <span className="block font-v2-headline text-sm font-bold text-[#ff6e84]">

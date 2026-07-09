@@ -224,7 +224,9 @@ export default function AgentV2() {
 
         <section className="mb-8">
           <div className="rounded-r-lg border-l-4 border-v2-primary bg-v2-surface-container/50 p-4">
-            <h2 className={cn(sectionEyebrowClassName, "mb-2")}>What it does</h2>
+            <h2 className={cn(sectionEyebrowClassName, "mb-2")}>
+              What it does
+            </h2>
             <p className="text-sm leading-relaxed text-v2-on-surface-variant">
               The Apex Agent runs locally on your computer and automatically
               detects when you complete a session in supported simulators. It

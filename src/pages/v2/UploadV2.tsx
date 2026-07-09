@@ -242,7 +242,8 @@ export default function UploadV2() {
               aria-hidden
             />
             <p className="text-sm text-amber-100/90">
-              This upload will count toward your active challenge when processed.
+              This upload will count toward your active challenge when
+              processed.
             </p>
           </div>
         )}
@@ -283,7 +284,10 @@ export default function UploadV2() {
                   <Button
                     type="button"
                     variant="outline"
-                    className={cn("mt-4 w-full rounded-[0.5rem]", v2OutlineButtonClassName)}
+                    className={cn(
+                      "mt-4 w-full rounded-[0.5rem]",
+                      v2OutlineButtonClassName,
+                    )}
                     onClick={() => {
                       if (postSuccessNavRef.current) {
                         clearTimeout(postSuccessNavRef.current);
@@ -416,7 +420,10 @@ export default function UploadV2() {
                     type="button"
                     variant="outline"
                     onClick={handleReset}
-                    className={cn("flex-1 rounded-[0.5rem]", v2OutlineButtonClassName)}
+                    className={cn(
+                      "flex-1 rounded-[0.5rem]",
+                      v2OutlineButtonClassName,
+                    )}
                   >
                     Clear
                   </Button>

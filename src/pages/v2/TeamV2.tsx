@@ -279,10 +279,7 @@ export default function TeamV2() {
           </p>
           <div className="divide-y divide-v2-outline-variant/20 rounded-xl bg-v2-surface-container-low">
             {TEAM_MEMBERS.map((member) => (
-              <div
-                key={member.id}
-                                className="flex items-center gap-3 p-3"
-              >
+              <div key={member.id} className="flex items-center gap-3 p-3">
                 <UserAvatar
                   name={member.name}
                   avatarUrl={member.avatarUrl}

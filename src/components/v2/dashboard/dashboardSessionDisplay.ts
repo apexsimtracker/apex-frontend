@@ -12,7 +12,10 @@ export function parseTrackHeadline(
     return { city: null, title: "Practice Session" };
   }
 
-  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = raw
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length >= 2) {
     return {
       city: parts[parts.length - 1] ?? null,

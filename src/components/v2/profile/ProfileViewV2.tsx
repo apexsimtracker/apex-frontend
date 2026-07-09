@@ -229,15 +229,19 @@ export function ProfileViewV2({
             />
 
             <ProfileMainDisciplinesV2
-              rows={(profile.mostPlayed ?? []) as Parameters<
-                typeof ProfileMainDisciplinesV2
-              >[0]["rows"]}
+              rows={
+                (profile.mostPlayed ?? []) as Parameters<
+                  typeof ProfileMainDisciplinesV2
+                >[0]["rows"]
+              }
             />
 
             <ProfileRaceHistoryV2
-              raceHistory={raceHistory as Parameters<
-                typeof ProfileRaceHistoryV2
-              >[0]["raceHistory"]}
+              raceHistory={
+                raceHistory as Parameters<
+                  typeof ProfileRaceHistoryV2
+                >[0]["raceHistory"]
+              }
               raceHistoryLoading={raceHistoryLoading}
               emptyMessage={raceHistoryEmptyMessage}
               onOpenSession={(sid) => navigate(`/sessions/${sid}`)}
@@ -256,9 +260,11 @@ export function ProfileViewV2({
             />
 
             <ProfileStatsByGameV2
-              rows={(profile.statsByGame ?? []) as Parameters<
-                typeof ProfileStatsByGameV2
-              >[0]["rows"]}
+              rows={
+                (profile.statsByGame ?? []) as Parameters<
+                  typeof ProfileStatsByGameV2
+                >[0]["rows"]
+              }
             />
           </>
         )}

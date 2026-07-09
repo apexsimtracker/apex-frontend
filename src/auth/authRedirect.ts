@@ -10,9 +10,13 @@ export type AuthRedirectState = {
 /** Paths that should never be used as post-login return targets (avoids stale router state). */
 const AUTH_FLOW_PATH_PREFIXES = [
   "/login",
+  "/v2/login",
   "/signup",
+  "/v2/signup",
   "/verify-email",
+  "/v2/verify-email",
   "/forgot-password",
+  "/v2/forgot-password",
 ] as const;
 
 function pathnameOnly(pathWithOptionalQuery: string): string {

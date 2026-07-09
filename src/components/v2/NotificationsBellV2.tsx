@@ -29,9 +29,7 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  v2OutlineButtonClassName,
-} from "@/components/v2/ui/v2ButtonClasses";
+import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 
 const NOTIFICATIONS_KEY = ["notifications"] as const;
 const FOLLOW_REQUESTS_KEY = ["followRequests", "incoming"] as const;
@@ -235,7 +233,10 @@ export function NotificationsBellV2() {
               type="button"
               variant="outline"
               size="sm"
-              className={cn(v2OutlineButtonClassName, "text-v2-error hover:bg-v2-error/10")}
+              className={cn(
+                v2OutlineButtonClassName,
+                "text-v2-error hover:bg-v2-error/10",
+              )}
               disabled={footerBusy || notifications.length === 0}
               onClick={() => void handleClearAll()}
             >

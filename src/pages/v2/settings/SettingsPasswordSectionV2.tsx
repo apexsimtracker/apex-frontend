@@ -21,8 +21,12 @@ import {
 import { cn } from "@/lib/utils";
 
 type SettingsPasswordSectionV2Props = {
-  changePasswordForm: UseFormReturn<WithRootError<SettingsChangePasswordValues>>;
-  onChangePassword: (values: SettingsChangePasswordValues) => void | Promise<void>;
+  changePasswordForm: UseFormReturn<
+    WithRootError<SettingsChangePasswordValues>
+  >;
+  onChangePassword: (
+    values: SettingsChangePasswordValues,
+  ) => void | Promise<void>;
   changePwWatch: SettingsChangePasswordValues;
   trimmedNewPw: string;
   currentPasswordValid: boolean;
@@ -125,8 +129,7 @@ export default function SettingsPasswordSectionV2({
                   newPasswordValid &&
                   currentPasswordValid && (
                     <p className="text-xs text-amber-500">
-                      New password must be different from your current
-                      password.
+                      New password must be different from your current password.
                     </p>
                   )}
                 <FormMessage className="text-xs text-v2-error" />
