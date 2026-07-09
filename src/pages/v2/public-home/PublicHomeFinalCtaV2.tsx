@@ -6,16 +6,11 @@ import {
 } from "@/components/v2/ui/v2ButtonClasses";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { cn } from "@/lib/utils";
-import { gradientCardClassName } from "./publicHomeV2Shared";
+import { cardClassName } from "./publicHomeV2Shared";
 
 export default function PublicHomeFinalCtaV2() {
   return (
-    <section
-      className={cn(
-        gradientCardClassName,
-        "relative text-center shadow-[0_0_24px_hsl(var(--v2-primary)/0.15)]",
-      )}
-    >
+    <section className={cn(cardClassName, "text-center")}>
       <h2 className="font-v2-headline text-lg font-semibold text-v2-on-surface sm:text-xl">
         Ready to centralize your sim racing data?
       </h2>

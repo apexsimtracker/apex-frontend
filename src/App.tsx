@@ -80,6 +80,8 @@ import ChallengesV2 from "./pages/v2/ChallengesV2";
 import ChallengesTopBarV2 from "./pages/v2/challenges/ChallengesTopBarV2";
 import CommunityV2 from "./pages/v2/CommunityV2";
 import CommunityTopBarV2 from "./pages/v2/community/CommunityTopBarV2";
+import DiscussionDetailV2 from "./pages/v2/DiscussionDetailV2";
+import DiscussionDetailTopBarV2 from "./pages/v2/discussion/DiscussionDetailTopBarV2";
 import ChallengeDetailV2 from "./pages/v2/ChallengeDetailV2";
 import ChallengeDetailTopBarV2 from "./pages/v2/challenges/ChallengeDetailTopBarV2";
 import TeamV2 from "./pages/v2/TeamV2";
@@ -483,6 +485,17 @@ export default function App() {
                             bottomBar={<V2BottomNavV2 />}
                           >
                             <CommunityV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
+                        path="discussion/:id"
+                        element={
+                          <V2Layout
+                            topBar={<DiscussionDetailTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <DiscussionDetailV2 />
                           </V2Layout>
                         }
                       />

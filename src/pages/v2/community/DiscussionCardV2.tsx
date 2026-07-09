@@ -8,11 +8,8 @@ import {
   formatCompactCount,
   cn,
 } from "@/lib/utils";
-import {
-  getDiscussionCategoryLabel,
-  resolveDiscussionAvatarSrc,
-  getDiscussionAuthorId,
-} from "@/lib/api";
+import { resolveDiscussionAvatarSrc, getDiscussionAuthorId } from "@/lib/api";
+import DiscussionCategoryBadgeV2 from "@/pages/v2/discussion/DiscussionCategoryBadgeV2";
 
 interface DiscussionCardV2Props {
   id: string;
@@ -29,24 +26,6 @@ interface DiscussionCardV2Props {
   isPinned?: boolean;
   wasEdited?: boolean;
   className?: string;
-}
-
-function CategoryBadge({
-  isPinned,
-  categoryKey,
-}: {
-  isPinned?: boolean;
-  categoryKey: string;
-}) {
-  const label = isPinned
-    ? "PINNED"
-    : getDiscussionCategoryLabel(categoryKey).toUpperCase();
-
-  return (
-    <span className="ml-auto shrink-0 rounded bg-v2-primary px-2 py-0.5 font-v2-body text-[8px] font-bold uppercase tracking-widest text-white">
-      {label}
-    </span>
-  );
 }
 
 export default function DiscussionCardV2({
@@ -77,7 +56,7 @@ export default function DiscussionCardV2({
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
   return (
-    <Link to={`/discussion/${id}`} className="block">
+    <Link to={`/v2/discussion/${id}`} className="block">
       <article
         className={cn(
           "cursor-pointer rounded-xl border-l-2 border-l-v2-primary/50 bg-v2-surface-container-low p-4 transition-colors hover:bg-v2-surface-container",
@@ -113,7 +92,11 @@ export default function DiscussionCardV2({
               {authorDisplay}
             </p>
           </button>
-          <CategoryBadge isPinned={isPinned} categoryKey={categoryKey} />
+          <DiscussionCategoryBadgeV2
+            isPinned={isPinned}
+            categoryKey={categoryKey}
+            className="ml-auto"
+          />
         </div>
 
         <h3 className="mb-1 line-clamp-2 font-v2-headline text-base font-bold text-v2-on-surface">

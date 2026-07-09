@@ -55,7 +55,7 @@ export default function V2Layout({
         ) : null}
         <main
           className={cn(
-            "flex min-h-0 flex-1 flex-col overflow-x-hidden",
+            "flex min-h-0 flex-1 flex-col overflow-x-clip",
             bottomBar ? "pb-24 lg:pb-0" : "pb-[env(safe-area-inset-bottom)]",
           )}
         >

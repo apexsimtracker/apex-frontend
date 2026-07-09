@@ -232,13 +232,16 @@ function normalizeDiscussionCommentsPage(
   return { items, page, limit, total, totalPages };
 }
 
+export type DiscussionCommentsSort = "asc" | "desc";
+
 export async function getDiscussionComments(
   id: string,
-  params?: { page?: number; limit?: number },
+  params?: { page?: number; limit?: number; sort?: DiscussionCommentsSort },
 ): Promise<DiscussionCommentsPageResult> {
   const sp = new URLSearchParams();
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.sort != null) sp.set("sort", params.sort);
   const q = sp.toString();
   const raw = await apiGet<unknown>(
     `/api/community/discussions/${encodeURIComponent(id)}/comments${q ? `?${q}` : ""}`,
