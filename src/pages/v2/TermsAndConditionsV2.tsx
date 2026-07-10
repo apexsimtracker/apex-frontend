@@ -44,11 +44,11 @@ export default function TermsAndConditionsV2() {
               </p>
               <p className="font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
                 Use of the Apex Agent desktop application is also subject to our{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   End User License Agreement (EULA)
                 </Link>
                 . Our{" "}
-                <Link to="/privacy-policy" className={linkClassName}>
+                <Link to="/v2/privacy-policy" className={linkClassName}>
                   Privacy Policy
                 </Link>{" "}
                 describes how we process personal data.
@@ -224,7 +224,7 @@ export default function TermsAndConditionsV2() {
                 copy, modify, distribute, reverse engineer, or create derivative
                 works from our materials. Additional restrictions on the Apex
                 Agent are set out in the{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   EULA
                 </Link>
                 .
@@ -421,15 +421,15 @@ export default function TermsAndConditionsV2() {
             <footer className="mt-10 border-t border-v2-outline-variant/15 pt-8">
               <p className="font-v2-body text-xs text-v2-on-surface-variant">
                 See also{" "}
-                <Link to="/privacy-policy" className={linkClassName}>
+                <Link to="/v2/privacy-policy" className={linkClassName}>
                   Privacy Policy
                 </Link>
                 ,{" "}
-                <Link to="/cookie-policy" className={linkClassName}>
+                <Link to="/v2/cookie-policy" className={linkClassName}>
                   Cookie &amp; Storage Policy
                 </Link>
                 , and{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   EULA
                 </Link>
                 .

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
 import {
@@ -299,7 +300,7 @@ export default function SettingsV2() {
       // Server revoke is best-effort; always clear local credentials.
     }
     clearToken();
-    navigate("/login", { replace: true });
+    navigate(V2_AUTH_PATHS.login, { replace: true });
   }, [navigate]);
 
   const handleExportData = useCallback(async () => {
@@ -347,7 +348,7 @@ export default function SettingsV2() {
         setUser(null);
         setDeleteDialogOpen(false);
         resetDeleteDialog();
-        navigate("/login", { replace: true });
+        navigate(V2_AUTH_PATHS.login, { replace: true });
       } catch (e) {
         const msg =
           e instanceof ApiError
@@ -480,7 +481,7 @@ export default function SettingsV2() {
             </p>
             <Button
               type="button"
-              onClick={() => navigate("/login", { replace: true })}
+              onClick={() => navigate(V2_AUTH_PATHS.login, { replace: true })}
               className={v2PrimaryButtonClassName}
               style={{ backgroundColor: PRIMARY_RED }}
             >

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Lock, Sparkles } from "lucide-react";
+import { toV2Path } from "@/config/navigation";
 import type { ProfileSummary } from "@/lib/api";
 import { parseTrendInsight } from "@/lib/parseTrendInsight";
 
@@ -90,7 +91,7 @@ export default function ApexAnalysisTrendCardV2({
               </p>
             </div>
             <Link
-              to="/pricing"
+              to={toV2Path("/pricing")}
               className="shrink-0 self-start rounded-v2-sm bg-v2-primary px-3 py-1.5 font-v2-headline text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-v2-primary/90 sm:ml-3"
             >
               Upgrade to Apex Pro

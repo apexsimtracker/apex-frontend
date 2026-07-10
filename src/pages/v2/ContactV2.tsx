@@ -177,7 +177,7 @@ export default function ContactV2() {
               </p>
               <p className="mt-3 font-v2-body text-sm text-v2-on-surface-variant">
                 <Link
-                  to="/faq"
+                  to="/v2/faq"
                   className="text-v2-primary transition-colors hover:text-v2-primary/80"
                 >
                   FAQ

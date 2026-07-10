@@ -51,7 +51,7 @@ export default function CookiePolicyV2() {
                 </a>
                 , including when accessed via our Capacitor mobile shell. It
                 should be read with our{" "}
-                <Link to="/privacy-policy" className={linkClassName}>
+                <Link to="/v2/privacy-policy" className={linkClassName}>
                   Privacy Policy
                 </Link>
                 .
@@ -285,7 +285,7 @@ export default function CookiePolicyV2() {
               <h2 className={h2ClassName}>5. Apex Agent desktop storage</h2>
               <p className={bodyClassName}>
                 The Apex Agent (documented in our{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   EULA
                 </Link>
                 ) stores data in your operating system’s application data
@@ -412,15 +412,15 @@ export default function CookiePolicyV2() {
             <footer className="mt-10 border-t border-v2-outline-variant/15 pt-8">
               <p className="font-v2-body text-xs text-v2-on-surface-variant">
                 See also{" "}
-                <Link to="/privacy-policy" className={linkClassName}>
+                <Link to="/v2/privacy-policy" className={linkClassName}>
                   Privacy Policy
                 </Link>
                 ,{" "}
-                <Link to="/terms-and-conditions" className={linkClassName}>
+                <Link to="/v2/terms-and-conditions" className={linkClassName}>
                   Terms &amp; Conditions
                 </Link>
                 , and{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   EULA
                 </Link>
                 .

@@ -59,15 +59,15 @@ export default function PrivacyPolicyV2() {
               </p>
               <p className={bodyClassName}>
                 This policy should be read together with our{" "}
-                <Link to="/cookie-policy" className={linkClassName}>
+                <Link to="/v2/cookie-policy" className={linkClassName}>
                   Cookie &amp; Storage Policy
                 </Link>
                 ,{" "}
-                <Link to="/terms-and-conditions" className={linkClassName}>
+                <Link to="/v2/terms-and-conditions" className={linkClassName}>
                   Terms &amp; Conditions
                 </Link>
                 , and (for the desktop Agent) our{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   End User License Agreement
                 </Link>
                 .
@@ -265,7 +265,7 @@ export default function PrivacyPolicyV2() {
                 community features, subscribe to Pro, or contact us.
                 Authentication state is maintained via tokens stored in browser
                 local storage (see our{" "}
-                <Link to="/cookie-policy" className={linkClassName}>
+                <Link to="/v2/cookie-policy" className={linkClassName}>
                   Cookie &amp; Storage Policy
                 </Link>
                 ).
@@ -613,7 +613,7 @@ export default function PrivacyPolicyV2() {
                 authentication. Instead, we use browser local storage and
                 session storage for tokens, preferences, and UI state. Full
                 details are in our{" "}
-                <Link to="/cookie-policy" className={linkClassName}>
+                <Link to="/v2/cookie-policy" className={linkClassName}>
                   Cookie &amp; Storage Policy
                 </Link>
                 .
@@ -665,15 +665,15 @@ export default function PrivacyPolicyV2() {
             <footer className="mt-10 border-t border-v2-outline-variant/15 pt-8">
               <p className="font-v2-body text-xs text-v2-on-surface-variant">
                 See also{" "}
-                <Link to="/terms-and-conditions" className={linkClassName}>
+                <Link to="/v2/terms-and-conditions" className={linkClassName}>
                   Terms &amp; Conditions
                 </Link>
                 ,{" "}
-                <Link to="/cookie-policy" className={linkClassName}>
+                <Link to="/v2/cookie-policy" className={linkClassName}>
                   Cookie &amp; Storage Policy
                 </Link>
                 , and{" "}
-                <Link to="/eula" className={linkClassName}>
+                <Link to="/v2/eula" className={linkClassName}>
                   EULA
                 </Link>
                 .

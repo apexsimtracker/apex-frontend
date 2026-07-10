@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, Heart, MessageCircle } from "lucide-react";
+import { toV2Path } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getDiscussionAuthorDisplay,
@@ -69,7 +70,8 @@ export default function DiscussionCardV2({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
+              if (authorId)
+                navigate(toV2Path(`/user/${encodeURIComponent(authorId)}`));
             }}
             className="group flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
           >

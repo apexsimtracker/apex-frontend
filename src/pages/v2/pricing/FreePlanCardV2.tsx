@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 import { PlanFeatureListV2 } from "./PlanFeatureListV2";
@@ -42,7 +43,7 @@ export function FreePlanCardV2({
             variant="outline"
             className={cn("w-full", v2OutlineButtonClassName)}
           >
-            <Link to="/signup">Get started free</Link>
+            <Link to={V2_AUTH_PATHS.signup}>Get started free</Link>
           </Button>
         ) : !isPro ? (
           <p className="rounded-v2-sm border border-v2-outline-variant/15 bg-v2-surface-container py-2.5 text-center font-v2-body text-sm font-medium text-v2-on-surface-variant">

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import {
   keepPreviousData,
@@ -24,6 +24,7 @@ import {
   type DiscussionComment,
 } from "@/lib/api";
 import type { AuthRedirectState } from "@/auth/authRedirect";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getDiscussionAuthorDisplay,
@@ -137,9 +138,10 @@ export default function DiscussionDetailV2() {
 
   const [commentsPage, setCommentsPage] = useState(1);
   const [replyModalOpen, setReplyModalOpen] = useState(false);
-  const dockAnchorRef = useRef<HTMLDivElement>(null);
   const [replyBarPinned, setReplyBarPinned] = useState(true);
-  const [replyBarHeight, setReplyBarHeight] = useState(DEFAULT_REPLY_BAR_HEIGHT);
+  const [replyBarHeight, setReplyBarHeight] = useState(
+    DEFAULT_REPLY_BAR_HEIGHT,
+  );
 
   const handleDockMetricsChange = useCallback(
     (metrics: { pinned: boolean; barHeight: number }) => {
@@ -297,7 +299,7 @@ export default function DiscussionDetailV2() {
         message: "Sign in to reply.",
         from: `${location.pathname}${location.search}`,
       };
-      navigate("/login", { state });
+      navigate(V2_AUTH_PATHS.login, { state });
       return;
     }
     setReplyError(null);
@@ -317,7 +319,9 @@ export default function DiscussionDetailV2() {
       return;
     }
     if (body.length > DISCUSSION_REPLY_MAX_LENGTH) {
-      setReplyError(`Reply must be ${DISCUSSION_REPLY_MAX_LENGTH} characters or fewer.`);
+      setReplyError(
+        `Reply must be ${DISCUSSION_REPLY_MAX_LENGTH} characters or fewer.`,
+      );
       return;
     }
     setReplyError(null);
@@ -330,7 +334,7 @@ export default function DiscussionDetailV2() {
         message: "Sign in to like posts.",
         from: `${location.pathname}${location.search}`,
       };
-      navigate("/login", { state });
+      navigate(V2_AUTH_PATHS.login, { state });
       return;
     }
     if (!id || likeMutation.isPending) return;
@@ -503,7 +507,10 @@ export default function DiscussionDetailV2() {
         image={avatarSrc}
         ogType="article"
       />
-      <PageShell replyBarPinned={replyBarPinned} replyBarHeight={replyBarHeight}>
+      <PageShell
+        replyBarPinned={replyBarPinned}
+        replyBarHeight={replyBarHeight}
+      >
         <DiscussionPostCardV2
           discussion={discussion}
           authorDisplay={authorDisplay}
@@ -533,11 +540,9 @@ export default function DiscussionDetailV2() {
           commentsRange={commentsRange}
           onRetryComments={loadComments}
           onPageChange={setCommentsPage}
-          dockAnchorRef={dockAnchorRef}
         />
 
         <DiscussionReplyFormV2
-          dockAnchorRef={dockAnchorRef}
           onDockMetricsChange={handleDockMetricsChange}
           replyBody={replyBody}
           replyError={replyError}

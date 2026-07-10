@@ -10,7 +10,7 @@
  * exposes lap-pace, driver-input, tyre and fuel data in this shape.
  */
 
-const SECTION = "rounded-lg bg-v2-surface-container-low p-4 shadow-lg";
+const SECTION = "rounded-xl bg-v2-surface-container-low p-4 shadow-lg";
 
 // NOTE(dummy): Best-lap driver-input waveforms (Speed/Throttle/Brake/Steering).
 const DRIVER_INPUTS: { label: string; color: string; d: string }[] = [

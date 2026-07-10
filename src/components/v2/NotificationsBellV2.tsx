@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -13,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { BaseModal } from "@/components/ui/base-modal";
+import { V2BaseModal } from "@/components/v2/ui/V2BaseModal";
 import { Button } from "@/components/ui/button";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import {
@@ -29,6 +30,7 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { isV2ShellPath, toV2AwarePath } from "@/config/navigation";
 import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 
 const NOTIFICATIONS_KEY = ["notifications"] as const;
@@ -208,7 +210,7 @@ export function NotificationsBellV2() {
         ) : null}
       </button>
 
-      <BaseModal
+      <V2BaseModal
         isOpen={open}
         onClose={() => onOpenChange(false)}
         title="Notifications"
@@ -343,7 +345,7 @@ export function NotificationsBellV2() {
             </>
           )}
         </div>
-      </BaseModal>
+      </V2BaseModal>
     </>
   );
 }
@@ -447,6 +449,11 @@ function SystemAnnouncementRow({
 }: {
   notification: NotificationItem;
 }) {
+  const { pathname } = useLocation();
+  const inV2Shell = isV2ShellPath(pathname);
+  const linkUrl = notification.linkUrl
+    ? toV2AwarePath(notification.linkUrl, inV2Shell)
+    : null;
   const severity = notification.severity ?? "INFO";
   const theme = {
     INFO: {
@@ -527,12 +534,10 @@ function SystemAnnouncementRow({
         ) : null}
         <div className="mt-2 flex items-center gap-3 text-xs text-v2-on-surface-variant">
           <span>{new Date(notification.createdAt).toLocaleString()}</span>
-          {notification.linkUrl ? (
+          {linkUrl ? (
             <a
-              href={notification.linkUrl}
-              target={
-                notification.linkUrl.startsWith("http") ? "_blank" : undefined
-              }
+              href={linkUrl}
+              target={linkUrl.startsWith("http") ? "_blank" : undefined}
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-v2-primary hover:underline"
             >
@@ -601,7 +606,7 @@ function FollowRequestsPanel({
               <p className="truncate font-medium text-v2-on-surface">
                 {r.follower.displayName}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-v2-on-surface-variant">
                 {new Date(r.createdAt).toLocaleString()}
               </p>
             </div>

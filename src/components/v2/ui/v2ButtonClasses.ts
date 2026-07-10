@@ -19,6 +19,12 @@ export const v2OutlineButtonClassName = cn(
   "disabled:cursor-not-allowed disabled:opacity-40",
 );
 
+export const v2DestructiveButtonClassName = cn(
+  "rounded-v2-sm bg-v2-error font-v2-body text-sm font-bold text-white",
+  "hover:bg-v2-error/90 transition-colors",
+  "disabled:cursor-not-allowed disabled:opacity-60",
+);
+
 export const v2InputClassName =
   "w-full rounded-v2-sm border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 text-sm text-v2-on-surface shadow-none placeholder:text-v2-on-surface-variant/50 focus:border-v2-primary focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50";
 

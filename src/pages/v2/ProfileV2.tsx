@@ -16,27 +16,15 @@ import {
   type ProfileSummary,
   type AuthUser,
 } from "@/lib/api";
-import { BaseModal } from "@/components/ui/base-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { SkeletonBlock } from "@/components/ui/skeleton";
 import {
   profileEditFormSchema,
   type ProfileEditFormValues,
 } from "@/lib/validation/profileEdit";
 import { ProfileViewV2 } from "@/components/v2/profile/ProfileViewV2";
-import { FollowListDialog } from "@/components/FollowListDialog";
+import { FollowListDialogV2 } from "@/components/v2/FollowListDialogV2";
+import ProfileEditModalV2 from "@/pages/v2/profile/ProfileEditModalV2";
+import ProfileSkeletonV2 from "@/pages/v2/profile/ProfileSkeletonV2";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import {
@@ -49,9 +37,6 @@ import {
 const PROFILE_V2_PATH = "/v2/profile";
 const profileTitle = `Profile | ${COMPANY_NAME}`;
 const profileDescription = `Your ${COMPANY_NAME} driver profile, stats, and race history.`;
-
-const v2InputClassName =
-  "w-full rounded-lg border border-v2-outline-variant/20 bg-v2-surface-container-highest px-3 py-2 text-sm text-v2-on-surface placeholder:text-v2-on-surface-variant/50 focus:border-transparent focus:outline-none focus:ring-1 focus:ring-v2-primary disabled:opacity-50";
 
 const emptyBuckets = {
   Mon: 0,
@@ -384,24 +369,7 @@ export default function ProfileV2() {
           noindex
         />
         <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
-          <div className="w-full space-y-6">
-            <SkeletonBlock
-              height={80}
-              className="rounded-lg bg-v2-surface-container-highest"
-            />
-            <SkeletonBlock
-              height={120}
-              className="rounded-lg bg-v2-surface-container-highest"
-            />
-            <SkeletonBlock
-              height={200}
-              className="rounded-lg bg-v2-surface-container-highest"
-            />
-            <SkeletonBlock
-              height={280}
-              className="rounded-lg bg-v2-surface-container-highest"
-            />
-          </div>
+          <ProfileSkeletonV2 />
         </div>
       </>
     );
@@ -470,7 +438,7 @@ export default function ProfileV2() {
         />
       </div>
 
-      <FollowListDialog
+      <FollowListDialogV2
         key={`${followsUserId}-${openList ?? "closed"}`}
         open={openList !== null}
         onOpenChange={(open) => !open && setOpenList(null)}
@@ -479,148 +447,19 @@ export default function ProfileV2() {
         profileLinkBase="/v2/user"
       />
 
-      <BaseModal
-        isOpen={editOpen}
-        onClose={() => {
-          clearAvatarSelection();
-          setEditOpen(false);
-        }}
-        title="Edit Profile"
-        description="Update your display name, bio, and profile picture."
-        size="sm"
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                clearAvatarSelection();
-                setEditOpen(false);
-              }}
-              disabled={editLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form="edit-profile-form-v2"
-              disabled={
-                editLoading ||
-                profileEditForm.watch("displayName").trim().length < 2
-              }
-            >
-              {editLoading ? "Saving…" : "Save"}
-            </Button>
-          </>
-        }
-      >
-        <Form {...profileEditForm}>
-          <form
-            id="edit-profile-form-v2"
-            onSubmit={profileEditForm.handleSubmit(onSaveProfileSubmit)}
-            className="space-y-4"
-          >
-            <FormRootMessage className="rounded-md bg-red-500/10 px-3 py-2" />
-            {editSuccess && (
-              <p className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-500">
-                Profile updated.
-              </p>
-            )}
-
-            <FormField
-              control={profileEditForm.control}
-              name="displayName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="edit-displayName-v2">
-                    Display name
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      id="edit-displayName-v2"
-                      type="text"
-                      className={v2InputClassName}
-                      placeholder="Your name"
-                      maxLength={40}
-                      disabled={editLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <p className="mt-0.5 font-v2-body text-xs text-v2-on-surface-variant">
-                    {field.value.trim().length}/40
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={profileEditForm.control}
-              name="tagline"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="edit-tagline-v2">Bio</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      id="edit-tagline-v2"
-                      className={`min-h-[80px] resize-y ${v2InputClassName}`}
-                      placeholder="A short bio..."
-                      maxLength={160}
-                      disabled={editLoading}
-                      {...field}
-                    />
-                  </FormControl>
-                  <p className="mt-0.5 font-v2-body text-xs text-v2-on-surface-variant">
-                    {field.value.length}/160
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div>
-              <label className="mb-1 block font-v2-body text-sm font-medium text-v2-on-surface">
-                Profile picture
-              </label>
-              <p className="mb-2 font-v2-body text-xs text-v2-on-surface-variant">
-                Choose an image from your device (JPEG, PNG, or WebP, max 5 MB).
-                Images are cropped to a square on upload.
-              </p>
-              <input
-                ref={avatarInputRef}
-                id="edit-avatar-file-v2"
-                type="file"
-                accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                onChange={handleAvatarFileChange}
-                className="w-full font-v2-body text-sm text-v2-on-surface file:mr-3 file:rounded-lg file:border-0 file:bg-v2-surface-container-highest file:px-3 file:py-2 file:text-sm file:font-medium file:text-v2-on-surface hover:file:bg-v2-surface-container-high"
-                disabled={editLoading}
-              />
-              {avatarError && (
-                <p className="mt-1.5 font-v2-body text-sm text-v2-error">
-                  {avatarError}
-                </p>
-              )}
-              {avatarPreview && (
-                <div className="mt-3 flex items-center gap-3">
-                  <img
-                    src={avatarPreview}
-                    alt="Preview"
-                    className="size-16 rounded-full border border-v2-outline-variant/20 bg-v2-surface-container-highest object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={clearAvatarSelection}
-                    disabled={editLoading}
-                    className="font-v2-body text-sm text-v2-on-surface-variant underline underline-offset-2 hover:text-v2-on-surface"
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
-            </div>
-          </form>
-        </Form>
-      </BaseModal>
+      <ProfileEditModalV2
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        profileEditForm={profileEditForm}
+        onSave={onSaveProfileSubmit}
+        editLoading={editLoading}
+        editSuccess={editSuccess}
+        avatarInputRef={avatarInputRef}
+        avatarPreview={avatarPreview}
+        avatarError={avatarError}
+        onAvatarFileChange={handleAvatarFileChange}
+        onClearAvatarSelection={clearAvatarSelection}
+      />
     </>
   );
 }

@@ -19,6 +19,7 @@ import {
   isNavPathActive,
   logSessionMenuItemsV2,
   toV2AccountPath,
+  V2_AUTH_PATHS,
   type AccountMenuItem,
   type LogSessionMenuIcon,
 } from "@/config/navigation";
@@ -225,14 +226,14 @@ export default function V2MobileNavDrawer({
           ) : (
             <div className="mt-4 flex flex-col gap-2 border-t border-v2-outline-variant/15 px-1 pt-4">
               <Link
-                to="/login"
+                to={V2_AUTH_PATHS.login}
                 onClick={onClose}
                 className="rounded-v2-sm px-4 py-2.5 text-center text-sm font-medium text-v2-on-surface-variant transition-colors hover:bg-v2-surface-container hover:text-v2-on-surface"
               >
                 Sign in
               </Link>
               <Link
-                to="/signup"
+                to={V2_AUTH_PATHS.signup}
                 onClick={onClose}
                 className={cn(
                   "rounded-v2-sm bg-v2-primary px-4 py-2.5 text-center font-v2-headline text-sm font-bold uppercase tracking-widest text-white transition-colors hover:bg-v2-primary/90",

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Heart, MessageCircle, Share2, Trophy } from "lucide-react";
-import SessionShareModal from "@/components/SessionShareModal";
+import SessionShareModalV2 from "@/components/v2/SessionShareModalV2";
 import DashboardSessionApexPanelV2 from "@/components/v2/dashboard/DashboardSessionApexPanelV2";
 import {
   parseTrackHeadline,
@@ -12,7 +12,7 @@ import {
   getPodiumTrophyClassName,
 } from "@/components/v2/dashboard/dashboardPodiumColors";
 import { getDisciplineLogoSrc } from "@/components/v2/profile/profileDisciplineAssets";
-import { SessionCommentsModal } from "@/components/SessionCommentsModal";
+import { SessionCommentsModalV2 } from "@/pages/v2/session/SessionCommentsModalV2";
 import { useIsProUser } from "@/contexts/AuthContext";
 import {
   formatLapMs,
@@ -659,14 +659,14 @@ export default function DashboardActivityCardV2(
         ) : null}
       </article>
 
-      <SessionCommentsModal
+      <SessionCommentsModalV2
         sessionId={id}
         isOpen={commentsOpen}
         onClose={closeCommentsModal}
         onCommentAdded={onCommentAdded}
         onRefreshSession={() => refreshSessionSocial(id)}
       />
-      <SessionShareModal
+      <SessionShareModalV2
         open={shareModalOpen}
         onOpenChange={setShareModalOpen}
         shareUrl={shareUrl}

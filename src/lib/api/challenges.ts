@@ -1,5 +1,11 @@
 import { apiGet, apiPost } from "./httpVerbs";
-import { fetchApi } from "./fetchClient";
+import {
+  buildApiAuthHeaders,
+  fetchApi,
+  notifyAuthExpired,
+} from "./fetchClient";
+import { API_BASE } from "./config";
+import { ApiError } from "./errors";
 
 /** Matches GET /api/challenges summary rows */
 export type ChallengeApiStatus = "UPCOMING" | "ACTIVE" | "ENDED";
@@ -36,6 +42,8 @@ export type ChallengeDetail = ChallengeSummary & {
   banReason?: string | null;
   /** True when the viewer is joined and has posted no sessions yet. */
   canLeave?: boolean;
+  /** Null when no custom cover uploaded; client resolves default hero image. */
+  coverImageUrl?: string | null;
 };
 
 export type ChallengesMeta = {
@@ -111,6 +119,8 @@ export type ChallengeListItem = {
   followedWhoJoined: { id: string; displayName: string }[];
   followedWhoJoinedMoreCount: number;
   timeRemainingSec: number | null;
+  /** Null when no custom cover uploaded; client resolves default hero image. */
+  coverImageUrl?: string | null;
 };
 
 export type ChallengeListResponse = {
@@ -265,6 +275,7 @@ export type AdminChallengeRow = {
   participantCount: number;
   fastestLapMs: number | null;
   createdByDisplayName: string | null;
+  coverImageUrl?: string | null;
 };
 
 export async function fetchAdminChallengeList(
@@ -333,6 +344,59 @@ export async function deleteAdminChallenge(
     "DELETE",
     `/api/admin/challenges/${encodeURIComponent(id)}`,
     { confirmation },
+    false,
+  );
+}
+
+export async function uploadAdminChallengeCover(
+  challengeId: string,
+  file: File,
+): Promise<{ coverImageUrl: string }> {
+  const formData = new FormData();
+  formData.append("cover", file);
+
+  const headers = buildApiAuthHeaders();
+  const url = `${API_BASE}/api/admin/challenges/${encodeURIComponent(challengeId)}/cover`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = "Cover upload failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text) as { message?: string; error?: string };
+          message = json.message ?? json.error ?? message;
+        } catch {
+          message = text;
+        }
+      }
+    } catch {
+      // keep default message
+    }
+    await notifyAuthExpired(false, res.status);
+    throw new ApiError(res.status, message);
+  }
+
+  const data = (await res.json()) as { coverImageUrl?: string };
+  if (!data?.coverImageUrl) {
+    throw new ApiError(500, "No cover URL in response");
+  }
+  return { coverImageUrl: data.coverImageUrl };
+}
+
+export async function deleteAdminChallengeCover(
+  challengeId: string,
+): Promise<{ ok: true }> {
+  return fetchApi(
+    "DELETE",
+    `/api/admin/challenges/${encodeURIComponent(challengeId)}/cover`,
+    undefined,
     false,
   );
 }

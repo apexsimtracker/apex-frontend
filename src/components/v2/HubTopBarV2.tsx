@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ApexLogo } from "@/components/ApexLogo";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import { NotificationsBellV2 } from "@/components/v2/NotificationsBellV2";
 import { UserSearchTriggerV2 } from "@/components/v2/UserSearchTriggerV2";
 import CreateMenuV2 from "@/components/v2/CreateMenuV2";
@@ -54,7 +55,7 @@ export default function HubTopBarV2() {
           </>
         ) : (
           <Link
-            to="/login"
+            to={V2_AUTH_PATHS.login}
             className="overflow-hidden rounded-full border border-v2-outline-variant/30 opacity-80"
             aria-label={profileName}
           >

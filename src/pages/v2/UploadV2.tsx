@@ -16,6 +16,7 @@ import {
 } from "@/components/v2/ui/v2ButtonClasses";
 import { uploadSessionFile, ApiError } from "@/lib/api";
 import PageMeta from "@/components/PageMeta";
+import ChallengeDetailBackLinkV2 from "@/pages/v2/challenges/ChallengeDetailBackLinkV2";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { MAX_MANUAL_UPLOAD_BYTES } from "@/lib/uploadLimits";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ export default function UploadV2() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const challengeId = searchParams.get("challenge")?.trim() || undefined;
+  const isChallengeLinked = Boolean(challengeId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -212,22 +214,30 @@ export default function UploadV2() {
     }
   }, []);
 
+  const pagePath = isChallengeLinked
+    ? `${UPLOAD_PATH}?challenge=${encodeURIComponent(challengeId!)}`
+    : UPLOAD_PATH;
+
   return (
     <>
       <PageMeta
         title={uploadTitle}
         description={uploadDescription}
-        path={UPLOAD_PATH}
+        path={pagePath}
         noindex
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
-        <div className="mb-10">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-8 px-6 py-8">
+        {isChallengeLinked && challengeId && (
+          <ChallengeDetailBackLinkV2 challengeId={challengeId} />
+        )}
+
+        <div>
           <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
             Upload session
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-v2-on-surface-variant">
+          <p className="mt-2 font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
             iRacing{" "}
-            <code className="rounded bg-v2-surface-container-highest px-1.5 py-0.5 text-xs text-v2-on-surface">
+            <code className="rounded-v2-sm bg-v2-surface-container-highest px-1.5 py-0.5 font-v2-body text-xs text-v2-on-surface">
               .ibt
             </code>{" "}
             telemetry is processed automatically — session type, positions, and
@@ -236,12 +246,12 @@ export default function UploadV2() {
         </div>
 
         {challengeId && uploadState !== "success" && (
-          <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+          <div className="flex items-start gap-3 rounded-v2-lg border border-v2-outline-variant/20 bg-v2-surface-container-high px-4 py-3">
             <Trophy
-              className="mt-0.5 size-4 shrink-0 text-amber-400"
+              className="mt-0.5 size-4 shrink-0 text-v2-primary"
               aria-hidden
             />
-            <p className="text-sm text-amber-100/90">
+            <p className="font-v2-body text-sm text-v2-on-surface-variant">
               This upload will count toward your active challenge when
               processed.
             </p>
@@ -445,16 +455,18 @@ export default function UploadV2() {
           )}
         </div>
 
-        <p className="mt-6 text-center text-sm text-v2-on-surface-variant">
-          Don&apos;t have a telemetry file?{" "}
-          <Link
-            to="/v2/manual"
-            className="inline-flex items-center gap-1 font-medium text-v2-on-surface transition-colors hover:text-v2-primary"
-          >
-            <PenLine className="size-3.5" aria-hidden />
-            Log manual activity
-          </Link>
-        </p>
+        {!isChallengeLinked && (
+          <p className="text-center font-v2-body text-sm text-v2-on-surface-variant">
+            Don&apos;t have a telemetry file?{" "}
+            <Link
+              to="/v2/manual"
+              className="inline-flex items-center gap-1 font-v2-body font-medium text-v2-on-surface transition-colors hover:text-v2-primary"
+            >
+              <PenLine className="size-3.5" aria-hidden />
+              Log manual activity
+            </Link>
+          </p>
+        )}
       </div>
     </>
   );

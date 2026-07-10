@@ -8,6 +8,7 @@ import {
   Pin,
   Trash2,
 } from "lucide-react";
+import { toV2Path } from "@/config/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -121,7 +122,8 @@ export default function DiscussionPostCardV2({
         <button
           type="button"
           onClick={() => {
-            if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
+            if (authorId)
+              navigate(toV2Path(`/user/${encodeURIComponent(authorId)}`));
           }}
           className="group flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
         >

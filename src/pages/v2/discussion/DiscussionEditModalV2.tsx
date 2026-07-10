@@ -1,7 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { BaseModal } from "@/components/ui/base-modal";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import {
+  v2InputClassName,
+  v2ManualTextareaClassName,
+  v2OutlineButtonClassName,
+  v2PrimaryButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
+import { V2BaseModal } from "@/components/v2/ui/V2BaseModal";
 
 type DiscussionEditModalV2Props = {
   open: boolean;
@@ -34,23 +38,30 @@ export default function DiscussionEditModalV2({
   if (!open) return null;
 
   return (
-    <BaseModal
+    <V2BaseModal
       isOpen={open}
       onClose={closeModal}
       title="Edit discussion"
       size="md"
       footer={
         <>
-          <Button
+          <button
             type="button"
-            variant="outline"
+            className={cn(
+              v2OutlineButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             onClick={closeModal}
             disabled={saving}
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
+            className={cn(
+              v2PrimaryButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             onClick={onSave}
             disabled={
               saving ||
@@ -59,35 +70,38 @@ export default function DiscussionEditModalV2({
             }
           >
             {saving ? "Saving…" : "Save"}
-          </Button>
+          </button>
         </>
       }
     >
       <div className="space-y-4">
-        {editError && <p className="text-sm text-destructive">{editError}</p>}
+        {editError && (
+          <p className="font-v2-body text-sm text-v2-error">{editError}</p>
+        )}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label className="mb-1.5 block font-v2-body text-sm font-medium text-v2-on-surface">
             Title
           </label>
-          <Input
+          <input
+            type="text"
             value={editTitle}
             onChange={(e) => onTitleChange(e.target.value)}
             disabled={saving}
-            className="border-white/10 bg-secondary"
+            className={v2InputClassName}
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label className="mb-1.5 block font-v2-body text-sm font-medium text-v2-on-surface">
             Body
           </label>
-          <Textarea
-            className="min-h-[160px] resize-y border-white/10 bg-secondary"
+          <textarea
+            className={cn(v2ManualTextareaClassName, "min-h-[160px] resize-y")}
             value={editDescription}
             onChange={(e) => onDescriptionChange(e.target.value)}
             disabled={saving}
           />
         </div>
       </div>
-    </BaseModal>
+    </V2BaseModal>
   );
 }

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { getLeaderboards, type LeaderboardRow } from "@/lib/api";
 import { formatLapMs, cn } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import UserAvatar from "@/components/UserAvatar";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import LeaderboardsListSkeletonV2 from "@/pages/v2/leaderboards/LeaderboardsListSkeletonV2";
 
 const LEADERBOARDS_V2_PATH = "/v2/leaderboards";
 const leaderboardsTitle = `Leaderboards | ${COMPANY_NAME}`;
@@ -94,7 +96,7 @@ export default function LeaderboardsV2() {
         description={leaderboardsDescription}
         path={LEADERBOARDS_V2_PATH}
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto px-6 pb-4 pt-5">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
         <section className="mb-5">
           <h1 className="font-v2-headline text-3xl font-bold tracking-tight text-v2-on-surface">
             Leaderboards
@@ -113,7 +115,7 @@ export default function LeaderboardsV2() {
                 type="button"
                 onClick={() => setActiveTab(tabKey)}
                 className={cn(
-                  "shrink-0 rounded-md px-4 py-2 font-v2-body text-xs font-bold transition-colors",
+                  "shrink-0 rounded-v2-sm px-4 py-2 font-v2-body text-xs font-bold transition-colors",
                   isActive
                     ? "bg-v2-primary text-white"
                     : "bg-v2-surface-container-low text-v2-on-surface-variant hover:text-v2-on-surface",
@@ -125,90 +127,97 @@ export default function LeaderboardsV2() {
           })}
         </section>
 
-        <section className="rounded-xl bg-v2-surface-container-low p-2">
-          {updating && (
-            <p className="px-2 py-1 font-v2-body text-xs text-v2-on-surface-variant">
-              Updating…
-            </p>
-          )}
+        {loading ? (
+          <LeaderboardsListSkeletonV2 />
+        ) : (
+          <section className="rounded-xl bg-v2-surface-container-low p-2">
+            {updating && rows.length > 0 && (
+              <div className="flex items-center gap-2 px-2 py-1.5 font-v2-body text-xs text-v2-on-surface-variant">
+                <Loader2
+                  className="size-3.5 animate-spin text-v2-primary"
+                  aria-hidden
+                />
+                Refreshing standings…
+              </div>
+            )}
 
-          {loading && (
-            <p className="px-2 py-8 font-v2-body text-sm text-v2-on-surface-variant">
-              Loading…
-            </p>
-          )}
+            {isError && (
+              <p className="px-2 py-8 font-v2-body text-sm text-v2-on-surface-variant">
+                {err}
+              </p>
+            )}
 
-          {!loading && isError && (
-            <p className="px-2 py-8 font-v2-body text-sm text-v2-on-surface-variant">
-              {err}
-            </p>
-          )}
+            {!isError && rows.length === 0 && (
+              <p className="px-2 py-8 font-v2-body text-sm text-v2-on-surface-variant">
+                No rankings yet.
+              </p>
+            )}
 
-          {!loading && !isError && rows.length === 0 && (
-            <p className="px-2 py-8 font-v2-body text-sm text-v2-on-surface-variant">
-              No rankings yet.
-            </p>
-          )}
+            {!isError && rows.length > 0 && (
+              <div
+                className={cn(updating && "pointer-events-none opacity-60")}
+                aria-busy={updating || undefined}
+              >
+                {rows.map((row, index) => {
+                  const rank = row.rank ?? index + 1;
+                  const name = row.displayName ?? "";
+                  const value = formatValue(row, metric ?? "wins");
+                  const uid = row.userId?.trim();
+                  const isTopThree = rank <= 3;
 
-          {!loading && !isError && rows.length > 0
-            ? rows.map((row, index) => {
-                const rank = row.rank ?? index + 1;
-                const name = row.displayName ?? "";
-                const value = formatValue(row, metric ?? "wins");
-                const uid = row.userId?.trim();
-                const isTopThree = rank <= 3;
-
-                return (
-                  <button
-                    key={`${rank}-${name}-${index}`}
-                    type="button"
-                    onClick={() => {
-                      if (uid) {
-                        navigate(`/v2/user/${encodeURIComponent(uid)}`);
-                      }
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-3 border-b border-v2-outline-variant/10 px-2 py-3 text-left transition-colors last:border-b-0 hover:bg-v2-surface-container-high/50",
-                      !uid && "cursor-default",
-                    )}
-                  >
-                    <div
+                  return (
+                    <button
+                      key={`${rank}-${name}-${index}`}
+                      type="button"
+                      onClick={() => {
+                        if (uid) {
+                          navigate(`/v2/user/${encodeURIComponent(uid)}`);
+                        }
+                      }}
                       className={cn(
-                        "flex size-7 shrink-0 items-center justify-center rounded-full font-v2-headline text-xs font-bold",
-                        rankBadgeClassName(rank),
+                        "flex w-full items-center gap-3 border-b border-v2-outline-variant/10 px-2 py-3 text-left transition-colors last:border-b-0 hover:bg-v2-surface-container-high/50",
+                        !uid && "cursor-default",
                       )}
                     >
-                      {rank}
-                    </div>
+                      <div
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-xl font-v2-headline text-xs font-bold",
+                          rankBadgeClassName(rank),
+                        )}
+                      >
+                        {rank}
+                      </div>
 
-                    <UserAvatar
-                      name={name || "Driver"}
-                      size="md"
-                      className="ring-v2-outline-variant/30"
-                    />
+                      <UserAvatar
+                        name={name || "Driver"}
+                        size="md"
+                        className="rounded-xl ring-v2-outline-variant/30"
+                      />
 
-                    <p
-                      className={cn(
-                        "min-w-0 flex-1 truncate font-v2-body text-sm",
-                        isTopThree
-                          ? "font-bold text-v2-on-surface"
-                          : "font-medium text-v2-on-surface",
-                      )}
-                    >
-                      {name || "—"}
-                    </p>
+                      <p
+                        className={cn(
+                          "min-w-0 flex-1 truncate font-v2-body text-sm",
+                          isTopThree
+                            ? "font-bold text-v2-on-surface"
+                            : "font-medium text-v2-on-surface",
+                        )}
+                      >
+                        {name || "—"}
+                      </p>
 
-                    <p className="shrink-0 font-v2-headline font-bold text-v2-primary">
-                      {value}
-                      <span className="ml-1 font-v2-body text-[10px] font-medium text-v2-on-surface-variant">
-                        {metricSuffix}
-                      </span>
-                    </p>
-                  </button>
-                );
-              })
-            : null}
-        </section>
+                      <p className="shrink-0 font-v2-headline font-bold text-v2-primary">
+                        {value}
+                        <span className="ml-1 font-v2-body text-[10px] font-medium text-v2-on-surface-variant">
+                          {metricSuffix}
+                        </span>
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </>
   );

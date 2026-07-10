@@ -1,6 +1,4 @@
 import type { UseFormReturn } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { BaseModal } from "@/components/ui/base-modal";
 import {
   Form,
   FormControl,
@@ -16,6 +14,13 @@ import { DISCUSSION_CATEGORIES } from "@/lib/api";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { NewDiscussionFormValues } from "@/lib/validation/community";
 import { cn } from "@/lib/utils";
+import {
+  v2InputClassName,
+  v2ManualTextareaClassName,
+  v2OutlineButtonClassName,
+  v2PrimaryButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
+import { V2BaseModal } from "@/components/v2/ui/V2BaseModal";
 
 const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
 
@@ -43,7 +48,7 @@ export default function NewDiscussionModalV2({
   if (!open) return null;
 
   return (
-    <BaseModal
+    <V2BaseModal
       isOpen={open}
       onClose={closeModal}
       title="Create New Discussion"
@@ -51,21 +56,28 @@ export default function NewDiscussionModalV2({
       mobileVariant="fullscreen"
       footer={
         <>
-          <Button
+          <button
             type="button"
-            variant="outline"
+            className={cn(
+              v2OutlineButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             onClick={closeModal}
             disabled={creating}
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="submit"
             form="create-discussion-form-v2"
+            className={cn(
+              v2PrimaryButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             disabled={creating}
           >
             {creating ? "Creating…" : "Create"}
-          </Button>
+          </button>
         </>
       }
     >
@@ -74,14 +86,14 @@ export default function NewDiscussionModalV2({
           id="create-discussion-form-v2"
           onSubmit={form.handleSubmit(onSubmit)}
         >
-          <FormRootMessage className="mb-4 text-xs" />
+          <FormRootMessage className="mb-4 font-v2-body text-xs text-v2-error" />
 
           <FormField
             control={form.control}
             name="category"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-3 block text-sm font-medium text-foreground">
+                <FormLabel className="mb-3 block font-v2-body text-sm font-medium text-v2-on-surface">
                   Category
                 </FormLabel>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -93,17 +105,17 @@ export default function NewDiscussionModalV2({
                         field.onChange(cat.value);
                       }}
                       className={cn(
-                        "rounded-lg border p-3 text-sm font-medium transition-all",
+                        "rounded-v2-sm border p-3 font-v2-body text-sm font-medium transition-all",
                         field.value === cat.value
-                          ? "border-primary/60 bg-primary/10 text-foreground"
-                          : "text-foreground hover:border-border",
+                          ? "border-v2-primary/60 bg-v2-primary/10 text-v2-on-surface"
+                          : "text-v2-on-surface hover:border-v2-outline-variant/30",
                       )}
                     >
                       {cat.label}
                     </button>
                   ))}
                 </div>
-                <FormMessage className="text-xs" />
+                <FormMessage className="font-v2-body text-xs text-v2-error" />
               </FormItem>
             )}
           />
@@ -113,17 +125,18 @@ export default function NewDiscussionModalV2({
             name="title"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-0.5 block text-sm font-medium text-foreground">
+                <FormLabel className="mb-0.5 block font-v2-body text-sm font-medium text-v2-on-surface">
                   Discussion Title
                 </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="What's your question or topic?"
                     disabled={creating}
+                    className={v2InputClassName}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-xs" />
+                <FormMessage className="font-v2-body text-xs text-v2-error" />
               </FormItem>
             )}
           />
@@ -133,23 +146,26 @@ export default function NewDiscussionModalV2({
             name="description"
             render={({ field }) => (
               <FormItem className="mb-6">
-                <FormLabel className="mb-0.5 block text-sm font-medium text-foreground">
+                <FormLabel className="mb-0.5 block font-v2-body text-sm font-medium text-v2-on-surface">
                   Description
                 </FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Describe your discussion in detail..."
                     disabled={creating}
-                    className="h-32 resize-none"
+                    className={cn(
+                      v2ManualTextareaClassName,
+                      "h-32 resize-none",
+                    )}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-xs" />
+                <FormMessage className="font-v2-body text-xs text-v2-error" />
               </FormItem>
             )}
           />
         </form>
       </Form>
-    </BaseModal>
+    </V2BaseModal>
   );
 }

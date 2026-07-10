@@ -26,6 +26,7 @@ import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AuthRedirectState } from "@/auth/authRedirect";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   newDiscussionFormSchema,
@@ -188,7 +189,7 @@ export default function CommunityV2() {
         message: "Sign in to start a discussion.",
         from: `${location.pathname}${location.search}`,
       };
-      navigate("/login", { state });
+      navigate(V2_AUTH_PATHS.login, { state });
       return;
     }
     setShowNewDiscussionModal(true);

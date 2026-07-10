@@ -144,6 +144,10 @@ export const footerLegalLinks: FooterLinkItem[] = [
 
 export const FOOTER_TAGLINE = "Sim racing performance hub";
 
+/** V2 desktop footer — slightly longer than V1 one-liner. */
+export const FOOTER_TAGLINE_V2 =
+  "Your sim racing performance hub. Track sessions, analyze telemetry, and compete on leaderboards and community challenges across iRacing, ACC, and your favorite sims.";
+
 function withoutWebOnlyNavItems<T extends { webOnly?: boolean }>(
   items: T[],
   isNative: boolean,
@@ -168,15 +172,111 @@ export function getPrimaryNavItemsV2(isAuthenticated: boolean): NavLinkItem[] {
   });
 }
 
+export const V2_HOME_PATH = "/v2";
+
+export const V2_AUTH_PATHS = {
+  login: "/v2/login",
+  signup: "/v2/signup",
+  forgotPassword: "/v2/forgot-password",
+  verifyEmail: "/v2/verify-email",
+} as const;
+
+const V1_TO_V2_EXACT: Record<string, string> = {
+  "/": V2_HOME_PATH,
+  "/profile": "/v2/profile",
+  "/settings": "/v2/settings",
+  "/agent": "/v2/agent",
+  "/personal-bests": "/v2/personal-bests",
+  "/community": "/v2/community",
+  "/challenges": "/v2/challenges",
+  "/leaderboards": "/v2/leaderboards",
+  "/pricing": "/v2/pricing",
+  "/sessions": "/v2/sessions",
+  "/about": "/v2/about",
+  "/faq": "/v2/faq",
+  "/contact": "/v2/contact",
+  "/terms-and-conditions": "/v2/terms-and-conditions",
+  "/privacy-policy": "/v2/privacy-policy",
+  "/cookie-policy": "/v2/cookie-policy",
+  "/eula": "/v2/eula",
+  "/login": V2_AUTH_PATHS.login,
+  "/signup": V2_AUTH_PATHS.signup,
+  "/forgot-password": V2_AUTH_PATHS.forgotPassword,
+  "/verify-email": V2_AUTH_PATHS.verifyEmail,
+  "/upload": "/v2/upload",
+  "/manual": "/v2/manual",
+  "/upgrade": "/v2/pricing",
+};
+
+/** V1 path prefixes that map to `/v2` + same suffix (e.g. `/sessions/:id`). */
+const V1_TO_V2_PREFIXES = [
+  "/sessions/",
+  "/user/",
+  "/discussion/",
+  "/challenge/",
+] as const;
+
+function splitAppPath(path: string): {
+  pathname: string;
+  search: string;
+  hash: string;
+} {
+  const hashIndex = path.indexOf("#");
+  const beforeHash = hashIndex === -1 ? path : path.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? "" : path.slice(hashIndex);
+  const queryIndex = beforeHash.indexOf("?");
+  const pathname =
+    queryIndex === -1 ? beforeHash : beforeHash.slice(0, queryIndex);
+  const search = queryIndex === -1 ? "" : beforeHash.slice(queryIndex);
+  return { pathname, search, hash };
+}
+
+/** True when the current route is inside the V2 shell. */
+export function isV2ShellPath(pathname: string): boolean {
+  return pathname === V2_HOME_PATH || pathname.startsWith(`${V2_HOME_PATH}/`);
+}
+
+/**
+ * Map any known V1 app path to its V2 equivalent.
+ * Pass-through for `/v2/*`, `/admin`, and external URLs.
+ */
+export function toV2Path(to: string): string {
+  if (
+    !to ||
+    to.startsWith("http") ||
+    to.startsWith("mailto:") ||
+    to.startsWith("//")
+  ) {
+    return to;
+  }
+  if (to.startsWith("/v2") || to.startsWith("/admin")) {
+    return to;
+  }
+
+  const { pathname, search, hash } = splitAppPath(to);
+  const exact = V1_TO_V2_EXACT[pathname];
+  if (exact) {
+    return `${exact}${search}${hash}`;
+  }
+
+  for (const prefix of V1_TO_V2_PREFIXES) {
+    if (pathname.startsWith(prefix)) {
+      return `/v2${pathname}${search}${hash}`;
+    }
+  }
+
+  return to;
+}
+
+/** Map V1 paths to V2 when the user is browsing inside the V2 shell. */
+export function toV2AwarePath(path: string, inV2Shell: boolean): string {
+  if (!inV2Shell) return path;
+  return toV2Path(path);
+}
+
 /** Map V1 account paths to V2 where a V2 route exists. */
 export function toV2AccountPath(to: string): string {
-  const map: Record<string, string> = {
-    "/profile": "/v2/profile",
-    "/settings": "/v2/settings",
-    "/agent": "/v2/agent",
-    "/personal-bests": "/v2/personal-bests",
-  };
-  return map[to] ?? to;
+  return toV2Path(to);
 }
 
 export function getAccountMenuItemsForUser(

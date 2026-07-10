@@ -8,6 +8,13 @@ import {
 } from "@/config/navigation";
 import { Dialog, DialogPortal } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  v2ModalCloseButtonClassName,
+  v2ModalDescriptionClassName,
+  v2ModalOverlayClassName,
+  v2ModalSheetTopRadiusClassName,
+  v2ModalTitleClassName,
+} from "@/components/v2/ui/v2ModalStyles";
 
 /** Loveable telemetry.html overrides `rounded-full` to 0.75rem — not a circle. */
 const LOVEABLE_ICON_RADIUS = "rounded-[0.75rem]";
@@ -25,8 +32,8 @@ function LogSessionMenuIcon({
   featured?: boolean;
 }) {
   const iconClassName = featured
-    ? "size-[22px] fill-[#E10600] text-[#E10600]"
-    : "size-[22px] text-white/60";
+    ? "size-[22px] fill-v2-primary text-v2-primary"
+    : "size-[22px] text-v2-on-surface-variant";
 
   switch (icon) {
     case "agent":
@@ -49,11 +56,11 @@ function LogSessionSheetRow({
     <button
       type="button"
       onClick={() => onSelect(item.to)}
-      className="group relative flex h-[76px] w-full cursor-pointer items-center border-b border-white/5 px-6 text-left transition-colors hover:bg-white/[0.03]"
+      className="group relative flex h-[76px] w-full cursor-pointer items-center border-b border-v2-outline-variant/15 px-6 text-left transition-colors hover:bg-v2-surface-container-high/50"
     >
       {item.featured ? (
         <div
-          className="absolute inset-y-0 left-0 w-[2px] bg-[#E10600]"
+          className="absolute inset-y-0 left-0 w-[2px] bg-v2-primary"
           aria-hidden
         />
       ) : null}
@@ -63,8 +70,8 @@ function LogSessionSheetRow({
           "flex size-11 shrink-0 items-center justify-center border",
           LOVEABLE_ICON_RADIUS,
           item.featured
-            ? "border-[#E10600]/20 bg-[#E10600]/15"
-            : "border-white/10 bg-white/5",
+            ? "border-v2-primary/20 bg-v2-primary/15"
+            : "border-v2-outline-variant/20 bg-v2-surface-container-high",
         )}
       >
         <LogSessionMenuIcon icon={item.icon} featured={item.featured} />
@@ -72,20 +79,22 @@ function LogSessionSheetRow({
 
       <div className="ml-4 flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex items-center gap-2">
-          <span className="font-v2-headline text-[15px] font-semibold text-white">
+          <span className="font-v2-headline text-[15px] font-semibold text-v2-on-surface">
             {item.title}
           </span>
           {item.proBadge ? (
-            <span className="rounded-[2px] bg-[#E10600] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+            <span className="rounded-v2-sm bg-v2-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
               APEX PRO REQUIRED
             </span>
           ) : null}
         </div>
-        <p className="truncate text-[12px] text-white/40">{item.subtitle}</p>
+        <p className="truncate font-v2-body text-[12px] text-v2-on-surface-variant">
+          {item.subtitle}
+        </p>
       </div>
 
       <ChevronRight
-        className="size-5 shrink-0 text-white/20 transition-colors group-hover:text-white/40"
+        className="size-5 shrink-0 text-v2-on-surface-variant/40 transition-colors group-hover:text-v2-on-surface-variant"
         aria-hidden
       />
     </button>
@@ -109,15 +118,16 @@ export default function LogSessionSheetV2({
         <div className="v2-theme">
           <DialogPrimitive.Overlay
             className={cn(
-              "v2-log-session-overlay fixed inset-0 z-[80]",
+              v2ModalOverlayClassName,
               "data-[state=open]:animate-in data-[state=closed]:animate-out",
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             )}
           />
           <DialogPrimitive.Content
             className={cn(
-              "v2-log-session-sheet fixed inset-x-0 bottom-0 z-[80] mx-auto flex h-[58vh] w-full max-w-xl flex-col overflow-hidden",
-              "rounded-t-[16px] border-t border-white/10 bg-v2-background text-v2-on-surface",
+              "fixed inset-x-0 bottom-0 z-[80] mx-auto flex h-[58vh] w-full max-w-xl flex-col overflow-hidden",
+              v2ModalSheetTopRadiusClassName,
+              "border-t border-v2-outline-variant/15 bg-v2-background text-v2-on-surface",
               "outline-none",
               "data-[state=open]:animate-in data-[state=closed]:animate-out",
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -127,25 +137,36 @@ export default function LogSessionSheetV2({
             aria-describedby="log-session-sheet-description"
           >
             <div
-              className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/20"
+              className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-v2-outline-variant/40"
               aria-hidden
             />
 
             <header className="mt-1 flex items-start justify-between p-4 px-6">
               <div className="flex flex-col">
-                <DialogPrimitive.Title className="font-v2-headline text-[20px] font-semibold leading-tight text-white">
+                <DialogPrimitive.Title
+                  className={cn(
+                    v2ModalTitleClassName,
+                    "text-[20px] leading-tight",
+                  )}
+                >
                   Log a Session
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description
                   id="log-session-sheet-description"
-                  className="mt-0.5 text-[13px] font-normal text-white/50"
+                  className={cn(
+                    v2ModalDescriptionClassName,
+                    "mt-0.5 text-[13px]",
+                  )}
                 >
                   Choose how you want to record this session
                 </DialogPrimitive.Description>
               </div>
               <DialogPrimitive.Close
                 type="button"
-                className="flex size-8 items-center justify-center text-white/40 transition-colors hover:text-white"
+                className={cn(
+                  v2ModalCloseButtonClassName,
+                  "relative right-0 top-0 flex size-8 items-center justify-center",
+                )}
                 aria-label="Close"
               >
                 <X className="size-6" aria-hidden />

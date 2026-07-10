@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import type { BillingInterval } from "@/lib/api";
 import { getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
@@ -148,7 +149,9 @@ export default function PricingV2() {
 
   function handleSignInToSubscribe() {
     if (!user) {
-      navigate(`/login?next=${encodeURIComponent(PRICING_V2_PATH)}`);
+      navigate(
+        `${V2_AUTH_PATHS.login}?next=${encodeURIComponent(PRICING_V2_PATH)}`,
+      );
     }
   }
 

@@ -5,6 +5,7 @@ import {
   fetchAdminChallengeList,
   createAdminChallenge,
   deleteAdminChallenge,
+  uploadAdminChallengeCover,
   type AdminChallengeRow,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
@@ -21,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Loader2, MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   ADMIN_PAGE,
@@ -455,8 +457,20 @@ function CreateChallengeModal({
   const [carId, setCarId] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
 
   const {
     tracks,
@@ -501,7 +515,7 @@ function CreateChallengeModal({
 
     setPending(true);
     try {
-      await createAdminChallenge({
+      const created = await createAdminChallenge({
         title: t,
         description: d,
         sim,
@@ -510,6 +524,17 @@ function CreateChallengeModal({
         startsAt: startsIso,
         endsAt: endsIso,
       });
+      if (coverFile) {
+        try {
+          await uploadAdminChallengeCover(created.id, coverFile);
+        } catch (e) {
+          const message =
+            e instanceof ApiError ? e.message : "Cover upload failed";
+          toast.warning(
+            `Challenge created, but cover upload failed: ${message}. Upload a cover from the challenge detail page.`,
+          );
+        }
+      }
       await onCreated();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Failed to create");
@@ -679,6 +704,36 @@ function CreateChallengeModal({
           onChange={(e) => setEndsAt(e.target.value)}
         />
       </label>
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">Cover image (optional)</p>
+        {coverPreviewUrl && (
+          <img
+            src={coverPreviewUrl}
+            alt=""
+            className="h-32 w-full rounded-lg border border-white/10 object-cover"
+          />
+        )}
+        <Input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={pending}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            setCoverFile(file);
+          }}
+        />
+        {coverFile && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() => setCoverFile(null)}
+          >
+            Clear cover
+          </Button>
+        )}
+      </div>
       {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
     </BaseModal>
   );

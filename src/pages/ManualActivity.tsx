@@ -96,8 +96,8 @@ export default function ManualActivity() {
                 Log manual activity
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                Record a session without telemetry. Add lap times to appear on
-                fastest-lap leaderboards.
+                Record a session without telemetry. Lap times are saved to your
+                profile and activity feed.
               </p>
             </div>
           </div>

@@ -4,12 +4,13 @@ import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatform } from "@/hooks/usePlatform";
 import {
-  FOOTER_TAGLINE,
+  FOOTER_TAGLINE_V2,
   footerAuthenticatedAccountLinks,
   footerCompanyLinks,
   footerGuestAccountLinks,
   getFooterLegalLinks,
   getFooterProductLinks,
+  toV2Path,
   type FooterLinkItem,
 } from "@/config/navigation";
 
@@ -33,32 +34,8 @@ function FooterLinkList({ links }: { links: FooterLinkItem[] }) {
   );
 }
 
-/** Map v1 footer paths to v2 where a v2 route exists. */
-function toV2FooterPath(to: string): string {
-  const v2Map: Record<string, string> = {
-    "/community": "/v2/community",
-    "/challenges": "/v2/challenges",
-    "/leaderboards": "/v2/leaderboards",
-    "/pricing": "/v2/pricing",
-    "/agent": "/v2/agent",
-    "/profile": "/v2/profile",
-    "/sessions": "/v2/sessions",
-    "/settings": "/v2/settings",
-    "/about": "/v2/about",
-    "/faq": "/v2/faq",
-    "/contact": "/v2/contact",
-    "/terms-and-conditions": "/v2/terms-and-conditions",
-    "/privacy-policy": "/v2/privacy-policy",
-    "/cookie-policy": "/v2/cookie-policy",
-    "/eula": "/v2/eula",
-    "/login": "/v2/login",
-    "/signup": "/v2/signup",
-  };
-  return v2Map[to] ?? to;
-}
-
 function mapFooterLinks(links: FooterLinkItem[]): FooterLinkItem[] {
-  return links.map((link) => ({ ...link, to: toV2FooterPath(link.to) }));
+  return links.map((link) => ({ ...link, to: toV2Path(link.to) }));
 }
 
 export default function V2AppFooter() {
@@ -100,8 +77,8 @@ export default function V2AppFooter() {
                   className="h-9 w-auto max-w-[104px] object-contain"
                 />
               </Link>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-v2-on-surface-variant">
-                {FOOTER_TAGLINE}
+              <p className="mt-4 max-w-sm font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
+                {FOOTER_TAGLINE_V2}
               </p>
             </div>
 

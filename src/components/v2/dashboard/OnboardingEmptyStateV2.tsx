@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Upload, Cpu, Zap, PenLine } from "lucide-react";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
+import { toV2Path } from "@/config/navigation";
 import {
   v2OutlineButtonClassName,
   v2PrimaryButtonClassName,
@@ -80,7 +81,7 @@ export default function OnboardingEmptyStateV2() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate("/pricing")}
+                onClick={() => navigate(toV2Path("/pricing"))}
                 className={`${v2PrimaryButtonClassName} mt-4 w-full`}
               >
                 Learn About Pro

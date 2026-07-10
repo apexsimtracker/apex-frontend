@@ -19,7 +19,6 @@ import Challenges from "./pages/Challenges";
 import ChallengeDetail from "./pages/ChallengeDetail";
 import Leaderboards from "./pages/Leaderboards";
 import Sessions from "./pages/Sessions";
-import RaceDetail from "./pages/RaceDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -99,6 +98,7 @@ import ManualTopBarV2 from "./pages/v2/manual/ManualTopBarV2";
 import EditActivityV2 from "./pages/v2/EditActivityV2";
 import EditActivityTopBarV2 from "./pages/v2/session/EditActivityTopBarV2";
 import SessionDetailV2 from "./pages/v2/SessionDetailV2";
+import SessionDetailTopBarV2 from "./pages/v2/session/SessionDetailTopBarV2";
 import SessionsV2 from "./pages/v2/SessionsV2";
 import SessionsTopBarV2 from "./pages/v2/sessions/SessionsTopBarV2";
 import PersonalBestsV2 from "./pages/v2/PersonalBestsV2";
@@ -119,6 +119,8 @@ import EULAV2 from "./pages/v2/EULAV2";
 import EULATopBarV2 from "./pages/v2/legal/EULATopBarV2";
 import FAQV2 from "./pages/v2/FAQV2";
 import FAQTopBarV2 from "./pages/v2/faq/FAQTopBarV2";
+import MaintenanceNoticeV2 from "./pages/v2/MaintenanceNoticeV2";
+import MaintenanceNoticeTopBarV2 from "./pages/v2/maintenance/MaintenanceNoticeTopBarV2";
 import LoginV2 from "./pages/v2/LoginV2";
 import LoginTopBarV2 from "./pages/v2/login/LoginTopBarV2";
 import SignupV2 from "./pages/v2/SignupV2";
@@ -331,7 +333,6 @@ function AppShell() {
                 />
                 <Route path="/sessions/:id" element={<SessionDetailPage />} />
                 <Route path="/discussion/:id" element={<DiscussionDetail />} />
-                <Route path="/race/:id" element={<RaceDetail />} />
                 <Route
                   path="/status/maintenance/:maintenanceId"
                   element={<MaintenanceNotice />}
@@ -533,6 +534,17 @@ export default function App() {
                         }
                       />
                       <Route
+                        path="status/maintenance/:maintenanceId"
+                        element={
+                          <V2Layout
+                            topBar={<MaintenanceNoticeTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
+                            <MaintenanceNoticeV2 />
+                          </V2Layout>
+                        }
+                      />
+                      <Route
                         path="contact"
                         element={
                           <V2Layout
@@ -642,7 +654,10 @@ export default function App() {
                       <Route
                         path="challenge/:id"
                         element={
-                          <V2Layout topBar={<ChallengeDetailTopBarV2 />}>
+                          <V2Layout
+                            topBar={<ChallengeDetailTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
                             <ChallengeDetailV2 />
                           </V2Layout>
                         }
@@ -707,7 +722,10 @@ export default function App() {
                       <Route
                         path="sessions/:id"
                         element={
-                          <V2Layout>
+                          <V2Layout
+                            topBar={<SessionDetailTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
                             <SessionDetailV2 />
                           </V2Layout>
                         }
@@ -754,7 +772,10 @@ export default function App() {
                       <Route
                         path="user/:userId"
                         element={
-                          <V2Layout topBar={<UserProfileTopBarV2 />}>
+                          <V2Layout
+                            topBar={<UserProfileTopBarV2 />}
+                            bottomBar={<V2BottomNavV2 />}
+                          >
                             <UserProfileV2 />
                           </V2Layout>
                         }

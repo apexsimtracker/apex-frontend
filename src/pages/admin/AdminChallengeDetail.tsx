@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   banAdminChallengeParticipant,
+  deleteAdminChallengeCover,
   fetchAdminChallengeDetail,
   fetchAdminChallengeLeaderboard,
   fetchAdminChallengeParticipants,
@@ -10,6 +11,7 @@ import {
   removeAdminChallengeParticipant,
   unbanAdminChallengeParticipant,
   updateAdminChallengeBan,
+  uploadAdminChallengeCover,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
@@ -35,6 +37,7 @@ import {
   MANUAL_ACTIVITY_SIMS,
   type ManualActivitySim,
 } from "@/lib/manualActivityData";
+import { resolveChallengeCoverUrl } from "@/lib/challenges/coverImage";
 
 const BAN_REASON_MAX = 500;
 
@@ -157,6 +160,7 @@ type AdminDetail = {
   endedEarlyAt: string | null;
   participantCount: number;
   fastestLapMs: number | null;
+  coverImageUrl?: string | null;
   /** Matches admin list API; derived from creator user name/email. */
   createdByDisplayName: string | null;
   badges?: {
@@ -196,6 +200,9 @@ export default function AdminChallengeDetail() {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
   const [endEarlyOpen, setEndEarlyOpen] = useState(false);
   const [endEarlyError, setEndEarlyError] = useState<string | null>(null);
   /** After first hydrate for this challenge, skip syncing server → form while editing (avoids clobbering edits on refetch). */
@@ -308,6 +315,16 @@ export default function AdminChallengeDetail() {
     if (resolved) setCarId(resolved);
   }, [data, catalogsLoading, cars, carId]);
 
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
+
   const saveMutation = useMutation({
     mutationFn: () => {
       if (isEnded) {
@@ -337,6 +354,32 @@ export default function AdminChallengeDetail() {
     },
     onError: (e) => {
       setFormError(e instanceof ApiError ? e.message : "Save failed");
+    },
+  });
+
+  const coverUploadMutation = useMutation({
+    mutationFn: (file: File) => uploadAdminChallengeCover(id, file),
+    onSuccess: async () => {
+      setCoverFile(null);
+      setCoverError(null);
+      await refetch();
+      await qc.invalidateQueries({ queryKey: ["admin", "challenges"] });
+    },
+    onError: (e) => {
+      setCoverError(e instanceof ApiError ? e.message : "Cover upload failed");
+    },
+  });
+
+  const coverRemoveMutation = useMutation({
+    mutationFn: () => deleteAdminChallengeCover(id),
+    onSuccess: async () => {
+      setCoverFile(null);
+      setCoverError(null);
+      await refetch();
+      await qc.invalidateQueries({ queryKey: ["admin", "challenges"] });
+    },
+    onError: (e) => {
+      setCoverError(e instanceof ApiError ? e.message : "Remove cover failed");
     },
   });
 
@@ -821,6 +864,85 @@ export default function AdminChallengeDetail() {
               </div>
             </div>
           )}
+
+          <div className="mb-8 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                Cover image
+              </h2>
+              <span
+                className={
+                  data.coverImageUrl?.trim()
+                    ? "rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
+                    : "rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/50"
+                }
+              >
+                {data.coverImageUrl?.trim() ? "Custom" : "Default"}
+              </span>
+            </div>
+            <img
+              src={
+                coverPreviewUrl ?? resolveChallengeCoverUrl(data.coverImageUrl)
+              }
+              alt=""
+              className="aspect-video w-full max-w-xl rounded-xl border border-white/10 object-cover"
+            />
+            {editing && (
+              <div className="max-w-xl space-y-2">
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={
+                    coverUploadMutation.isPending ||
+                    coverRemoveMutation.isPending
+                  }
+                  onChange={(e) => {
+                    setCoverError(null);
+                    setCoverFile(e.target.files?.[0] ?? null);
+                  }}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {coverFile && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={coverUploadMutation.isPending}
+                      onClick={() => coverUploadMutation.mutate(coverFile)}
+                    >
+                      {coverUploadMutation.isPending ? "Uploading…" : "Upload"}
+                    </Button>
+                  )}
+                  {coverFile && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={coverUploadMutation.isPending}
+                      onClick={() => setCoverFile(null)}
+                    >
+                      Clear selection
+                    </Button>
+                  )}
+                  {data.coverImageUrl?.trim() && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={coverRemoveMutation.isPending}
+                      onClick={() => coverRemoveMutation.mutate()}
+                    >
+                      {coverRemoveMutation.isPending
+                        ? "Removing…"
+                        : "Remove custom cover"}
+                    </Button>
+                  )}
+                </div>
+                {coverError && (
+                  <p className="text-sm text-destructive">{coverError}</p>
+                )}
+              </div>
+            )}
+          </div>
 
           {!editing && (
             <>

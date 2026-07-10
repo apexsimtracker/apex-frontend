@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toV2Path } from "@/config/navigation";
 import { createBillingPortalSession, getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
 import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
@@ -111,7 +112,7 @@ export function SubscriptionCardV2() {
           variant="outline"
           className={cn("mt-2", v2OutlineButtonClassName)}
         >
-          <Link to="/pricing">Upgrade to Pro</Link>
+          <Link to={toV2Path("/pricing")}>Upgrade to Pro</Link>
         </Button>
       )}
     </div>

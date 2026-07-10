@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import { Upload, PenLine, Cpu } from "lucide-react";
 import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
+import { toV2Path } from "@/config/navigation";
 import ActivityFeedListV2 from "@/components/v2/dashboard/ActivityFeedListV2";
 import OnboardingEmptyStateV2 from "@/components/v2/dashboard/OnboardingEmptyStateV2";
 import {
@@ -222,7 +223,7 @@ function EmptyTelemetryV2() {
           </Link>
         ) : (
           <Link
-            to="/pricing"
+            to={toV2Path("/pricing")}
             className={`${v2OutlineButtonClassName} inline-flex h-11 items-center justify-center px-6 text-v2-primary`}
           >
             Upgrade for Agent

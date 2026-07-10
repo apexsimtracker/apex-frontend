@@ -1,7 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { BaseAlertDialog } from "@/components/ui/base-modal";
 import {
   Form,
   FormControl,
@@ -13,7 +11,13 @@ import {
 import { Input } from "@/components/ui/input";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { DeleteAccountFormValues } from "@/lib/validation/settingsForms";
-import { v2InputClassName } from "@/components/v2/ui/v2ButtonClasses";
+import { cn } from "@/lib/utils";
+import {
+  v2DestructiveButtonClassName,
+  v2InputClassName,
+  v2OutlineButtonClassName,
+} from "@/components/v2/ui/v2ButtonClasses";
+import { V2BaseAlertDialog } from "@/components/v2/ui/V2BaseModal";
 
 type SettingsDeleteDialogV2Props = {
   open: boolean;
@@ -33,7 +37,7 @@ export default function SettingsDeleteDialogV2({
   deleteConfirmPhrase,
 }: SettingsDeleteDialogV2Props) {
   return (
-    <BaseAlertDialog
+    <V2BaseAlertDialog
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title="Delete account"
@@ -52,20 +56,26 @@ export default function SettingsDeleteDialogV2({
       size="sm"
       footer={
         <>
-          <Button
+          <button
             type="button"
-            variant="outline"
+            className={cn(
+              v2OutlineButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             disabled={submitting}
             onClick={() => onOpenChange(false)}
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="submit"
             form="delete-account-form"
-            variant="destructive"
+            className={cn(
+              v2DestructiveButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+              submitting && "cursor-not-allowed opacity-60",
+            )}
             disabled={submitting}
-            className={submitting ? "cursor-not-allowed opacity-60" : undefined}
           >
             {submitting ? (
               <>
@@ -75,7 +85,7 @@ export default function SettingsDeleteDialogV2({
             ) : (
               "Delete permanently"
             )}
-          </Button>
+          </button>
         </>
       }
     >
@@ -134,6 +144,6 @@ export default function SettingsDeleteDialogV2({
           <FormRootMessage className="text-xs text-v2-error" />
         </form>
       </Form>
-    </BaseAlertDialog>
+    </V2BaseAlertDialog>
   );
 }

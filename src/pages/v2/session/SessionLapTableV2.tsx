@@ -14,20 +14,16 @@ type SessionLapTableV2Props = {
   onShowMore: () => void;
 };
 
-// Loveable uses a single green accent for highlighted sectors/laps.
 function loveableHighlightClass(h: TimingHighlight): string {
   return h === "default" ? "text-v2-on-surface" : "text-green-500";
 }
 
-// Loveable bolds a sector cell when its row is the fastest lap OR that sector
-// is the highlighted (fastest) sector, so highlighted sectors stay bold even on
-// non-fastest rows.
 function sectorWeightClass(isFastest: boolean, h: TimingHighlight): string {
   return isFastest || h !== "default" ? "font-bold" : "";
 }
 
 const HEADER_CELL =
-  "px-2 py-3 whitespace-nowrap text-[10px] font-bold tracking-widest text-v2-on-surface-variant";
+  "px-2 py-3 whitespace-nowrap font-v2-headline text-[10px] font-bold tracking-widest text-v2-on-surface-variant";
 
 export default function SessionLapTableV2({
   laps,
@@ -37,7 +33,7 @@ export default function SessionLapTableV2({
   onShowMore,
 }: SessionLapTableV2Props) {
   return (
-    <div className="overflow-hidden rounded-lg bg-v2-surface-container-low shadow-lg">
+    <div className="overflow-hidden rounded-xl bg-v2-surface-container-low shadow-lg">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[320px] border-collapse text-left">
           <thead>
@@ -54,7 +50,7 @@ export default function SessionLapTableV2({
               <tr>
                 <td
                   colSpan={5}
-                  className="px-4 py-10 text-center text-sm text-v2-on-surface-variant"
+                  className="px-4 py-10 text-center font-v2-body text-sm text-v2-on-surface-variant"
                 >
                   No laps recorded yet.
                 </td>
@@ -126,7 +122,7 @@ export default function SessionLapTableV2({
           <button
             type="button"
             onClick={onShowMore}
-            className="text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
+            className="font-v2-body text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
           >
             Show all laps
           </button>

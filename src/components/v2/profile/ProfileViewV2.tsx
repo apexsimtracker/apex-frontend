@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { toV2Path } from "@/config/navigation";
 import { ArrowLeft } from "lucide-react";
 import type {
   FollowRelationship,
@@ -197,7 +198,7 @@ export function ProfileViewV2({
           profile.insight.title &&
           profile.insight.body && (
             <Link
-              to={`/sessions/${profile.insight.sessionId}`}
+              to={toV2Path(`/sessions/${profile.insight.sessionId}`)}
               className="block rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container-low p-4 transition-colors hover:bg-v2-surface-container"
             >
               <div className="font-v2-body text-xs uppercase tracking-wide text-v2-on-surface-variant">
@@ -244,7 +245,7 @@ export function ProfileViewV2({
               }
               raceHistoryLoading={raceHistoryLoading}
               emptyMessage={raceHistoryEmptyMessage}
-              onOpenSession={(sid) => navigate(`/sessions/${sid}`)}
+              onOpenSession={(sid) => navigate(toV2Path(`/sessions/${sid}`))}
               range={raceHistoryRange}
               pagination={
                 raceHistoryPagination

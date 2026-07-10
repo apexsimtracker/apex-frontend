@@ -82,7 +82,9 @@ export function ProfileHeaderV2({
 
   return (
     <section className="flex flex-col py-2">
-      <div className="flex items-center gap-4">
+      <div
+        className={`flex gap-4 ${isCurrentUser ? "items-center" : "items-start"}`}
+      >
         <div className="relative shrink-0">
           {isPro ? (
             <div className="size-20 rounded-lg border-2 border-v2-primary p-0.5">
@@ -168,6 +170,10 @@ export function ProfileHeaderV2({
               </div>
             )}
 
+          <p className="mt-2 font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
+            {bioText}
+          </p>
+
           {!isCurrentUser && onToggleFollow && (
             <button
               type="button"
@@ -192,10 +198,6 @@ export function ProfileHeaderV2({
               )}
             </button>
           )}
-
-          <p className="mt-2 font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
-            {bioText}
-          </p>
         </div>
       </div>
 

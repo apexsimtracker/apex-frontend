@@ -3,15 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Check,
-  CheckCircle,
   Cpu,
   Download,
   FileText,
   Loader2,
   Radio,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { BaseModal } from "@/components/ui/base-modal";
+import AgentUpgradeModalV2 from "@/pages/v2/agent/AgentUpgradeModalV2";
 import { AgentInstallRequirementsV2 } from "@/components/v2/AgentInstallRequirementsV2";
 import { AgentPlatformSelectorV2 } from "@/components/v2/AgentPlatformSelectorV2";
 import AgentProUpgradeCardV2 from "@/components/v2/AgentProUpgradeCardV2";
@@ -21,8 +19,8 @@ import { toast } from "sonner";
 import { downloadAgentBinary } from "@/lib/api/agentDownload";
 import { ApiError, isProRequiredError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
-import { BRAND_RED } from "@/lib/appConfig";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { V2_AUTH_PATHS } from "@/config/navigation";
 import {
   AGENT_DOWNLOAD_FILENAMES,
   type AgentOs,
@@ -139,7 +137,7 @@ export default function AgentV2() {
         toast.error("Sign in required", {
           description: "Log in with an Apex Pro account to download the agent.",
         });
-        navigate("/login");
+        navigate(V2_AUTH_PATHS.login);
         return;
       }
       if (err instanceof ApiError && err.code === "AGENT_OBJECT_NOT_FOUND") {
@@ -381,68 +379,11 @@ export default function AgentV2() {
         </div>
       </div>
 
-      <BaseModal
-        isOpen={upgradeModalOpen}
+      <AgentUpgradeModalV2
+        open={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
-        title="Apex Pro Required"
-        description="Automatic telemetry uploads and the Apex Agent installer are available with Apex Pro."
-        footer={
-          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              className="border-white/15"
-              onClick={() => setUpgradeModalOpen(false)}
-            >
-              Not now
-            </Button>
-            <Button
-              className="text-white hover:opacity-90"
-              style={{ backgroundColor: BRAND_RED }}
-              onClick={() => {
-                setUpgradeModalOpen(false);
-                navigate("/pricing");
-              }}
-            >
-              Upgrade to Pro
-            </Button>
-          </div>
-        }
-      >
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <CheckCircle
-              className="mt-0.5 size-4 shrink-0 text-green-500"
-              aria-hidden
-            />
-            Background F1 25 UDP telemetry capture
-          </li>
-          {selectedOs === "windows" && (
-            <li className="flex items-start gap-2">
-              <CheckCircle
-                className="mt-0.5 size-4 shrink-0 text-green-500"
-                aria-hidden
-              />
-              Automatic iRacing session log uploads
-            </li>
-          )}
-          {selectedOs === "windows" && (
-            <li className="flex items-start gap-2">
-              <CheckCircle
-                className="mt-0.5 size-4 shrink-0 text-green-500"
-                aria-hidden
-              />
-              Automatic Le Mans Ultimate telemetry uploads
-            </li>
-          )}
-          <li className="flex items-start gap-2">
-            <CheckCircle
-              className="mt-0.5 size-4 shrink-0 text-green-500"
-              aria-hidden
-            />
-            Unlimited session history and full analytics
-          </li>
-        </ul>
-      </BaseModal>
+        selectedOs={selectedOs}
+      />
     </>
   );
 }

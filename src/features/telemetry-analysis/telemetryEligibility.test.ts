@@ -12,6 +12,5 @@ describe("isManualIngest", () => {
     expect(isManualIngest(null)).toBe(false);
     expect(isManualIngest(undefined)).toBe(false);
     expect(isManualIngest("agent_upload")).toBe(false);
-    expect(isManualIngest("legacy_laps_ibt")).toBe(false);
   });
 });

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { BaseModal } from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import {
   resolveApiUrl,
@@ -14,6 +13,7 @@ import {
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { v2InputClassName } from "@/components/v2/ui/v2ButtonClasses";
+import { V2BaseModal } from "@/components/v2/ui/V2BaseModal";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -144,7 +144,7 @@ export function UserSearchModalV2({
         : null;
 
   return (
-    <BaseModal
+    <V2BaseModal
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title="Find people"
@@ -204,6 +204,6 @@ export function UserSearchModalV2({
           ) : null}
         </div>
       ) : null}
-    </BaseModal>
+    </V2BaseModal>
   );
 }

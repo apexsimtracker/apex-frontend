@@ -1,9 +1,9 @@
 import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import { ProfileView } from "@/components/ProfileView";
-import { FollowListDialog } from "@/components/FollowListDialog";
+import { ProfileViewV2 } from "@/components/v2/profile/ProfileViewV2";
+import { FollowListDialogV2 } from "@/components/v2/FollowListDialogV2";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   resolveApiUrl,
@@ -17,11 +17,14 @@ import {
   type ProfileSummary,
 } from "@/lib/api";
 import { profileKeys, prefetchFollowList } from "@/lib/profileQueryKeys";
-import { SkeletonBlock } from "@/components/ui/skeleton";
+import ProfileSkeletonV2 from "@/pages/v2/profile/ProfileSkeletonV2";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 
 const USER_PROFILE_V2_PATH = "/v2/user";
+
+const contentRootClassName =
+  "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8";
 
 function emptyProfileSummary(id: string, displayName: string): ProfileSummary {
   const emptyBuckets = {
@@ -145,7 +148,7 @@ export default function UserProfileV2() {
         : "Failed to load profile."
       : null;
 
-  const loading = Boolean(id) && previewQuery.isPending;
+  const previewLoading = Boolean(id) && previewQuery.isPending;
 
   const handleToggleFollow = useCallback(async () => {
     if (!currentUser || !id || currentUser.id === id) return;
@@ -202,8 +205,8 @@ export default function UserProfileV2() {
           path={USER_PROFILE_V2_PATH}
           noindex
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col p-6">
-          <p className="text-center text-lg text-v2-on-surface">
+        <div className={contentRootClassName}>
+          <p className="text-center font-v2-headline text-lg text-v2-on-surface">
             Invalid profile link.
           </p>
         </div>
@@ -215,7 +218,7 @@ export default function UserProfileV2() {
     return <Navigate to="/v2/profile" replace />;
   }
 
-  if (loading || authLoading) {
+  if (previewLoading || authLoading) {
     return (
       <>
         <PageMeta
@@ -223,23 +226,8 @@ export default function UserProfileV2() {
           description={`${COMPANY_NAME} driver profile, stats, and race history.`}
           path={`${USER_PROFILE_V2_PATH}/${id}`}
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto p-6">
-          <SkeletonBlock
-            height={80}
-            className="mb-6 rounded-full bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={120}
-            className="mb-6 rounded-lg bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={200}
-            className="mb-6 rounded-lg bg-v2-surface-container-highest"
-          />
-          <SkeletonBlock
-            height={280}
-            className="rounded-lg bg-v2-surface-container-highest"
-          />
+        <div className={contentRootClassName}>
+          <ProfileSkeletonV2 showBackLink />
         </div>
       </>
     );
@@ -255,17 +243,11 @@ export default function UserProfileV2() {
           setCanonical={false}
           noindex
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col p-6">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
+        <div className={contentRootClassName}>
           <div className="text-center">
-            <p className="text-lg text-v2-on-surface">User not found</p>
+            <p className="font-v2-headline text-lg text-v2-on-surface">
+              User not found
+            </p>
           </div>
         </div>
       </>
@@ -281,22 +263,14 @@ export default function UserProfileV2() {
           path={`${USER_PROFILE_V2_PATH}/${id}`}
           noindex
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col p-6">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
+        <div className={contentRootClassName}>
           <div className="mx-auto max-w-md text-center">
-            <p className="mb-4 text-sm text-v2-error">
+            <p className="mb-4 font-v2-body text-sm text-v2-error">
               {loadError ?? "Something went wrong."}
             </p>
             <Link
               to="/v2/community"
-              className="text-sm text-v2-primary underline underline-offset-2"
+              className="font-v2-body text-sm text-v2-primary transition-colors hover:text-v2-primary/80"
             >
               Back to community
             </Link>
@@ -307,6 +281,26 @@ export default function UserProfileV2() {
   }
 
   const profileLocked = !viewerHasAccess;
+
+  // Keep skeleton until summary stats load — preview alone is not enough for full profiles.
+  const summaryLoading = viewerHasAccess && summaryQuery.isLoading;
+
+  if (summaryLoading) {
+    const skeletonDisplayName = preview.displayName?.trim() || "Driver";
+    return (
+      <>
+        <PageMeta
+          title={`${skeletonDisplayName} | ${COMPANY_NAME}`}
+          description={`${COMPANY_NAME} driver profile, stats, and race history.`}
+          path={`${USER_PROFILE_V2_PATH}/${id}`}
+        />
+        <div className={contentRootClassName}>
+          <ProfileSkeletonV2 showBackLink />
+        </div>
+      </>
+    );
+  }
+
   const profileData: ProfileSummary =
     viewerHasAccess && summaryQuery.data
       ? summaryQuery.data
@@ -349,75 +343,79 @@ export default function UserProfileV2() {
         path={`${USER_PROFILE_V2_PATH}/${id}`}
         image={avatarUrl}
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col overflow-y-auto">
+      <div className={contentRootClassName}>
         {followActionError && (
-          <div className="px-6 pt-4">
-            <div className="flex items-start justify-between gap-3 rounded-lg border border-v2-error/30 bg-v2-error/10 px-4 py-3">
-              <p className="text-sm text-v2-error">{followActionError}</p>
-              <button
-                type="button"
-                onClick={() => setFollowActionError(null)}
-                className="shrink-0 text-sm font-medium text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
-              >
-                Dismiss
-              </button>
-            </div>
+          <div className="mb-6 flex items-start justify-between gap-3 rounded-v2-lg border border-v2-outline-variant/15 bg-v2-error/10 px-4 py-3">
+            <p className="font-v2-body text-sm text-v2-error">
+              {followActionError}
+            </p>
+            <button
+              type="button"
+              onClick={() => setFollowActionError(null)}
+              className="shrink-0 font-v2-body text-sm font-medium text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
+            >
+              Dismiss
+            </button>
           </div>
         )}
-        <div className="profile-v2-view">
-          <ProfileView
-            profile={displayProfile}
-            avatarUrl={avatarUrl || undefined}
-            bio={bio}
-            followersCount={preview.followersCount}
-            followingCount={preview.followingCount}
-            isCurrentUser={false}
-            isFollowing={preview.isFollowing}
-            profileLocked={profileLocked}
-            followRelationship={preview.followRelationship}
-            targetPrivateProfile={preview.privateProfile}
-            followLoading={followLoading}
-            onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
-            onOpenFollowers={
-              viewerHasAccess ? () => setOpenList("followers") : undefined
-            }
-            onOpenFollowing={
-              viewerHasAccess ? () => setOpenList("following") : undefined
-            }
-            onPrefetchFollowers={
-              viewerHasAccess
-                ? () => prefetchFollowList(queryClient, id, "followers")
-                : undefined
-            }
-            onPrefetchFollowing={
-              viewerHasAccess
-                ? () => prefetchFollowList(queryClient, id, "following")
-                : undefined
-            }
-            raceHistoryPagination={
-              viewerHasAccess
-                ? {
-                    page: raceHistoryData?.page ?? raceHistoryPage,
-                    limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
-                    totalPages: raceHistoryData?.totalPages ?? 1,
-                    total: raceHistoryData?.total ?? 0,
-                    items: raceHistoryData?.items ?? [],
-                    loading: raceHistoryLoading,
-                    fetching: raceHistoryFetching,
-                    onPageChange: setRaceHistoryPage,
-                  }
-                : undefined
-            }
-            raceHistoryForbiddenCode={raceHistoryForbiddenCode}
-            isPro={preview.isPro}
-            challengeBadges={preview.challengeBadges}
-            rootClassName="min-h-0 bg-transparent"
-            containerClassName="mx-auto w-full max-w-2xl space-y-6 px-6 py-6"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 inline-flex items-center gap-1.5 font-v2-body text-sm text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
+        >
+          <ChevronLeft className="size-4 shrink-0" aria-hidden />
+          Back
+        </button>
+        <ProfileViewV2
+          profile={displayProfile}
+          avatarUrl={avatarUrl || undefined}
+          bio={bio}
+          followersCount={preview.followersCount}
+          followingCount={preview.followingCount}
+          isCurrentUser={false}
+          isFollowing={preview.isFollowing}
+          profileLocked={profileLocked}
+          followRelationship={preview.followRelationship}
+          targetPrivateProfile={preview.privateProfile}
+          followLoading={followLoading}
+          onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
+          onOpenFollowers={
+            viewerHasAccess ? () => setOpenList("followers") : undefined
+          }
+          onOpenFollowing={
+            viewerHasAccess ? () => setOpenList("following") : undefined
+          }
+          onPrefetchFollowers={
+            viewerHasAccess
+              ? () => prefetchFollowList(queryClient, id, "followers")
+              : undefined
+          }
+          onPrefetchFollowing={
+            viewerHasAccess
+              ? () => prefetchFollowList(queryClient, id, "following")
+              : undefined
+          }
+          raceHistoryPagination={
+            viewerHasAccess
+              ? {
+                  page: raceHistoryData?.page ?? raceHistoryPage,
+                  limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+                  totalPages: raceHistoryData?.totalPages ?? 1,
+                  total: raceHistoryData?.total ?? 0,
+                  items: raceHistoryData?.items ?? [],
+                  loading: raceHistoryLoading,
+                  fetching: raceHistoryFetching,
+                  onPageChange: setRaceHistoryPage,
+                }
+              : undefined
+          }
+          raceHistoryForbiddenCode={raceHistoryForbiddenCode}
+          isPro={preview.isPro}
+          challengeBadges={preview.challengeBadges}
+        />
       </div>
 
-      <FollowListDialog
+      <FollowListDialogV2
         key={`${id}-${openList ?? "closed"}`}
         open={openList !== null}
         onOpenChange={(open) => !open && setOpenList(null)}
