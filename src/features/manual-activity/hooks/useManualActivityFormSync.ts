@@ -95,6 +95,7 @@ export function useManualActivityFormSync(options: {
   }, [sim, form, telemetryMinLapRows]);
 
   useEffect(() => {
+    if (pendingRecent) return;
     if (!sim || tracks.length === 0) return;
     const current = form.getValues("trackId") as string;
     if (current && tracks.some((t) => t.id === current)) return;
@@ -109,9 +110,18 @@ export function useManualActivityFormSync(options: {
     if (current) {
       form.setValue("trackId", "", { shouldValidate: true });
     }
-  }, [sim, tracks, trackToken, trackNameHint, form, resolveCatalogTrackId]);
+  }, [
+    pendingRecent,
+    sim,
+    tracks,
+    trackToken,
+    trackNameHint,
+    form,
+    resolveCatalogTrackId,
+  ]);
 
   useEffect(() => {
+    if (pendingRecent) return;
     if (!sim || cars.length === 0) return;
     const current = form.getValues("carId") as string;
     if (current && cars.some((c) => c.id === current)) return;
@@ -125,27 +135,45 @@ export function useManualActivityFormSync(options: {
     if (current) {
       form.setValue("carId", "", { shouldValidate: true });
     }
-  }, [sim, cars, carToken, carNameHint, form, resolveCatalogCarId]);
+  }, [
+    pendingRecent,
+    sim,
+    cars,
+    carToken,
+    carNameHint,
+    form,
+    resolveCatalogCarId,
+  ]);
 
   useEffect(() => {
-    if (!pendingRecent || tracks.length === 0) return;
+    if (!pendingRecent || !sim || tracks.length === 0) return;
+
     const trackResolved = resolveCatalogTrackId(
       tracks,
       pendingRecent.trackToken,
       pendingRecent.trackName,
     );
-    if (trackResolved) form.setValue("trackId", trackResolved);
+    form.setValue("trackId", trackResolved || pendingRecent.trackToken, {
+      shouldValidate: true,
+    });
+
     if (cars.length > 0) {
       const carResolved = resolveCatalogCarId(
         cars,
         pendingRecent.carToken,
         pendingRecent.carName !== "—" ? pendingRecent.carName : null,
       );
-      if (carResolved) form.setValue("carId", carResolved);
+      form.setValue("carId", carResolved || pendingRecent.carToken, {
+        shouldValidate: true,
+      });
+    } else if (!pendingRecent.carToken) {
+      form.setValue("carId", "", { shouldValidate: true });
     }
+
     setPendingRecent(null);
   }, [
     pendingRecent,
+    sim,
     tracks,
     cars,
     form,

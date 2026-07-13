@@ -8,7 +8,7 @@ import { Capacitor } from "@capacitor/core";
 const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
 
 /** Default local API port (matches apex `PORT` default 10000, not the Vite dev port 8080). */
-const DEFAULT_DEV_API = "http://127.0.0.1:10000";
+const DEFAULT_DEV_API = "http://localhost:10000";
 
 function resolveInitialApiBase(): string {
   return (

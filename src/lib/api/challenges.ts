@@ -47,9 +47,16 @@ export type ChallengeDetail = ChallengeSummary & {
 };
 
 export type ChallengesMeta = {
-  activeChallenges: number;
-  joinedThisSeason: number;
-  yourRank: number | null;
+  tabCounts: {
+    upcoming: number;
+    live: number;
+    past: number;
+    joined: number;
+  };
+  defaultTab: "upcoming" | "live" | "past" | "joined" | null;
+  activeChallenges?: number;
+  joinedThisSeason?: number;
+  yourRank?: number | null;
 };
 
 export async function getChallengesMeta(): Promise<ChallengesMeta> {
@@ -361,6 +368,7 @@ export async function uploadAdminChallengeCover(
   const res = await fetch(url, {
     method: "POST",
     headers: Object.keys(headers).length > 0 ? headers : undefined,
+    credentials: "include",
     body: formData,
   });
 

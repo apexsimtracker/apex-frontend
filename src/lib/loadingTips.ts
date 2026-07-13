@@ -1,5 +1,5 @@
 /** Delay before status lines and tips appear (short loads stay minimal). */
-export const LOADING_EXTENDED_DELAY_MS = 3000;
+export const LOADING_EXTENDED_DELAY_MS = 1500;
 
 /** How long each tip/status stays visible once extended content is shown. */
 export const LOADING_ROTATE_MS = 5000;

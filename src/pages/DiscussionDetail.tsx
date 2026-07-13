@@ -28,7 +28,6 @@ import {
   getDiscussionAuthorId,
   likeDiscussion,
   unlikeDiscussion,
-  recordDiscussionView,
   updateDiscussion,
   deleteDiscussion,
   type Discussion,
@@ -53,27 +52,13 @@ import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SkeletonBlock } from "@/components/ui/skeleton";
+import { useRecordDiscussionView } from "@/hooks/useRecordDiscussionView";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-/** Persists one UUID per browser for anonymous view dedupe; signing in uses a separate server-side key (may double-count once — MVP). */
-const ANON_VIEWER_STORAGE_KEY = "apex_discussion_anon_viewer";
-
-function getOrCreateAnonymousViewerId(): string {
-  try {
-    let v = localStorage.getItem(ANON_VIEWER_STORAGE_KEY);
-    if (!v) {
-      v = crypto.randomUUID();
-      localStorage.setItem(ANON_VIEWER_STORAGE_KEY, v);
-    }
-    return v;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
 
 function categoryLabel(value: string) {
   return DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
@@ -310,34 +295,9 @@ export default function DiscussionDetail() {
     setCommentsPage(1);
   }, [id]);
 
-  useEffect(() => {
-    if (!id || !discussionQuery.isSuccess || !discussion) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const res = user
-          ? await recordDiscussionView(id)
-          : await recordDiscussionView(id, {
-              anonymousId: getOrCreateAnonymousViewerId(),
-            });
-        if (cancelled) return;
-        queryClient.setQueryData<Discussion>(
-          ["discussion", "detail", id],
-          (prev) => (prev ? { ...prev, views: res.views } : prev),
-        );
-        if (res.recorded) {
-          void queryClient.invalidateQueries({ queryKey: ["discussions"] });
-        }
-      } catch {
-        /* view registration is best-effort */
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on identity keys only; `discussion`/`user` objects would over-trigger view recording
-  }, [id, discussionQuery.isSuccess, discussion?.id, user?.id, queryClient]);
+  useRecordDiscussionView(id, {
+    enabled: Boolean(id && discussionQuery.isSuccess && discussion),
+  });
 
   useEffect(() => {
     setPostAvatarFailed(false);

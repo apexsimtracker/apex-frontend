@@ -296,6 +296,7 @@ function buildDefaults(
 interface ManualActivityFormV2Props {
   initialData?: ManualActivityInitialData;
   prefilledFromPrevious?: boolean;
+  hideRecentSessions?: boolean;
   onSubmit: (data: {
     sim: string;
     trackId: string;
@@ -317,6 +318,7 @@ interface ManualActivityFormV2Props {
 export default function ManualActivityFormV2({
   initialData,
   prefilledFromPrevious = false,
+  hideRecentSessions = false,
   onSubmit,
   submitLabel,
   submittingLabel,
@@ -370,7 +372,7 @@ export default function ManualActivityFormV2({
     retry: retryCatalogs,
   } = useCatalogs(sim || null);
   const { recent: recentItems, loading: recentLoading } =
-    useRecentManualSessions();
+    useRecentManualSessions({ enabled: !hideRecentSessions });
 
   useManualActivityFormSync({
     initialData,
@@ -388,9 +390,12 @@ export default function ManualActivityFormV2({
   });
 
   function handleRecentChipClick(item: RecentManualItem) {
-    form.setValue("sim", item.sim);
-    form.setValue("trackId", item.trackId);
-    form.setValue("carId", item.carId ?? "");
+    const currentSim = form.getValues("sim");
+    if (currentSim !== item.sim) {
+      form.setValue("sim", item.sim);
+      form.setValue("trackId", "");
+      form.setValue("carId", "");
+    }
     setPendingRecent({
       trackToken: item.trackId,
       trackName: item.trackName,
@@ -452,10 +457,10 @@ export default function ManualActivityFormV2({
     });
   }
 
-  const showRecent =
-    !recentLoading && recentItems.length > 0 && !catalogsLoading;
+  const showRecent = !recentLoading && recentItems.length > 0;
   const showRecentSection =
-    recentLoading || showRecent || prefilledFromPrevious;
+    !hideRecentSessions &&
+    (recentLoading || showRecent || prefilledFromPrevious);
 
   const lapsRootError = form.getFieldState("laps", formState).error;
   const lapsRootMessage =

@@ -280,7 +280,7 @@ export async function unlikeDiscussion(
   );
 }
 
-/** POST /api/community/discussions/:id/view — idempotent per viewer; optional anonymousId when logged out. */
+/** POST /api/community/discussions/:id/view — idempotent per viewer; send anonymousId whenever available (including when logged in for identity merge). */
 export type DiscussionViewResponse = {
   views: number;
   recorded: boolean;

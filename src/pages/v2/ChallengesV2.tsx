@@ -6,6 +6,7 @@ import ChallengeFeaturedHeroV2 from "@/pages/v2/challenges/ChallengeFeaturedHero
 import ChallengeBrowseRowV2 from "@/pages/v2/challenges/ChallengeBrowseRowV2";
 import ChallengeBrowseListSkeletonV2 from "@/pages/v2/challenges/ChallengeBrowseListSkeletonV2";
 import ChallengesSeasonStatsV2 from "@/pages/v2/challenges/ChallengesSeasonStatsV2";
+import ChallengesSeasonStatsSkeletonV2 from "@/pages/v2/challenges/ChallengesSeasonStatsSkeletonV2";
 import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 import V2NativeSelect from "@/components/v2/ui/V2NativeSelect";
 import {
@@ -20,6 +21,7 @@ import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AuthRedirectState } from "@/auth/authRedirect";
 import { V2_AUTH_PATHS } from "@/config/navigation";
+import { MANUAL_ACTIVITY_SIMS } from "@/lib/manualActivityData";
 import { cn } from "@/lib/utils";
 
 const CHALLENGES_V2_PATH = "/v2/challenges";
@@ -71,12 +73,34 @@ export default function ChallengesV2() {
   const location = useLocation();
   const { user } = useAuth();
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [tab, setTab] = useState<BrowseTab>("upcoming");
+  const [tab, setTab] = useState<BrowseTab | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [simFilter, setSimFilter] = useState<string>("");
   const [carClassFilter, setCarClassFilter] = useState("");
+
+  const hasActiveFilters = Boolean(
+    debouncedQ || simFilter || carClassFilter.trim(),
+  );
+
+  const { data: meta, isPending: metaLoading } = useQuery({
+    queryKey: ["challenges", "meta", user?.id ?? "anon"],
+    queryFn: () => getChallengesMeta(),
+    staleTime: META_STALE_MS,
+  });
+
+  const isResolvingTab =
+    !hasActiveFilters && tab === null && metaLoading;
+
+  useEffect(() => {
+    if (hasActiveFilters) {
+      if (tab === null) setTab("upcoming");
+      return;
+    }
+    if (tab !== null || !meta) return;
+    setTab(meta.defaultTab);
+  }, [hasActiveFilters, tab, meta]);
 
   const joinedTabLoggedOut = tab === "joined" && !user;
 
@@ -89,14 +113,16 @@ export default function ChallengesV2() {
     setPage(1);
   }, [tab, debouncedQ, simFilter, carClassFilter]);
 
-  const listParams = {
-    page,
-    pageSize: PAGE_SIZE,
-    ...listParamsForTab(tab),
-    ...(debouncedQ ? { q: debouncedQ } : {}),
-    ...(simFilter ? { sim: simFilter } : {}),
-    ...(carClassFilter.trim() ? { carClass: carClassFilter.trim() } : {}),
-  };
+  const listParams = tab
+    ? {
+        page,
+        pageSize: PAGE_SIZE,
+        ...listParamsForTab(tab),
+        ...(debouncedQ ? { q: debouncedQ } : {}),
+        ...(simFilter ? { sim: simFilter } : {}),
+        ...(carClassFilter.trim() ? { carClass: carClassFilter.trim() } : {}),
+      }
+    : null;
 
   const listQueryKey = useMemo(
     () =>
@@ -126,8 +152,8 @@ export default function ChallengesV2() {
     isError: listFailed,
   } = useQuery({
     queryKey: listQueryKey,
-    queryFn: () => getChallengeList(listParams),
-    enabled: !joinedTabLoggedOut,
+    queryFn: () => getChallengeList(listParams!),
+    enabled: Boolean(listParams) && !joinedTabLoggedOut,
   });
 
   useEffect(() => {
@@ -145,14 +171,6 @@ export default function ChallengesV2() {
     queryKey: ["challenges", "social", user?.id, challengeIds],
     queryFn: () => getChallengesSocialPreview(challengeIds),
     enabled: Boolean(user) && challengeIds.length > 0,
-  });
-
-  const { data: meta = null } = useQuery({
-    queryKey: ["challenges", "meta", user?.id],
-    queryFn: () => getChallengesMeta(),
-    retry: false,
-    enabled: Boolean(user),
-    staleTime: META_STALE_MS,
   });
 
   const joinMutation = useMutation({
@@ -216,9 +234,18 @@ export default function ChallengesV2() {
 
   const totalPages = listData?.totalPages ?? 1;
   const total = joinedTabLoggedOut ? 0 : (listData?.total ?? 0);
+  const listQueryEnabled = Boolean(listParams) && !joinedTabLoggedOut;
   const listQueryStale = settledListQueryKey !== listQueryKeySerialized;
+
+  const allTabsEmpty =
+    tab === null && !hasActiveFilters && !metaLoading && meta?.defaultTab === null;
+
   const showListSkeleton =
-    !joinedTabLoggedOut && !listFailed && (listLoading || listQueryStale);
+    !joinedTabLoggedOut &&
+    !listFailed &&
+    !allTabsEmpty &&
+    (isResolvingTab ||
+      (listQueryEnabled && (listLoading || listQueryStale)));
 
   const yourRank =
     meta?.yourRank != null && Number.isFinite(meta.yourRank)
@@ -229,9 +256,11 @@ export default function ChallengesV2() {
     tab === "live" && page === 1 && !showListSkeleton && !error && total > 0;
   const listItems = showFeatured ? items.slice(1) : items;
   const listSectionLabel =
-    showFeatured && listItems.length > 0
+    tab && showFeatured && listItems.length > 0
       ? "More live challenges"
-      : TAB_SECTION_LABEL[tab];
+      : tab
+        ? TAB_SECTION_LABEL[tab]
+        : "";
 
   const paginationButtonClassName = cn(
     v2OutlineButtonClassName,
@@ -265,7 +294,12 @@ export default function ChallengesV2() {
           </p>
         </header>
 
-        {user && <ChallengesSeasonStatsV2 meta={meta} yourRank={yourRank} />}
+        {user &&
+          (metaLoading ? (
+            <ChallengesSeasonStatsSkeletonV2 />
+          ) : (
+            <ChallengesSeasonStatsV2 meta={meta ?? null} yourRank={yourRank} />
+          ))}
 
         <section className="flex gap-2 overflow-x-auto pb-1">
           {TAB_CONFIG.map(([key, label]) => {
@@ -291,8 +325,8 @@ export default function ChallengesV2() {
           })}
         </section>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
-          <div className="relative min-w-0 flex-1">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-3">
+          <div className="relative w-full shrink-0 lg:min-w-0 lg:flex-1">
             <Search
               className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-v2-on-surface-variant/60"
               aria-hidden
@@ -305,27 +339,29 @@ export default function ChallengesV2() {
               className={cn(CHALLENGES_FIELD_CLASS, "w-full pl-10 pr-4")}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <V2NativeSelect
-              value={simFilter}
-              onChange={(e) => setSimFilter(e.target.value)}
-              className="min-w-[140px]"
-              aria-label="Simulator"
-            >
-              <option value="">All sims</option>
-              <option value="IRACING">iRacing</option>
-              <option value="F1_25">F1 25</option>
-            </V2NativeSelect>
+          <div className="w-full shrink-0 lg:min-w-0 lg:flex-1">
             <input
               type="text"
               placeholder="Car class"
               value={carClassFilter}
               onChange={(e) => setCarClassFilter(e.target.value)}
-              className={cn(
-                CHALLENGES_FIELD_CLASS,
-                "min-w-[120px] flex-1 px-3",
-              )}
+              className={cn(CHALLENGES_FIELD_CLASS, "w-full px-3")}
             />
+          </div>
+          <div className="w-full shrink-0 lg:w-auto lg:min-w-[140px]">
+            <V2NativeSelect
+              value={simFilter}
+              onChange={(e) => setSimFilter(e.target.value)}
+              className="w-full"
+              aria-label="Simulator"
+            >
+              <option value="">All sims</option>
+              {MANUAL_ACTIVITY_SIMS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </V2NativeSelect>
           </div>
         </div>
 
@@ -340,7 +376,28 @@ export default function ChallengesV2() {
           />
         )}
 
-        {error && !showListSkeleton && (
+        {allTabsEmpty && (
+          <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-v2-lg border border-v2-outline-variant/15 bg-v2-surface-container-low px-6 py-12 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-v2-surface-container-high ring-1 ring-v2-outline-variant/20">
+              <Trophy
+                className="size-7 text-v2-on-surface-variant/50"
+                aria-hidden
+              />
+            </div>
+            <div className="max-w-md space-y-2">
+              <p className="font-v2-headline text-base font-semibold text-v2-on-surface">
+                No challenges right now
+              </p>
+              <p className="font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
+                There are no upcoming, live, past, or joined challenges at the
+                moment. Check back soon — new time-limited competitions are
+                added regularly.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {error && !showListSkeleton && !allTabsEmpty && (
           <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 py-12">
             <Trophy
               className="size-10 text-v2-on-surface-variant/40"
@@ -352,7 +409,7 @@ export default function ChallengesV2() {
           </div>
         )}
 
-        {!showListSkeleton && !error && total === 0 && (
+        {!showListSkeleton && !error && !allTabsEmpty && total === 0 && (
           <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 py-12">
             <Trophy
               className="size-10 text-v2-on-surface-variant/40"
@@ -364,7 +421,7 @@ export default function ChallengesV2() {
           </div>
         )}
 
-        {!showListSkeleton && !error && total > 0 && (
+        {!showListSkeleton && !error && !allTabsEmpty && total > 0 && (
           <div className="space-y-8">
             {showFeatured && (
               <div className="space-y-3">

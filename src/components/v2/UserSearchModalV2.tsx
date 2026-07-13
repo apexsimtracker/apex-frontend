@@ -14,6 +14,7 @@ import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { v2InputClassName } from "@/components/v2/ui/v2ButtonClasses";
 import { V2BaseModal } from "@/components/v2/ui/V2BaseModal";
+import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -159,7 +160,7 @@ export function UserSearchModalV2({
           placeholder="Search by name or email…"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className={`pl-9 ${v2InputClassName}`}
+          className={cn(v2InputClassName, "pl-9")}
           autoComplete="off"
           autoFocus
         />

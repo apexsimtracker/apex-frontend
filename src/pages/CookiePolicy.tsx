@@ -41,10 +41,11 @@ export default function CookiePolicy() {
                   <Link to="/privacy-policy">Privacy Policy</Link>.
                 </p>
                 <p>
-                  <strong>Current implementation note:</strong> we do not set
-                  first-party HTTP cookies for authentication or preferences in
-                  the web application. Session state is maintained using browser
-                  storage APIs and HTTP authorization headers instead.
+                  <strong>Current implementation note:</strong> authentication and
+                  preferences use browser storage APIs and HTTP authorization
+                  headers. We set one first-party HttpOnly cookie (
+                  <code>apex_discussion_anon</code>) to bind anonymous community
+                  discussion view counts to your browser.
                 </p>
               </section>
 
@@ -82,6 +83,17 @@ export default function CookiePolicy() {
                       </tr>
                     </thead>
                     <tbody className="text-foreground/90">
+                      <tr className="border-b border-white/5">
+                        <td className="py-2 pr-4">
+                          <code>apex_discussion_anon</code>
+                        </td>
+                        <td className="py-2 pr-4">HttpOnly cookie</td>
+                        <td className="py-2">
+                          Server-issued anonymous viewer ID for community
+                          discussion view deduplication (sent automatically on
+                          view API requests; not readable by page JavaScript)
+                        </td>
+                      </tr>
                       <tr className="border-b border-white/5">
                         <td className="py-2 pr-4">
                           <code>apex_token</code>
@@ -193,8 +205,18 @@ export default function CookiePolicy() {
                         </td>
                         <td className="py-2 pr-4">localStorage</td>
                         <td className="py-2">
-                          Anonymous viewer ID for unauthenticated community
-                          discussion views
+                          Anonymous viewer ID for community discussion views
+                          (client-side; used for identity merge when signing in)
+                        </td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="py-2 pr-4">
+                          <code>apex_discussion_viewed</code>
+                        </td>
+                        <td className="py-2 pr-4">localStorage</td>
+                        <td className="py-2">
+                          Capped list of discussion IDs already counted in this
+                          browser (avoids duplicate view requests on refresh)
                         </td>
                       </tr>
                     </tbody>

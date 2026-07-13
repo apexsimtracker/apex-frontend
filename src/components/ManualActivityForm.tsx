@@ -304,9 +304,12 @@ export default function ManualActivityForm({
   });
 
   function handleRecentChipClick(item: RecentManualItem) {
-    form.setValue("sim", item.sim);
-    form.setValue("trackId", item.trackId);
-    form.setValue("carId", item.carId ?? "");
+    const currentSim = form.getValues("sim");
+    if (currentSim !== item.sim) {
+      form.setValue("sim", item.sim);
+      form.setValue("trackId", "");
+      form.setValue("carId", "");
+    }
     setPendingRecent({
       trackToken: item.trackId,
       trackName: item.trackName,
@@ -365,8 +368,7 @@ export default function ManualActivityForm({
     });
   }
 
-  const showRecent =
-    !recentLoading && recentItems.length > 0 && !catalogsLoading;
+  const showRecent = !recentLoading && recentItems.length > 0;
   const showQuickFill = showRecent || prefilledFromPrevious;
 
   return (

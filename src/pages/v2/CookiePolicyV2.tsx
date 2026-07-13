@@ -60,10 +60,10 @@ export default function CookiePolicyV2() {
                 <strong className="text-v2-on-surface">
                   Current implementation note:
                 </strong>{" "}
-                we do not set first-party HTTP cookies for authentication or
-                preferences in the web application. Session state is maintained
-                using browser storage APIs and HTTP authorization headers
-                instead.
+                authentication and preferences use browser storage APIs and HTTP
+                authorization headers. We set one first-party HttpOnly cookie (
+                <code className={codeClassName}>apex_discussion_anon</code>) to
+                bind anonymous community discussion view counts to your browser.
               </p>
             </section>
 
@@ -105,6 +105,19 @@ export default function CookiePolicyV2() {
                     </tr>
                   </thead>
                   <tbody>
+                    <tr className="border-b border-v2-outline-variant/10">
+                      <td className="py-2 pr-4 text-v2-on-surface-variant">
+                        <code className={codeClassName}>apex_discussion_anon</code>
+                      </td>
+                      <td className="py-2 pr-4 text-v2-on-surface-variant">
+                        HttpOnly cookie
+                      </td>
+                      <td className="py-2 text-v2-on-surface-variant">
+                        Server-issued anonymous viewer ID for community
+                        discussion view deduplication (sent automatically on view
+                        API requests; not readable by page JavaScript)
+                      </td>
+                    </tr>
                     <tr className="border-b border-v2-outline-variant/10">
                       <td className="py-2 pr-4 text-v2-on-surface-variant">
                         <code className={codeClassName}>apex_token</code>
@@ -255,8 +268,22 @@ export default function CookiePolicyV2() {
                         localStorage
                       </td>
                       <td className="py-2 text-v2-on-surface-variant">
-                        Anonymous viewer ID for unauthenticated community
-                        discussion views
+                        Anonymous viewer ID for community discussion views
+                        (client-side; used for identity merge when signing in)
+                      </td>
+                    </tr>
+                    <tr className="border-b border-v2-outline-variant/10">
+                      <td className="py-2 pr-4 text-v2-on-surface-variant">
+                        <code className={codeClassName}>
+                          apex_discussion_viewed
+                        </code>
+                      </td>
+                      <td className="py-2 pr-4 text-v2-on-surface-variant">
+                        localStorage
+                      </td>
+                      <td className="py-2 text-v2-on-surface-variant">
+                        Capped list of discussion IDs already counted in this
+                        browser (avoids duplicate view requests on refresh)
                       </td>
                     </tr>
                   </tbody>

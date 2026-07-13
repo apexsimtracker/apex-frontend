@@ -191,6 +191,7 @@ export default function ManualActivityV2() {
           <ManualActivityFormV2
             initialData={initialData}
             prefilledFromPrevious={prefilledFromPrevious}
+            hideRecentSessions={isChallengeLinked}
             onSubmit={handleSubmit}
             submitLabel="Save session"
             submittingLabel="Saving…"

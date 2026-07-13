@@ -16,6 +16,7 @@ export * from "./authAndContact";
 export * from "./adminMetrics";
 export * from "./dataExport";
 export * from "./activityBilling";
+export * from "./sessionsLibrary";
 export * from "./manualAndUpload";
 export * from "./challenges";
 export * from "./adminUsers";

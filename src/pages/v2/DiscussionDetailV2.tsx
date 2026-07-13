@@ -17,7 +17,6 @@ import {
   getDiscussionAuthorId,
   likeDiscussion,
   unlikeDiscussion,
-  recordDiscussionView,
   updateDiscussion,
   deleteDiscussion,
   type Discussion,
@@ -48,26 +47,11 @@ import {
   normalizeDiscussionReplyBody,
   DISCUSSION_REPLY_MAX_LENGTH,
 } from "@/pages/v2/discussion/discussionReplyUtils";
+import { useRecordDiscussionView } from "@/hooks/useRecordDiscussionView";
 
 const COMMUNITY_V2_PATH = "/v2/community";
 const COMMENTS_SORT = "desc" as const;
 const DEFAULT_REPLY_BAR_HEIGHT = 120;
-
-/** Persists one UUID per browser for anonymous view dedupe; signing in uses a separate server-side key (may double-count once — MVP). */
-const ANON_VIEWER_STORAGE_KEY = "apex_discussion_anon_viewer";
-
-function getOrCreateAnonymousViewerId(): string {
-  try {
-    let v = localStorage.getItem(ANON_VIEWER_STORAGE_KEY);
-    if (!v) {
-      v = crypto.randomUUID();
-      localStorage.setItem(ANON_VIEWER_STORAGE_KEY, v);
-    }
-    return v;
-  } catch {
-    return crypto.randomUUID();
-  }
-}
 
 function discussionLoadErrorMessage(e: unknown): string {
   if (e instanceof ApiError && e.status === 404) return "Discussion not found.";
@@ -353,36 +337,9 @@ export default function DiscussionDetailV2() {
     setCommentsPage(1);
   }, [id]);
 
-  useEffect(() => {
-    if (!id || !discussionQuery.isSuccess || !discussion) return;
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const res = user
-          ? await recordDiscussionView(id)
-          : await recordDiscussionView(id, {
-              anonymousId: getOrCreateAnonymousViewerId(),
-            });
-        if (cancelled) return;
-        queryClient.setQueryData<Discussion>(
-          ["discussion", "detail", id],
-          (prev) => (prev ? { ...prev, views: res.views } : prev),
-        );
-        if (res.recorded) {
-          void queryClient.invalidateQueries({
-            queryKey: ["discussions"],
-          });
-        }
-      } catch {
-        /* view registration is best-effort */
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on identity keys only; `discussion`/`user` objects would over-trigger view recording
-  }, [id, discussionQuery.isSuccess, discussion?.id, user?.id, queryClient]);
+  useRecordDiscussionView(id, {
+    enabled: Boolean(id && discussionQuery.isSuccess && discussion),
+  });
 
   useEffect(() => {
     setPostAvatarFailed(false);

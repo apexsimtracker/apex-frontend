@@ -120,6 +120,7 @@ export async function fetchApi<T>(
     res = await fetch(url, {
       method,
       headers,
+      credentials: "include",
       body: hasJsonBody ? JSON.stringify(body) : undefined,
     });
   } catch {

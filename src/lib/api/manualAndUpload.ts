@@ -193,8 +193,9 @@ export async function uploadSessionFile(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
-    // Do not set `withCredentials`: API CORS uses `credentials: false`; credentialed XHR breaks
-    // cross-origin uploads (e.g. Vite on :8080 → API on :10000). Auth uses Bearer + X-Apex-Session.
+    // Auth uses Bearer + X-Apex-Session headers (not cookies). Keep XHR non-credentialed so
+    // discussion anon cookies are not required for uploads; CORS credentials:true on the API
+    // still allows this as long as Access-Control-Allow-Origin echoes the request Origin.
     for (const [name, value] of Object.entries(authHeaders)) {
       xhr.setRequestHeader(name, value);
     }
