@@ -94,6 +94,13 @@ export async function extractErrorInfo(
   }
 }
 
+export type FetchApiOptions = {
+  /** When true, skip calling the auth-expired handler on 401 (login, register, authMe, etc.). */
+  skipAuthExpiredCheck?: boolean;
+  /** Only set for cross-origin cookie endpoints (e.g. discussion view anon cookie). */
+  credentials?: RequestCredentials;
+};
+
 // Central fetch handler (exported for auth/api and other modules that need it).
 // Token is read from localStorage "apex_token". On 401, notifyAuthExpired runs the registered handler
 // (unless skipAuthExpiredCheck) so AuthContext can sync user state; token clearing is left to the handler/backend.
@@ -101,9 +108,11 @@ export async function fetchApi<T>(
   method: string,
   path: string,
   body?: unknown,
-  /** When true, skip calling the auth-expired handler on 401 (login, register, authMe, etc.). */
-  skipAuthExpiredCheck = false,
+  options: boolean | FetchApiOptions = false,
 ): Promise<T> {
+  const opts: FetchApiOptions =
+    typeof options === "boolean" ? { skipAuthExpiredCheck: options } : options;
+  const skipAuthExpiredCheck = opts.skipAuthExpiredCheck ?? false;
   const hasJsonBody = body !== undefined;
   const headers: Record<string, string> = {
     // Only when we send a body: Fastify rejects Content-Type: application/json with an empty body.
@@ -120,7 +129,7 @@ export async function fetchApi<T>(
     res = await fetch(url, {
       method,
       headers,
-      credentials: "include",
+      ...(opts.credentials ? { credentials: opts.credentials } : {}),
       body: hasJsonBody ? JSON.stringify(body) : undefined,
     });
   } catch {

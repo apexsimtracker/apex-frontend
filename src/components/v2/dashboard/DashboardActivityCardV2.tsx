@@ -119,13 +119,13 @@ type StatCellProps = {
 
 function StatCell({ label, value, valueClassName, className }: StatCellProps) {
   return (
-    <div className={className}>
-      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-v2-on-surface-variant">
+    <div className={cn("min-w-0", className)}>
+      <p className="mb-0.5 text-[9px] font-bold uppercase tracking-wider text-v2-on-surface-variant">
         {label}
       </p>
       <p
         className={cn(
-          "font-v2-headline text-sm font-bold text-v2-on-surface",
+          "font-v2-headline text-xs font-bold text-v2-on-surface lg:text-sm",
           valueClassName,
         )}
       >
@@ -168,13 +168,13 @@ function DashboardPositionRowV2({
   return (
     <div className="flex items-center justify-between pt-1">
       <div>
-        <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
+        <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
           Position
         </p>
-        <p className="font-v2-headline text-3xl font-bold leading-none text-v2-on-surface">
+        <p className="font-v2-headline text-2xl font-bold leading-none text-v2-on-surface">
           {rank}
           {suffix ? (
-            <span className="text-lg font-semibold text-v2-on-surface-variant">
+            <span className="text-base font-semibold text-v2-on-surface-variant">
               {suffix}
             </span>
           ) : null}
@@ -182,7 +182,7 @@ function DashboardPositionRowV2({
       </div>
       {pos >= 1 && pos <= 3 && trophyClassName ? (
         <Trophy
-          className={cn("size-10 shrink-0", trophyClassName)}
+          className={cn("size-8 shrink-0", trophyClassName)}
           aria-hidden
           fill="currentColor"
         />
@@ -219,8 +219,8 @@ function DashboardStatsRowV2({
   return (
     <div
       className={cn(
-        "grid divide-x divide-v2-outline-variant/10 border-t border-v2-outline-variant/10 pt-4",
-        columns === 3 && "grid-cols-3",
+        "grid gap-x-3 gap-y-2 border-t border-v2-outline-variant/10 pt-3 sm:gap-3",
+        columns === 3 && "grid-cols-2 sm:grid-cols-3",
         columns === 2 && "grid-cols-2",
         columns === 1 && "grid-cols-1",
       )}
@@ -230,18 +230,16 @@ function DashboardStatsRowV2({
           label="Fastest"
           value={formatLapMs(bestLapMs)}
           valueClassName={fastestLapClassName}
-          className="pr-3"
         />
       )}
-      {showLaps && (
-        <StatCell
-          label="Laps"
-          value={String(lapCount ?? 0)}
-          className={cn(showFastest ? "px-3" : "pr-3")}
-        />
-      )}
+      {showLaps && <StatCell label="Laps" value={String(lapCount ?? 0)} />}
       {showCar && (
-        <StatCell label="Car" value={carLabel} className="truncate pl-3" />
+        <StatCell
+          label="Car"
+          value={carLabel}
+          valueClassName="truncate"
+          className={cn(columns === 3 && "col-span-2 sm:col-span-1")}
+        />
       )}
     </div>
   );
@@ -493,7 +491,7 @@ export default function DashboardActivityCardV2(
         className="cursor-pointer overflow-hidden rounded-2xl border border-v2-outline-variant/10 bg-v2-surface-container-low transition-colors hover:bg-v2-surface-container-low/90"
         onClick={handleShellClick}
       >
-        <div className="space-y-5 p-5">
+        <div className="space-y-3 p-4 lg:p-5">
           <div className="flex items-center justify-between">
             <div className="flex min-w-0 items-center gap-3">
               {profileUserId ? (
@@ -566,7 +564,7 @@ export default function DashboardActivityCardV2(
               <img
                 src={disciplineLogo}
                 alt=""
-                className="h-7 w-auto shrink-0 object-contain opacity-90"
+                className="h-5 w-auto max-w-[3.5rem] shrink-0 object-contain opacity-90 sm:h-7 sm:max-w-none"
               />
             ) : null}
           </div>
@@ -585,7 +583,7 @@ export default function DashboardActivityCardV2(
                   {city}
                 </p>
               ) : null}
-              <h3 className="font-v2-headline text-2xl font-bold leading-tight text-v2-on-surface">
+              <h3 className="font-v2-headline text-lg font-bold leading-tight text-v2-on-surface lg:text-xl">
                 {trackTitle}
               </h3>
             </div>
@@ -612,7 +610,7 @@ export default function DashboardActivityCardV2(
             positionRank={positionRank}
           />
 
-          <div className="flex items-center justify-between border-t border-v2-outline-variant/10 pt-3">
+          <div className="flex items-center justify-between border-t border-v2-outline-variant/10 pt-2">
             <div className="flex items-center gap-5 text-v2-on-surface-variant">
               <button
                 type="button"

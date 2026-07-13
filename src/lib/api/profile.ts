@@ -246,13 +246,27 @@ export async function patchPrivacySettings(
 }
 
 /** PATCH /api/settings/notifications — Bearer session */
+export type InAppNotificationPrefs = {
+  social: boolean;
+  challenges: boolean;
+  activity: boolean;
+  account: boolean;
+};
+
 export type NotificationSettingsPayload = {
   emailNotifications: boolean;
   showNotificationBadge: boolean;
+  inAppNotificationPrefs: InAppNotificationPrefs;
+};
+
+export type NotificationSettingsPatch = {
+  emailNotifications?: boolean;
+  showNotificationBadge?: boolean;
+  inAppNotificationPrefs?: Partial<InAppNotificationPrefs>;
 };
 
 export async function patchNotificationSettings(
-  body: Partial<NotificationSettingsPayload>,
+  body: NotificationSettingsPatch,
 ): Promise<NotificationSettingsPayload> {
   return fetchApi<NotificationSettingsPayload>(
     "PATCH",
@@ -275,18 +289,30 @@ export type NotificationItem = {
     | "FOLLOW"
     | "FOLLOW_REQUEST"
     | "FOLLOW_REQUEST_ACCEPTED"
+    | "FOLLOW_REQUEST_DECLINED"
     | "REPLY"
     | "COMMENT"
+    | "SESSION_LIKE"
+    | "SESSION_COMMENT"
+    | "CHALLENGE_STARTED"
+    | "CHALLENGE_ENDED"
+    | "CHALLENGE_WON"
+    | "CHALLENGE_BANNED"
+    | "CHALLENGE_REMOVED"
+    | "SUBSCRIPTION_ACTIVATED"
+    | "SUBSCRIPTION_CANCELLED"
+    | "SUBSCRIPTION_EXPIRED"
+    | "ACCOUNT_SUSPENDED"
     | "SYSTEM_ANNOUNCEMENT";
   entityId: string | null;
   read: boolean;
   createdAt: string;
-  /** Populated only for SYSTEM_ANNOUNCEMENT */
+  /** Populated for rich/system notifications */
   title?: string | null;
   body?: string | null;
   linkUrl?: string | null;
   severity?: NotificationSeverity | null;
-  /** Null for SYSTEM_ANNOUNCEMENT (no actor user). */
+  /** Null for rich/system notifications without an actor. */
   actor: {
     id: string;
     displayName: string;

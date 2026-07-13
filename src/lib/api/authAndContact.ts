@@ -6,7 +6,7 @@ import {
 } from "./fetchClient";
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
-import type { SessionVisibility } from "./profile";
+import type { SessionVisibility, InAppNotificationPrefs } from "./profile";
 
 // Auth — backend may return { id, email, displayName?, createdAt? } at top level (no user wrapper)
 export type AuthUser = {
@@ -35,6 +35,7 @@ export type AuthUser = {
   emailNotifications?: boolean;
   /** Navbar unread badge; notifications panel still works when false. */
   showNotificationBadge?: boolean;
+  inAppNotificationPrefs?: InAppNotificationPrefs;
 };
 
 /** Body for PATCH /api/auth/me. Backend may use "bio" or "tagline"; we send both so either works. */
@@ -85,7 +86,6 @@ export async function uploadProfileAvatar(
   const res = await fetch(url, {
     method: "POST",
     headers: Object.keys(headers).length > 0 ? headers : undefined,
-    credentials: "include",
     body: formData,
   });
 
@@ -181,7 +181,6 @@ export async function authRegister(
   );
 }
 
-/** @deprecated Use authRegister. Kept for compatibility. */
 /** POST /api/auth/forgot-password — request reset code via email. Body: { email }. */
 export async function requestPasswordReset(
   email: string,

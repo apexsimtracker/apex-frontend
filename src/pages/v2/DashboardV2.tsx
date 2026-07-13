@@ -73,7 +73,7 @@ function FeedSkeletonCardV2() {
   const blockClassName = "bg-v2-surface-container-high/80";
   return (
     <div className="animate-pulse overflow-hidden rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container-low shadow-sm">
-      <div className="space-y-5 p-5">
+      <div className="space-y-3 p-4 lg:p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SkeletonBlock

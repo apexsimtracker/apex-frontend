@@ -74,7 +74,6 @@ export async function getAgentDownloadLink(
     res = await fetch(agentDownloadEndpoint(os), {
       method: "GET",
       headers: buildApiAuthHeaders(),
-      credentials: "include",
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");

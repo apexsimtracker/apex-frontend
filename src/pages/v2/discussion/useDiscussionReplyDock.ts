@@ -3,6 +3,11 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 export type DiscussionReplyDockMode = "pinned" | "docked";
 
 const DOCK_TOUCH_PX = 8;
+const PAGE_SCROLL_THRESHOLD_PX = 8;
+
+type UseDiscussionReplyDockOptions = {
+  dockAnchorRef?: RefObject<HTMLElement | null>;
+};
 
 type UseDiscussionReplyDockResult = {
   slotRef: RefObject<HTMLDivElement>;
@@ -15,7 +20,33 @@ function inViewportBottomTouchZone(bottom: number, vh: number): boolean {
   return Math.abs(bottom - vh) <= DOCK_TOUCH_PX;
 }
 
-export function useDiscussionReplyDock(): UseDiscussionReplyDockResult {
+function pageCanScroll(vh: number): boolean {
+  return (
+    document.documentElement.scrollHeight > vh + PAGE_SCROLL_THRESHOLD_PX
+  );
+}
+
+/**
+ * Auto-dock without user scroll — short pages, or initial layout when the slot
+ * is already in view. Intentionally excludes the touch-zone case while the user
+ * has scrolled down on a long thread, so scroll-up repin is not immediately undone.
+ */
+function shouldAutoDock(
+  vh: number,
+  slotBottom: number,
+  scrollY: number,
+): boolean {
+  if (!pageCanScroll(vh)) return true;
+  return (
+    scrollY <= PAGE_SCROLL_THRESHOLD_PX &&
+    slotBottom <= vh + DOCK_TOUCH_PX
+  );
+}
+
+export function useDiscussionReplyDock(
+  options: UseDiscussionReplyDockOptions = {},
+): UseDiscussionReplyDockResult {
+  const { dockAnchorRef } = options;
   const slotRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<DiscussionReplyDockMode>("pinned");
@@ -23,6 +54,7 @@ export function useDiscussionReplyDock(): UseDiscussionReplyDockResult {
   const lastScrollYRef = useRef(0);
   const lastSlotBottomRef = useRef<number | null>(null);
   const modeRef = useRef<DiscussionReplyDockMode>("pinned");
+  const observedAnchorRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -69,6 +101,12 @@ export function useDiscussionReplyDock(): UseDiscussionReplyDockResult {
       const crossedUpFromBelowViewport =
         prevSlotBottom > vh + DOCK_TOUCH_PX && slotBottom <= vh + DOCK_TOUCH_PX;
 
+      // Short-page / initial in-view slot: keep reply bar in document flow.
+      if (currentMode === "pinned" && shouldAutoDock(vh, slotBottom, scrollY)) {
+        setMode("docked");
+        return;
+      }
+
       // Docked while the natural slot is still below the viewport — bar would be off-screen.
       if (currentMode === "docked" && slotBottom > vh + DOCK_TOUCH_PX) {
         setMode("pinned");
@@ -94,8 +132,28 @@ export function useDiscussionReplyDock(): UseDiscussionReplyDockResult {
       }
     };
 
-    const ro = new ResizeObserver(update);
+    const ro = new ResizeObserver(() => {
+      const anchor = dockAnchorRef?.current ?? null;
+      if (anchor && anchor !== observedAnchorRef.current) {
+        if (observedAnchorRef.current) {
+          ro.unobserve(observedAnchorRef.current);
+        }
+        ro.observe(anchor);
+        observedAnchorRef.current = anchor;
+      }
+      update();
+    });
     ro.observe(bar);
+
+    const slot = slotRef.current;
+    if (slot) ro.observe(slot);
+
+    const initialAnchor = dockAnchorRef?.current ?? null;
+    if (initialAnchor) {
+      ro.observe(initialAnchor);
+      observedAnchorRef.current = initialAnchor;
+    }
+
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
     mq.addEventListener("change", update);
@@ -109,7 +167,7 @@ export function useDiscussionReplyDock(): UseDiscussionReplyDockResult {
       window.removeEventListener("resize", update);
       mq.removeEventListener("change", update);
     };
-  }, []);
+  }, [dockAnchorRef]);
 
   return { slotRef, barRef, mode, barHeight };
 }

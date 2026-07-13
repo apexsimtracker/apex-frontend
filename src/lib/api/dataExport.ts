@@ -32,7 +32,6 @@ export async function downloadUserDataExport(options?: {
     res = await fetch(url, {
       method: "GET",
       headers: buildApiAuthHeaders(),
-      credentials: "include",
     });
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");

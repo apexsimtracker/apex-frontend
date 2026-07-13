@@ -80,13 +80,6 @@ export const logSessionMenuItemsV2: LogSessionMenuItemV2[] = [
   },
 ];
 
-/** @deprecated Use logSessionMenuItemsV2 */
-export const createMenuItemsV2 = logSessionMenuItemsV2.map((item) => ({
-  label: item.title,
-  to: item.to,
-  icon: item.icon === "agent" ? ("upload" as const) : item.icon,
-}));
-
 export type AccountMenuItem = {
   label: string;
   to: string;
@@ -103,11 +96,6 @@ export const accountMenuItems: AccountMenuItem[] = [
   { label: "Settings", to: "/settings" },
   { label: "Agent", to: "/agent", webOnly: true },
   { label: "Admin dashboard", to: "/admin", adminOnly: true },
-];
-
-export const createMenuItems = [
-  { label: "Upload Session", to: "/upload", icon: "upload" as const },
-  { label: "Log Manual Activity", to: "/manual", icon: "manual" as const },
 ];
 
 export const footerProductLinks: FooterLinkItem[] = [

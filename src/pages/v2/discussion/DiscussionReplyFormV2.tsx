@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
 import DiscussionReplyComposeV2, {
   type DiscussionReplyComposeV2Props,
 } from "@/pages/v2/discussion/DiscussionReplyComposeV2";
@@ -6,6 +6,7 @@ import { useDiscussionReplyDock } from "@/pages/v2/discussion/useDiscussionReply
 import { cn } from "@/lib/utils";
 
 type DiscussionReplyFormV2Props = DiscussionReplyComposeV2Props & {
+  dockAnchorRef?: RefObject<HTMLElement | null>;
   onDockMetricsChange?: (metrics: {
     pinned: boolean;
     barHeight: number;
@@ -13,10 +14,13 @@ type DiscussionReplyFormV2Props = DiscussionReplyComposeV2Props & {
 };
 
 export default function DiscussionReplyFormV2({
+  dockAnchorRef,
   onDockMetricsChange,
   ...composeProps
 }: DiscussionReplyFormV2Props) {
-  const { slotRef, barRef, mode, barHeight } = useDiscussionReplyDock();
+  const { slotRef, barRef, mode, barHeight } = useDiscussionReplyDock({
+    dockAnchorRef,
+  });
   const pinned = mode === "pinned";
 
   useEffect(() => {

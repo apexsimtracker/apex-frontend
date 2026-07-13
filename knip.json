@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "scripts/generate-sitemap.mjs",
+    "playwright.config.ts",
+    "vitest.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{js,mjs}", "tests/**/*.{ts,tsx}"]
+}

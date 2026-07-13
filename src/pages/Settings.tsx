@@ -17,7 +17,8 @@ import {
   patchNotificationSettings,
   type DataExportFormat,
 } from "@/lib/api";
-import { getApexSettings, type ApexSettings } from "@/lib/settingsStorage";
+import { getApexSettings, type ApexSettings, DEFAULT_IN_APP_NOTIFICATION_PREFS } from "@/lib/settingsStorage";
+import type { InAppNotificationPrefs } from "@/lib/api";
 import { SettingsCard } from "@/features/settings/components/SettingsCard";
 import { SettingsRow } from "@/features/settings/components/SettingsRow";
 import { SubscriptionCard } from "@/features/settings/components/SubscriptionCard";
@@ -136,6 +137,39 @@ export default function Settings() {
 
   usePersistApexToStorageEffect(settings);
 
+  const applyNotificationSettingsResponse = useCallback(
+    (updated: {
+      emailNotifications: boolean;
+      showNotificationBadge: boolean;
+      inAppNotificationPrefs: InAppNotificationPrefs;
+    }) => {
+      setSettings((s) => ({
+        ...s,
+        emailNotifications: updated.emailNotifications,
+        showNotificationBadge: updated.showNotificationBadge,
+        inAppNotificationPrefs: updated.inAppNotificationPrefs,
+      }));
+      if (user) {
+        setUser({
+          ...user,
+          emailNotifications: updated.emailNotifications,
+          showNotificationBadge: updated.showNotificationBadge,
+          inAppNotificationPrefs: updated.inAppNotificationPrefs,
+        });
+      }
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
+        if (!old || typeof old !== "object") return old;
+        return {
+          ...(old as Record<string, unknown>),
+          emailNotifications: updated.emailNotifications,
+          showNotificationBadge: updated.showNotificationBadge,
+          inAppNotificationPrefs: updated.inAppNotificationPrefs,
+        };
+      });
+    },
+    [queryClient, setUser, user],
+  );
+
   const applyNotificationToggle = useCallback(
     async (
       key: "emailNotifications" | "showNotificationBadge",
@@ -146,26 +180,7 @@ export default function Settings() {
       setNotificationSaving(true);
       try {
         const updated = await patchNotificationSettings({ [key]: value });
-        setSettings((s) => ({
-          ...s,
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        }));
-        if (user) {
-          setUser({
-            ...user,
-            emailNotifications: updated.emailNotifications,
-            showNotificationBadge: updated.showNotificationBadge,
-          });
-        }
-        queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
-          if (!old || typeof old !== "object") return old;
-          return {
-            ...(old as Record<string, unknown>),
-            emailNotifications: updated.emailNotifications,
-            showNotificationBadge: updated.showNotificationBadge,
-          };
-        });
+        applyNotificationSettingsResponse(updated);
       } catch (e) {
         setSettings((s) => ({ ...s, [key]: prev }));
         const msg =
@@ -179,7 +194,39 @@ export default function Settings() {
         setNotificationSaving(false);
       }
     },
-    [queryClient, setUser, settings, user],
+    [applyNotificationSettingsResponse, settings],
+  );
+
+  const applyInAppCategoryToggle = useCallback(
+    async (key: keyof InAppNotificationPrefs, value: boolean) => {
+      const prev = settings.inAppNotificationPrefs[key];
+      setSettings((s) => ({
+        ...s,
+        inAppNotificationPrefs: { ...s.inAppNotificationPrefs, [key]: value },
+      }));
+      setNotificationSaving(true);
+      try {
+        const updated = await patchNotificationSettings({
+          inAppNotificationPrefs: { [key]: value },
+        });
+        applyNotificationSettingsResponse(updated);
+      } catch (e) {
+        setSettings((s) => ({
+          ...s,
+          inAppNotificationPrefs: { ...s.inAppNotificationPrefs, [key]: prev },
+        }));
+        const msg =
+          e instanceof ApiError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : "Could not save notification settings.";
+        toast.error(msg);
+      } finally {
+        setNotificationSaving(false);
+      }
+    },
+    [applyNotificationSettingsResponse, settings.inAppNotificationPrefs],
   );
 
   const handleResetNotificationDefaults = useCallback(async () => {
@@ -188,27 +235,9 @@ export default function Settings() {
       const updated = await patchNotificationSettings({
         emailNotifications: true,
         showNotificationBadge: true,
+        inAppNotificationPrefs: { ...DEFAULT_IN_APP_NOTIFICATION_PREFS },
       });
-      setSettings((s) => ({
-        ...s,
-        emailNotifications: updated.emailNotifications,
-        showNotificationBadge: updated.showNotificationBadge,
-      }));
-      if (user) {
-        setUser({
-          ...user,
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        });
-      }
-      queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
-        if (!old || typeof old !== "object") return old;
-        return {
-          ...(old as Record<string, unknown>),
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        };
-      });
+      applyNotificationSettingsResponse(updated);
     } catch (e) {
       const msg =
         e instanceof ApiError
@@ -220,7 +249,7 @@ export default function Settings() {
     } finally {
       setNotificationSaving(false);
     }
-  }, [queryClient, setUser, user]);
+  }, [applyNotificationSettingsResponse]);
 
   const applyPrivacyToggle = useCallback(
     async (key: "privateProfile" | "manualFollowApproval", value: boolean) => {
@@ -624,6 +653,59 @@ export default function Settings() {
                     disabled={notificationSaving}
                     onCheckedChange={(v) =>
                       void applyNotificationToggle("showNotificationBadge", v)
+                    }
+                  />
+                </SettingsRow>
+              </div>
+              <p className="mb-3 mt-6 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                In-app categories
+              </p>
+              <div className="-mx-1 divide-y divide-white/5">
+                <SettingsRow
+                  label="Social notifications"
+                  description="Follows, follow requests, and community replies."
+                >
+                  <Switch
+                    checked={settings.inAppNotificationPrefs.social}
+                    disabled={notificationSaving}
+                    onCheckedChange={(v) =>
+                      void applyInAppCategoryToggle("social", v)
+                    }
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Challenge notifications"
+                  description="Challenge start, end, results, and admin actions."
+                >
+                  <Switch
+                    checked={settings.inAppNotificationPrefs.challenges}
+                    disabled={notificationSaving}
+                    onCheckedChange={(v) =>
+                      void applyInAppCategoryToggle("challenges", v)
+                    }
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Session activity"
+                  description="Likes and comments on your sessions."
+                >
+                  <Switch
+                    checked={settings.inAppNotificationPrefs.activity}
+                    disabled={notificationSaving}
+                    onCheckedChange={(v) =>
+                      void applyInAppCategoryToggle("activity", v)
+                    }
+                  />
+                </SettingsRow>
+                <SettingsRow
+                  label="Account and billing"
+                  description="Subscription changes and account status updates."
+                >
+                  <Switch
+                    checked={settings.inAppNotificationPrefs.account}
+                    disabled={notificationSaving}
+                    onCheckedChange={(v) =>
+                      void applyInAppCategoryToggle("account", v)
                     }
                   />
                 </SettingsRow>

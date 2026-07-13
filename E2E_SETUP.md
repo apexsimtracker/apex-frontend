@@ -60,7 +60,8 @@ cp apex-frontend/.env.e2e.example apex-frontend/.env.e2e.local
 set -a && source ../apex-frontend/.env.e2e.local && set +a
 E2E_SEED_PASSWORD="$E2E_USER_PASSWORD" npm run seed:e2e
 
-# 5. IBT fixture symlinks (requires repo-root .ibt-files/)
+# 5. IBT fixture symlinks (optional — requires repo-root ibt-files/)
+#    Skip if you only run JSON-based Playwright E2E.
 npm run setup:e2e-fixtures
 
 # 6. Playwright browser
@@ -217,7 +218,7 @@ Challenge ID (stable): `e2e-challenge-road-atlanta-gt3` (`E2E_CHALLENGE_ID` in e
 
 | Path                                      | Purpose                                |
 | ----------------------------------------- | -------------------------------------- |
-| `apex/tests/fixtures/ibt/*.ibt`           | Symlinks to `.ibt-files/` (gitignored) |
+| `apex/tests/fixtures/ibt/*.ibt`           | Symlinks to `ibt-files/` (gitignored, optional) |
 | `apex/tests/fixtures/sessions/*.json`     | Race/qualify/warmup JSON uploads       |
 | `apex/tests/fixtures/avatar-e2e.png`      | Profile avatar upload                  |
 | `apex-frontend/tests/helpers/fixtures.ts` | Path resolvers for Playwright          |

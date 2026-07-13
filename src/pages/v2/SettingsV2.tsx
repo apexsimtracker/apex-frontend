@@ -17,7 +17,8 @@ import {
   type DataExportFormat,
   type SessionVisibility,
 } from "@/lib/api";
-import { getApexSettings, type ApexSettings } from "@/lib/settingsStorage";
+import { getApexSettings, type ApexSettings, DEFAULT_IN_APP_NOTIFICATION_PREFS } from "@/lib/settingsStorage";
+import type { InAppNotificationPrefs } from "@/lib/api";
 import {
   settingsTitle,
   settingsDescription,
@@ -123,6 +124,39 @@ export default function SettingsV2() {
 
   usePersistApexToStorageEffect(settings);
 
+  const applyNotificationSettingsResponse = useCallback(
+    (updated: {
+      emailNotifications: boolean;
+      showNotificationBadge: boolean;
+      inAppNotificationPrefs: InAppNotificationPrefs;
+    }) => {
+      setSettings((s) => ({
+        ...s,
+        emailNotifications: updated.emailNotifications,
+        showNotificationBadge: updated.showNotificationBadge,
+        inAppNotificationPrefs: updated.inAppNotificationPrefs,
+      }));
+      if (user) {
+        setUser({
+          ...user,
+          emailNotifications: updated.emailNotifications,
+          showNotificationBadge: updated.showNotificationBadge,
+          inAppNotificationPrefs: updated.inAppNotificationPrefs,
+        });
+      }
+      queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
+        if (!old || typeof old !== "object") return old;
+        return {
+          ...(old as Record<string, unknown>),
+          emailNotifications: updated.emailNotifications,
+          showNotificationBadge: updated.showNotificationBadge,
+          inAppNotificationPrefs: updated.inAppNotificationPrefs,
+        };
+      });
+    },
+    [queryClient, setUser, user],
+  );
+
   const applyNotificationToggle = useCallback(
     async (
       key: "emailNotifications" | "showNotificationBadge",
@@ -133,26 +167,7 @@ export default function SettingsV2() {
       setNotificationSaving(true);
       try {
         const updated = await patchNotificationSettings({ [key]: value });
-        setSettings((s) => ({
-          ...s,
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        }));
-        if (user) {
-          setUser({
-            ...user,
-            emailNotifications: updated.emailNotifications,
-            showNotificationBadge: updated.showNotificationBadge,
-          });
-        }
-        queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
-          if (!old || typeof old !== "object") return old;
-          return {
-            ...(old as Record<string, unknown>),
-            emailNotifications: updated.emailNotifications,
-            showNotificationBadge: updated.showNotificationBadge,
-          };
-        });
+        applyNotificationSettingsResponse(updated);
       } catch (e) {
         setSettings((s) => ({ ...s, [key]: prev }));
         const msg =
@@ -166,7 +181,39 @@ export default function SettingsV2() {
         setNotificationSaving(false);
       }
     },
-    [queryClient, setUser, settings, user],
+    [applyNotificationSettingsResponse, settings],
+  );
+
+  const applyInAppCategoryToggle = useCallback(
+    async (key: keyof InAppNotificationPrefs, value: boolean) => {
+      const prev = settings.inAppNotificationPrefs[key];
+      setSettings((s) => ({
+        ...s,
+        inAppNotificationPrefs: { ...s.inAppNotificationPrefs, [key]: value },
+      }));
+      setNotificationSaving(true);
+      try {
+        const updated = await patchNotificationSettings({
+          inAppNotificationPrefs: { [key]: value },
+        });
+        applyNotificationSettingsResponse(updated);
+      } catch (e) {
+        setSettings((s) => ({
+          ...s,
+          inAppNotificationPrefs: { ...s.inAppNotificationPrefs, [key]: prev },
+        }));
+        const msg =
+          e instanceof ApiError
+            ? e.message
+            : e instanceof Error
+              ? e.message
+              : "Could not save notification settings.";
+        toast.error(msg);
+      } finally {
+        setNotificationSaving(false);
+      }
+    },
+    [applyNotificationSettingsResponse, settings.inAppNotificationPrefs],
   );
 
   const handleResetNotificationDefaults = useCallback(async () => {
@@ -175,27 +222,9 @@ export default function SettingsV2() {
       const updated = await patchNotificationSettings({
         emailNotifications: true,
         showNotificationBadge: true,
+        inAppNotificationPrefs: { ...DEFAULT_IN_APP_NOTIFICATION_PREFS },
       });
-      setSettings((s) => ({
-        ...s,
-        emailNotifications: updated.emailNotifications,
-        showNotificationBadge: updated.showNotificationBadge,
-      }));
-      if (user) {
-        setUser({
-          ...user,
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        });
-      }
-      queryClient.setQueryData(AUTH_ME_QUERY_KEY, (old: unknown) => {
-        if (!old || typeof old !== "object") return old;
-        return {
-          ...(old as Record<string, unknown>),
-          emailNotifications: updated.emailNotifications,
-          showNotificationBadge: updated.showNotificationBadge,
-        };
-      });
+      applyNotificationSettingsResponse(updated);
     } catch (e) {
       const msg =
         e instanceof ApiError
@@ -207,7 +236,7 @@ export default function SettingsV2() {
     } finally {
       setNotificationSaving(false);
     }
-  }, [queryClient, setUser, user]);
+  }, [applyNotificationSettingsResponse]);
 
   const applyPrivacyToggle = useCallback(
     async (key: "privateProfile" | "manualFollowApproval", value: boolean) => {
@@ -536,6 +565,7 @@ export default function SettingsV2() {
               settings={settings}
               notificationSaving={notificationSaving}
               applyNotificationToggle={applyNotificationToggle}
+              applyInAppCategoryToggle={applyInAppCategoryToggle}
               onResetDefaults={handleResetNotificationDefaults}
             />
           </div>

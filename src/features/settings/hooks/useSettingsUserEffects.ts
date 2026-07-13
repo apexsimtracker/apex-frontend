@@ -1,7 +1,7 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { WithRootError } from "@/lib/formWithRootError";
-import type { SessionVisibility, AuthUser } from "@/lib/api";
+import type { SessionVisibility, AuthUser, InAppNotificationPrefs } from "@/lib/api";
 import type {
   SettingsDisplayNameValues,
   DeleteAccountFormValues,
@@ -45,6 +45,7 @@ export function useApexFromServerUserEffect(
       sessionVisibility?: SessionVisibility;
       emailNotifications?: boolean;
       showNotificationBadge?: boolean;
+      inAppNotificationPrefs?: InAppNotificationPrefs;
     };
     setSettings((prev) => ({
       ...prev,
@@ -65,6 +66,9 @@ export function useApexFromServerUserEffect(
       ...(typeof u.showNotificationBadge === "boolean"
         ? { showNotificationBadge: u.showNotificationBadge }
         : {}),
+      ...(u.inAppNotificationPrefs
+        ? { inAppNotificationPrefs: u.inAppNotificationPrefs }
+        : {}),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- field-level deps mirror previous Settings page (avoids `user` object in deps)
   }, [
@@ -74,6 +78,7 @@ export function useApexFromServerUserEffect(
     user?.sessionVisibility,
     user?.emailNotifications,
     user?.showNotificationBadge,
+    user?.inAppNotificationPrefs,
     setSettings,
   ]);
 }

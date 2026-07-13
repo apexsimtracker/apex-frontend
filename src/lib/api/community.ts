@@ -57,6 +57,31 @@ export type Discussion = {
 /** Default page size for GET /api/community/discussions (must match server default). */
 export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 5;
 
+export type DiscussionListSort =
+  | "newest"
+  | "oldest"
+  | "mostLikes"
+  | "mostViews"
+  | "mostReplies";
+
+export const DISCUSSION_LIST_SORT_OPTIONS: {
+  value: DiscussionListSort;
+  label: string;
+}[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "mostLikes", label: "Most likes" },
+  { value: "mostViews", label: "Most views" },
+  { value: "mostReplies", label: "Most replies" },
+];
+
+export function getDiscussionListSortLabel(sort: DiscussionListSort): string {
+  return (
+    DISCUSSION_LIST_SORT_OPTIONS.find((o) => o.value === sort)?.label ??
+    "Recent"
+  );
+}
+
 /** Totals per category for community tiles (GET /api/community/discussions/counts). */
 export type DiscussionCategoryCounts = {
   all: number;
@@ -108,6 +133,7 @@ export async function getDiscussionsPage(params?: {
   q?: string;
   page?: number;
   limit?: number;
+  sort?: DiscussionListSort;
   /** Skip expensive total count on the server (list uses hasMore only). */
   includeTotal?: boolean;
 }): Promise<DiscussionsPageResult> {
@@ -116,6 +142,7 @@ export async function getDiscussionsPage(params?: {
   if (params?.q?.trim()) sp.set("q", params.q.trim());
   if (params?.page != null) sp.set("page", String(params.page));
   if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.sort && params.sort !== "newest") sp.set("sort", params.sort);
   if (params?.includeTotal === false) sp.set("includeTotal", "0");
   const query = sp.toString();
   const path = `/api/community/discussions${query ? `?${query}` : ""}`;
@@ -291,16 +318,14 @@ export async function recordDiscussionView(
   options?: { anonymousId?: string },
 ): Promise<DiscussionViewResponse> {
   const anon = options?.anonymousId?.trim();
+  const path = `/api/community/discussions/${id}/view`;
+  const credentialed = { credentials: "include" as const };
   if (anon) {
     return apiPost<DiscussionViewResponse>(
-      `/api/community/discussions/${id}/view`,
-      {
-        anonymousId: anon,
-      },
+      path,
+      { anonymousId: anon },
+      credentialed,
     );
   }
-  return apiPost<DiscussionViewResponse>(
-    `/api/community/discussions/${id}/view`,
-    undefined,
-  );
+  return apiPost<DiscussionViewResponse>(path, undefined, credentialed);
 }

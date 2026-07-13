@@ -1,4 +1,5 @@
 import { MessageCircle } from "lucide-react";
+import type { RefObject } from "react";
 import type { DiscussionComment } from "@/lib/api";
 import DiscussionCommentItemV2 from "./DiscussionCommentItemV2";
 import DiscussionCommentsPaginationV2 from "./DiscussionCommentsPaginationV2";
@@ -13,6 +14,7 @@ type DiscussionCommentListV2Props = {
   commentsRange: { start: number; end: number } | null;
   onRetryComments: () => void;
   onPageChange: (page: number) => void;
+  dockAnchorRef?: RefObject<HTMLDivElement | null>;
 };
 
 export default function DiscussionCommentListV2({
@@ -25,6 +27,7 @@ export default function DiscussionCommentListV2({
   commentsRange,
   onRetryComments,
   onPageChange,
+  dockAnchorRef,
 }: DiscussionCommentListV2Props) {
   const repliesSubtitle =
     repliesTotal === 0
@@ -96,6 +99,8 @@ export default function DiscussionCommentListV2({
           />
         </div>
       )}
+
+      <div ref={dockAnchorRef} aria-hidden className="h-0 w-full shrink-0" />
     </section>
   );
 }

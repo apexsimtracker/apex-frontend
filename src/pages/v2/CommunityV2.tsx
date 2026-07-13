@@ -7,18 +7,19 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
-import { SkeletonBlock } from "@/components/ui/skeleton";
+import { Plus } from "lucide-react";
 import DiscussionCardV2 from "@/pages/v2/community/DiscussionCardV2";
 import { DiscussionCardSkeletonV2 } from "@/pages/v2/community/DiscussionCardSkeletonV2";
+import CommunityFiltersV2 from "@/pages/v2/community/CommunityFiltersV2";
 import {
   getDiscussionsPage,
   getDiscussionCategoryCounts,
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   createDiscussion,
-  DISCUSSION_CATEGORIES,
+  getDiscussionListSortLabel,
   type Discussion,
   type DiscussionCategory,
+  type DiscussionListSort,
 } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,7 @@ function truncateDescription(text: string): string {
   return t.slice(0, DESCRIPTION_TRUNCATE).trim() + "…";
 }
 
-const SEARCH_DEBOUNCE_MS = 200;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const emptyCategoryCounts = {
   all: 0,
@@ -55,12 +56,6 @@ const emptyCategoryCounts = {
   general: 0,
 } as const;
 
-function getCategoryChipLabel(value: DiscussionCategory): string {
-  if (value === "all") return "All Posts";
-  const row = DISCUSSION_CATEGORIES.find((c) => c.value === value);
-  return row?.label ?? value;
-}
-
 export default function CommunityV2() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -68,6 +63,7 @@ export default function CommunityV2() {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] =
     useState<DiscussionCategory>("all");
+  const [sortBy, setSortBy] = useState<DiscussionListSort>("newest");
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
@@ -117,12 +113,14 @@ export default function CommunityV2() {
       "community",
       selectedCategory,
       searchQuery,
+      sortBy,
       DISCUSSIONS_PAGE_DEFAULT_LIMIT,
     ],
     queryFn: ({ pageParam }) =>
       getDiscussionsPage({
         category: selectedCategory,
         q: searchQuery.trim() || undefined,
+        sort: sortBy,
         page: pageParam as number,
         limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
         includeTotal: false,
@@ -196,7 +194,17 @@ export default function CommunityV2() {
   }, [user, navigate, location.pathname, location.search]);
 
   const hasFilters =
-    selectedCategory !== "all" || searchQuery.trim().length > 0;
+    selectedCategory !== "all" ||
+    searchQuery.trim().length > 0 ||
+    sortBy !== "newest";
+
+  const clearFilters = useCallback(() => {
+    setSelectedCategory("all");
+    setSortBy("newest");
+    setSearchInput("");
+  }, []);
+
+  const listSectionLabel = getDiscussionListSortLabel(sortBy);
   const emptyMessage =
     loading || error
       ? null
@@ -233,59 +241,23 @@ export default function CommunityV2() {
           </button>
         </section>
 
-        <div className="relative mb-5">
-          <Search
-            className="absolute left-3 top-3 size-4 text-v2-on-surface-variant/60"
-            aria-hidden
-          />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container py-2.5 pl-10 pr-4 font-v2-body text-sm text-v2-on-surface transition-colors placeholder:text-v2-on-surface-variant/60 focus:border-v2-primary/40 focus:outline-none"
-          />
-        </div>
-
-        <section className="mb-5 grid grid-cols-4 gap-2">
-          {DISCUSSION_CATEGORIES.map((cat) => {
-            const isActive = selectedCategory === cat.value;
-            return (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setSelectedCategory(cat.value)}
-                className={cn(
-                  "flex items-center justify-center gap-1 rounded p-2 font-v2-body text-[10px] font-bold uppercase transition-colors",
-                  isActive
-                    ? "bg-v2-primary text-white"
-                    : "bg-v2-surface-container-low text-v2-on-surface-variant",
-                )}
-              >
-                <span className="truncate">
-                  {getCategoryChipLabel(cat.value)}
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0 font-semibold tabular-nums",
-                    isActive
-                      ? "text-white/80"
-                      : "text-v2-on-surface-variant/60",
-                  )}
-                >
-                  {categoryCountsPending ? (
-                    <SkeletonBlock className="h-2.5 w-4 rounded" />
-                  ) : (
-                    `(${categoryCounts[cat.value]})`
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </section>
+        <CommunityFiltersV2
+          searchInput={searchInput}
+          onSearchInputChange={setSearchInput}
+          onClearSearch={() => setSearchInput("")}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categoryCounts={categoryCounts}
+          categoryCountsPending={categoryCountsPending}
+          hasActiveFilters={hasFilters}
+          onClear={clearFilters}
+          className="mb-5"
+        />
 
         <h2 className="mb-3 font-v2-body text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
-          Recent
+          {listSectionLabel}
         </h2>
 
         <div className="space-y-3">

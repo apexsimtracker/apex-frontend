@@ -83,8 +83,6 @@ import DiscussionDetailV2 from "./pages/v2/DiscussionDetailV2";
 import DiscussionDetailTopBarV2 from "./pages/v2/discussion/DiscussionDetailTopBarV2";
 import ChallengeDetailV2 from "./pages/v2/ChallengeDetailV2";
 import ChallengeDetailTopBarV2 from "./pages/v2/challenges/ChallengeDetailTopBarV2";
-import TeamV2 from "./pages/v2/TeamV2";
-import TeamTopBarV2 from "./pages/v2/team/TeamTopBarV2";
 import SettingsV2 from "./pages/v2/SettingsV2";
 import SettingsTopBarV2 from "./pages/v2/settings/SettingsTopBarV2";
 import ProfileV2 from "./pages/v2/ProfileV2";
@@ -659,14 +657,6 @@ export default function App() {
                             bottomBar={<V2BottomNavV2 />}
                           >
                             <ChallengeDetailV2 />
-                          </V2Layout>
-                        }
-                      />
-                      <Route
-                        path="team"
-                        element={
-                          <V2Layout topBar={<TeamTopBarV2 />}>
-                            <TeamV2 />
                           </V2Layout>
                         }
                       />

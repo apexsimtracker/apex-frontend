@@ -2,9 +2,24 @@ import type { SessionVisibility } from "./api";
 
 const STORAGE_KEY = "apex_settings";
 
+export type InAppNotificationPrefs = {
+  social: boolean;
+  challenges: boolean;
+  activity: boolean;
+  account: boolean;
+};
+
+export const DEFAULT_IN_APP_NOTIFICATION_PREFS: InAppNotificationPrefs = {
+  social: true,
+  challenges: true,
+  activity: true,
+  account: true,
+};
+
 export type ApexSettings = {
   emailNotifications: boolean;
   showNotificationBadge: boolean;
+  inAppNotificationPrefs: InAppNotificationPrefs;
   privateProfile: boolean;
   /** When private profile is on: require approval for new followers (synced with server). */
   manualFollowApproval: boolean;
@@ -14,6 +29,7 @@ export type ApexSettings = {
 export const DEFAULT_APEX_SETTINGS: ApexSettings = {
   emailNotifications: true,
   showNotificationBadge: true,
+  inAppNotificationPrefs: { ...DEFAULT_IN_APP_NOTIFICATION_PREFS },
   privateProfile: false,
   manualFollowApproval: true,
   sessionVisibility: "PUBLIC",
@@ -42,10 +58,31 @@ function parseStored(raw: string | null): ApexSettings | null {
           ? data.pushNotifications
           : DEFAULT_APEX_SETTINGS.showNotificationBadge;
 
+    const prefsRaw = data.inAppNotificationPrefs as Partial<InAppNotificationPrefs> | undefined;
+    const inAppNotificationPrefs: InAppNotificationPrefs = {
+      social:
+        typeof prefsRaw?.social === "boolean"
+          ? prefsRaw.social
+          : DEFAULT_IN_APP_NOTIFICATION_PREFS.social,
+      challenges:
+        typeof prefsRaw?.challenges === "boolean"
+          ? prefsRaw.challenges
+          : DEFAULT_IN_APP_NOTIFICATION_PREFS.challenges,
+      activity:
+        typeof prefsRaw?.activity === "boolean"
+          ? prefsRaw.activity
+          : DEFAULT_IN_APP_NOTIFICATION_PREFS.activity,
+      account:
+        typeof prefsRaw?.account === "boolean"
+          ? prefsRaw.account
+          : DEFAULT_IN_APP_NOTIFICATION_PREFS.account,
+    };
+
     return {
       emailNotifications:
         data.emailNotifications ?? DEFAULT_APEX_SETTINGS.emailNotifications,
       showNotificationBadge,
+      inAppNotificationPrefs,
       privateProfile:
         data.privateProfile ?? DEFAULT_APEX_SETTINGS.privateProfile,
       manualFollowApproval:

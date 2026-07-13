@@ -368,7 +368,6 @@ export async function uploadAdminChallengeCover(
   const res = await fetch(url, {
     method: "POST",
     headers: Object.keys(headers).length > 0 ? headers : undefined,
-    credentials: "include",
     body: formData,
   });
 

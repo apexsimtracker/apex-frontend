@@ -30,6 +30,11 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  isRichNotification,
+  socialNotificationLabel,
+  socialNotificationLink,
+} from "@/lib/notificationDisplay";
 import { isV2ShellPath, toV2AwarePath } from "@/config/navigation";
 import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 
@@ -380,12 +385,16 @@ function NotificationList({
   return (
     <ul className="space-y-3">
       {notifications.map((n) => {
-        if (n.type === "SYSTEM_ANNOUNCEMENT") {
+        if (isRichNotification(n)) {
           return <SystemAnnouncementRow key={n.id} notification={n} />;
         }
         if (!n.actor) {
           return null;
         }
+        const activityLink = socialNotificationLink(n.type, n.entityId);
+        const resolvedLink = activityLink
+          ? toV2AwarePath(activityLink, true)
+          : null;
         return (
           <li
             key={n.id}
@@ -397,16 +406,20 @@ function NotificationList({
             <div className="min-w-0 flex-1">
               <p className="text-sm text-v2-on-surface">
                 <span className="font-medium">{n.actor.displayName}</span>{" "}
-                {n.type === "FOLLOW" && "started following you."}
-                {n.type === "FOLLOW_REQUEST" && "requested to follow you."}
-                {n.type === "FOLLOW_REQUEST_ACCEPTED" &&
-                  "approved your follow request."}
-                {n.type === "REPLY" && "replied."}
-                {n.type === "COMMENT" && "commented."}
+                {socialNotificationLabel(n.type)}
               </p>
               <p className="mt-1 text-xs text-v2-on-surface-variant">
                 {new Date(n.createdAt).toLocaleString()}
               </p>
+              {resolvedLink ? (
+                <a
+                  href={resolvedLink}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-v2-primary hover:underline"
+                >
+                  View
+                  <ExternalLink className="size-3" />
+                </a>
+              ) : null}
               {n.type === "FOLLOW_REQUEST" && n.entityId ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button

@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import {
   keepPreviousData,
@@ -126,6 +126,7 @@ export default function DiscussionDetailV2() {
   const [replyBarHeight, setReplyBarHeight] = useState(
     DEFAULT_REPLY_BAR_HEIGHT,
   );
+  const dockAnchorRef = useRef<HTMLDivElement>(null);
 
   const handleDockMetricsChange = useCallback(
     (metrics: { pinned: boolean; barHeight: number }) => {
@@ -497,9 +498,11 @@ export default function DiscussionDetailV2() {
           commentsRange={commentsRange}
           onRetryComments={loadComments}
           onPageChange={setCommentsPage}
+          dockAnchorRef={dockAnchorRef}
         />
 
         <DiscussionReplyFormV2
+          dockAnchorRef={dockAnchorRef}
           onDockMetricsChange={handleDockMetricsChange}
           replyBody={replyBody}
           replyError={replyError}

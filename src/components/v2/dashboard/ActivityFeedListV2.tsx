@@ -138,7 +138,7 @@ export default function ActivityFeedListV2({
   currentUser,
 }: ActivityFeedListV2Props) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       {items.map((item) => {
         if (item.type === "standalone") {
           const session = item.session as ActivityFeedSession;

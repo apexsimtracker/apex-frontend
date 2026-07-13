@@ -81,13 +81,13 @@ function StatCell({
   className?: string;
 }) {
   return (
-    <div className={className}>
-      <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-v2-on-surface-variant">
+    <div className={cn("min-w-0", className)}>
+      <p className="mb-0.5 text-[9px] font-bold uppercase tracking-wider text-v2-on-surface-variant">
         {label}
       </p>
       <p
         className={cn(
-          "font-v2-headline text-sm font-bold text-v2-on-surface",
+          "font-v2-headline text-xs font-bold text-v2-on-surface lg:text-sm",
           valueClassName,
         )}
       >
@@ -174,6 +174,55 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
     Boolean,
   ).length;
 
+  type SessionStatItem = {
+    key: "fastest" | "laps" | "car" | "time";
+    label: string;
+    value: string;
+    valueClassName?: string;
+  };
+
+  const statItems: SessionStatItem[] = [];
+  if (showFastest && bestLapMs != null) {
+    statItems.push({
+      key: "fastest",
+      label: "Fastest",
+      value: formatLapMs(bestLapMs),
+      valueClassName: getPodiumFastestLapClassName(pos),
+    });
+  }
+  if (showLaps) {
+    statItems.push({
+      key: "laps",
+      label: "Laps",
+      value: String(lapCount ?? 0),
+    });
+  }
+  if (showTime && trackTime) {
+    statItems.push({
+      key: "time",
+      label: "Time",
+      value: trackTime,
+    });
+  }
+  if (showCar) {
+    statItems.push({
+      key: "car",
+      label: "Car",
+      value: carLabel,
+      valueClassName: "truncate",
+    });
+  }
+
+  // Mobile 2+1 layout: first two stats on row 1, full-width stat on row 2.
+  // Car is always the full-width row when present; otherwise the last stat is.
+  const orderedStatItems =
+    columns === 3 && showCar
+      ? [
+          ...statItems.filter((item) => item.key !== "car"),
+          ...statItems.filter((item) => item.key === "car"),
+        ]
+      : statItems;
+
   return (
     <article
       role="button"
@@ -187,34 +236,26 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
       }}
       className="cursor-pointer overflow-hidden rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container-low shadow-sm transition-colors hover:bg-v2-surface-container"
     >
-      <div className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            {logoSrc ? (
-              <img
-                src={logoSrc}
-                alt=""
-                className="size-9 shrink-0 rounded-full object-contain"
-              />
-            ) : (
-              <div className="size-9 shrink-0 rounded-full bg-v2-surface-container-high" />
-            )}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <SessionTypePillV2
-                  sessionType={sessionType}
-                  manualSessionKind={manualSessionKind}
-                />
-                <IngestBadgeV2
-                  ingestSource={ingestSource}
-                  source={source}
-                />
-              </div>
-              <p className="mt-1 font-v2-body text-[10px] text-v2-on-surface-variant">
-                {timeAgo(createdAt)}
-              </p>
-            </div>
-          </div>
+      <div className="space-y-3 p-4 lg:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-v2-body text-[10px] text-v2-on-surface-variant">
+            {timeAgo(createdAt)}
+          </p>
+          {logoSrc ? (
+            <img
+              src={logoSrc}
+              alt=""
+              className="h-5 w-auto max-w-[3.5rem] shrink-0 object-contain opacity-90 sm:h-7 sm:max-w-none"
+            />
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <SessionTypePillV2
+            sessionType={sessionType}
+            manualSessionKind={manualSessionKind}
+          />
+          <IngestBadgeV2 ingestSource={ingestSource} source={source} />
         </div>
 
         <div className="space-y-1">
@@ -223,7 +264,7 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
               {city}
             </p>
           ) : null}
-          <h3 className="font-v2-headline text-lg font-bold leading-tight text-v2-on-surface">
+          <h3 className="font-v2-headline text-base font-bold leading-tight text-v2-on-surface lg:text-lg">
             {title}
           </h3>
         </div>
@@ -231,13 +272,13 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
         {showPos && displayLabel ? (
           <div className="flex items-center justify-between pt-1">
             <div>
-              <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
+              <p className="mb-0.5 text-[9px] font-bold uppercase tracking-widest text-v2-on-surface-variant">
                 Position
               </p>
-              <p className="font-v2-headline text-3xl font-bold leading-none text-v2-on-surface">
+              <p className="font-v2-headline text-2xl font-bold leading-none text-v2-on-surface">
                 {rank}
                 {suffix ? (
-                  <span className="text-lg font-semibold text-v2-on-surface-variant">
+                  <span className="text-base font-semibold text-v2-on-surface-variant">
                     {suffix}
                   </span>
                 ) : null}
@@ -245,7 +286,7 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
             </div>
             {pos >= 1 && pos <= 3 && trophyClassName ? (
               <Trophy
-                className={cn("size-10 shrink-0", trophyClassName)}
+                className={cn("size-8 shrink-0", trophyClassName)}
                 aria-hidden
                 fill="currentColor"
               />
@@ -260,29 +301,26 @@ export default function MySessionCardV2({ session }: MySessionCardV2Props) {
         {columns > 0 ? (
           <div
             className={cn(
-              "grid gap-3 border-t border-v2-outline-variant/10 pt-4",
+              "grid gap-x-3 gap-y-2 border-t border-v2-outline-variant/10 pt-3 sm:gap-3",
               columns >= 4 && "grid-cols-2 sm:grid-cols-4",
-              columns === 3 && "grid-cols-3",
+              columns === 3 && "grid-cols-2 sm:grid-cols-3",
               columns === 2 && "grid-cols-2",
               columns === 1 && "grid-cols-1",
             )}
           >
-            {showFastest && bestLapMs != null ? (
+            {orderedStatItems.map((item, index) => (
               <StatCell
-                label="Fastest"
-                value={formatLapMs(bestLapMs)}
-                valueClassName={getPodiumFastestLapClassName(pos)}
+                key={item.key}
+                label={item.label}
+                value={item.value}
+                valueClassName={item.valueClassName}
+                className={cn(
+                  columns === 3 &&
+                    index === orderedStatItems.length - 1 &&
+                    "col-span-2 sm:col-span-1",
+                )}
               />
-            ) : null}
-            {showLaps ? (
-              <StatCell label="Laps" value={String(lapCount ?? 0)} />
-            ) : null}
-            {showCar ? (
-              <StatCell label="Car" value={carLabel} className="truncate" />
-            ) : null}
-            {showTime && trackTime ? (
-              <StatCell label="Time" value={trackTime} />
-            ) : null}
+            ))}
           </div>
         ) : null}
       </div>
