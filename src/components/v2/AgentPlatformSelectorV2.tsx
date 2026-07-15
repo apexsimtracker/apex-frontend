@@ -22,7 +22,7 @@ export function AgentPlatformSelectorV2({
 }: AgentPlatformSelectorV2Props) {
   return (
     <div
-      className="inline-flex w-full rounded-lg border border-[#2a2a2a] bg-[#121212] p-1"
+      className="inline-flex w-full gap-2 p-1"
       role="group"
       aria-label="Download platform"
     >
@@ -33,10 +33,10 @@ export function AgentPlatformSelectorV2({
           aria-pressed={selectedOs === os}
           onClick={() => onSelect(os)}
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-md p-2 font-v2-headline text-xs transition-colors sm:px-3 sm:text-sm",
+            "flex flex-1 items-center justify-center gap-1.5 rounded p-2 font-v2-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
             selectedOs === os
-              ? "bg-v2-primary font-bold text-white shadow-sm"
-              : "font-medium text-v2-on-surface-variant hover:text-v2-on-surface",
+              ? "bg-v2-primary text-white"
+              : "bg-v2-surface-container-low text-v2-on-surface-variant hover:text-v2-on-surface",
           )}
         >
           {platformIcon(os)}

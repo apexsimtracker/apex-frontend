@@ -1,8 +1,13 @@
-import { useState, useMemo, useRef } from "react";
-import { useForm, useFormState, useFieldArray } from "react-hook-form";
+import { useState, useMemo, useRef, useEffect } from "react";
+import {
+  useForm,
+  useFormState,
+  useFieldArray,
+  useWatch,
+} from "react-hook-form";
 import type { ControllerRenderProps, FieldPath } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { Loader2, AlertCircle, Lock, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +36,13 @@ import {
   MANUAL_ACTIVITY_POSITION_MAX,
   MANUAL_ACTIVITY_TOTAL_DRIVERS_MAX,
 } from "@/lib/validation/manualActivity";
-import type { ManualActivityInitialData } from "@/components/ManualActivityForm";
+import type { ManualActivityRequest } from "@/lib/api/manualAndUpload";
+import type { ManualActivityEditInitialData } from "@/lib/sessionEditInitialData";
 import { useManualActivityFormSync } from "@/features/manual-activity/hooks/useManualActivityFormSync";
 import {
   createManualActivityV2FormSchema,
   isValidSectorTimeFormat,
+  parseSectorTimeToMs,
   MANUAL_V2_CONDITIONS,
   type ManualActivityV2FormValues,
 } from "./manualActivityV2Schema";
@@ -115,7 +122,7 @@ function LapTableCellField({
         disabled={disabled}
         aria-label={ariaLabel}
         className={cn(
-          "w-full border-0 bg-transparent p-0 font-mono text-xs",
+          "w-full border-0 bg-transparent p-0 font-mono text-xs disabled:cursor-not-allowed disabled:text-v2-on-surface-variant/40",
           align === "right" ? "text-right font-bold" : "text-center",
           invalid ? "manual-lap-cell-invalid text-v2-error" : displayClassName,
         )}
@@ -148,6 +155,8 @@ function LapTableCellField({
       aria-label={ariaLabel}
       className={cn(
         CELL_INPUT_CLASS,
+        disabled &&
+          "cursor-not-allowed text-v2-on-surface-variant/40 placeholder:text-v2-on-surface-variant/30",
         align === "right" && "text-right font-bold",
         invalid ? "manual-lap-cell-invalid text-v2-error" : displayClassName,
       )}
@@ -251,16 +260,19 @@ function formatMsToInput(ms: number | null | undefined): string {
 }
 
 function buildDefaults(
-  initial?: ManualActivityInitialData,
+  initial?: ManualActivityEditInitialData,
 ): ManualActivityV2FormValues {
   let laps: ManualActivityV2FormValues["laps"];
   if (initial?.lapsMs && initial.lapsMs.length > 0) {
-    laps = initial.lapsMs.map((ms) => ({
-      lapTime: formatMsToInput(ms),
-      s1: "",
-      s2: "",
-      s3: "",
-    }));
+    laps = initial.lapsMs.map((ms, index) => {
+      const sectors = initial.lapsSectorsMs?.[index] ?? null;
+      return {
+        lapTime: formatMsToInput(ms),
+        s1: formatMsToInput(sectors?.sector1Ms),
+        s2: formatMsToInput(sectors?.sector2Ms),
+        s3: formatMsToInput(sectors?.sector3Ms),
+      };
+    });
   } else if (initial?.bestLapMs != null && Number.isFinite(initial.bestLapMs)) {
     laps = [
       { lapTime: formatMsToInput(initial.bestLapMs), s1: "", s2: "", s3: "" },
@@ -288,27 +300,20 @@ function buildDefaults(
         : "",
     laps,
     notes: initial?.notes ?? "",
-    // Frontend-only field — defaults to Dry, never submitted.
-    conditions: "DRY",
+    conditions:
+      initial?.conditions === "DRY" ||
+      initial?.conditions === "WET" ||
+      initial?.conditions === "MIXED"
+        ? initial.conditions
+        : "DRY",
   };
 }
 
 interface ManualActivityFormV2Props {
-  initialData?: ManualActivityInitialData;
+  initialData?: ManualActivityEditInitialData;
   prefilledFromPrevious?: boolean;
   hideRecentSessions?: boolean;
-  onSubmit: (data: {
-    sim: string;
-    trackId: string;
-    manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
-    carId?: string;
-    position?: number;
-    totalDrivers?: number;
-    qualifyingPosition?: number;
-    laps?: { lapTimeMs: number }[];
-    bestLapMs?: number;
-    notes?: string;
-  }) => Promise<void>;
+  onSubmit: (data: ManualActivityRequest) => Promise<void>;
   submitLabel: string;
   submittingLabel: string;
   isSubmitting: boolean;
@@ -326,6 +331,8 @@ export default function ManualActivityFormV2({
   errorMessage,
 }: ManualActivityFormV2Props) {
   const telemetryMinLapRows = initialData?.telemetryMinLapRows ?? null;
+  const lapsIsOutLap = initialData?.lapsIsOutLap ?? null;
+  const lapsCanEditOutLap = initialData?.lapsCanEditOutLap ?? null;
   const activitySchema = useMemo(
     () => createManualActivityV2FormSchema(telemetryMinLapRows),
     [telemetryMinLapRows],
@@ -355,14 +362,74 @@ export default function ManualActivityFormV2({
   const sim = form.watch("sim") as ManualActivitySim | "";
   const sessionKind = form.watch("manualSessionKind");
   const conditions = form.watch("conditions");
-  const lapsWatch = form.watch("laps");
+  const lapsWatch = useWatch({ control: form.control, name: "laps" });
+
+  /** Indices whose Total was last written by sector auto-calc (cleared when sectors go invalid). */
+  const autoFilledLapTotalsRef = useRef<Set<number>>(new Set());
+
+  // Form reset from challenge/prefill must not leave stale auto-fill marks that would wipe lapTime.
+  useEffect(() => {
+    autoFilledLapTotalsRef.current = new Set();
+  }, [initialData]);
+
+  useEffect(() => {
+    const rows = lapsWatch ?? [];
+    const autoFilled = autoFilledLapTotalsRef.current;
+
+    // Drop stale indices after lap remove / length shrink.
+    for (const idx of [...autoFilled]) {
+      if (idx >= rows.length) autoFilled.delete(idx);
+    }
+
+    rows.forEach((row, index) => {
+      const s1Ms = parseSectorTimeToMs(row?.s1 ?? "");
+      const s2Ms = parseSectorTimeToMs(row?.s2 ?? "");
+      const s3Ms = parseSectorTimeToMs(row?.s3 ?? "");
+      const currentTotal = row?.lapTime ?? "";
+
+      if (s1Ms != null && s2Ms != null && s3Ms != null) {
+        const formatted = formatMsToLapTime(s1Ms + s2Ms + s3Ms);
+        autoFilled.add(index);
+        if (currentTotal !== formatted) {
+          form.setValue(`laps.${index}.lapTime`, formatted, {
+            shouldDirty: true,
+            shouldValidate: false,
+          });
+        }
+        return;
+      }
+
+      if (autoFilled.has(index)) {
+        autoFilled.delete(index);
+        if (currentTotal !== "") {
+          form.setValue(`laps.${index}.lapTime`, "", {
+            shouldDirty: true,
+            shouldValidate: false,
+          });
+        }
+      }
+    });
+  }, [lapsWatch, form]);
 
   const maxLapsForSim = effectiveManualLapMaxForForm(
     sim || "",
     telemetryMinLapRows ?? null,
   );
-  const canAddLap = fields.length < maxLapsForSim;
-  const canRemoveLap = fields.length > 1;
+  const canAddLap =
+    fields.length < maxLapsForSim && !Boolean(telemetryMinLapRows);
+  const canRemoveLap =
+    fields.length > 1 && !Boolean(telemetryMinLapRows);
+
+  function removeLap(index: number) {
+    const prev = autoFilledLapTotalsRef.current;
+    const next = new Set<number>();
+    for (const i of prev) {
+      if (i < index) next.add(i);
+      else if (i > index) next.add(i - 1);
+    }
+    autoFilledLapTotalsRef.current = next;
+    remove(index);
+  }
 
   const {
     tracks,
@@ -413,22 +480,35 @@ export default function ManualActivityFormV2({
       ? parseInt(values.totalDrivers, 10)
       : undefined;
 
-    const lapTimesMs = values.laps
-      .map((r) => r.lapTime.trim())
-      .filter(Boolean)
-      .map((t) => parseStrictManualLapTimeToMs(t))
-      .filter((ms): ms is number => ms != null);
+    const lapsOut = values.laps
+      .map((r) => {
+        const lapTimeMs = parseStrictManualLapTimeToMs(r.lapTime.trim());
+        if (lapTimeMs == null) return null;
+        return {
+          lapTimeMs,
+          sector1Ms: parseSectorTimeToMs(r.s1),
+          sector2Ms: parseSectorTimeToMs(r.s2),
+          sector3Ms: parseSectorTimeToMs(r.s3),
+        };
+      })
+      .filter(
+        (
+          row,
+        ): row is {
+          lapTimeMs: number;
+          sector1Ms: number | null;
+          sector2Ms: number | null;
+          sector3Ms: number | null;
+        } => row != null,
+      );
 
-    if (lapTimesMs.length === 0) {
+    if (lapsOut.length === 0) {
       form.setError("laps", {
         type: "manual",
         message: "At least one valid lap time is required",
       });
       return;
     }
-
-    const lapsOut = lapTimesMs.map((lapTimeMs) => ({ lapTimeMs }));
-    const bestLapMs = Math.min(...lapTimesMs);
 
     const kind = values.manualSessionKind.trim().toUpperCase() as
       | "PRACTICE"
@@ -438,9 +518,6 @@ export default function ManualActivityFormV2({
       ? parseInt(values.qualifyingPosition, 10)
       : undefined;
 
-    // NOTE: `values.conditions` and per-lap sector times (`s1`/`s2`/`s3`) are
-    // intentionally omitted — they are V2 frontend-only fields with no backend
-    // support. The payload below is identical to the V1 manual-create request.
     await onSubmit({
       sim: values.sim,
       trackId: values.trackId,
@@ -452,8 +529,9 @@ export default function ManualActivityFormV2({
         kind === "RACE" && qualiNum !== undefined && Number.isFinite(qualiNum)
           ? qualiNum
           : undefined,
-      ...(lapsOut.length > 0 ? { laps: lapsOut, bestLapMs } : {}),
+      laps: lapsOut,
       notes: values.notes.trim() || undefined,
+      conditions: values.conditions,
     });
   }
 
@@ -687,11 +765,6 @@ export default function ManualActivityFormV2({
             )}
           />
 
-          {/*
-           * Conditions is a V2 frontend-only field (Dry / Wet / Mixed) from the
-           * Loveable design. It is NOT persisted to the backend and is excluded
-           * from the submit payload. Reconcile when backend support exists.
-           */}
           <FormField
             control={form.control}
             name="conditions"
@@ -720,9 +793,6 @@ export default function ManualActivityFormV2({
                     })}
                   </div>
                 </FormControl>
-                <p className="text-[11px] text-v2-on-surface-variant/60">
-                  Not saved yet — coming soon.
-                </p>
               </FormItem>
             )}
           />
@@ -848,7 +918,11 @@ export default function ManualActivityFormV2({
 
         <FormBlock
           title="Lap history"
-          description="Add at least one valid lap time. Sector splits are optional."
+          description={
+            lapsIsOutLap?.some(Boolean)
+              ? "Out laps are editable only when all sectors and driving telemetry are available. Locked rows preserve their recorded data."
+              : "Add at least one valid lap time. Sector splits are optional."
+          }
         >
           {/* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */}
           <div className="overflow-hidden rounded-xl border border-v2-outline-variant/30 bg-v2-surface-container">
@@ -872,22 +946,55 @@ export default function ManualActivityFormV2({
               <tbody>
                 {fields.map((fieldItem, index) => {
                   const row = lapsWatch?.[index];
+                  const isOutLap = lapsIsOutLap?.[index] === true;
+                  const canEditOutLap =
+                    isOutLap && lapsCanEditOutLap?.[index] === true;
+                  const lockedOutLap = isOutLap && !canEditOutLap;
                   const rawTotal = row?.lapTime ?? "";
                   const totalInvalid =
+                    !lockedOutLap &&
                     rawTotal.trim() !== "" &&
                     parseStrictManualLapTimeToMs(rawTotal) === null;
                   return (
                     <tr
                       key={fieldItem.id}
-                      className="border-b border-v2-outline-variant/15 last:border-b-0"
+                      className={
+                        lockedOutLap
+                          ? "border-b border-l-2 border-b-v2-outline-variant/15 border-l-v2-outline-variant/60 bg-v2-surface-container-high/70 text-v2-on-surface-variant/50 last:border-b-0"
+                          : "border-b border-v2-outline-variant/15 last:border-b-0"
+                      }
                     >
                       <td className="p-3 align-middle font-v2-headline text-sm font-bold text-v2-on-surface">
-                        {String(index + 1).padStart(2, "0")}
+                        <span className="inline-flex flex-col gap-0.5">
+                          {String(index + 1).padStart(2, "0")}
+                          {isOutLap ? (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 font-v2-body text-[9px] font-semibold uppercase tracking-wider",
+                                lockedOutLap
+                                  ? "text-v2-on-surface-variant/60"
+                                  : "text-v2-on-surface-variant",
+                              )}
+                              title={
+                                lockedOutLap
+                                  ? "Locked: sectors and driving telemetry are incomplete"
+                                  : "Editable: sectors and driving telemetry are available"
+                              }
+                            >
+                              {lockedOutLap ? (
+                                <Lock className="size-2.5" aria-hidden />
+                              ) : null}
+                              {lockedOutLap ? "Out · Locked" : "Out"}
+                            </span>
+                          ) : null}
+                        </span>
                       </td>
                       {(["s1", "s2", "s3"] as const).map((sector) => {
                         const sRaw = row?.[sector] ?? "";
                         const sInvalid =
-                          sRaw.trim() !== "" && !isValidSectorTimeFormat(sRaw);
+                          !lockedOutLap &&
+                          sRaw.trim() !== "" &&
+                          !isValidSectorTimeFormat(sRaw);
                         return (
                           <td key={sector} className="p-3 align-middle">
                             <FormField
@@ -899,7 +1006,7 @@ export default function ManualActivityFormV2({
                                   displayClassName={CELL_SECTOR_CLASS}
                                   placeholder="--.---"
                                   ariaLabel={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
-                                  disabled={isSubmitting}
+                                  disabled={isSubmitting || lockedOutLap}
                                   invalid={sInvalid}
                                 />
                               )}
@@ -917,7 +1024,7 @@ export default function ManualActivityFormV2({
                               displayClassName={CELL_TOTAL_CLASS}
                               placeholder="0:00.000"
                               ariaLabel={`Lap ${index + 1} total time`}
-                              disabled={isSubmitting}
+                              disabled={isSubmitting || lockedOutLap}
                               align="right"
                               invalid={totalInvalid}
                             />
@@ -928,8 +1035,8 @@ export default function ManualActivityFormV2({
                         <td className="p-1 text-center align-middle">
                           <button
                             type="button"
-                            disabled={isSubmitting}
-                            onClick={() => remove(index)}
+                            disabled={isSubmitting || lockedOutLap}
+                            onClick={() => removeLap(index)}
                             aria-label={`Remove lap ${index + 1}`}
                             className="text-v2-on-surface-variant transition-colors hover:text-v2-error disabled:opacity-50"
                           >
@@ -944,7 +1051,7 @@ export default function ManualActivityFormV2({
             </table>
             <button
               type="button"
-              disabled={isSubmitting || !canAddLap}
+              disabled={isSubmitting || !canAddLap || Boolean(telemetryMinLapRows)}
               onClick={() => append({ lapTime: "", s1: "", s2: "", s3: "" })}
               className="flex w-full items-center justify-center gap-2 border-t border-v2-outline-variant/30 py-3 font-v2-headline text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant transition-colors hover:text-v2-on-surface disabled:opacity-40"
             >

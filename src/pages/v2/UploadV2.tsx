@@ -15,11 +15,14 @@ import {
   v2PrimaryButtonClassName,
 } from "@/components/v2/ui/v2ButtonClasses";
 import { uploadSessionFile, ApiError } from "@/lib/api";
+import { isProRequiredError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import ChallengeDetailBackLinkV2 from "@/pages/v2/challenges/ChallengeDetailBackLinkV2";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { MAX_MANUAL_UPLOAD_BYTES } from "@/lib/uploadLimits";
 import { cn } from "@/lib/utils";
+import { useIsProUser } from "@/contexts/AuthContext";
+import { toV2Path } from "@/config/navigation";
 
 const UPLOAD_PATH = "/v2/upload";
 const uploadTitle = `Upload session | ${COMPANY_NAME}`;
@@ -42,6 +45,7 @@ function formatFileSize(bytes: number): string {
 export default function UploadV2() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isPro = useIsProUser();
   const challengeId = searchParams.get("challenge")?.trim() || undefined;
   const isChallengeLinked = Boolean(challengeId);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +140,12 @@ export default function UploadV2() {
   const handleUpload = useCallback(async () => {
     if (!file || isBusy) return;
 
+    if (!isPro) {
+      setErrorMessage("Apex Pro is required to upload .ibt telemetry files.");
+      setUploadState("error");
+      return;
+    }
+
     if (file.size > MAX_MANUAL_UPLOAD_BYTES) {
       setErrorMessage(
         `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(file.size)}).`,
@@ -188,6 +198,13 @@ export default function UploadV2() {
         navigate(`/v2/sessions/${result.sessionId}`);
       }, redirectMs);
     } catch (err) {
+      if (isProRequiredError(err)) {
+        setErrorMessage(
+          "Apex Pro is required to upload .ibt telemetry files.",
+        );
+        setUploadState("error");
+        return;
+      }
       const message =
         err instanceof ApiError
           ? err.message
@@ -195,7 +212,7 @@ export default function UploadV2() {
       setErrorMessage(message);
       setUploadState("error");
     }
-  }, [file, isBusy, navigate, challengeId]);
+  }, [file, isBusy, isPro, navigate, challengeId]);
 
   const handleReset = useCallback(() => {
     setFile(null);
@@ -241,9 +258,25 @@ export default function UploadV2() {
               .ibt
             </code>{" "}
             telemetry is processed automatically — session type, positions, and
-            distance when available (max {MAX_MB_LABEL} MB).
+            distance when available (max {MAX_MB_LABEL} MB). Apex Pro required.
           </p>
         </div>
+
+        {!isPro && uploadState !== "success" && (
+          <div className="flex flex-col gap-3 rounded-v2-lg border border-v2-outline-variant/20 bg-v2-surface-container-high px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-v2-body text-sm text-v2-on-surface-variant">
+              Manual .ibt upload is an Apex Pro feature. Upgrade to process
+              telemetry from the web.
+            </p>
+            <Button
+              type="button"
+              className={cn(v2PrimaryButtonClassName, "shrink-0")}
+              onClick={() => navigate(toV2Path("/pricing"))}
+            >
+              Upgrade to Pro
+            </Button>
+          </div>
+        )}
 
         {challengeId && uploadState !== "success" && (
           <div className="flex items-start gap-3 rounded-v2-lg border border-v2-outline-variant/20 bg-v2-surface-container-high px-4 py-3">

@@ -25,6 +25,13 @@ export type UploadSessionFileCallbacks = {
 };
 
 // Manual activity creation (no file upload)
+export type ManualActivityLapPayload = {
+  lapTimeMs: number;
+  sector1Ms?: number | null;
+  sector2Ms?: number | null;
+  sector3Ms?: number | null;
+};
+
 export type ManualActivityRequest = {
   sim: string;
   trackId: string;
@@ -35,9 +42,11 @@ export type ManualActivityRequest = {
   totalDrivers?: number;
   /** Race sessions: qualifying finishing position. */
   qualifyingPosition?: number;
-  /** Ordered lap times (ms). */
-  laps?: { lapTimeMs: number }[];
+  /** Ordered laps (ms); optional sectors when provided. */
+  laps?: ManualActivityLapPayload[];
   notes?: string;
+  /** Track weather conditions. */
+  conditions?: "DRY" | "WET" | "MIXED";
   /** Link session to a challenge (must be active; you must have joined; track/car must match). */
   challengeId?: string;
 };
@@ -78,6 +87,13 @@ export function buildManualActivityRequestBody(
   if (data.notes != null && String(data.notes).trim() !== "") {
     body.notes = String(data.notes).trim();
   }
+  if (
+    data.conditions === "DRY" ||
+    data.conditions === "WET" ||
+    data.conditions === "MIXED"
+  ) {
+    body.conditions = data.conditions;
+  }
 
   const laps = Array.isArray(data.laps)
     ? data.laps
@@ -87,7 +103,21 @@ export function buildManualActivityRequestBody(
             typeof l.lapTimeMs === "number" &&
             Number.isFinite(l.lapTimeMs),
         )
-        .map((l) => ({ lapTimeMs: Math.round(l.lapTimeMs) }))
+        .map((l) => {
+          const row: ManualActivityLapPayload = {
+            lapTimeMs: Math.round(l.lapTimeMs),
+          };
+          if (l.sector1Ms != null && Number.isFinite(l.sector1Ms)) {
+            row.sector1Ms = Math.round(l.sector1Ms);
+          }
+          if (l.sector2Ms != null && Number.isFinite(l.sector2Ms)) {
+            row.sector2Ms = Math.round(l.sector2Ms);
+          }
+          if (l.sector3Ms != null && Number.isFinite(l.sector3Ms)) {
+            row.sector3Ms = Math.round(l.sector3Ms);
+          }
+          return row;
+        })
     : [];
 
   if (laps.length > 0) {

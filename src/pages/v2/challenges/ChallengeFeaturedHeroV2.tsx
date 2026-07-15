@@ -4,8 +4,9 @@ import { v2PrimaryButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 import { formatSimEnum } from "@/lib/enumFormat";
 import { resolveChallengeCoverUrl } from "@/lib/challenges/coverImage";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
-import { formatChallengeTimeRemaining } from "@/lib/datetime";
+import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import type { ChallengeListItem } from "@/lib/api";
+import { useChallengeLiveState } from "@/hooks/useChallengeLiveState";
 
 interface ChallengeFeaturedHeroV2Props {
   item: ChallengeListItem;
@@ -34,12 +35,12 @@ export default function ChallengeFeaturedHeroV2({
 }: ChallengeFeaturedHeroV2Props) {
   const linkTo = detailTo ?? `/v2/challenge/${item.id}`;
   const isJoining = joiningId === item.id;
-  const canJoin =
-    onJoin && item.status !== "ENDED" && item.status !== "UPCOMING";
-  const timeRemaining =
-    item.timeRemainingSec != null && item.status === "ACTIVE"
-      ? Math.max(0, Math.floor(item.timeRemainingSec))
-      : null;
+  const canJoin = onJoin && item.status !== "ENDED";
+  const { timeRemainingSec } = useChallengeLiveState({
+    status: item.status,
+    startsAt: item.startsAt,
+    endsAt: item.endsAt,
+  });
 
   return (
     <section className="overflow-hidden rounded-2xl border border-v2-outline-variant/15 bg-v2-surface-container">
@@ -55,11 +56,11 @@ export default function ChallengeFeaturedHeroV2({
             <span className="size-1 animate-pulse rounded-full bg-white" />
             Live
           </div>
-          {timeRemaining != null && (
+          {item.status === "ACTIVE" && timeRemainingSec != null && (
             <div className="absolute right-4 top-4 font-v2-body text-[11px] font-medium text-v2-on-surface">
-              Ends in{" "}
-              <span className="font-bold">
-                {formatChallengeTimeRemaining(timeRemaining)}
+              Ends {formatChallengeDateTime(item.endsAt)}
+              <span className="ml-1 font-bold">
+                · {formatChallengeTimeRemaining(timeRemainingSec)} left
               </span>
             </div>
           )}

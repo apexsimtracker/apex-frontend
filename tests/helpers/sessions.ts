@@ -70,6 +70,7 @@ function applySessionUploadFixtureOptions(
 
 export type SessionDetailApi = {
   id?: string;
+  createdAt?: string | null;
   sessionType?: string | null;
   manualSessionKind?: string | null;
   lapCount?: number | null;

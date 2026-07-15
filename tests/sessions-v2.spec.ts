@@ -13,7 +13,7 @@ test.describe("@sessions-v2", () => {
     page.on("response", (res) => {
       const url = res.url();
       if (
-        url.includes("/api/activity") &&
+        /\/api\/activity(\?|$|\/)/.test(url) &&
         !url.includes("/api/sessions/library")
       ) {
         activityHits.push(url);

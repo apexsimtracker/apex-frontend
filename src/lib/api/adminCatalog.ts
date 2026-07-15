@@ -1,4 +1,6 @@
-import { fetchApi } from "./fetchClient";
+import { fetchApi, buildApiAuthHeaders, notifyAuthExpired } from "./fetchClient";
+import { API_BASE } from "./config";
+import { ApiError } from "./errors";
 
 export type AdminCatalogKind = "track" | "car";
 
@@ -8,6 +10,7 @@ export type AdminCatalogTrackRow = {
   slug: string;
   displayName: string;
   lengthKm: number | null;
+  imageUrl: string | null;
   retiredAt: string | null;
   sortOrder: number;
   createdAt: string;
@@ -113,6 +116,66 @@ export async function patchAdminCatalogCar(
     "PATCH",
     `/api/admin/catalog/cars/${encodeURIComponent(id)}`,
     body,
+    false,
+  );
+}
+
+export const TRACK_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const TRACK_IMAGE_ALLOWED_MIMES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export async function uploadAdminCatalogTrackImage(
+  trackId: string,
+  file: File,
+): Promise<{ imageUrl: string }> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const headers = buildApiAuthHeaders();
+  const url = `${API_BASE}/api/admin/catalog/tracks/${encodeURIComponent(trackId)}/image`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = "Track image upload failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text) as { message?: string; error?: string };
+          message = json.message ?? json.error ?? message;
+        } catch {
+          message = text;
+        }
+      }
+    } catch {
+      // keep default
+    }
+    await notifyAuthExpired(false, res.status);
+    throw new ApiError(res.status, message);
+  }
+
+  const data = (await res.json()) as { imageUrl?: string | null };
+  if (!data?.imageUrl) {
+    throw new ApiError(500, "No image URL in response");
+  }
+  return { imageUrl: data.imageUrl };
+}
+
+export async function deleteAdminCatalogTrackImage(
+  trackId: string,
+): Promise<{ imageUrl: null }> {
+  return fetchApi(
+    "DELETE",
+    `/api/admin/catalog/tracks/${encodeURIComponent(trackId)}/image`,
+    undefined,
     false,
   );
 }

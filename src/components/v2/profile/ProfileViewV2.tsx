@@ -46,6 +46,7 @@ type ProfileViewV2Props = {
   };
   raceHistoryForbiddenCode?: string;
   isPro?: boolean;
+  profileUserId: string;
   challengeBadges?: {
     challengeId: string;
     challengeTitle: string;
@@ -54,6 +55,8 @@ type ProfileViewV2Props = {
     tier: string;
     awardedAt: string;
   }[];
+  challengeBadgeCount?: number;
+  challengeBadgesLoading?: boolean;
   rootClassName?: string;
   containerClassName?: string;
 };
@@ -80,7 +83,10 @@ export function ProfileViewV2({
   raceHistoryPagination,
   raceHistoryForbiddenCode,
   isPro = false,
+  profileUserId,
   challengeBadges,
+  challengeBadgeCount,
+  challengeBadgesLoading,
   rootClassName,
   containerClassName,
 }: ProfileViewV2Props) {
@@ -180,7 +186,10 @@ export function ProfileViewV2({
           onEditProfile={onEditProfile}
           streakDays={profile.user.streakDays ?? 0}
           isPro={isPro}
+          profileUserId={profileUserId}
           challengeBadges={challengeBadges}
+          challengeBadgeCount={challengeBadgeCount}
+          challengeBadgesLoading={challengeBadgesLoading}
         />
 
         <ProfileKeyStatsV2

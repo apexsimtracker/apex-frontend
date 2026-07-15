@@ -5,6 +5,7 @@ import {
   type NavLinkItem,
 } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSessionsNavActiveV2 } from "@/hooks/useSessionsNavActiveV2";
 import { cn } from "@/lib/utils";
 
 const activeUnderline =
@@ -37,6 +38,7 @@ export default function HubTopBarNavLinksV2() {
   const location = useLocation();
   const { user } = useAuth();
   const items = getPrimaryNavItemsV2(Boolean(user));
+  const sessionsNavActive = useSessionsNavActiveV2();
 
   return (
     <nav
@@ -47,7 +49,11 @@ export default function HubTopBarNavLinksV2() {
         <NavLinkDesktop
           key={item.to}
           item={item}
-          active={isNavPathActive(location.pathname, item.to, item.end)}
+          active={
+            item.to === "/v2/sessions"
+              ? sessionsNavActive
+              : isNavPathActive(location.pathname, item.to, item.end)
+          }
         />
       ))}
     </nav>

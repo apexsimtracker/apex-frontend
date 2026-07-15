@@ -1,17 +1,13 @@
 /**
  * V2-only form schema for the forked Manual Entry (`/v2/manual`) page.
  *
- * The backend-bound fields (sim, track, car, session kind, position, grid size,
- * qualifying position, lap times, notes) reuse the shared V1 validation from
- * `createManualActivityFormSchema` verbatim — the core object subset is delegated
- * to that schema so create/submit behaviour stays identical to V1.
+ * Backend-bound fields (sim, track, car, session kind, position, grid size,
+ * qualifying position, lap times, notes, conditions, per-lap sectors) are
+ * validated here and submitted via ManualActivityFormV2 → POST manual-activity.
  *
- * FRONTEND-ONLY FIELDS (NOT linked to the backend):
- *   - `conditions` (Dry / Wet / Mixed)
- *   - per-lap sector times `s1` / `s2` / `s3`
- * These come from the Loveable manual-entry design. They are validated client-side
- * for UX only and MUST NOT be sent to the API (see ManualActivityFormV2 `handleValid`).
- * When the backend gains support for these, reconcile here and in the submit payload.
+ * The core object subset (sim/track/car/kind/positions/lapTime/notes) still
+ * delegates to `createManualActivityFormSchema` so create rules stay aligned
+ * with V1 for those fields.
  */
 import { z } from "zod";
 import {
@@ -19,7 +15,7 @@ import {
   LAP_FORMAT_MSG,
 } from "@/lib/validation/manualActivity";
 
-/** Frontend-only track conditions (not persisted to the backend). */
+/** Track conditions persisted on Session.conditions. */
 export const MANUAL_V2_CONDITIONS = [
   { value: "DRY" as const, label: "Dry" },
   { value: "WET" as const, label: "Wet" },
@@ -32,17 +28,17 @@ const SECTOR_FORMAT_MSG =
   "Use ss.mmm (e.g. 26.452) or m:ss.mmm — three-digit milliseconds.";
 
 /**
- * Frontend-only sector-time format check (UX validation for `s1`/`s2`/`s3`).
+ * Parse a frontend-only sector time (`s1`/`s2`/`s3`) to milliseconds.
  *
- * We deliberately do NOT reuse `parseStrictManualLapTimeToMs`: that parser
- * enforces the full-lap floor (`MANUAL_LAP_MS_MIN` = 10s), which would reject a
- * legitimately-formatted sub-10s sector like "9.876" and surface a misleading
- * "wrong format" error. Sectors are shorter than laps, so this only validates
- * the same `ss.mmm` / `m:ss.mmm` shape and requires a positive value.
+ * Same `ss.mmm` / `m:ss.mmm` shape as strict lap times (exactly 3 ms digits,
+ * comma→dot), but deliberately does NOT reuse `parseStrictManualLapTimeToMs`:
+ * that parser enforces the full-lap floor (`MANUAL_LAP_MS_MIN` = 10s), which
+ * would reject a legitimately-formatted sub-10s sector like "9.876".
+ * Returns null for empty, partial, or invalid input (never throws).
  */
-export function isValidSectorTimeFormat(input: string): boolean {
+export function parseSectorTimeToMs(input: string): number | null {
   const s = input.trim().replace(",", ".");
-  if (!s) return false;
+  if (!s) return null;
 
   const withColon = /^(\d+):([0-5]\d)\.(\d{3})$/;
   const secondsOnly = /^(\d+)\.(\d{3})$/;
@@ -53,21 +49,26 @@ export function isValidSectorTimeFormat(input: string): boolean {
       parseInt(m1[1]!, 10) * 60_000 +
       parseInt(m1[2]!, 10) * 1_000 +
       parseInt(m1[3]!, 10);
-    return Number.isFinite(total) && total > 0;
+    return Number.isFinite(total) && total > 0 ? total : null;
   }
 
   const m2 = s.match(secondsOnly);
   if (m2) {
     const total = parseInt(m2[1]!, 10) * 1_000 + parseInt(m2[2]!, 10);
-    return Number.isFinite(total) && total > 0;
+    return Number.isFinite(total) && total > 0 ? total : null;
   }
 
-  return false;
+  return null;
+}
+
+/** Frontend-only sector-time format check (UX validation for `s1`/`s2`/`s3`). */
+export function isValidSectorTimeFormat(input: string): boolean {
+  return parseSectorTimeToMs(input) != null;
 }
 
 const v2LapRowSchema = z.object({
   lapTime: z.string(),
-  /** Frontend-only sector times — not sent to the backend. */
+  /** Optional sector times mapped to Lap.sector1/2/3Ms on submit. */
   s1: z.string(),
   s2: z.string(),
   s3: z.string(),
@@ -89,13 +90,12 @@ export function createManualActivityV2FormSchema(
       qualifyingPosition: z.string(),
       laps: z.array(v2LapRowSchema),
       notes: z.string(),
-      /** Frontend-only — not persisted. */
+      /** Persisted as Session.conditions. */
       conditions: z.enum(["DRY", "WET", "MIXED"]),
     })
     .superRefine((data, ctx) => {
-      // Delegate all backend-bound validation to the shared V1 schema so create
-      // rules (positions, grid size, lap format, caps) stay identical. Paths align
-      // because field names and lap indices match one-to-one.
+      // Delegate shared validation to the V1 schema so create rules (positions,
+      // grid size, lap format, caps) stay identical. Paths align 1:1.
       const coreResult = coreSchema.safeParse({
         sim: data.sim,
         trackId: data.trackId,
@@ -119,7 +119,7 @@ export function createManualActivityV2FormSchema(
         }
       }
 
-      // Frontend-only sector-time format validation (UX only, never submitted).
+      // Sector-time format validation (optional fields; empty is OK).
       data.laps.forEach((row, i) => {
         (["s1", "s2", "s3"] as const).forEach((sector) => {
           const raw = row[sector]?.trim() ?? "";

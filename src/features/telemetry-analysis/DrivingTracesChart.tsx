@@ -40,7 +40,7 @@ export function DrivingTracesChart({
   const data = buildChartData(traces);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="telemetry-driving-chart">
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart

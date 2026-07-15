@@ -198,6 +198,8 @@ export type UserPublicProfile = {
   /** Set when viewerHasAccess is true — used for race history empty-state copy. */
   sessionVisibility: SessionVisibility | null;
   isPro: boolean;
+  /** Visible badge count (excludes challenges the user is banned from). */
+  challengeBadgeCount?: number;
   challengeBadges?: {
     challengeId: string;
     challengeTitle: string;
@@ -208,6 +210,22 @@ export type UserPublicProfile = {
   }[];
 };
 
+/** Row in GET .../challenge-badges paginated list. */
+export type UserChallengeBadge = NonNullable<
+  UserPublicProfile["challengeBadges"]
+>[number];
+
+export type UserChallengeBadgesPage = {
+  items: UserChallengeBadge[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+/** Default page size for challenge badge history modal (must match server). */
+export const CHALLENGE_BADGES_PAGE_SIZE = 10;
+
 /** Row in GET .../followers and .../following paginated lists (same shape as UserPublicProfile). */
 export type FollowUser = UserPublicProfile;
 
@@ -215,6 +233,22 @@ export async function getUserPublicProfile(
   userId: string,
 ): Promise<UserPublicProfile> {
   return apiGet<UserPublicProfile>(`/api/users/${encodeURIComponent(userId)}`);
+}
+
+/** GET /api/users/:userId/challenge-badges — paginated podium history. */
+export async function getUserChallengeBadgesPage(
+  userId: string,
+  params?: { page?: number; pageSize?: number },
+): Promise<UserChallengeBadgesPage> {
+  const page = params?.page ?? 1;
+  const pageSize = params?.pageSize ?? CHALLENGE_BADGES_PAGE_SIZE;
+  const sp = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  return apiGet<UserChallengeBadgesPage>(
+    `/api/users/${encodeURIComponent(userId)}/challenge-badges?${sp.toString()}`,
+  );
 }
 
 /** GET /api/users/founder — public founder profile (avatar + display name), no auth. */

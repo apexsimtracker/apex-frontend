@@ -180,7 +180,8 @@ export async function getChallenge(
     return normalizeChallengeSummaryRow(
       data as ChallengeSummary,
     ) as ChallengeDetail;
-  } catch {
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
     return null;
   }
 }

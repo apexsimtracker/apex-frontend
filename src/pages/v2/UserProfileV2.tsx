@@ -295,7 +295,14 @@ export default function UserProfileV2() {
           path={`${USER_PROFILE_V2_PATH}/${id}`}
         />
         <div className={contentRootClassName}>
-          <ProfileSkeletonV2 showBackLink />
+          <ProfileSkeletonV2
+            showBackLink
+            showChallengeBadges={
+              (preview.challengeBadgeCount ??
+                preview.challengeBadges?.length ??
+                0) > 0
+            }
+          />
         </div>
       </>
     );
@@ -411,7 +418,9 @@ export default function UserProfileV2() {
           }
           raceHistoryForbiddenCode={raceHistoryForbiddenCode}
           isPro={preview.isPro}
+          profileUserId={id}
           challengeBadges={preview.challengeBadges}
+          challengeBadgeCount={preview.challengeBadgeCount}
         />
       </div>
 

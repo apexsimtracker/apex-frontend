@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -24,6 +24,10 @@ import ChallengeDetailOverviewV2 from "@/pages/v2/challenges/ChallengeDetailOver
 import ChallengeDetailLeaderboardV2 from "@/pages/v2/challenges/ChallengeDetailLeaderboardV2";
 import ChallengeDetailSessionsV2 from "@/pages/v2/challenges/ChallengeDetailSessionsV2";
 import ChallengeDetailSkeletonV2 from "@/pages/v2/challenges/ChallengeDetailSkeletonV2";
+import {
+  challengeLiveRefetchIntervalMs,
+  useChallengeLiveState,
+} from "@/hooks/useChallengeLiveState";
 
 const CHALLENGES_V2_PATH = "/v2/challenges";
 const LEADERBOARD_PAGE_SIZE = 20;
@@ -71,12 +75,6 @@ export default function ChallengeDetailV2() {
   const [joinBanMessage, setJoinBanMessage] = useState<string | null>(null);
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(t);
-  }, []);
 
   useEffect(() => {
     setLeaderboardPage(1);
@@ -91,6 +89,7 @@ export default function ChallengeDetailV2() {
     isPending: loading,
     error: queryError,
     isError,
+    refetch: refetchChallenge,
   } = useQuery({
     queryKey: ["challenges", "detail", id ?? "", user?.id ?? "anon"],
     queryFn: async () => {
@@ -100,20 +99,57 @@ export default function ChallengeDetailV2() {
       return data;
     },
     enabled: Boolean(id),
+    refetchInterval: (query) =>
+      challengeLiveRefetchIntervalMs(query.state.data?.status),
   });
 
-  const { data: leaderboardData, isPending: leaderboardLoading } = useQuery({
+  useEffect(() => {
+    if (tab !== "sessions") return;
+    if (!user || (challenge != null && !challenge.joined)) {
+      setTab("overview");
+    }
+  }, [tab, user, challenge]);
+
+  const { timeRemainingSec: liveTimeRemainingSec } = useChallengeLiveState({
+    status: challenge?.status,
+    startsAt: challenge?.startsAt,
+    endsAt: challenge?.endsAt,
+    onBoundaryCrossed: () => {
+      void refetchChallenge();
+      void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
+      void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
+      if (id) {
+        void queryClient.invalidateQueries({
+          queryKey: ["challenges", "leaderboard", id],
+        });
+      }
+    },
+  });
+
+  const { data: leaderboardData, isPending: leaderboardLoading, isFetching: leaderboardFetching } = useQuery({
     queryKey: ["challenges", "leaderboard", id, leaderboardPage],
     queryFn: () =>
       getChallengeLeaderboard(id!, leaderboardPage, LEADERBOARD_PAGE_SIZE),
     enabled: Boolean(id) && tab === "leaderboard",
+    refetchInterval:
+      challenge?.status === "ACTIVE" && tab === "leaderboard" ? 15_000 : false,
   });
 
-  const { data: sessionsData, isPending: sessionsLoading } = useQuery({
+  const { data: sessionsData, isPending: sessionsLoading, isFetching: sessionsFetching, error: sessionsError } = useQuery({
     queryKey: ["challenges", "entrant-sessions", id, sessionsPage],
     queryFn: () =>
       getChallengeEntrantSessions(id!, sessionsPage, SESSIONS_PAGE_SIZE),
-    enabled: Boolean(id) && tab === "sessions" && Boolean(user),
+    enabled:
+      Boolean(id) &&
+      tab === "sessions" &&
+      Boolean(user) &&
+      Boolean(challenge?.joined),
+    retry: (failureCount, err) => {
+      if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   const joinMutation = useMutation({
@@ -183,11 +219,8 @@ export default function ChallengeDetailV2() {
       : "Failed to load challenge"
     : null;
 
-  const countdownMs = useMemo(() => {
-    if (!challenge?.countdownTargetIso) return null;
-    const t = new Date(challenge.countdownTargetIso).getTime();
-    return Math.max(0, t - now);
-  }, [challenge, now]);
+  const countdownMs =
+    liveTimeRemainingSec != null ? liveTimeRemainingSec * 1000 : null;
 
   const detailPath = id ? `/v2/challenge/${id}` : CHALLENGES_V2_PATH;
 
@@ -268,9 +301,7 @@ export default function ChallengeDetailV2() {
 
   const status = challengeStatusLabel(challenge.status as ChallengeApiStatus);
   const activeTimeRemainingSec =
-    challenge.timeRemainingSec != null && challenge.status === "ACTIVE"
-      ? challenge.timeRemainingSec
-      : null;
+    challenge.status === "ACTIVE" ? liveTimeRemainingSec : null;
   const upcomingScheduleText =
     challenge.status === "UPCOMING" && challenge.startsAt
       ? `Starts ${formatChallengeDateTime(challenge.startsAt)}`
@@ -281,15 +312,18 @@ export default function ChallengeDetailV2() {
     `${formatSimEnum(challenge.sim)} · ${formatTrackName(challenge.track)} — ${COMPANY_NAME} challenge.`;
 
   const canJoin = Boolean(
-    user &&
-    !challenge.joined &&
-    challenge.status !== "ENDED" &&
-    new Date(challenge.endsAt).getTime() > Date.now(),
+    user && !challenge.joined && challenge.status !== "ENDED",
   );
 
   const canLeave = Boolean(user && challenge.joined && challenge.canLeave);
   const showLeaveLockedHint = Boolean(
     user && challenge.joined && challenge.canLeave === false,
+  );
+
+  const showSessionsTab = Boolean(user && challenge.joined);
+
+  const visibleTabs = TAB_CONFIG.filter(
+    ({ key }) => key !== "sessions" || showSessionsTab,
   );
 
   const followPreview = challenge.followedWhoJoined ?? [];
@@ -335,7 +369,7 @@ export default function ChallengeDetailV2() {
         )}
 
         <section className="flex gap-2 overflow-x-auto pb-1">
-          {TAB_CONFIG.map(({ key, label }) => {
+          {visibleTabs.map(({ key, label }) => {
             const isActive = tab === key;
             return (
               <button
@@ -370,16 +404,21 @@ export default function ChallengeDetailV2() {
             loading={leaderboardLoading}
             data={leaderboardData}
             page={leaderboardPage}
+            pageSize={LEADERBOARD_PAGE_SIZE}
+            fetching={leaderboardFetching}
             onPageChange={setLeaderboardPage}
           />
         )}
 
-        {tab === "sessions" && (
+        {tab === "sessions" && showSessionsTab && (
           <ChallengeDetailSessionsV2
             signedIn={Boolean(user)}
             loading={sessionsLoading}
             data={sessionsData}
+            error={sessionsError}
             page={sessionsPage}
+            pageSize={SESSIONS_PAGE_SIZE}
+            fetching={sessionsFetching}
             onPageChange={setSessionsPage}
           />
         )}

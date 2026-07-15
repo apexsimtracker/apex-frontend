@@ -25,6 +25,7 @@ import {
 } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatform } from "@/hooks/usePlatform";
+import { useSessionsNavActiveV2 } from "@/hooks/useSessionsNavActiveV2";
 import { useSignOut } from "@/lib/auth/useSignOut";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +70,7 @@ export default function V2MobileNavDrawer({
   const { user, loading } = useAuth();
   const { isNative } = usePlatform();
   const { signOut, isSigningOut } = useSignOut();
+  const sessionsNavActive = useSessionsNavActiveV2();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const primaryItems = getPrimaryNavItemsV2(Boolean(user));
@@ -115,11 +117,10 @@ export default function V2MobileNavDrawer({
 
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3">
           {primaryItems.map((item) => {
-            const active = isNavPathActive(
-              location.pathname,
-              item.to,
-              item.end,
-            );
+            const active =
+              item.to === "/v2/sessions"
+                ? sessionsNavActive
+                : isNavPathActive(location.pathname, item.to, item.end);
             return (
               <Link
                 key={item.to}

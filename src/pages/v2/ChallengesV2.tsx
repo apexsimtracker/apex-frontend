@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Search, Trophy } from "lucide-react";
+import { Search, Trophy } from "lucide-react";
 import ChallengeFeaturedHeroV2 from "@/pages/v2/challenges/ChallengeFeaturedHeroV2";
 import ChallengeBrowseRowV2 from "@/pages/v2/challenges/ChallengeBrowseRowV2";
 import ChallengeBrowseListSkeletonV2 from "@/pages/v2/challenges/ChallengeBrowseListSkeletonV2";
 import ChallengesSeasonStatsV2 from "@/pages/v2/challenges/ChallengesSeasonStatsV2";
 import ChallengesSeasonStatsSkeletonV2 from "@/pages/v2/challenges/ChallengesSeasonStatsSkeletonV2";
-import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
+import V2ListPaginationFooter from "@/components/v2/ui/V2ListPaginationFooter";
 import V2NativeSelect from "@/components/v2/ui/V2NativeSelect";
 import {
   getChallengeList,
@@ -23,6 +23,8 @@ import type { AuthRedirectState } from "@/auth/authRedirect";
 import { V2_AUTH_PATHS } from "@/config/navigation";
 import { MANUAL_ACTIVITY_SIMS } from "@/lib/manualActivityData";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { challengeLiveRefetchIntervalMs } from "@/hooks/useChallengeLiveState";
 
 const CHALLENGES_V2_PATH = "/v2/challenges";
 const challengesTitle = `Challenges | ${COMPANY_NAME}`;
@@ -76,12 +78,13 @@ export default function ChallengesV2() {
   const [tab, setTab] = useState<BrowseTab | null>(null);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedQ, setDebouncedQ] = useState("");
+  const debouncedQ = useDebouncedValue(searchInput.trim(), 300);
   const [simFilter, setSimFilter] = useState<string>("");
   const [carClassFilter, setCarClassFilter] = useState("");
+  const debouncedCarClass = useDebouncedValue(carClassFilter.trim(), 300);
 
   const hasActiveFilters = Boolean(
-    debouncedQ || simFilter || carClassFilter.trim(),
+    debouncedQ || simFilter || debouncedCarClass,
   );
 
   const { data: meta, isPending: metaLoading } = useQuery({
@@ -105,13 +108,8 @@ export default function ChallengesV2() {
   const joinedTabLoggedOut = tab === "joined" && !user;
 
   useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedQ(searchInput.trim()), 300);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
-
-  useEffect(() => {
     setPage(1);
-  }, [tab, debouncedQ, simFilter, carClassFilter]);
+  }, [tab, debouncedQ, simFilter, debouncedCarClass]);
 
   const listParams = tab
     ? {
@@ -120,7 +118,7 @@ export default function ChallengesV2() {
         ...listParamsForTab(tab),
         ...(debouncedQ ? { q: debouncedQ } : {}),
         ...(simFilter ? { sim: simFilter } : {}),
-        ...(carClassFilter.trim() ? { carClass: carClassFilter.trim() } : {}),
+        ...(debouncedCarClass ? { carClass: debouncedCarClass } : {}),
       }
     : null;
 
@@ -134,9 +132,9 @@ export default function ChallengesV2() {
         page,
         debouncedQ,
         simFilter,
-        carClassFilter,
+        debouncedCarClass,
       ] as const,
-    [user?.id, tab, page, debouncedQ, simFilter, carClassFilter],
+    [user?.id, tab, page, debouncedQ, simFilter, debouncedCarClass],
   );
 
   const listQueryKeySerialized = JSON.stringify(listQueryKey);
@@ -154,6 +152,14 @@ export default function ChallengesV2() {
     queryKey: listQueryKey,
     queryFn: () => getChallengeList(listParams!),
     enabled: Boolean(listParams) && !joinedTabLoggedOut,
+    refetchInterval: (query) => {
+      const items = query.state.data?.items ?? [];
+      const hasLive = items.some((c) => c.status === "ACTIVE");
+      const hasUpcoming = items.some((c) => c.status === "UPCOMING");
+      if (hasLive) return challengeLiveRefetchIntervalMs("ACTIVE") as number;
+      if (hasUpcoming) return challengeLiveRefetchIntervalMs("UPCOMING") as number;
+      return false;
+    },
   });
 
   useEffect(() => {
@@ -262,14 +268,9 @@ export default function ChallengesV2() {
         ? TAB_SECTION_LABEL[tab]
         : "";
 
-  const paginationButtonClassName = cn(
-    v2OutlineButtonClassName,
-    "inline-flex items-center gap-1 px-3 py-2 font-v2-body text-sm font-medium normal-case tracking-normal",
-  );
-
   const emptyMessage = joinedTabLoggedOut
     ? "Sign in to see challenges you've joined."
-    : debouncedQ || simFilter || carClassFilter.trim()
+    : debouncedQ || simFilter || debouncedCarClass
       ? "No challenges match your filters."
       : tab === "joined"
         ? "You haven't joined any challenges yet."
@@ -447,6 +448,7 @@ export default function ChallengesV2() {
                     <ChallengeBrowseRowV2
                       key={c.id}
                       item={c}
+                      activeTab={tab ?? "upcoming"}
                       isLoggedIn={Boolean(user)}
                       onJoin={handleJoin}
                       joiningId={joiningId}
@@ -459,29 +461,14 @@ export default function ChallengesV2() {
             )}
 
             {totalPages > 1 && (
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className={paginationButtonClassName}
-                >
-                  <ChevronLeft className="size-4" aria-hidden />
-                  Previous
-                </button>
-                <span className="font-v2-body text-sm text-v2-on-surface-variant">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  className={paginationButtonClassName}
-                >
-                  Next
-                  <ChevronRight className="size-4" aria-hidden />
-                </button>
-              </div>
+              <V2ListPaginationFooter
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+                disabled={listFetching}
+              />
             )}
           </div>
         )}

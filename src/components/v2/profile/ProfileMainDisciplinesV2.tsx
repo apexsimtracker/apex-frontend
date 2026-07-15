@@ -39,10 +39,11 @@ export function ProfileMainDisciplinesV2({ rows }: { rows: MostPlayedRow[] }) {
       {sortedRows.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg bg-v2-surface-container-low p-8 text-center">
           <p className="font-v2-body text-sm text-v2-on-surface-variant">
-            No sessions recorded yet.
+            No race sessions yet.
           </p>
           <p className="mt-1 font-v2-body text-xs text-v2-on-surface-variant/70">
-            Your main disciplines will appear here.
+            Main disciplines appear after race sessions from agent or .ibt
+            uploads.
           </p>
         </div>
       ) : (

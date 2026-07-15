@@ -21,7 +21,7 @@ function StatCell({ label, value, align = "left" }: StatCellProps) {
   return (
     <div
       className={cn(
-        "space-y-0.5",
+        "space-y-0.5 lg:rounded-xl lg:border lg:border-v2-outline-variant/15 lg:bg-v2-surface-container-low lg:p-4 lg:text-left lg:shadow-lg",
         align === "center" && "text-center",
         align === "right" && "text-right",
       )}
@@ -58,7 +58,7 @@ export function ProfileKeyStatsV2({
   }
 
   return (
-    <section className="grid grid-cols-3 gap-y-2 border-y border-v2-outline-variant/15 py-4">
+    <section className="grid grid-cols-3 gap-y-2 border-y border-v2-outline-variant/15 py-4 lg:gap-3 lg:border-0 lg:py-0">
       <StatCell label="Races" value={races} align="left" />
       <StatCell label="Wins" value={safeValue(wins)} align="center" />
       <StatCell label="Podiums" value={safeValue(podiums)} align="right" />

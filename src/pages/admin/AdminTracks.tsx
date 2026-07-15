@@ -7,12 +7,15 @@ import {
   createAdminCatalogCar,
   patchAdminCatalogTrack,
   patchAdminCatalogCar,
+  uploadAdminCatalogTrackImage,
+  deleteAdminCatalogTrackImage,
   type AdminCatalogKind,
   type AdminCatalogTrackRow,
   type AdminCatalogCarRow,
   type AdminCatalogConsistency,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
+import { validateTrackImageFile } from "@/lib/trackImageValidation";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { BaseModal } from "@/components/ui/base-modal";
@@ -137,9 +140,29 @@ export default function AdminTracks() {
   });
 
   const createTrackMu = useMutation({
-    mutationFn: createAdminCatalogTrack,
+    mutationFn: async (payload: {
+      body: Parameters<typeof createAdminCatalogTrack>[0];
+      imageFile?: File | null;
+    }) => {
+      const row = await createAdminCatalogTrack(payload.body);
+      if (payload.imageFile) {
+        try {
+          await uploadAdminCatalogTrackImage(row.id, payload.imageFile);
+        } catch (err) {
+          // Track row exists — surface upload failure so admin can retry from Edit
+          throw new ApiError(
+            err instanceof ApiError ? err.status : 500,
+            err instanceof ApiError
+              ? `Track created, but image upload failed: ${err.message}`
+              : "Track created, but image upload failed",
+          );
+        }
+      }
+      return row;
+    },
     onSuccess: async () => {
       setCreateOpen(false);
+      setFormError(null);
       await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
       await qc.invalidateQueries({
         queryKey: ["admin", "catalog", "consistency"],
@@ -346,6 +369,9 @@ export default function AdminTracks() {
                         {kind === "track" ? (
                           <th className={ADMIN_TH}>Length (km)</th>
                         ) : null}
+                        {kind === "track" ? (
+                          <th className={ADMIN_TH}>Image</th>
+                        ) : null}
                         <th className={ADMIN_TH}>Status</th>
                         <th className="w-12 whitespace-nowrap p-3" />
                       </tr>
@@ -367,6 +393,19 @@ export default function AdminTracks() {
                                 className={`${ADMIN_TD} tabular-nums text-muted-foreground`}
                               >
                                 {r.lengthKm != null ? r.lengthKm : "—"}
+                              </td>
+                              <td className={ADMIN_TD}>
+                                {r.imageUrl ? (
+                                  <img
+                                    src={r.imageUrl}
+                                    alt=""
+                                    className="h-8 w-12 rounded object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
                               </td>
                               <td className={ADMIN_TD}>
                                 {r.retiredAt ? (
@@ -560,7 +599,9 @@ export default function AdminTracks() {
             setCreateOpen(false);
             setFormError(null);
           }}
-          onSubmitTrack={(body) => createTrackMu.mutate(body)}
+          onSubmitTrack={(body, imageFile) =>
+            createTrackMu.mutate({ body, imageFile })
+          }
           onSubmitCar={(body) => createCarMu.mutate(body)}
           submitting={createTrackMu.isPending || createCarMu.isPending}
           errorMessage={formError}
@@ -1011,7 +1052,10 @@ function CreateCatalogModal({
 }: {
   kind: AdminCatalogKind;
   onClose: () => void;
-  onSubmitTrack: (body: Parameters<typeof createAdminCatalogTrack>[0]) => void;
+  onSubmitTrack: (
+    body: Parameters<typeof createAdminCatalogTrack>[0],
+    imageFile?: File | null,
+  ) => void;
   onSubmitCar: (body: Parameters<typeof createAdminCatalogCar>[0]) => void;
   submitting: boolean;
   errorMessage: string | null;
@@ -1020,6 +1064,47 @@ function CreateCatalogModal({
   const [slug, setSlug] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [lengthKm, setLengthKm] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  async function onPickImage(file: File | null) {
+    setImageError(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setImageFile(null);
+    if (!file) return;
+    const validated = validateTrackImageFile(file);
+    if (validated.ok === false) {
+      setImageError(validated.message);
+      return;
+    }
+    const ok = await new Promise<boolean>((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(true);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(false);
+      };
+      img.src = url;
+    });
+    if (!ok) {
+      setImageError("Could not decode image. Try another file.");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
   function submit() {
     if (!sim.trim() || !slug.trim() || !displayName.trim()) return;
@@ -1027,12 +1112,15 @@ function CreateCatalogModal({
       if (!lengthKm.trim()) return;
       const n = parseFloat(lengthKm);
       if (!Number.isFinite(n) || n <= 0) return;
-      onSubmitTrack({
-        sim: sim.trim(),
-        slug: slug.trim(),
-        displayName: displayName.trim(),
-        lengthKm: n,
-      });
+      onSubmitTrack(
+        {
+          sim: sim.trim(),
+          slug: slug.trim(),
+          displayName: displayName.trim(),
+          lengthKm: n,
+        },
+        imageFile,
+      );
     } else {
       onSubmitCar({
         sim: sim.trim(),
@@ -1070,9 +1158,9 @@ function CreateCatalogModal({
         </>
       }
     >
-      {errorMessage && (
+      {(errorMessage || imageError) && (
         <p className="text-sm text-red-500" role="alert">
-          {errorMessage}
+          {errorMessage ?? imageError}
         </p>
       )}
       <div className="space-y-3">
@@ -1109,15 +1197,36 @@ function CreateCatalogModal({
           />
         </label>
         {kind === "track" && (
-          <label className="block text-xs text-muted-foreground">
-            Length (km) <span className="text-red-400">*</span>
-            <Input
-              className="mt-1"
-              inputMode="decimal"
-              value={lengthKm}
-              onChange={(e) => setLengthKm(e.target.value)}
-            />
-          </label>
+          <>
+            <label className="block text-xs text-muted-foreground">
+              Length (km) <span className="text-red-400">*</span>
+              <Input
+                className="mt-1"
+                inputMode="decimal"
+                value={lengthKm}
+                onChange={(e) => setLengthKm(e.target.value)}
+              />
+            </label>
+            <label className="block text-xs text-muted-foreground">
+              Track image (optional)
+              <Input
+                className="mt-1"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={submitting}
+                onChange={(e) =>
+                  void onPickImage(e.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Track preview"
+                className="h-24 w-full rounded-lg bg-black/40 object-contain"
+              />
+            )}
+          </>
         )}
       </div>
     </BaseModal>
@@ -1137,11 +1246,53 @@ function EditTrackModal({
   submitting: boolean;
   errorMessage: string | null;
 }) {
+  const qc = useQueryClient();
   const [displayName, setDisplayName] = useState(row.displayName);
   const [lengthKm, setLengthKm] = useState(
     row.lengthKm != null ? String(row.lengthKm) : "",
   );
   const [sortOrder, setSortOrder] = useState(String(row.sortOrder));
+  const [imageUrl, setImageUrl] = useState(row.imageUrl);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+
+  async function onPickImage(file: File | null) {
+    setImageError(null);
+    if (!file) return;
+    const validated = validateTrackImageFile(file);
+    if (validated.ok === false) {
+      setImageError(validated.message);
+      return;
+    }
+    setImageBusy(true);
+    try {
+      const res = await uploadAdminCatalogTrackImage(row.id, file);
+      setImageUrl(res.imageUrl);
+      await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
+    } catch (e) {
+      setImageError(
+        e instanceof ApiError ? e.message : "Image upload failed",
+      );
+    } finally {
+      setImageBusy(false);
+    }
+  }
+
+  async function onRemoveImage() {
+    setImageError(null);
+    setImageBusy(true);
+    try {
+      await deleteAdminCatalogTrackImage(row.id);
+      setImageUrl(null);
+      await qc.invalidateQueries({ queryKey: ["admin", "catalog"] });
+    } catch (e) {
+      setImageError(
+        e instanceof ApiError ? e.message : "Could not remove image",
+      );
+    } finally {
+      setImageBusy(false);
+    }
+  }
 
   return (
     <BaseModal
@@ -1157,14 +1308,14 @@ function EditTrackModal({
             type="button"
             variant="outline"
             onClick={onClose}
-            disabled={submitting}
+            disabled={submitting || imageBusy}
           >
             Cancel
           </Button>
           <Button
             type="button"
             variant="destructive"
-            disabled={submitting}
+            disabled={submitting || imageBusy}
             onClick={() => {
               const so = parseInt(sortOrder, 10);
               if (!lengthKm.trim()) return;
@@ -1182,9 +1333,9 @@ function EditTrackModal({
         </>
       }
     >
-      {errorMessage && (
+      {(errorMessage || imageError) && (
         <p className="text-sm text-red-500" role="alert">
-          {errorMessage}
+          {errorMessage ?? imageError}
         </p>
       )}
       <div className="space-y-3">
@@ -1214,6 +1365,37 @@ function EditTrackModal({
             onChange={(e) => setSortOrder(e.target.value)}
           />
         </label>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Track image</p>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt=""
+              className="h-24 w-full rounded-lg bg-black/40 object-contain"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">No image uploaded.</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={imageBusy || submitting}
+              onChange={(e) => void onPickImage(e.target.files?.[0] ?? null)}
+            />
+            {imageUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={imageBusy || submitting}
+                onClick={() => void onRemoveImage()}
+              >
+                Remove image
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </BaseModal>
   );

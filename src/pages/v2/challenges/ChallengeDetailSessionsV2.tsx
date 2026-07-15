@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
+import V2ListPaginationFooter from "@/components/v2/ui/V2ListPaginationFooter";
 import type { EntrantSessionRow } from "@/lib/api";
-import { cn, formatLapMs } from "@/lib/utils";
+import { ApiError } from "@/lib/api/errors";
+import { formatLapMs } from "@/lib/utils";
 
 interface SessionsData {
   items: EntrantSessionRow[];
   page: number;
+  pageSize?: number;
   total: number;
   totalPages: number;
 }
@@ -15,15 +16,32 @@ interface ChallengeDetailSessionsV2Props {
   signedIn: boolean;
   loading: boolean;
   data: SessionsData | undefined;
+  error?: unknown;
   page: number;
+  pageSize: number;
+  fetching?: boolean;
   onPageChange: (page: number) => void;
+}
+
+function sessionsErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.code === "NOT_JOINED" || error.status === 403) {
+      return "Join the challenge to view entrant sessions.";
+    }
+    if (error.message) return error.message;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return "Failed to load sessions.";
 }
 
 export default function ChallengeDetailSessionsV2({
   signedIn,
   loading,
   data,
+  error,
   page,
+  pageSize,
+  fetching = false,
   onPageChange,
 }: ChallengeDetailSessionsV2Props) {
   return (
@@ -37,11 +55,6 @@ export default function ChallengeDetailSessionsV2({
             </span>
           )}
         </h2>
-        {data && data.totalPages > 1 && (
-          <p className="font-v2-body text-xs text-v2-on-surface-variant">
-            Page {data.page} / {data.totalPages}
-          </p>
-        )}
       </div>
       {!signedIn ? (
         <p className="py-4 font-v2-body text-sm text-v2-on-surface-variant">
@@ -50,6 +63,10 @@ export default function ChallengeDetailSessionsV2({
       ) : loading ? (
         <p className="py-4 font-v2-body text-sm text-v2-on-surface-variant">
           Loading…
+        </p>
+      ) : error ? (
+        <p className="py-4 font-v2-body text-sm text-v2-error">
+          {sessionsErrorMessage(error)}
         </p>
       ) : !data?.items?.length ? (
         <p className="py-4 font-v2-body text-sm text-v2-on-surface-variant">
@@ -80,36 +97,15 @@ export default function ChallengeDetailSessionsV2({
               </li>
             ))}
           </ul>
-          {data.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => onPageChange(Math.max(1, page - 1))}
-                className={cn(
-                  v2OutlineButtonClassName,
-                  "inline-flex items-center gap-1 px-3 py-2 font-v2-body text-sm font-medium",
-                )}
-              >
-                <ChevronLeft className="size-4" aria-hidden />
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={page >= data.totalPages}
-                onClick={() =>
-                  onPageChange(Math.min(data.totalPages, page + 1))
-                }
-                className={cn(
-                  v2OutlineButtonClassName,
-                  "inline-flex items-center gap-1 px-3 py-2 font-v2-body text-sm font-medium",
-                )}
-              >
-                Next
-                <ChevronRight className="size-4" aria-hidden />
-              </button>
-            </div>
-          )}
+          <V2ListPaginationFooter
+            page={page}
+            totalPages={data.totalPages}
+            total={data.total}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            disabled={fetching}
+            className="mt-4"
+          />
         </>
       )}
     </div>

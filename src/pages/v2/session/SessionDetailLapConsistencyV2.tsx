@@ -1,47 +1,85 @@
+type ConsistencyDot = "green" | "yellow" | "red" | "muted";
+
 type SessionDetailLapConsistencyV2Props = {
   consistencyText: string;
+  dots: ConsistencyDot[];
+  narrative: string;
 };
 
 const CARD = "rounded-xl bg-v2-surface-container-low p-4 shadow-lg";
 
-// NOTE(dummy): Per-lap consistency dots and description are static.
-const CONSISTENCY_DOTS = [
-  "bg-green-500",
-  "bg-green-500",
-  "bg-yellow-400",
-  "bg-green-500",
-  "bg-green-500",
-] as const;
+const DOT_CLASS: Record<ConsistencyDot, string> = {
+  green: "bg-green-500",
+  yellow: "bg-yellow-400",
+  red: "bg-red-500",
+  muted: "bg-v2-outline-variant/40",
+};
+
+export function buildConsistencyVisual(
+  lapTimesMs: number[],
+  bestLapMs: number | null,
+): { dots: ConsistencyDot[]; narrative: string } {
+  if (lapTimesMs.length === 0 || bestLapMs == null || !Number.isFinite(bestLapMs)) {
+    return {
+      dots: [],
+      narrative: "Not enough valid laps to score consistency.",
+    };
+  }
+
+  const thresholdMs = 800;
+  const dots: ConsistencyDot[] = lapTimesMs.map((t) => {
+    const delta = t - bestLapMs;
+    if (delta <= thresholdMs) return "green";
+    if (delta <= thresholdMs * 2) return "yellow";
+    return "red";
+  });
+
+  const within = dots.filter((d) => d === "green").length;
+  const narrative =
+    within === lapTimesMs.length
+      ? `All ${lapTimesMs.length} laps within 0.8s of your best.`
+      : `${within} of ${lapTimesMs.length} laps within 0.8s of your best.`;
+
+  return { dots, narrative };
+}
 
 export default function SessionDetailLapConsistencyV2({
   consistencyText,
+  dots,
+  narrative,
 }: SessionDetailLapConsistencyV2Props) {
   return (
     <section className={CARD}>
       <h2 className="mb-3 font-v2-headline text-lg font-bold tracking-tight text-v2-on-surface">
         Lap consistency
       </h2>
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="font-v2-body text-xs text-v2-on-surface-variant">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="shrink-0 font-v2-body text-xs text-v2-on-surface-variant">
             Consistency
           </span>
-          <div className="flex gap-1">
-            {CONSISTENCY_DOTS.map((color, i) => (
-              <span
-                key={i}
-                className={`size-2.5 rounded-full ${color}`}
-                aria-hidden
-              />
-            ))}
+          <div className="flex flex-wrap gap-1">
+            {dots.length === 0 ? (
+              <span className="font-v2-body text-[11px] text-v2-on-surface-variant">
+                —
+              </span>
+            ) : (
+              dots.map((color, i) => (
+                <span
+                  key={i}
+                  className={`size-2.5 rounded-full ${DOT_CLASS[color]}`}
+                  aria-hidden
+                />
+              ))
+            )}
           </div>
         </div>
-        <span className="font-v2-headline text-sm font-bold text-green-500">
+        <span className="shrink-0 font-v2-headline text-sm font-bold text-green-500">
           {consistencyText}
         </span>
       </div>
       <p className="font-v2-body text-[11px] text-v2-on-surface-variant/70">
-        4 of 5 laps within 0.8s of your best. Strong session.
+        {narrative}
       </p>
     </section>
   );

@@ -21,8 +21,10 @@ export type RawLap = {
   lapNumber?: number;
   timeMs?: number;
   lapTimeMs?: number;
+  deltaMs?: number;
   isValid?: boolean;
   isBestLap?: boolean;
+  isOutLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -33,8 +35,10 @@ export type RawLap = {
 export type NormalizedLap = {
   lap: number;
   timeMs: number;
+  deltaMs?: number;
   isValid?: boolean;
   isBestLap?: boolean;
+  isOutLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -47,8 +51,10 @@ export function normalizeLaps(laps: RawLap[] | undefined): NormalizedLap[] {
   return laps.map((l) => ({
     lap: l.lapNumber ?? l.lap,
     timeMs: l.lapTimeMs ?? l.timeMs ?? 0,
+    deltaMs: typeof l.deltaMs === "number" ? l.deltaMs : undefined,
     isValid: l.isValid,
     isBestLap: l.isBestLap,
+    isOutLap: l.isOutLap === true,
     sector1Ms: l.sector1Ms,
     sector2Ms: l.sector2Ms,
     sector3Ms: l.sector3Ms,
@@ -93,6 +99,12 @@ export type SessionDetail = {
   laps?: RawLap[];
   /** Server-precomputed session minima for Ideal Lap panel (Pro). */
   sessionTimingMinima?: SessionTimingMinima | null;
+  idealLap?: {
+    lapTimeMs: number;
+    sector1Ms?: number;
+    sector2Ms?: number;
+    sector3Ms?: number;
+  } | null;
   /** Server-computed from valid lap times (same as activity feed). */
   consistencyScore?: number | null;
   compareToPrevious?: {
@@ -105,6 +117,25 @@ export type SessionDetail = {
   source?: SessionSource | null;
   ingestPath?: string | null;
   notes?: string | null;
+  driverName?: string | null;
+  likeCount?: number | null;
+  commentCount?: number | null;
+  likedByMe?: boolean;
+  /** Track weather conditions when set (manual form / future telemetry). */
+  conditions?: "DRY" | "WET" | "MIXED" | null;
+  /** Catalog track image URL when present. */
+  trackImageUrl?: string | null;
+  /** Normalized weather metrics from IBT telemetryMeta (scalars only). */
+  weather?: {
+    airTempC?: number | null;
+    trackTempC?: number | null;
+    humidityPct?: number | null;
+    windVelMs?: number | null;
+    skies?: string | null;
+    airPressure?: number | null;
+    trackWetness?: string | null;
+    precipitation?: string | null;
+  } | null;
   userId?: string | null;
   /** Manual rows only: PRACTICE | QUALIFY | RACE */
   manualSessionKind?: string | null;
@@ -113,8 +144,10 @@ export type SessionDetail = {
 type BackendLapLite = {
   lapNumber: number;
   lapTimeMs: number;
+  deltaMs?: number;
   isValid: boolean;
   isBestLap: boolean;
+  isOutLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;

@@ -703,7 +703,10 @@ export default function App() {
                         path="sessions/:id/edit"
                         element={
                           <ProtectedRoute message="Sign in to edit your session.">
-                            <V2Layout topBar={<EditActivityTopBarV2 />}>
+                            <V2Layout
+                              topBar={<EditActivityTopBarV2 />}
+                              bottomBar={<V2BottomNavV2 />}
+                            >
                               <EditActivityV2 />
                             </V2Layout>
                           </ProtectedRoute>

@@ -22,31 +22,41 @@ export async function createDiscussionViaApi(
   input: CreateDiscussionInput,
 ): Promise<DiscussionApi> {
   const { apiUrl } = getE2eEnv();
-  const res = await request.post(`${apiUrl}/api/community/discussions`, {
-    headers: authHeaders(auth.token, auth.sessionToken),
-    data: input,
-  });
+  let lastBody = "";
 
-  if (!res.ok()) {
-    const body = await res.text();
-    throw new Error(`createDiscussion failed (${res.status()}): ${body}`);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await request.post(`${apiUrl}/api/community/discussions`, {
+      headers: authHeaders(auth.token, auth.sessionToken),
+      data: input,
+    });
+
+    if (res.ok()) {
+      const data = (await res.json()) as {
+        id?: string;
+        title?: string;
+        category?: string;
+      };
+      const id = data.id?.trim();
+      if (!id) {
+        throw new Error("createDiscussion response missing id");
+      }
+
+      return {
+        id,
+        title: data.title?.trim() || input.title,
+        category: (data.category?.trim() || input.category) as DiscussionCategory,
+      };
+    }
+
+    lastBody = await res.text();
+    if (res.status() === 429 && attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      continue;
+    }
+    throw new Error(`createDiscussion failed (${res.status()}): ${lastBody}`);
   }
 
-  const data = (await res.json()) as {
-    id?: string;
-    title?: string;
-    category?: string;
-  };
-  const id = data.id?.trim();
-  if (!id) {
-    throw new Error("createDiscussion response missing id");
-  }
-
-  return {
-    id,
-    title: data.title?.trim() || input.title,
-    category: (data.category?.trim() || input.category) as DiscussionCategory,
-  };
+  throw new Error(`createDiscussion failed: ${lastBody}`);
 }
 
 export async function deleteDiscussionViaApi(

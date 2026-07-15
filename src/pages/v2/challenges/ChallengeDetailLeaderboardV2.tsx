@@ -1,12 +1,12 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { v2OutlineButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
+import V2ListPaginationFooter from "@/components/v2/ui/V2ListPaginationFooter";
 import { formatChallengeDateTime } from "@/lib/datetime";
 import type { ChallengeLeaderboardRow } from "@/lib/api";
-import { cn, formatLapMs } from "@/lib/utils";
+import { formatLapMs } from "@/lib/utils";
 
 interface LeaderboardData {
   items: ChallengeLeaderboardRow[];
   page: number;
+  pageSize?: number;
   total: number;
   totalPages: number;
 }
@@ -15,6 +15,8 @@ interface ChallengeDetailLeaderboardV2Props {
   loading: boolean;
   data: LeaderboardData | undefined;
   page: number;
+  pageSize: number;
+  fetching?: boolean;
   onPageChange: (page: number) => void;
 }
 
@@ -22,6 +24,8 @@ export default function ChallengeDetailLeaderboardV2({
   loading,
   data,
   page,
+  pageSize,
+  fetching = false,
   onPageChange,
 }: ChallengeDetailLeaderboardV2Props) {
   return (
@@ -35,11 +39,6 @@ export default function ChallengeDetailLeaderboardV2({
             </span>
           )}
         </h2>
-        {data && data.totalPages > 1 && (
-          <p className="font-v2-body text-xs text-v2-on-surface-variant">
-            Page {data.page} / {data.totalPages}
-          </p>
-        )}
       </div>
       {loading ? (
         <p className="py-4 font-v2-body text-sm text-v2-on-surface-variant">
@@ -119,36 +118,15 @@ export default function ChallengeDetailLeaderboardV2({
               </tbody>
             </table>
           </div>
-          {data.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => onPageChange(Math.max(1, page - 1))}
-                className={cn(
-                  v2OutlineButtonClassName,
-                  "inline-flex items-center gap-1 px-3 py-2 font-v2-body text-sm font-medium",
-                )}
-              >
-                <ChevronLeft className="size-4" aria-hidden />
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={page >= data.totalPages}
-                onClick={() =>
-                  onPageChange(Math.min(data.totalPages, page + 1))
-                }
-                className={cn(
-                  v2OutlineButtonClassName,
-                  "inline-flex items-center gap-1 px-3 py-2 font-v2-body text-sm font-medium",
-                )}
-              >
-                Next
-                <ChevronRight className="size-4" aria-hidden />
-              </button>
-            </div>
-          )}
+          <V2ListPaginationFooter
+            page={page}
+            totalPages={data.totalPages}
+            total={data.total}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            disabled={fetching}
+            className="mt-4"
+          />
         </>
       )}
     </div>

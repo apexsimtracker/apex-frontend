@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Loader2, User } from "lucide-react";
 import {
   Tooltip,
@@ -6,6 +7,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatSimEnum } from "@/lib/enumFormat";
+import ProfileChallengeBadgesModalV2 from "@/components/v2/profile/ProfileChallengeBadgesModalV2";
+import { ProfileChallengeBadgesSkeletonV2 } from "@/components/v2/profile/ProfileChallengeBadgesSkeletonV2";
 
 export type ProfileHeaderBadgeV2 = {
   challengeId: string;
@@ -34,7 +37,10 @@ type ProfileHeaderV2Props = {
   onEditProfile?: () => void;
   streakDays: number;
   isPro?: boolean;
+  profileUserId: string;
   challengeBadges?: ProfileHeaderBadgeV2[];
+  challengeBadgeCount?: number;
+  challengeBadgesLoading?: boolean;
 };
 
 const PODIUM_EMOJI = ["🥇", "🥈", "🥉"] as const;
@@ -62,8 +68,12 @@ export function ProfileHeaderV2({
   onEditProfile,
   streakDays,
   isPro = false,
+  profileUserId,
   challengeBadges,
+  challengeBadgeCount,
+  challengeBadgesLoading = false,
 }: ProfileHeaderV2Props) {
+  const [badgesModalOpen, setBadgesModalOpen] = useState(false);
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
 
   const sortedBadges = (challengeBadges ?? []).slice().sort((a, b) => {
@@ -72,6 +82,8 @@ export function ProfileHeaderV2({
     if (tb !== ta) return tb - ta;
     return a.challengeId.localeCompare(b.challengeId);
   });
+
+  const badgeTotal = challengeBadgeCount ?? sortedBadges.length;
 
   const streakLabel =
     streakDays > 0
@@ -201,14 +213,27 @@ export function ProfileHeaderV2({
         </div>
       </div>
 
-      {sortedBadges.length > 0 && (
+      {challengeBadgesLoading ? (
+        <ProfileChallengeBadgesSkeletonV2 />
+      ) : badgeTotal > 0 ? (
         <div className="mt-4">
-          <p className="mb-1.5 font-v2-body text-xs font-semibold uppercase tracking-widest text-v2-on-surface-variant">
-            Podium badges
-          </p>
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-v2-body text-xs font-semibold uppercase tracking-widest text-v2-on-surface-variant">
+              Podium badges
+            </p>
+            <button
+              type="button"
+              onClick={() => setBadgesModalOpen(true)}
+              className="font-v2-body text-xs font-medium text-v2-primary transition-colors hover:text-v2-primary/80"
+            >
+              {badgeTotal > 3
+                ? `View all (${badgeTotal})`
+                : "View history"}
+            </button>
+          </div>
           <TooltipProvider delayDuration={150}>
             <div className="flex flex-wrap items-center gap-1.5">
-              {sortedBadges.map((badge) => {
+              {sortedBadges.slice(0, 6).map((badge) => {
                 const emoji =
                   badge.place >= 1 && badge.place <= 3
                     ? PODIUM_EMOJI[badge.place - 1]
@@ -245,8 +270,14 @@ export function ProfileHeaderV2({
               })}
             </div>
           </TooltipProvider>
+          <ProfileChallengeBadgesModalV2
+            open={badgesModalOpen}
+            onOpenChange={setBadgesModalOpen}
+            userId={profileUserId}
+            totalCount={badgeTotal}
+          />
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

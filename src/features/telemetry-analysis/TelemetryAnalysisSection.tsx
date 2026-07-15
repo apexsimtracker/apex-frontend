@@ -7,7 +7,7 @@ import { DrivingTracesChart } from "./DrivingTracesChart";
 import { FuelAnalysisChart } from "./FuelAnalysisChart";
 import { LapSelector } from "./LapSelector";
 import { TyreAnalysisChart } from "./TyreAnalysisChart";
-import { isManualIngest } from "./telemetryEligibility";
+import { isAgentOnlyTelemetryGate, telemetryIngestSourceLabel } from "./telemetryEligibility";
 import { useTelemetrySummary, useTelemetryTraces } from "./useSessionTelemetry";
 
 type TabId = "driving" | "fuel" | "tyres";
@@ -22,13 +22,13 @@ export function TelemetryAnalysisSection({
   ingestPath,
 }: TelemetryAnalysisSectionProps) {
   const isPro = useIsProUser();
-  const manualIngest = isManualIngest(ingestPath);
+  const agentOnlyGate = isAgentOnlyTelemetryGate(ingestPath);
 
   const {
     data: summary,
     isLoading,
     isError,
-  } = useTelemetrySummary(sessionId, isPro && !manualIngest);
+  } = useTelemetrySummary(sessionId, isPro && !agentOnlyGate);
 
   const [tab, setTab] = useState<TabId>("driving");
   const [selectedLap, setSelectedLap] = useState<number | null>(null);
@@ -82,8 +82,8 @@ export function TelemetryAnalysisSection({
             Telemetry Analysis is available with Apex Pro
           </p>
           <p className="mt-1 text-sm text-white/60">
-            Unlock driving traces, fuel strategy, and tyre insights for
-            agent-uploaded sessions
+            Unlock driving traces, fuel strategy, and tyre insights for Pro
+            sessions with telemetry
           </p>
           <Button
             asChild
@@ -96,7 +96,7 @@ export function TelemetryAnalysisSection({
     );
   }
 
-  if (manualIngest) {
+  if (agentOnlyGate) {
     return (
       <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-8 text-center">
         <div className="text-xs uppercase tracking-wider text-white/50">
@@ -106,8 +106,9 @@ export function TelemetryAnalysisSection({
           Upload with the Apex Agent for full telemetry analysis
         </p>
         <p className="mt-1 text-sm text-white/60">
-          Manual and web uploads store lap times only. Install the desktop agent
-          to capture driving traces, fuel, and tyre data automatically.
+          Manual form and JSON uploads store lap times only. Install the desktop
+          agent or upload an .ibt file (Pro) to capture driving traces, fuel, and
+          tyre data.
         </p>
         <Button
           asChild
@@ -156,18 +157,22 @@ export function TelemetryAnalysisSection({
   }
 
   if (!hasAnyData) {
+    const sourceLabel = telemetryIngestSourceLabel(ingestPath);
+    const isIbt = (ingestPath ?? "").trim().toLowerCase() === "manual_upload_ibt";
     return (
       <div className="mt-8 rounded-2xl border border-white/5 bg-white/[0.03] p-6">
         <div className="text-xs uppercase tracking-wider text-white/50">
           Telemetry Analysis
         </div>
         <p className="mt-1 text-sm text-white/60">
-          Agent session · {summary.simKey.replace(/_/g, " ")}
+          {sourceLabel} · {summary.simKey.replace(/_/g, " ")}
         </p>
         <p className="mt-4 text-sm text-white/60">
           Lap times are stored, but driving traces, fuel, and tyre data were not
-          captured for this session. Re-upload via a current Apex Agent build
-          after driving at least one complete lap.
+          captured for this session.
+          {isIbt
+            ? " Re-upload a complete .ibt that includes at least one full lap with telemetry channels."
+            : " Re-upload via a current Apex Agent build after driving at least one complete lap."}
         </p>
         {summary.laps.length > 0 && (
           <div className="mt-6">
@@ -206,7 +211,8 @@ export function TelemetryAnalysisSection({
             Telemetry Analysis
           </div>
           <p className="mt-1 text-sm text-white/60">
-            Agent session · {summary.simKey.replace(/_/g, " ")}
+            {telemetryIngestSourceLabel(ingestPath)} ·{" "}
+            {summary.simKey.replace(/_/g, " ")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

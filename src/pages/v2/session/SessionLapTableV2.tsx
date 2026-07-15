@@ -1,4 +1,5 @@
 import { formatLapMs } from "@/lib/utils";
+import { formatLapDeltaMsForDisplay } from "@/features/session-detail/sessionInsights";
 import {
   DEFAULT_LAP_TIMING_HIGHLIGHTS,
   type LapTimingHighlights,
@@ -12,10 +13,12 @@ type SessionLapTableV2Props = {
   bestLapMsFromLaps: number | null;
   canShowMore: boolean;
   onShowMore: () => void;
+  selectedLap?: number | null;
+  onSelectLap?: (lapNumber: number) => void;
 };
 
 function loveableHighlightClass(h: TimingHighlight): string {
-  return h === "default" ? "text-v2-on-surface" : "text-green-500";
+  return h === "purple" ? "text-purple-400" : "text-v2-on-surface";
 }
 
 function sectorWeightClass(isFastest: boolean, h: TimingHighlight): string {
@@ -31,11 +34,13 @@ export default function SessionLapTableV2({
   bestLapMsFromLaps,
   canShowMore,
   onShowMore,
+  selectedLap = null,
+  onSelectLap,
 }: SessionLapTableV2Props) {
   return (
     <div className="overflow-hidden rounded-xl bg-v2-surface-container-low shadow-lg">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[320px] border-collapse text-left">
+        <table className="w-full min-w-[360px] border-collapse text-left">
           <thead>
             <tr className="border-b border-v2-outline-variant/15">
               <th className={HEADER_CELL}>Lap</th>
@@ -43,13 +48,14 @@ export default function SessionLapTableV2({
               <th className={HEADER_CELL}>S2</th>
               <th className={HEADER_CELL}>S3</th>
               <th className={`${HEADER_CELL} text-right`}>Time</th>
+              <th className={`${HEADER_CELL} text-right`}>Δ</th>
             </tr>
           </thead>
           <tbody className="font-v2-body text-[11px]">
             {laps.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-10 text-center font-v2-body text-sm text-v2-on-surface-variant"
                 >
                   No laps recorded yet.
@@ -61,23 +67,39 @@ export default function SessionLapTableV2({
                   lapHighlights.get(row.lap) ?? DEFAULT_LAP_TIMING_HIGHLIGHTS;
                 const isFastest =
                   bestLapMsFromLaps != null && row.timeMs === bestLapMsFromLaps;
+                const isSelected = selectedLap === row.lap;
+                const deltaMs =
+                  typeof row.deltaMs === "number"
+                    ? row.deltaMs
+                    : bestLapMsFromLaps != null
+                      ? row.timeMs - bestLapMsFromLaps
+                      : null;
                 return (
                   <tr
                     key={`lap-${row.lap}-${index}`}
+                    data-testid={`lap-row-${row.lap}`}
+                    onClick={() => onSelectLap?.(row.lap)}
                     className={
                       isFastest
-                        ? "border-b border-green-500/20 bg-green-500/10"
-                        : "border-b border-v2-outline-variant/5 transition-colors hover:bg-v2-surface-container"
+                        ? "cursor-pointer border-b border-purple-400/20 bg-purple-400/10"
+                        : isSelected
+                          ? "cursor-pointer border-b border-v2-primary/30 bg-v2-primary/10"
+                          : "cursor-pointer border-b border-v2-outline-variant/5 transition-colors hover:bg-v2-surface-container"
                     }
                   >
                     <td
                       className={`whitespace-nowrap px-2 py-3 ${
                         isFastest
-                          ? "font-bold italic text-green-500"
+                          ? "font-bold italic text-purple-400"
                           : "text-v2-on-surface-variant"
                       }`}
                     >
                       {row.lap}
+                      {row.isOutLap ? (
+                        <span className="ml-1 rounded bg-v2-surface-container px-1 py-0.5 font-v2-body text-[9px] font-bold uppercase tracking-wide text-v2-on-surface-variant">
+                          Out
+                        </span>
+                      ) : null}
                     </td>
                     <td
                       className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
@@ -105,10 +127,19 @@ export default function SessionLapTableV2({
                     </td>
                     <td
                       className={`whitespace-nowrap px-2 py-3 text-right font-v2-headline font-bold ${
-                        isFastest ? "text-green-500" : "text-v2-on-surface"
+                        isFastest || rowHighlights.lap === "purple"
+                          ? "text-purple-400"
+                          : "text-v2-on-surface"
                       }`}
                     >
                       {formatLapMs(row.timeMs)}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-3 text-right text-v2-on-surface-variant">
+                      {deltaMs != null &&
+                      Number.isFinite(deltaMs) &&
+                      Math.abs(deltaMs) >= 0.5
+                        ? formatLapDeltaMsForDisplay(deltaMs)
+                        : "—"}
                     </td>
                   </tr>
                 );

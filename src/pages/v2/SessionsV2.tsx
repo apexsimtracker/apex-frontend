@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Upload,
-  PenLine,
-  Cpu,
-  Search,
-  LayoutGrid,
-  List,
-} from "lucide-react";
+import { Upload, PenLine, Cpu, Search, LayoutGrid, List } from "lucide-react";
 import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
 import { toV2Path } from "@/config/navigation";
 import OnboardingEmptyStateV2 from "@/components/v2/dashboard/OnboardingEmptyStateV2";
@@ -273,7 +266,9 @@ export default function SessionsV2() {
   const isPro = useIsProUser();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const type = parseType(searchParams.get("type") ?? searchParams.get("sessionsType"));
+  const type = parseType(
+    searchParams.get("type") ?? searchParams.get("sessionsType"),
+  );
   const sessionKind = parseSessionKind(searchParams.get("sessionKind"));
   const sim = searchParams.get("sim") ?? "";
   const ingest = parseIngest(searchParams.get("ingest"));
@@ -384,10 +379,7 @@ export default function SessionsV2() {
   });
 
   const needsLazyStats = statsTab !== "overview";
-  const {
-    data: statsData,
-    isPending: statsLoading,
-  } = useQuery({
+  const { data: statsData, isPending: statsLoading } = useQuery({
     queryKey: ["sessions-library", "stats", statsTab, user?.id, filters],
     queryFn: () => getSessionsLibraryStats(statsTab, filters),
     enabled: Boolean(user?.id) && needsLazyStats,
@@ -506,7 +498,7 @@ export default function SessionsV2() {
         </div>
 
         <div
-          className="mb-4 inline-flex w-full rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container-low p-1"
+          className="mb-4 inline-flex w-full gap-2 p-1"
           role="tablist"
           aria-label="Stats"
         >
@@ -520,10 +512,10 @@ export default function SessionsV2() {
                 aria-selected={isActive}
                 onClick={() => setStatsTab(tab.value)}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-md p-2 font-v2-headline text-xs transition-colors sm:px-3 sm:text-sm",
+                  "flex flex-1 items-center justify-center rounded p-2 font-v2-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
                   isActive
-                    ? "bg-v2-primary font-bold text-white shadow-sm"
-                    : "font-medium text-v2-on-surface-variant hover:text-v2-on-surface",
+                    ? "bg-v2-primary text-white"
+                    : "bg-v2-surface-container-low text-v2-on-surface-variant hover:text-v2-on-surface",
                 )}
               >
                 {tab.label}
@@ -547,30 +539,39 @@ export default function SessionsV2() {
               loading={statsLoading}
             />
           )}
-          {statsTab === "racing" && (
-            statsLoading ? (
+          {statsTab === "racing" &&
+            (statsLoading ? (
               <p className="font-v2-body text-sm text-v2-on-surface-variant">
                 Loading racing stats…
               </p>
             ) : (
               <ProfileKeyStatsV2
                 profileLocked={false}
-                races={(statsData as SessionsLibraryRacingStats | undefined)?.races ?? 0}
-                wins={(statsData as SessionsLibraryRacingStats | undefined)?.wins}
-                podiums={(statsData as SessionsLibraryRacingStats | undefined)?.podiums}
-                poles={(statsData as SessionsLibraryRacingStats | undefined)?.poles}
+                races={
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.races ?? 0
+                }
+                wins={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.wins
+                }
+                podiums={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.podiums
+                }
+                poles={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.poles
+                }
                 fastestLaps={
                   (statsData as SessionsLibraryRacingStats | undefined)
                     ?.fastestLaps ?? 0
                 }
                 avgFinish={
-                  (statsData as SessionsLibraryRacingStats | undefined)?.avgFinish
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.avgFinish
                 }
               />
-            )
-          )}
-          {statsTab === "bySim" && (
-            statsLoading ? (
+            ))}
+          {statsTab === "bySim" &&
+            (statsLoading ? (
               <p className="font-v2-body text-sm text-v2-on-surface-variant">
                 Loading stats by sim…
               </p>
@@ -581,12 +582,11 @@ export default function SessionsV2() {
                     ?.statsByGame ?? []
                 }
               />
-            )
-          )}
+            ))}
         </div>
 
         <div
-          className="mb-4 inline-flex w-full rounded-lg border border-v2-outline-variant/15 bg-v2-surface-container-low p-1"
+          className="mb-4 inline-flex w-full gap-2 p-1"
           role="tablist"
           aria-label="Session type"
         >
@@ -601,10 +601,10 @@ export default function SessionsV2() {
                 aria-selected={isActive}
                 onClick={() => setType(tab.value)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-md p-2 font-v2-headline text-xs transition-colors sm:px-3 sm:text-sm",
+                  "flex flex-1 items-center justify-center gap-1.5 rounded p-2 font-v2-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
                   isActive
-                    ? "bg-v2-primary font-bold text-white shadow-sm"
-                    : "font-medium text-v2-on-surface-variant hover:text-v2-on-surface",
+                    ? "bg-v2-primary text-white"
+                    : "bg-v2-surface-container-low text-v2-on-surface-variant hover:text-v2-on-surface",
                 )}
               >
                 {tab.label}
@@ -612,7 +612,9 @@ export default function SessionsV2() {
                   <span
                     className={cn(
                       "tabular-nums text-[10px]",
-                      isActive ? "text-white/80" : "text-v2-on-surface-variant/70",
+                      isActive
+                        ? "text-white/80"
+                        : "text-v2-on-surface-variant/70",
                     )}
                   >
                     {count}
@@ -739,12 +741,14 @@ export default function SessionsV2() {
           {!listLoading && !listError && isEmpty && emptyMessage === "all" && (
             <OnboardingEmptyStateV2 />
           )}
-          {!listLoading && !listError && isEmpty && emptyMessage === "manual" && (
-            <EmptyManualV2 />
-          )}
-          {!listLoading && !listError && isEmpty && emptyMessage === "telemetry" && (
-            <EmptyTelemetryV2 />
-          )}
+          {!listLoading &&
+            !listError &&
+            isEmpty &&
+            emptyMessage === "manual" && <EmptyManualV2 />}
+          {!listLoading &&
+            !listError &&
+            isEmpty &&
+            emptyMessage === "telemetry" && <EmptyTelemetryV2 />}
           {!listLoading &&
             !listError &&
             isEmpty &&

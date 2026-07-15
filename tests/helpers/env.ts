@@ -69,6 +69,11 @@ export type E2eEnv = {
   adminSecret: string;
   billingConfigured: boolean;
   challengeId: string;
+  challengeUpcomingId: string;
+  challengePastId: string;
+  challengeCascadeId: string;
+  challengeTransitionId: string;
+  challengeBanTargetId: string;
   unverifiedKnownCode: string;
   personas: Record<E2ePersonaKey, string>;
 };
@@ -123,6 +128,21 @@ export function getE2eEnv(): E2eEnv {
     billingConfigured: process.env.E2E_BILLING_CONFIGURED === "1",
     challengeId:
       process.env.E2E_CHALLENGE_ID?.trim() || "e2e-challenge-road-atlanta-gt3",
+    challengeUpcomingId:
+      process.env.E2E_CHALLENGE_UPCOMING_ID?.trim() ||
+      "e2e-challenge-upcoming-spa-gt3",
+    challengePastId:
+      process.env.E2E_CHALLENGE_PAST_ID?.trim() ||
+      "e2e-challenge-past-monza-gt3",
+    challengeCascadeId:
+      process.env.E2E_CHALLENGE_CASCADE_ID?.trim() ||
+      "e2e-challenge-cascade-silverstone",
+    challengeTransitionId:
+      process.env.E2E_CHALLENGE_TRANSITION_ID?.trim() ||
+      "e2e-challenge-transition-dynamic",
+    challengeBanTargetId:
+      process.env.E2E_CHALLENGE_BAN_TARGET_ID?.trim() ||
+      "e2e-challenge-ban-target-laguna",
     unverifiedKnownCode:
       process.env.E2E_UNVERIFIED_KNOWN_CODE?.trim() || "12345678",
     personas,

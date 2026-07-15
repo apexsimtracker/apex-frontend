@@ -1,7 +1,7 @@
 import SimBadge from "@/components/SimBadge";
 import SessionTypeTag from "@/components/SessionTypeTag";
-import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { ProfilePositionBadgeV2 } from "@/components/v2/profile/ProfilePositionBadgeV2";
+import DiscussionCommentsPaginationV2 from "@/pages/v2/discussion/DiscussionCommentsPaginationV2";
 import { formatLapMs, formatCarName, formatTrackName } from "@/lib/utils";
 import { getSimShortName } from "@/lib/sim";
 
@@ -208,7 +208,7 @@ export function ProfileRaceHistoryV2({
               Showing {range.start}–{range.end} of {total}
             </p>
           )}
-          <RaceHistoryPagination
+          <DiscussionCommentsPaginationV2
             page={pagination.page}
             totalPages={pagination.totalPages}
             onPageChange={pagination.onPageChange}

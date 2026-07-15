@@ -6,85 +6,107 @@ const blockClassName = "bg-v2-surface-container-high/80";
 export default function SessionDetailSkeletonV2() {
   return (
     <div
-      className="space-y-8"
+      className="space-y-4"
       role="status"
       aria-live="polite"
       aria-busy="true"
       aria-label="Loading session"
     >
-      <SkeletonBlock className={cn("h-4 w-24 rounded-v2-sm", blockClassName)} />
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <SkeletonBlock
-              className={cn("h-6 w-16 rounded-v2-sm", blockClassName)}
-            />
-            <SkeletonBlock
-              className={cn("h-6 w-14 rounded-v2-sm", blockClassName)}
-            />
-          </div>
+      <div className="flex flex-wrap gap-2">
+        {["w-16", "w-14", "w-20"].map((widthClass) => (
           <SkeletonBlock
-            className={cn("h-9 w-64 max-w-full rounded-v2-sm", blockClassName)}
+            key={widthClass}
+            className={cn("h-6 rounded-v2-sm", widthClass, blockClassName)}
           />
-          <SkeletonBlock
-            className={cn("h-4 w-20 rounded-v2-sm", blockClassName)}
-          />
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <SkeletonBlock
-            className={cn("h-10 w-20 rounded-v2-sm", blockClassName)}
-          />
-          <SkeletonBlock
-            className={cn("h-10 w-16 rounded-v2-sm", blockClassName)}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div
-            key={i}
-            className="rounded-v2-lg border border-v2-outline-variant/15 bg-v2-surface-container-low p-4"
-          >
-            <SkeletonBlock
-              className={cn("mb-2 h-3 w-16 rounded-v2-sm", blockClassName)}
-            />
-            <SkeletonBlock
-              className={cn("h-8 w-20 rounded-v2-sm", blockClassName)}
-            />
-          </div>
         ))}
       </div>
 
-      <SkeletonBlock
-        className={cn(
-          "h-32 w-full rounded-v2-lg border border-v2-outline-variant/15",
-          blockClassName,
-        )}
-      />
-
-      <SkeletonBlock
-        className={cn(
-          "h-64 w-full rounded-2xl border border-v2-outline-variant/15",
-          blockClassName,
-        )}
-      />
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="relative h-[220px] rounded-xl bg-v2-surface-container-low p-4 sm:h-64">
+        <div className="flex justify-end gap-2">
+          {Array.from({ length: 3 }, (_, index) => (
+            <SkeletonBlock
+              key={index}
+              className={cn("size-9 rounded-full", blockClassName)}
+            />
+          ))}
+        </div>
         <SkeletonBlock
           className={cn(
-            "h-40 rounded-v2-lg border border-v2-outline-variant/15",
-            blockClassName,
-          )}
-        />
-        <SkeletonBlock
-          className={cn(
-            "h-40 rounded-v2-lg border border-v2-outline-variant/15",
+            "absolute bottom-6 left-4 h-10 w-64 max-w-[75%] rounded-v2-sm sm:left-6",
             blockClassName,
           )}
         />
       </div>
+
+      <section className="space-y-3">
+        <div className="flex items-center gap-5 overflow-hidden rounded-xl bg-v2-surface-container-low p-4 shadow-lg">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="min-w-24 flex-1 space-y-2">
+              <SkeletonBlock
+                className={cn("h-3 w-14 rounded-v2-sm", blockClassName)}
+              />
+              <SkeletonBlock
+                className={cn("h-7 w-20 rounded-v2-sm", blockClassName)}
+              />
+            </div>
+          ))}
+        </div>
+        <SkeletonBlock
+          className={cn("h-3 w-72 max-w-full rounded-v2-sm", blockClassName)}
+        />
+      </section>
+
+      <section className="rounded-xl bg-v2-surface-container-low p-4 shadow-lg">
+        <div className="mb-5 flex items-center justify-between">
+          <SkeletonBlock
+            className={cn("h-6 w-40 rounded-v2-sm", blockClassName)}
+          />
+          <SkeletonBlock
+            className={cn("h-3 w-24 rounded-v2-sm", blockClassName)}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="space-y-2">
+              <SkeletonBlock
+                className={cn("h-1 w-full rounded-full", blockClassName)}
+              />
+              <SkeletonBlock
+                className={cn("h-3 w-14 rounded-v2-sm", blockClassName)}
+              />
+              <SkeletonBlock
+                className={cn(
+                  "h-7 w-20 max-w-full rounded-v2-sm",
+                  blockClassName,
+                )}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <SkeletonBlock
+          className={cn("h-6 w-28 rounded-v2-sm", blockClassName)}
+        />
+        <SkeletonBlock
+          className={cn("h-64 w-full rounded-xl", blockClassName)}
+        />
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <SkeletonBlock className={cn("h-52 rounded-xl", blockClassName)} />
+        <SkeletonBlock className={cn("h-52 rounded-xl", blockClassName)} />
+      </div>
+
+      <section className="space-y-3">
+        <SkeletonBlock
+          className={cn("h-6 w-36 rounded-v2-sm", blockClassName)}
+        />
+        <SkeletonBlock
+          className={cn("h-72 w-full rounded-xl", blockClassName)}
+        />
+      </section>
     </div>
   );
 }

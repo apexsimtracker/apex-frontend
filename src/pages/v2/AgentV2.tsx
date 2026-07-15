@@ -193,189 +193,193 @@ export default function AgentV2() {
           </p>
         </section>
 
-        <div className="mb-6">
-          <AgentPlatformSelectorV2
-            selectedOs={selectedOs}
-            onSelect={setSelectedOs}
-          />
-        </div>
-
-        {showWelcomeBanner && isPro && (
-          <div className="mb-6 rounded-lg border border-v2-success/30 bg-v2-success/10 px-4 py-3 text-sm">
-            <p className="font-medium text-v2-success">Welcome to Apex Pro!</p>
-            <p className="mt-1 text-v2-on-surface-variant">
-              Download the agent below, then sign in with the same email and
-              password you use on this website.
-            </p>
-            <button
-              type="button"
-              className="mt-2 text-xs text-v2-on-surface-variant underline-offset-2 hover:underline"
-              onClick={() => {
-                searchParams.delete("welcome");
-                setSearchParams(searchParams, { replace: true });
-              }}
-            >
-              Dismiss
-            </button>
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="mb-6">
+            <AgentPlatformSelectorV2
+              selectedOs={selectedOs}
+              onSelect={setSelectedOs}
+            />
           </div>
-        )}
 
-        <section className="mb-8">
-          <div className="rounded-r-lg border-l-4 border-v2-primary bg-v2-surface-container/50 p-4">
-            <h2 className={cn(sectionEyebrowClassName, "mb-2")}>
-              What it does
-            </h2>
-            <p className="text-sm leading-relaxed text-v2-on-surface-variant">
-              The Apex Agent runs locally on your computer and automatically
-              detects when you complete a session in supported simulators. It
-              uploads your telemetry data to Apex so you can track your progress
-              without any manual work.
-            </p>
-          </div>
-        </section>
-
-        <section className="mb-8">
-          <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
-            Supported simulators
-          </h2>
-          <div className="space-y-3">
-            {SUPPORTED_SIMS.map((sim) => {
-              const isSupported = sim.support[selectedOs];
-              return (
-                <div
-                  key={sim.name}
-                  className="rounded-lg border border-[#2a2a2a] bg-v2-surface-container p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      {isSupported ? (
-                        <Check
-                          className="size-5 shrink-0 text-v2-primary"
-                          aria-hidden
-                        />
-                      ) : (
-                        <sim.icon
-                          className="size-5 shrink-0 text-v2-on-surface-variant/50"
-                          aria-hidden
-                        />
-                      )}
-                      <span className="font-medium text-v2-on-surface">
-                        {sim.name}
-                      </span>
-                    </div>
-                    <span className="text-xs text-v2-on-surface-variant">
-                      {simStatusLabel(isSupported)}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 pl-8 text-xs text-v2-on-surface-variant">
-                    {sim.detail[selectedOs]}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <div className="mb-10 rounded-lg border border-[#2a2a2a] bg-[#121212] p-4">
-          <p className="text-xs leading-relaxed text-v2-on-surface-variant">
-            <span className="mr-1 font-bold uppercase text-v2-on-surface">
-              Status:
-            </span>
-            Runs locally and uploads sessions automatically when you finish
-            driving.
-          </p>
-        </div>
-
-        <AgentInstallRequirementsV2 os={selectedOs} />
-
-        <section className="mb-8">
-          <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
-            After you install
-          </h2>
-          <div className="rounded-lg border border-[#2a2a2a] bg-v2-surface-container p-6">
-            <ol className="space-y-3 text-sm text-v2-on-surface-variant">
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
-                  1
-                </span>
-                <span>
-                  Open Apex Agent from your{" "}
-                  {selectedOs === "macos" ? "menu bar" : "system tray"} (look
-                  for the Apex icon).
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
-                  2
-                </span>
-                <span>
-                  Sign in with the{" "}
-                  <strong className="font-medium text-v2-on-surface">
-                    same email and password
-                  </strong>{" "}
-                  as your {COMPANY_NAME} account. No separate activation code is
-                  required.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
-                  3
-                </span>
-                <span>
-                  The agent minimizes to the{" "}
-                  {selectedOs === "macos" ? "menu bar" : "system tray"} and
-                  uploads sessions automatically while you race.
-                </span>
-              </li>
-            </ol>
-          </div>
-        </section>
-
-        {isWeb ? (
-          <div className="mb-8">
-            {authLoading ? (
-              <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#121212] px-4 py-3 text-sm text-v2-on-surface-variant">
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Checking subscription…
-              </div>
-            ) : isPro ? (
+          {showWelcomeBanner && isPro && (
+            <div className="mb-6 rounded-lg border border-v2-success/30 bg-v2-success/10 px-4 py-3 text-sm">
+              <p className="font-medium text-v2-success">
+                Welcome to Apex Pro!
+              </p>
+              <p className="mt-1 text-v2-on-surface-variant">
+                Download the agent below, then sign in with the same email and
+                password you use on this website.
+              </p>
               <button
                 type="button"
-                onClick={handleDownloadClick}
-                disabled={isDownloading}
-                className={cn(
-                  v2PrimaryButtonClassName,
-                  "flex w-full items-center justify-center gap-2 rounded-lg",
-                )}
+                className="mt-2 text-xs text-v2-on-surface-variant underline-offset-2 hover:underline"
+                onClick={() => {
+                  searchParams.delete("welcome");
+                  setSearchParams(searchParams, { replace: true });
+                }}
               >
-                {isDownloading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Preparing download…
-                  </>
-                ) : (
-                  <>
-                    <Download className="size-4" aria-hidden />
-                    Download {downloadFilename}
-                  </>
-                )}
+                Dismiss
               </button>
-            ) : (
-              <AgentProUpgradeCardV2
-                onUpgradeClick={() => setUpgradeModalOpen(true)}
-              />
-            )}
-          </div>
-        ) : null}
+            </div>
+          )}
 
-        <div className="flex justify-center">
-          <Link
-            to="/v2"
-            className="inline-flex items-center gap-2 text-sm text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Back to Home
-          </Link>
+          <section className="mb-8">
+            <div className="rounded-r-lg border-l-4 border-v2-primary bg-v2-surface-container/50 p-4">
+              <h2 className={cn(sectionEyebrowClassName, "mb-2")}>
+                What it does
+              </h2>
+              <p className="text-sm leading-relaxed text-v2-on-surface-variant">
+                The Apex Agent runs locally on your computer and automatically
+                detects when you complete a session in supported simulators. It
+                uploads your telemetry data to Apex so you can track your
+                progress without any manual work.
+              </p>
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
+              Supported simulators
+            </h2>
+            <div className="space-y-3">
+              {SUPPORTED_SIMS.map((sim) => {
+                const isSupported = sim.support[selectedOs];
+                return (
+                  <div
+                    key={sim.name}
+                    className="rounded-lg border border-[#2a2a2a] bg-v2-surface-container p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {isSupported ? (
+                          <Check
+                            className="size-5 shrink-0 text-v2-primary"
+                            aria-hidden
+                          />
+                        ) : (
+                          <sim.icon
+                            className="size-5 shrink-0 text-v2-on-surface-variant/50"
+                            aria-hidden
+                          />
+                        )}
+                        <span className="font-medium text-v2-on-surface">
+                          {sim.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-v2-on-surface-variant">
+                        {simStatusLabel(isSupported)}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 pl-8 text-xs text-v2-on-surface-variant">
+                      {sim.detail[selectedOs]}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="mb-10 rounded-lg border border-[#2a2a2a] bg-[#121212] p-4">
+            <p className="text-xs leading-relaxed text-v2-on-surface-variant">
+              <span className="mr-1 font-bold uppercase text-v2-on-surface">
+                Status:
+              </span>
+              Runs locally and uploads sessions automatically when you finish
+              driving.
+            </p>
+          </div>
+
+          <AgentInstallRequirementsV2 os={selectedOs} />
+
+          <section className="mb-8">
+            <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
+              After you install
+            </h2>
+            <div className="rounded-lg border border-[#2a2a2a] bg-v2-surface-container p-6">
+              <ol className="space-y-3 text-sm text-v2-on-surface-variant">
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
+                    1
+                  </span>
+                  <span>
+                    Open Apex Agent from your{" "}
+                    {selectedOs === "macos" ? "menu bar" : "system tray"} (look
+                    for the Apex icon).
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
+                    2
+                  </span>
+                  <span>
+                    Sign in with the{" "}
+                    <strong className="font-medium text-v2-on-surface">
+                      same email and password
+                    </strong>{" "}
+                    as your {COMPANY_NAME} account. No separate activation code
+                    is required.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-v2-on-surface">
+                    3
+                  </span>
+                  <span>
+                    The agent minimizes to the{" "}
+                    {selectedOs === "macos" ? "menu bar" : "system tray"} and
+                    uploads sessions automatically while you race.
+                  </span>
+                </li>
+              </ol>
+            </div>
+          </section>
+
+          {isWeb ? (
+            <div className="mb-8">
+              {authLoading ? (
+                <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#121212] px-4 py-3 text-sm text-v2-on-surface-variant">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Checking subscription…
+                </div>
+              ) : isPro ? (
+                <button
+                  type="button"
+                  onClick={handleDownloadClick}
+                  disabled={isDownloading}
+                  className={cn(
+                    v2PrimaryButtonClassName,
+                    "flex w-full items-center justify-center gap-2 rounded-lg",
+                  )}
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Preparing download…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="size-4" aria-hidden />
+                      Download {downloadFilename}
+                    </>
+                  )}
+                </button>
+              ) : (
+                <AgentProUpgradeCardV2
+                  onUpgradeClick={() => setUpgradeModalOpen(true)}
+                />
+              )}
+            </div>
+          ) : null}
+
+          <div className="flex justify-center">
+            <Link
+              to="/v2"
+              className="inline-flex items-center gap-2 text-sm text-v2-on-surface-variant transition-colors hover:text-v2-on-surface"
+            >
+              <ArrowLeft className="size-4" aria-hidden />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -47,17 +47,23 @@ export type TelemetrySummaryResponse = {
     trackTempC?: number;
     humidityPct?: number;
     trackLengthKm?: number;
+    sessionStartedAt?: string;
   } | null;
 };
 
 export type TelemetryTracesResponse = {
   lapNumber: number;
   compareLapNumber?: number;
+  lapTimeMs: number;
+  isValid: boolean;
+  isBestLap: boolean;
   distanceM: number[];
   speedKmh: number[];
   throttlePct: number[];
   brakePct: number[];
   gear: number[];
   steeringDeg?: number[];
+  rpm?: number[];
+  clutchPct?: number[];
   deltaMs?: number[];
 };

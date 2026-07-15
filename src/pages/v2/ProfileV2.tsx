@@ -35,6 +35,8 @@ import {
 } from "@/lib/profileQueryKeys";
 
 const PROFILE_V2_PATH = "/v2/profile";
+const contentRootClassName =
+  "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8";
 const profileTitle = `Profile | ${COMPANY_NAME}`;
 const profileDescription = `Your ${COMPANY_NAME} driver profile, stats, and race history.`;
 
@@ -135,11 +137,12 @@ export default function ProfileV2() {
   const profileUserKey = ownedProfileUserKey(user);
   const followsUserId = user?.id?.trim() ?? "";
 
-  const { data: profileSummary } = useQuery({
+  const summaryQuery = useQuery({
     queryKey: profileKeys.summary(profileUserKey),
     queryFn: getProfileSummary,
     enabled: Boolean(user),
   });
+  const profileSummary = summaryQuery.data;
 
   const {
     data: raceHistoryData,
@@ -156,7 +159,10 @@ export default function ProfileV2() {
     placeholderData: (previousData) => previousData,
   });
 
-  const { data: publicPreview } = useQuery({
+  const {
+    data: publicPreview,
+    isPending: publicPreviewLoading,
+  } = useQuery({
     queryKey: profileKeys.publicPreview(followsUserId),
     queryFn: () => getUserPublicProfile(followsUserId),
     enabled: Boolean(followsUserId),
@@ -181,15 +187,12 @@ export default function ProfileV2() {
     mode: "onChange",
   });
 
-  const profile =
-    profileSummary ?? (user ? profileSummaryFromMe({ user }) : null);
-
   const openEditProfile = useCallback(() => {
     if (!user) return;
     const name = getAccountDisplayName(user);
     const currentBio =
-      (profile?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
-      (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
+      (profileSummary?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
+      (profileSummary?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       "";
     profileEditForm.reset({
       displayName: name,
@@ -201,7 +204,7 @@ export default function ProfileV2() {
     profileEditForm.clearErrors("root");
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profile, profileEditForm]);
+  }, [user, profileSummary, profileEditForm]);
 
   const handleAvatarFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -368,7 +371,27 @@ export default function ProfileV2() {
           path={PROFILE_V2_PATH}
           noindex
         />
-        <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className={contentRootClassName}>
+          <ProfileSkeletonV2 />
+        </div>
+      </>
+    );
+  }
+
+  const summaryLoading = summaryQuery.isLoading;
+
+  if (summaryLoading) {
+    const accountName = getAccountDisplayName(user);
+    const skeletonSeoTitle = `${accountName} | ${COMPANY_NAME}`;
+    return (
+      <>
+        <PageMeta
+          title={skeletonSeoTitle}
+          description={profileDescription}
+          path={PROFILE_V2_PATH}
+          noindex
+        />
+        <div className={contentRootClassName}>
           <ProfileSkeletonV2 />
         </div>
       </>
@@ -377,8 +400,8 @@ export default function ProfileV2() {
 
   const accountName = getAccountDisplayName(user);
   const me: MeResponse = { user };
-  const displayProfile: ProfileSummary = profile
-    ? { ...profile, user: { ...profile.user, displayName: accountName } }
+  const displayProfile: ProfileSummary = profileSummary
+    ? { ...profileSummary, user: { ...profileSummary.user, displayName: accountName } }
     : profileSummaryFromMe(me);
 
   const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
@@ -406,7 +429,7 @@ export default function ProfileV2() {
         image={avatarUrl}
         noindex
       />
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+      <div className={contentRootClassName}>
         <ProfileViewV2
           profile={displayProfile}
           avatarUrl={avatarUrl || undefined}
@@ -415,7 +438,12 @@ export default function ProfileV2() {
           followingCount={publicPreview?.followingCount ?? 0}
           isCurrentUser
           isPro={user.hasPro === true}
+          profileUserId={followsUserId}
           challengeBadges={publicPreview?.challengeBadges}
+          challengeBadgeCount={publicPreview?.challengeBadgeCount}
+          challengeBadgesLoading={
+            Boolean(followsUserId) && publicPreviewLoading
+          }
           onOpenFollowers={() => setOpenList("followers")}
           onOpenFollowing={() => setOpenList("following")}
           onPrefetchFollowers={() =>

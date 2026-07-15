@@ -1,8 +1,11 @@
 import { SkeletonBlock } from "@/components/ui/skeleton";
+import { ProfileChallengeBadgesSkeletonV2 } from "@/components/v2/profile/ProfileChallengeBadgesSkeletonV2";
 
 type ProfileSkeletonV2Props = {
   /** User details page shows a back control above the profile content. */
   showBackLink?: boolean;
+  /** When preview is already loaded, mirror whether badges will appear. */
+  showChallengeBadges?: boolean;
 };
 
 const sk = "bg-v2-surface-container-highest";
@@ -16,10 +19,10 @@ function StatCellSkeleton({ align }: { align?: "left" | "center" | "right" }) {
     <div
       className={
         align === "center"
-          ? "flex flex-col items-center space-y-2"
+          ? "flex flex-col items-center space-y-2 lg:items-start lg:rounded-xl lg:border lg:border-v2-outline-variant/15 lg:bg-v2-surface-container-low lg:p-4 lg:shadow-lg"
           : align === "right"
-            ? "flex flex-col items-end space-y-2"
-            : "space-y-2"
+            ? "flex flex-col items-end space-y-2 lg:items-start lg:rounded-xl lg:border lg:border-v2-outline-variant/15 lg:bg-v2-surface-container-low lg:p-4 lg:shadow-lg"
+            : "space-y-2 lg:rounded-xl lg:border lg:border-v2-outline-variant/15 lg:bg-v2-surface-container-low lg:p-4 lg:shadow-lg"
       }
     >
       <SkeletonBlock className={`h-2.5 w-14 rounded-v2-sm ${sk}`} />
@@ -91,6 +94,7 @@ function GameStatCardSkeleton() {
 
 export default function ProfileSkeletonV2({
   showBackLink = false,
+  showChallengeBadges = false,
 }: ProfileSkeletonV2Props) {
   const barHeights = [
     "h-[45%]",
@@ -131,8 +135,10 @@ export default function ProfileSkeletonV2({
         </div>
       </section>
 
-      {/* Key stats — 3×2 grid */}
-      <section className="grid grid-cols-3 gap-y-4 border-y border-v2-outline-variant/15 py-4">
+      {showChallengeBadges && <ProfileChallengeBadgesSkeletonV2 />}
+
+      {/* Key stats — 3×2 grid; cards on laptop+ */}
+      <section className="grid grid-cols-3 gap-y-4 border-y border-v2-outline-variant/15 py-4 lg:gap-3 lg:border-0 lg:py-0">
         <StatCellSkeleton align="left" />
         <StatCellSkeleton align="center" />
         <StatCellSkeleton align="right" />

@@ -57,6 +57,7 @@ type RawLap = {
   lapTimeMs?: number;
   isValid?: boolean;
   isBestLap?: boolean;
+  isOutLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -69,6 +70,7 @@ type NormalizedLap = {
   timeMs: number;
   isValid?: boolean;
   isBestLap?: boolean;
+  isOutLap?: boolean;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -83,6 +85,7 @@ function normalizeLaps(laps: RawLap[] | undefined): NormalizedLap[] {
     timeMs: l.lapTimeMs ?? l.timeMs ?? 0,
     isValid: l.isValid,
     isBestLap: l.isBestLap,
+    isOutLap: l.isOutLap === true ? true : undefined,
     sector1Ms: l.sector1Ms,
     sector2Ms: l.sector2Ms,
     sector3Ms: l.sector3Ms,
@@ -485,14 +488,23 @@ export default function SessionDetailPage() {
     Number.isFinite(session.consistencyScore)
       ? Math.round(session.consistencyScore)
       : calcConsistencyScore(lapTimes);
-  const lapTimesForTrend = laps.map((l) => l.timeMs);
+  const competitiveLaps = laps.filter(
+    (l) =>
+      l.isOutLap !== true &&
+      l.timeMs > 0 &&
+      l.isValid !== false,
+  );
+  const lapTimesForTrend = competitiveLaps.map((l) => l.timeMs);
   const trendBestLapMs =
     lapTimesForTrend.length > 0 ? Math.min(...lapTimesForTrend) : null;
-  const firstLapMs = lapTimesForTrend.length > 0 ? lapTimesForTrend[0] : null;
+  const baselineLap = competitiveLaps[0] ?? null;
+  const firstLapMs = baselineLap?.timeMs ?? null;
   const improvementMs =
     firstLapMs != null && trendBestLapMs != null
       ? firstLapMs - trendBestLapMs
       : 0;
+  const improvementFromLap =
+    improvementMs > 0 && baselineLap != null ? baselineLap.lap : null;
   const bestLapLapNumber = session.bestLapLapNumber;
 
   const sessionShareText = buildSessionShareText(session);
@@ -705,14 +717,14 @@ export default function SessionDetailPage() {
           <div className="mb-2 mt-8 text-sm text-white/60">
             Best lap was{" "}
             <span className="text-white">Lap {bestLapLapNumber}</span>
-            {improvementMs > 0 ? (
+            {improvementMs > 0 && improvementFromLap != null ? (
               <>
                 {" "}
                 — improved by{" "}
                 <span className="text-white">
                   {formatLapDelta(improvementMs)}
                 </span>{" "}
-                from Lap 1
+                from Lap {improvementFromLap}
               </>
             ) : null}
           </div>
@@ -725,10 +737,6 @@ export default function SessionDetailPage() {
             <span className="inline-flex items-center gap-1.5">
               <span className="font-mono font-semibold text-purple-400">●</span>
               Session best
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="font-mono font-semibold text-lime-400">●</span>
-              Session PB
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="font-mono text-white/80">●</span>

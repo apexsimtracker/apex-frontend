@@ -37,6 +37,8 @@ export const profileKeys = {
     page: number,
     q: string,
   ) => ["profile", "followList", userId, kind, page, q] as const,
+  challengeBadges: (userId: string, page: number) =>
+    ["profile", "challengeBadges", userId, page] as const,
   userBundle: (id: string) => ["userProfile", "bundle", id] as const,
   userRaceHistory: (id: string, page: number) =>
     ["userProfile", "raceHistory", id, page] as const,
@@ -70,6 +72,7 @@ export function invalidateSessionDerivedCaches(
   void queryClient.invalidateQueries({ queryKey: ["profile", "raceHistory"] });
   void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
   void queryClient.invalidateQueries({ queryKey: ["activity"] });
+  void queryClient.invalidateQueries({ queryKey: ["sessions-library"] });
 
   const uid = ownerUserId?.trim();
   if (uid) {

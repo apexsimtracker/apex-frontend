@@ -8,6 +8,21 @@ import { telemetrySessionTypeToFormKind } from "@/lib/sessionEditMapping";
 import { effectiveQualifyingPosition } from "@/lib/sessionKind";
 import type { AdminSessionDetail } from "@/lib/api/adminSessions";
 
+export type ManualActivityLapSectorsMs = {
+  sector1Ms?: number | null;
+  sector2Ms?: number | null;
+  sector3Ms?: number | null;
+};
+
+/** V2 edit prefill: V1 initial data plus optional per-lap sectors aligned with `lapsMs`. */
+export type ManualActivityEditInitialData = ManualActivityInitialData & {
+  lapsSectorsMs?: Array<ManualActivityLapSectorsMs | null> | null;
+  /** Parallel to `lapsMs`: true when the lap is an iRacing out-lap. */
+  lapsIsOutLap?: boolean[] | null;
+  /** Out-laps are editable only when all real sectors and driving telemetry exist. */
+  lapsCanEditOutLap?: boolean[] | null;
+};
+
 /** Session GET `/api/sessions/:id` payload used by EditActivity (subset). */
 export type PublicSessionDetailForEdit = {
   simKey?: string | null;
@@ -25,7 +40,18 @@ export type PublicSessionDetailForEdit = {
   bestLapMs?: number | null;
   sessionType?: string | null;
   notes?: string | null;
-  laps?: Array<{ lap?: number; timeMs?: number; lapTimeMs?: number }>;
+  conditions?: "DRY" | "WET" | "MIXED" | null;
+  laps?: Array<{
+    lap?: number;
+    timeMs?: number;
+    lapTimeMs?: number;
+    isOutLap?: boolean;
+    hasTelemetryData?: boolean;
+    canEditOutLap?: boolean;
+    sector1Ms?: number | null;
+    sector2Ms?: number | null;
+    sector3Ms?: number | null;
+  }>;
   lapCount?: number | null;
 };
 
@@ -43,14 +69,34 @@ export function simKeyToFormSim(
   return "IRACING";
 }
 
+function finiteOrNull(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 export function manualActivityInitialFromPublicDetail(
   data: PublicSessionDetailForEdit,
-): ManualActivityInitialData {
+): ManualActivityEditInitialData {
   const lapsRaw = Array.isArray(data.laps) ? data.laps : [];
-  const lapsMs = [...lapsRaw]
+  const orderedLaps = [...lapsRaw]
     .filter((l) => l && typeof (l.timeMs ?? l.lapTimeMs) === "number")
-    .sort((a, b) => (a.lap ?? 0) - (b.lap ?? 0))
-    .map((l) => Number(l.timeMs ?? l.lapTimeMs));
+    .sort((a, b) => (a.lap ?? 0) - (b.lap ?? 0));
+
+  const lapsMs = orderedLaps.map((l) => Number(l.timeMs ?? l.lapTimeMs));
+  const lapsSectorsMs: ManualActivityLapSectorsMs[] = orderedLaps.map((l) => ({
+    sector1Ms: finiteOrNull(l.sector1Ms),
+    sector2Ms: finiteOrNull(l.sector2Ms),
+    sector3Ms: finiteOrNull(l.sector3Ms),
+  }));
+  const lapsIsOutLap = orderedLaps.map((l) => l.isOutLap === true);
+  const lapsCanEditOutLap = orderedLaps.map(
+    (l) =>
+      l.isOutLap === true &&
+      (l.canEditOutLap === true ||
+        (l.hasTelemetryData === true &&
+          finiteOrNull(l.sector1Ms) != null &&
+          finiteOrNull(l.sector2Ms) != null &&
+          finiteOrNull(l.sector3Ms) != null)),
+  );
 
   const lapCountFromApi =
     typeof data.lapCount === "number" && Number.isFinite(data.lapCount)
@@ -91,8 +137,17 @@ export function manualActivityInitialFromPublicDetail(
     totalDrivers: data.totalDrivers,
     qualifyingPosition: data.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
+    lapsSectorsMs: lapsMs.length > 0 ? lapsSectorsMs : undefined,
+    lapsIsOutLap: lapsMs.length > 0 ? lapsIsOutLap : undefined,
+    lapsCanEditOutLap: lapsMs.length > 0 ? lapsCanEditOutLap : undefined,
     bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
     notes: data.notes,
+    conditions:
+      data.conditions === "DRY" ||
+      data.conditions === "WET" ||
+      data.conditions === "MIXED"
+        ? data.conditions
+        : null,
     telemetryMinLapRows,
   };
 }

@@ -65,7 +65,10 @@ export default function CreateMenuV2() {
         <DropdownMenuTrigger asChild>
           <CreatePlusButton className="hidden md:flex" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={v2DropdownContentClassName}>
+        <DropdownMenuContent
+          align="end"
+          className={cn(v2DropdownContentClassName, "w-48")}
+        >
           {logSessionMenuItemsV2.map((item) => (
             <DropdownMenuItem
               key={item.id}

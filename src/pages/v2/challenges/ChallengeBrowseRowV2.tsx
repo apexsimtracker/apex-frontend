@@ -2,11 +2,16 @@ import { Link } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { v2PrimaryButtonClassName } from "@/components/v2/ui/v2ButtonClasses";
 import { formatSimEnum } from "@/lib/enumFormat";
+import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import type { ChallengeApiStatus, ChallengeListItem } from "@/lib/api";
+import { useChallengeLiveState } from "@/hooks/useChallengeLiveState";
+
+type BrowseTab = "upcoming" | "live" | "past" | "joined";
 
 interface ChallengeBrowseRowV2Props {
   item: ChallengeListItem;
+  activeTab: BrowseTab;
   isLoggedIn: boolean;
   onJoin?: (id: string) => void;
   joiningId?: string | null;
@@ -36,8 +41,64 @@ const STATUS_CHIP_CLASS: Record<ReturnType<typeof statusLabel>, string> = {
     "border-v2-outline-variant/15 bg-v2-surface-container-high text-v2-on-surface-variant",
 };
 
+function ChallengeRowTimeDisplay({
+  item,
+  activeTab,
+}: {
+  item: ChallengeListItem;
+  activeTab: BrowseTab;
+}) {
+  const { timeRemainingSec } = useChallengeLiveState({
+    status: item.status,
+    startsAt: item.startsAt,
+    endsAt: item.endsAt,
+  });
+
+  if (activeTab === "upcoming") {
+    return (
+      <p className="mt-1 font-v2-body text-[11px] text-v2-on-surface-variant">
+        Starts {formatChallengeDateTime(item.startsAt)}
+      </p>
+    );
+  }
+
+  if (activeTab === "live") {
+    const remaining =
+      timeRemainingSec ??
+      (item.timeRemainingSec != null
+        ? Math.max(0, Math.floor(item.timeRemainingSec))
+        : null);
+    return (
+      <p className="mt-1 font-v2-body text-[11px] text-v2-on-surface-variant">
+        Ends {formatChallengeDateTime(item.endsAt)}
+        {remaining != null && (
+          <>
+            {" "}
+            ·{" "}
+            <span className="font-medium text-v2-on-surface">
+              {formatChallengeTimeRemaining(remaining)} left
+            </span>
+          </>
+        )}
+      </p>
+    );
+  }
+
+  if (activeTab === "past") {
+    return (
+      <p className="mt-1 font-v2-body text-[11px] text-v2-on-surface-variant">
+        {formatChallengeDateTime(item.startsAt)} –{" "}
+        {formatChallengeDateTime(item.endsAt)}
+      </p>
+    );
+  }
+
+  return null;
+}
+
 export default function ChallengeBrowseRowV2({
   item,
+  activeTab,
   isLoggedIn,
   onJoin,
   joiningId,
@@ -47,8 +108,7 @@ export default function ChallengeBrowseRowV2({
   const linkTo = detailTo ?? `/v2/challenge/${item.id}`;
   const label = statusLabel(item.status);
   const isJoining = joiningId === item.id;
-  const canJoin =
-    onJoin && item.status !== "ENDED" && item.status !== "UPCOMING";
+  const canJoin = onJoin && item.status !== "ENDED";
   const social =
     isLoggedIn &&
     (item.followedWhoJoined.length > 0 || item.followedWhoJoinedMoreCount > 0);
@@ -91,6 +151,7 @@ export default function ChallengeBrowseRowV2({
               </>
             )}
           </p>
+          <ChallengeRowTimeDisplay item={item} activeTab={activeTab} />
           {social && (
             <p className="mt-2 flex items-start gap-1.5 font-v2-body text-[11px] text-v2-primary">
               <UserRound className="mt-0.5 size-3.5 shrink-0" aria-hidden />
