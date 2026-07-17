@@ -82,6 +82,7 @@ export type SessionDetailApi = {
   carName?: string | null;
   notes?: string | null;
   proFeaturesLocked?: boolean;
+  sim?: string | null;
 };
 
 type ManualUploadResponse = {

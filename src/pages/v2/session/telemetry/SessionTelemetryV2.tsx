@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Maximize2 } from "lucide-react";
 import { formatLapMs, cn } from "@/lib/utils";
 import { useIsProUser } from "@/contexts/AuthContext";
 import {
@@ -17,6 +18,9 @@ import type {
 import type { NormalizedLap } from "@/features/session-detail/sessionDetailData";
 import SessionTelemetryChartsV2 from "./SessionTelemetryChartsV2";
 import TelemetryLapPickerV2 from "./TelemetryLapPickerV2";
+import FullTelemetryModalV2, {
+  type SectorLapTimes,
+} from "./FullTelemetryModalV2";
 
 const SECTION = "rounded-xl bg-v2-surface-container-low p-4 shadow-lg";
 
@@ -43,6 +47,7 @@ export default function SessionTelemetryV2({
   const agentOnlyGate = isAgentOnlyTelemetryGate(ingestPath);
   const [tab, setTab] = useState<TabId>("driving");
   const [compareLap, setCompareLap] = useState<number | null>(null);
+  const [fullOpen, setFullOpen] = useState(false);
 
   const {
     data: summary,
@@ -93,6 +98,18 @@ export default function SessionTelemetryV2({
       laps.filter(
         (l) => l.timeMs > 0 && l.isValid !== false && l.isOutLap !== true,
       ),
+    [laps],
+  );
+
+  const sectorTimes = useMemo<SectorLapTimes[]>(
+    () =>
+      laps.map((l) => ({
+        lap: l.lap,
+        timeMs: l.timeMs,
+        sector1Ms: l.sector1Ms,
+        sector2Ms: l.sector2Ms,
+        sector3Ms: l.sector3Ms,
+      })),
     [laps],
   );
 
@@ -241,13 +258,32 @@ export default function SessionTelemetryV2({
 
         {tab === "driving" && (
           <div className="space-y-4" role="tabpanel">
-            <TelemetryLapPickerV2
-              laps={summary.laps}
-              selectedLap={selectedLap}
-              compareLap={compareLap}
-              onSelectLap={onSelectLap}
-              onSelectCompare={setCompareLap}
-            />
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <TelemetryLapPickerV2
+                  laps={summary.laps}
+                  selectedLap={selectedLap}
+                  compareLap={compareLap}
+                  onSelectLap={onSelectLap}
+                  onSelectCompare={setCompareLap}
+                />
+              </div>
+              {traces && (
+                <button
+                  type="button"
+                  onClick={() => setFullOpen(true)}
+                  className="group flex shrink-0 items-center gap-2 self-end rounded-v2-sm border border-v2-outline-variant/25 bg-v2-surface-container-high px-3.5 py-2.5 font-v2-body text-xs font-bold text-v2-on-surface transition-all hover:border-v2-primary/50 hover:bg-v2-surface-container-highest"
+                  data-testid="open-full-telemetry-v2"
+                >
+                  <Maximize2
+                    className="size-4 text-v2-primary transition-transform group-hover:scale-110"
+                    aria-hidden
+                  />
+                  <span className="hidden sm:inline">View Full Telemetry</span>
+                  <span className="sm:hidden">Full</span>
+                </button>
+              )}
+            </div>
             {tracesLoading ? (
               <div className="h-48 animate-pulse rounded-lg bg-v2-surface-container" />
             ) : tracesError ? (
@@ -260,6 +296,20 @@ export default function SessionTelemetryV2({
               <p className="font-v2-body text-sm text-v2-on-surface-variant">
                 Select a lap with traces to view driver inputs.
               </p>
+            )}
+            {traces && (
+              <FullTelemetryModalV2
+                isOpen={fullOpen}
+                onClose={() => setFullOpen(false)}
+                sessionId={sessionId}
+                traces={traces}
+                laps={summary.laps}
+                selectedLap={selectedLap}
+                compareLap={compareLap}
+                onSelectLap={onSelectLap}
+                onSelectCompare={setCompareLap}
+                sectorTimes={sectorTimes}
+              />
             )}
           </div>
         )}
@@ -364,7 +414,12 @@ function FuelPanelV2({ summary }: { summary: TelemetrySummaryResponse }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Tank" value={`${fuel.tankCapacityL.toFixed(1)} L`} />
+        <Stat
+          label="Tank"
+          value={
+            fuel.tankCapacityL != null ? `${fuel.tankCapacityL.toFixed(1)} L` : "—"
+          }
+        />
         <Stat
           label="Avg / lap"
           value={
@@ -375,11 +430,10 @@ function FuelPanelV2({ summary }: { summary: TelemetrySummaryResponse }) {
         />
         <Stat
           label="Proj. laps"
-          value={
-            fuel.projectedLapsFromFull != null
-              ? fuel.projectedLapsFromFull.toFixed(1)
-              : "—"
-          }
+          value={(() => {
+            const projected = fuel.projectedLaps ?? fuel.projectedLapsFromFull;
+            return projected != null ? String(projected) : "—";
+          })()}
         />
       </div>
       <div className="overflow-x-auto">

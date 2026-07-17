@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Share2, Pencil, Trash2, Repeat } from "lucide-react";
 import { formatTrackName } from "@/lib/tracks";
+import { getDisciplineLogoSrc } from "@/components/v2/profile/profileDisciplineAssets";
 
 type SessionDetailHeroV2Props = {
   trackName: string | null;
   trackImageUrl?: string | null;
+  sim?: string | null;
   canEditSession: boolean;
   canManualExtras: boolean;
   onShare: () => void;
@@ -16,6 +18,7 @@ type SessionDetailHeroV2Props = {
 export default function SessionDetailHeroV2({
   trackName,
   trackImageUrl,
+  sim,
   canEditSession,
   canManualExtras,
   onShare,
@@ -25,7 +28,10 @@ export default function SessionDetailHeroV2({
 }: SessionDetailHeroV2Props) {
   const title = formatTrackName(trackName) || "Unknown track";
   const [imageFailed, setImageFailed] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const showImage = Boolean(trackImageUrl?.trim()) && !imageFailed;
+  const simLogoSrc = sim ? getDisciplineLogoSrc(sim) : null;
+  const showLogo = !showImage && Boolean(simLogoSrc) && !logoFailed;
 
   return (
     <header className="relative min-h-[220px] w-full overflow-hidden rounded-xl bg-v2-surface-container-low sm:min-h-[256px]">
@@ -38,11 +44,24 @@ export default function SessionDetailHeroV2({
         />
       ) : (
         <div
-          className="absolute inset-0 bg-gradient-to-br from-v2-surface-container-highest via-v2-surface-container to-v2-background"
+          className="absolute inset-0 bg-gradient-to-br from-v2-surface-container via-v2-surface-container-low to-v2-background"
           aria-hidden
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--v2-primary)/0.18),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(var(--v2-primary)/0.08),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--v2-primary)/0.10),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,hsl(var(--v2-primary)/0.05),transparent_50%)]" />
+        </div>
+      )}
+      {showLogo && (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center"
+          aria-hidden
+        >
+          <img
+            alt=""
+            src={simLogoSrc!}
+            onError={() => setLogoFailed(true)}
+            className="h-16 w-auto max-w-[60%] object-contain opacity-90 drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)] sm:h-20"
+          />
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-v2-background via-v2-background/50 to-transparent" />

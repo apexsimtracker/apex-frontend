@@ -23,8 +23,11 @@ export type TelemetrySummaryResponse = {
   defaultLapNumber: number | null;
   laps: TelemetryLapSummary[];
   fuel: {
-    tankCapacityL: number;
+    tankCapacityL: number | null;
     avgFuelPerLapL: number | null;
+    /** Projected remaining laps from current fuel / avg (preferred by UI). */
+    projectedLaps?: number | null;
+    /** Legacy: laps on a full tank. */
     projectedLapsFromFull: number | null;
     perLap: Array<{
       lapNumber: number;

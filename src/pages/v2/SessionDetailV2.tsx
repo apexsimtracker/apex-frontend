@@ -409,6 +409,7 @@ export default function SessionDetailV2() {
         <SessionDetailHeroV2
           trackName={resolved.track}
           trackImageUrl={session.trackImageUrl}
+          sim={resolved.sim ?? session.sim ?? undefined}
           canEditSession={canEditSession}
           canManualExtras={canManualExtras}
           onShare={() => setShareModalOpen(true)}

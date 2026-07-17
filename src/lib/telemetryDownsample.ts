@@ -77,6 +77,83 @@ export function lttbIndices(
   return indices;
 }
 
+/**
+ * Trim a trailing distance "wrap" so the distance series is usable as a
+ * monotonic x-axis. Some sims (e.g. LMU) include a few samples past the
+ * start/finish line where Lap Dist resets to ~0, producing a non-monotonic
+ * array that collapses uPlot's numeric x-scale. We keep everything up to and
+ * including the peak-distance sample and drop the trailing wrap, slicing every
+ * aligned channel identically so overlays stay in sync. No-op when distance is
+ * already monotonic (peak is the last sample), e.g. iRacing.
+ */
+export function clampToMonotonicDistance(
+  series: AlignedTelemetrySeries,
+): AlignedTelemetrySeries {
+  const distanceM = series.distanceM;
+  if (!Array.isArray(distanceM) || distanceM.length < 2) return series;
+
+  let peakIdx = 0;
+  let peak = distanceM[0]!;
+  for (let i = 1; i < distanceM.length; i++) {
+    if (distanceM[i]! > peak) {
+      peak = distanceM[i]!;
+      peakIdx = i;
+    }
+  }
+
+  if (peakIdx >= distanceM.length - 1) return series;
+
+  const end = peakIdx + 1;
+  const out: AlignedTelemetrySeries = { distanceM: distanceM.slice(0, end) };
+  for (const [key, values] of Object.entries(series)) {
+    if (key === "distanceM" || values == null) continue;
+    out[key] = values.slice(0, end);
+  }
+  return out;
+}
+
+/**
+ * Linearly resample a source channel onto a target distance grid so a
+ * comparison lap can be overlaid on the primary lap's x-axis. Both distance
+ * arrays must be ascending. Target points outside the source distance range
+ * return NaN so uPlot renders a gap rather than an invented value.
+ */
+export function resampleChannelToGrid(
+  srcDistance: number[],
+  srcValues: number[],
+  targetDistance: number[],
+): number[] {
+  const out = new Array<number>(targetDistance.length).fill(NaN);
+  const n = srcDistance.length;
+  if (n === 0 || srcValues.length !== n) return out;
+
+  let j = 0;
+  for (let i = 0; i < targetDistance.length; i++) {
+    const x = targetDistance[i]!;
+    const first = srcDistance[0]!;
+    const last = srcDistance[n - 1]!;
+    if (x < first || x > last) {
+      out[i] = NaN;
+      continue;
+    }
+    if (x === first) {
+      out[i] = srcValues[0]!;
+      continue;
+    }
+    if (x === last) {
+      out[i] = srcValues[n - 1]!;
+      continue;
+    }
+    while (j < n - 1 && srcDistance[j + 1]! < x) j++;
+    const x0 = srcDistance[j]!;
+    const x1 = srcDistance[j + 1]!;
+    const span = x1 - x0;
+    const frac = span > 0 ? (x - x0) / span : 0;
+    out[i] = srcValues[j]! + frac * (srcValues[j + 1]! - srcValues[j]!);
+  }
+  return out;
+}
+
 function pickPrimaryY(series: AlignedTelemetrySeries): number[] {
   if (series.speedKmh && series.speedKmh.length === series.distanceM.length) {
     return series.speedKmh;

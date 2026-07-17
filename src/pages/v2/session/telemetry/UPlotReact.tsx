@@ -8,6 +8,12 @@ type UPlotReactProps = {
   className?: string;
   /** Shared uPlot sync key — charts with the same key share cursor/scale. */
   syncKey?: string;
+  /**
+   * Opaque value that forces a full chart rebuild when it changes. uPlot only
+   * reads `plugins` at construction, so anything that changes plugin behaviour
+   * (e.g. sector-band boundaries) must bump this key to take effect.
+   */
+  resetKey?: string | number;
 };
 
 /**
@@ -19,11 +25,18 @@ export default function UPlotReact({
   data,
   className,
   syncKey,
+  resetKey,
 }: UPlotReactProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<uPlot | null>(null);
   const dataRef = useRef(data);
-  dataRef.current = data;
+
+  // Keep the latest data available to the (re)construction effect without
+  // making data a dependency of it. Updated in an effect (not during render) so
+  // the chart is seeded correctly on mount and setData handles later updates.
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -58,9 +71,9 @@ export default function UPlotReact({
       plot.destroy();
       plotRef.current = null;
     };
-    // Recreate only when series schema / height / sync change; data updates separately.
+    // Recreate only when series schema / height / sync / reset key change; data updates separately.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- options serialized via keys below
-  }, [options.height, options.series?.length, syncKey]);
+  }, [options.height, options.series?.length, syncKey, resetKey]);
 
   useEffect(() => {
     plotRef.current?.setData(data);

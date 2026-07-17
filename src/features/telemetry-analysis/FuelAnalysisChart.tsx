@@ -30,7 +30,7 @@ export function FuelAnalysisChart({ fuel }: FuelAnalysisChartProps) {
             Tank capacity
           </div>
           <div className="mt-1 text-2xl font-semibold tabular-nums text-white">
-            {fuel.tankCapacityL.toFixed(1)} L
+            {fuel.tankCapacityL != null ? `${fuel.tankCapacityL.toFixed(1)} L` : "—"}
           </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">

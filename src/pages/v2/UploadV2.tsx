@@ -7,7 +7,10 @@ import {
   Loader2,
   PenLine,
   CheckCircle,
+  Check,
   Trophy,
+  Gauge,
+  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,13 +29,14 @@ import { toV2Path } from "@/config/navigation";
 
 const UPLOAD_PATH = "/v2/upload";
 const uploadTitle = `Upload session | ${COMPANY_NAME}`;
-const uploadDescription = `Upload .ibt telemetry to ${COMPANY_NAME} to process laps and share sessions.`;
+const uploadDescription = `Upload iRacing .ibt or Le Mans Ultimate .duckdb telemetry to ${COMPANY_NAME} to process laps and share sessions.`;
 
 const MAX_MB_LABEL = Math.round(MAX_MANUAL_UPLOAD_BYTES / (1024 * 1024));
 
 const SECTION_LABEL_CLASS =
   "font-v2-headline text-[10px] font-bold uppercase tracking-widest text-v2-on-surface-variant";
 
+type UploadSim = "iracing" | "lmu";
 type UploadState = "idle" | "uploading" | "success" | "error";
 type UploadPhase = "bytes" | "processing";
 
@@ -42,6 +46,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function expectedExtForSim(sim: UploadSim): string {
+  return sim === "lmu" ? "duckdb" : "ibt";
+}
+
+function simLabel(sim: UploadSim): string {
+  return sim === "lmu" ? "Le Mans Ultimate" : "iRacing";
+}
+
 export default function UploadV2() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -49,6 +61,7 @@ export default function UploadV2() {
   const challengeId = searchParams.get("challenge")?.trim() || undefined;
   const isChallengeLinked = Boolean(challengeId);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sim, setSim] = useState<UploadSim>("iracing");
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("bytes");
@@ -62,6 +75,7 @@ export default function UploadV2() {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const isBusy = uploadState === "uploading";
+  const expectedExt = expectedExtForSim(sim);
 
   useEffect(() => {
     if (!isBusy) return;
@@ -85,27 +99,42 @@ export default function UploadV2() {
     };
   }, []);
 
-  const handleFileSelect = useCallback((selectedFile: File | null) => {
-    if (!selectedFile) return;
+  const handleFileSelect = useCallback(
+    (selectedFile: File | null) => {
+      if (!selectedFile) return;
 
-    const ext = selectedFile.name.toLowerCase().split(".").pop();
-    if (ext !== "ibt") {
-      setErrorMessage("Only .ibt files are supported.");
-      setUploadState("error");
-      return;
-    }
+      const ext = selectedFile.name.toLowerCase().split(".").pop();
+      if (ext !== expectedExt) {
+        setErrorMessage(
+          sim === "lmu"
+            ? "Only .duckdb files are supported for Le Mans Ultimate."
+            : "Only .ibt files are supported for iRacing.",
+        );
+        setUploadState("error");
+        return;
+      }
 
-    if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
-      setErrorMessage(
-        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`,
-      );
-      setUploadState("error");
-      return;
-    }
+      if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
+        setErrorMessage(
+          `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`,
+        );
+        setUploadState("error");
+        return;
+      }
 
-    setFile(selectedFile);
+      setFile(selectedFile);
+      setUploadState("idle");
+      setErrorMessage(null);
+    },
+    [expectedExt, sim],
+  );
+
+  const handleSimChange = useCallback((next: UploadSim) => {
+    setSim(next);
+    setFile(null);
     setUploadState("idle");
     setErrorMessage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const handleDrop = useCallback(
@@ -141,7 +170,9 @@ export default function UploadV2() {
     if (!file || isBusy) return;
 
     if (!isPro) {
-      setErrorMessage("Apex Pro is required to upload .ibt telemetry files.");
+      setErrorMessage(
+        "Apex Pro is required to upload telemetry files (.ibt / .duckdb).",
+      );
       setUploadState("error");
       return;
     }
@@ -200,7 +231,7 @@ export default function UploadV2() {
     } catch (err) {
       if (isProRequiredError(err)) {
         setErrorMessage(
-          "Apex Pro is required to upload .ibt telemetry files.",
+          "Apex Pro is required to upload telemetry files (.ibt / .duckdb).",
         );
         setUploadState("error");
         return;
@@ -253,20 +284,24 @@ export default function UploadV2() {
             Upload session
           </h1>
           <p className="mt-2 font-v2-body text-sm leading-relaxed text-v2-on-surface-variant">
-            iRacing{" "}
+            Upload{" "}
             <code className="rounded-v2-sm bg-v2-surface-container-highest px-1.5 py-0.5 font-v2-body text-xs text-v2-on-surface">
               .ibt
             </code>{" "}
-            telemetry is processed automatically — session type, positions, and
-            distance when available (max {MAX_MB_LABEL} MB). Apex Pro required.
+            (iRacing) or{" "}
+            <code className="rounded-v2-sm bg-v2-surface-container-highest px-1.5 py-0.5 font-v2-body text-xs text-v2-on-surface">
+              .duckdb
+            </code>{" "}
+            (Le Mans Ultimate) telemetry — laps, sectors, and driving traces
+            when available (max {MAX_MB_LABEL} MB). Apex Pro required.
           </p>
         </div>
 
         {!isPro && uploadState !== "success" && (
-          <div className="flex flex-col gap-3 rounded-v2-lg border border-v2-outline-variant/20 bg-v2-surface-container-high px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-v2-lg border border-v2-outline-variant/20 bg-v2-surface-container-high p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-v2-body text-sm text-v2-on-surface-variant">
-              Manual .ibt upload is an Apex Pro feature. Upgrade to process
-              telemetry from the web.
+              Manual telemetry upload is an Apex Pro feature. Upgrade to process
+              .ibt and .duckdb files from the web.
             </p>
             <Button
               type="button"
@@ -392,9 +427,82 @@ export default function UploadV2() {
           ) : (
             <div className="rounded-lg border border-v2-outline-variant/10 bg-v2-surface-container-low p-4 sm:p-5">
               <header className="mb-4 border-b border-v2-outline-variant/10 pb-3">
+                <h2 className={SECTION_LABEL_CLASS}>Simulator</h2>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {(
+                    [
+                      {
+                        id: "iracing" as const,
+                        label: "iRacing",
+                        ext: ".ibt",
+                        Icon: Gauge,
+                      },
+                      {
+                        id: "lmu" as const,
+                        label: "Le Mans Ultimate",
+                        ext: ".duckdb",
+                        Icon: Car,
+                      },
+                    ] as const
+                  ).map((opt) => {
+                    const selected = sim === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handleSimChange(opt.id)}
+                        aria-pressed={selected}
+                        className={cn(
+                          "group relative flex items-center gap-3 rounded-v2-lg border p-3.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                          selected
+                            ? "border-v2-primary/60 bg-v2-primary/5 ring-1 ring-v2-primary/30"
+                            : "border-v2-outline-variant/20 bg-v2-surface-container hover:border-v2-outline-variant/50 hover:bg-v2-surface-container-high",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex size-10 shrink-0 items-center justify-center rounded-v2-sm transition-colors",
+                            selected
+                              ? "bg-v2-primary/15 text-v2-primary"
+                              : "bg-v2-surface-container-highest text-v2-on-surface-variant group-hover:text-v2-on-surface",
+                          )}
+                        >
+                          <opt.Icon className="size-5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-v2-body text-sm font-bold text-v2-on-surface">
+                            {opt.label}
+                          </span>
+                          <span className="mt-0.5 block font-v2-body text-[11px] text-v2-on-surface-variant">
+                            {opt.ext} telemetry
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                            selected
+                              ? "border-v2-primary bg-v2-primary text-white"
+                              : "border-v2-outline-variant/40 text-transparent",
+                          )}
+                          aria-hidden
+                        >
+                          <Check className="size-3" strokeWidth={3} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </header>
+
+              <header className="mb-4 border-b border-v2-outline-variant/10 pb-3">
                 <h2 className={SECTION_LABEL_CLASS}>Telemetry file</h2>
                 <p className="mt-1.5 text-xs leading-relaxed text-v2-on-surface-variant">
-                  Drag and drop or browse for an iRacing replay file.
+                  Drag and drop or browse for a {simLabel(sim)}{" "}
+                  <code className="rounded-v2-sm bg-v2-surface-container-highest px-1 py-0.5 text-[10px]">
+                    .{expectedExt}
+                  </code>{" "}
+                  file.
                 </p>
               </header>
 
@@ -413,7 +521,7 @@ export default function UploadV2() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".ibt"
+                  accept={`.${expectedExt}`}
                   onChange={handleInputChange}
                   className="hidden"
                 />
@@ -440,7 +548,7 @@ export default function UploadV2() {
                         <UploadIcon className="size-6 text-v2-on-surface-variant" />
                       </div>
                       <p className="text-sm text-v2-on-surface">
-                        Drag &amp; drop your .ibt file here
+                        Drag &amp; drop your .{expectedExt} file here
                       </p>
                       <p className="mt-1 text-xs text-v2-on-surface-variant">
                         or click to browse (max {MAX_MB_LABEL} MB)

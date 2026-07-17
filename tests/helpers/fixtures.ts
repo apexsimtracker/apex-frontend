@@ -27,3 +27,14 @@ export function ibtFixtureExists(filename = IBT_PRACTICE_BMW_FIXTURE): boolean {
   const p = ibtFixture(filename);
   return existsSync(p);
 }
+
+/** Path to a real .duckdb under apex/tests/fixtures/lmu (symlink into ibt-files/). */
+export function duckdbFixture(filename: string): string {
+  return fixturePath("lmu", filename);
+}
+
+export const DUCKDB_PRACTICE_SEBRING = "practice_sebring_lmu.duckdb";
+
+export function duckdbFixtureExists(filename = DUCKDB_PRACTICE_SEBRING): boolean {
+  return existsSync(duckdbFixture(filename));
+}
