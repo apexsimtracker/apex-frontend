@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { BaseModal } from "@/components/ui/base-modal";
+import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 import { Button } from "@/components/ui/button";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import {
@@ -29,11 +29,14 @@ import {
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAfterFirstPaint } from "@/hooks/useAfterFirstPaint";
 import {
   isRichNotification,
   socialNotificationLabel,
   socialNotificationLink,
 } from "@/lib/notificationDisplay";
+
+import { appOutlineButtonClassName } from "@/components/app-ui/appButtonClasses";
 
 const NOTIFICATIONS_KEY = ["notifications"] as const;
 const FOLLOW_REQUESTS_KEY = ["followRequests", "incoming"] as const;
@@ -50,6 +53,7 @@ export function NotificationsBell() {
   const [clearing, setClearing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [requestsPage, setRequestsPage] = useState(1);
+  const chromeIdleReady = useAfterFirstPaint(Boolean(user));
 
   useEffect(() => {
     const openHandler = () => {
@@ -65,12 +69,13 @@ export function NotificationsBell() {
     queryKey: NOTIFICATIONS_KEY,
     queryFn: getNotifications,
     staleTime: 15_000,
+    enabled: Boolean(user) && chromeIdleReady,
   });
 
   const requestsQuery = useQuery({
     queryKey: FOLLOW_REQUESTS_KEY,
     queryFn: listFollowRequests,
-    enabled: open,
+    enabled: open && Boolean(user),
     staleTime: 15_000,
   });
 
@@ -200,19 +205,19 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="relative rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+        className="relative flex items-center justify-center text-apex-on-surface-variant transition-colors hover:text-apex-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/70"
         aria-label="Notifications"
         title="Notifications"
       >
-        <Bell className="size-5 text-foreground/70 transition-colors hover:text-foreground" />
+        <Bell className="size-6" aria-hidden />
         {showBadge ? (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-none text-primary-foreground">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-apex-primary px-1 text-[10px] font-bold leading-none text-white">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
       </button>
 
-      <BaseModal
+      <AppBaseModal
         isOpen={open}
         onClose={() => onOpenChange(false)}
         title="Notifications"
@@ -224,6 +229,7 @@ export function NotificationsBell() {
               type="button"
               variant="outline"
               size="sm"
+              className={appOutlineButtonClassName}
               disabled={footerBusy || notifications.length === 0}
               onClick={() => void handleMarkAllViewed()}
             >
@@ -234,9 +240,12 @@ export function NotificationsBell() {
             </Button>
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               size="sm"
-              className="text-destructive hover:bg-destructive/15 hover:text-destructive"
+              className={cn(
+                appOutlineButtonClassName,
+                "text-apex-error hover:bg-apex-error/10",
+              )}
               disabled={footerBusy || notifications.length === 0}
               onClick={() => void handleClearAll()}
             >
@@ -248,16 +257,16 @@ export function NotificationsBell() {
           </>
         }
       >
-        <div className="shrink-0 border-b border-border px-0.5 py-3">
+        <div className="shrink-0 border-b border-apex-outline-variant/15 px-0.5 py-3">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setTab("activity")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-apex-sm px-3 py-1.5 text-xs font-medium transition-colors",
                 tab === "activity"
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-apex-surface-container text-apex-on-surface"
+                  : "text-apex-on-surface-variant hover:text-apex-on-surface",
               )}
             >
               Activity
@@ -266,15 +275,15 @@ export function NotificationsBell() {
               type="button"
               onClick={() => setTab("requests")}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "rounded-apex-sm px-3 py-1.5 text-xs font-medium transition-colors",
                 tab === "requests"
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-apex-surface-container text-apex-on-surface"
+                  : "text-apex-on-surface-variant hover:text-apex-on-surface",
               )}
             >
               Follow requests
               {requests.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
+                <span className="ml-1.5 rounded-full bg-apex-primary/20 px-1.5 py-0.5 text-[10px] text-apex-primary">
                   {requests.length}
                 </span>
               )}
@@ -295,8 +304,8 @@ export function NotificationsBell() {
                 />
               </div>
               {!notifQuery.isPending && activityTotalPages > 1 ? (
-                <div className="mt-4 border-t border-border pt-3">
-                  <p className="mb-3 text-center text-xs text-muted-foreground">
+                <div className="mt-4 border-t border-apex-outline-variant/15 pt-3">
+                  <p className="mb-3 text-center text-xs text-apex-on-surface-variant">
                     {getPageSummary(
                       activityPage,
                       ACTIVITY_PAGE_SIZE,
@@ -324,8 +333,8 @@ export function NotificationsBell() {
                 />
               </div>
               {!requestsQuery.isPending && requestsTotalPages > 1 ? (
-                <div className="mt-4 border-t border-border pt-3">
-                  <p className="mb-3 text-center text-xs text-muted-foreground">
+                <div className="mt-4 border-t border-apex-outline-variant/15 pt-3">
+                  <p className="mb-3 text-center text-xs text-apex-on-surface-variant">
                     {getPageSummary(
                       requestsPage,
                       REQUESTS_PAGE_SIZE,
@@ -343,7 +352,7 @@ export function NotificationsBell() {
             </>
           )}
         </div>
-      </BaseModal>
+      </AppBaseModal>
     </>
   );
 }
@@ -364,13 +373,13 @@ function NotificationList({
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <Loader2 className="size-8 animate-spin text-apex-on-surface-variant" />
       </div>
     );
   }
   if (notifications.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
+      <p className="py-8 text-center text-sm text-apex-on-surface-variant">
         No notifications yet.
       </p>
     );
@@ -385,28 +394,29 @@ function NotificationList({
           return null;
         }
         const activityLink = socialNotificationLink(n.type, n.entityId);
+        const resolvedLink = activityLink
+          ? activityLink
+          : null;
         return (
           <li
             key={n.id}
             className={cn(
-              "flex gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3",
-              !n.read && "border-primary/20",
+              "flex gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-3",
+              !n.read && "border-apex-primary/30",
             )}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-foreground">
+              <p className="text-sm text-apex-on-surface">
                 <span className="font-medium">{n.actor.displayName}</span>{" "}
                 {socialNotificationLabel(n.type)}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-apex-on-surface-variant">
                 {new Date(n.createdAt).toLocaleString()}
               </p>
-              {activityLink ? (
+              {resolvedLink ? (
                 <a
-                  href={activityLink
-                    .replace("/v2/session/", "/sessions/")
-                    .replace("/v2/community/discussions/", "/discussion/")}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  href={resolvedLink}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-apex-primary hover:underline"
                 >
                   View
                   <ExternalLink className="size-3" />
@@ -454,6 +464,9 @@ function SystemAnnouncementRow({
 }: {
   notification: NotificationItem;
 }) {
+  const linkUrl = notification.linkUrl
+    ? notification.linkUrl
+    : null;
   const severity = notification.severity ?? "INFO";
   const theme = {
     INFO: {
@@ -497,9 +510,9 @@ function SystemAnnouncementRow({
   return (
     <li
       className={cn(
-        "flex gap-3 rounded-lg border bg-white/[0.02] p-3",
+        "flex gap-3 rounded-apex-lg border bg-apex-surface-container-low p-3",
         theme.border,
-        !notification.read && "ring-1 ring-primary/20",
+        !notification.read && "ring-1 ring-apex-primary/20",
       )}
     >
       <span
@@ -514,7 +527,7 @@ function SystemAnnouncementRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {notification.title ? (
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-apex-on-surface">
               {notification.title}
             </span>
           ) : null}
@@ -528,20 +541,18 @@ function SystemAnnouncementRow({
           </span>
         </div>
         {notification.body ? (
-          <p className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">
+          <p className="mt-1 whitespace-pre-wrap text-sm text-apex-on-surface/90">
             {notification.body}
           </p>
         ) : null}
-        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="mt-2 flex items-center gap-3 text-xs text-apex-on-surface-variant">
           <span>{new Date(notification.createdAt).toLocaleString()}</span>
-          {notification.linkUrl ? (
+          {linkUrl ? (
             <a
-              href={notification.linkUrl}
-              target={
-                notification.linkUrl.startsWith("http") ? "_blank" : undefined
-              }
+              href={linkUrl}
+              target={linkUrl.startsWith("http") ? "_blank" : undefined}
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-apex-primary hover:underline"
             >
               Open <ExternalLink className="size-3" aria-hidden />
             </a>
@@ -572,13 +583,13 @@ function FollowRequestsPanel({
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <Loader2 className="size-8 animate-spin text-apex-on-surface-variant" />
       </div>
     );
   }
   if (requests.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
+      <p className="py-8 text-center text-sm text-apex-on-surface-variant">
         No pending follow requests.
       </p>
     );
@@ -591,24 +602,24 @@ function FollowRequestsPanel({
         return (
           <li
             key={r.id}
-            className="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3"
+            className="flex flex-wrap items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-3"
           >
             {avatar ? (
               <img
                 src={avatar}
                 alt=""
-                className="size-10 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+                className="size-10 shrink-0 rounded-full object-cover ring-1 ring-apex-outline-variant/20"
               />
             ) : (
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-apex-surface-container-highest text-xs text-apex-on-surface-variant">
                 {(r.follower.displayName ?? "?").slice(0, 1)}
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">
+              <p className="truncate font-medium text-apex-on-surface">
                 {r.follower.displayName}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-apex-on-surface-variant">
                 {new Date(r.createdAt).toLocaleString()}
               </p>
             </div>

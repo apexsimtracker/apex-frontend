@@ -1,16 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import AppLoadingScreen from "@/components/AppLoadingScreen";
 import type { MeResponse } from "@/auth/api";
-import { clearToken } from "@/auth/token";
 import {
   resolveApiUrl,
   authMe,
-  authLogout,
   getProfileSummary,
   getProfileRaceHistory,
   getUserPublicProfile,
@@ -20,26 +16,15 @@ import {
   type ProfileSummary,
   type AuthUser,
 } from "@/lib/api";
-import { BaseModal } from "@/components/ui/base-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   profileEditFormSchema,
   type ProfileEditFormValues,
 } from "@/lib/validation/profileEdit";
-import { ProfileView } from "@/components/ProfileView";
+import { ProfileView } from "@/components/profile/ProfileView";
 import { FollowListDialog } from "@/components/FollowListDialog";
+import ProfileEditModal from "@/pages/profile/ProfileEditModal";
+import ProfileSkeleton from "@/pages/profile/ProfileSkeleton";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import {
@@ -50,6 +35,8 @@ import {
 } from "@/lib/profileQueryKeys";
 
 const PROFILE_PATH = "/profile";
+const contentRootClassName =
+  "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8";
 const profileTitle = `Profile | ${COMPANY_NAME}`;
 const profileDescription = `Your ${COMPANY_NAME} driver profile, stats, and race history.`;
 
@@ -147,16 +134,15 @@ export default function Profile() {
   const { user, loading, refreshMe, setUser } = useAuth();
   const [raceHistoryPage, setRaceHistoryPage] = useState(1);
 
-  // Summary + race history are token-scoped; run whenever we're authenticated (ProtectedRoute), even if
-  // `user.id` is missing from the /me payload (some backends omit it briefly).
   const profileUserKey = ownedProfileUserKey(user);
   const followsUserId = user?.id?.trim() ?? "";
 
-  const { data: profileSummary } = useQuery({
+  const summaryQuery = useQuery({
     queryKey: profileKeys.summary(profileUserKey),
     queryFn: getProfileSummary,
     enabled: Boolean(user),
   });
+  const profileSummary = summaryQuery.data;
 
   const {
     data: raceHistoryData,
@@ -173,7 +159,10 @@ export default function Profile() {
     placeholderData: (previousData) => previousData,
   });
 
-  const { data: publicPreview } = useQuery({
+  const {
+    data: publicPreview,
+    isPending: publicPreviewLoading,
+  } = useQuery({
     queryKey: profileKeys.publicPreview(followsUserId),
     queryFn: () => getUserPublicProfile(followsUserId),
     enabled: Boolean(followsUserId),
@@ -198,15 +187,12 @@ export default function Profile() {
     mode: "onChange",
   });
 
-  const profile =
-    profileSummary ?? (user ? profileSummaryFromMe({ user }) : null);
-
   const openEditProfile = useCallback(() => {
     if (!user) return;
     const name = getAccountDisplayName(user);
     const currentBio =
-      (profile?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
-      (profile?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
+      (profileSummary?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
+      (profileSummary?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       "";
     profileEditForm.reset({
       displayName: name,
@@ -218,7 +204,7 @@ export default function Profile() {
     profileEditForm.clearErrors("root");
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profile, profileEditForm]);
+  }, [user, profileSummary, profileEditForm]);
 
   const handleAvatarFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,18 +247,6 @@ export default function Profile() {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   }, [avatarPreview]);
 
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    try {
-      await authLogout();
-    } catch {
-      // Server revoke is best-effort; always clear local credentials.
-    }
-    clearToken();
-    navigate("/login", { replace: true });
-  };
-
   const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
     if (!user || profileSaveInFlightRef.current) return;
     const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
@@ -288,7 +262,6 @@ export default function Profile() {
         try {
           const uploadRes = await uploadProfileAvatar(avatarFile);
           avatarUrlToSet = uploadRes.avatarUrl;
-          // Persist cache-busted avatar in global auth user for this session.
           uploadedAvatarForSession = withCacheBust(avatarUrlToSet, Date.now());
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Avatar upload failed.";
@@ -335,8 +308,6 @@ export default function Profile() {
             : profileSummaryFromMe({ user: userWithAvatar }),
       );
 
-      // Re-sync from backend only after upload/save has settled.
-      // If backend still returns stale avatar briefly, preserve the freshly uploaded URL.
       if (avatarUrlToSet) {
         await new Promise((resolve) => setTimeout(resolve, 500));
         try {
@@ -391,7 +362,7 @@ export default function Profile() {
     }
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <>
         <PageMeta
@@ -400,30 +371,28 @@ export default function Profile() {
           path={PROFILE_PATH}
           noindex
         />
-        <AppLoadingScreen />
+        <div className={contentRootClassName}>
+          <ProfileSkeleton />
+        </div>
       </>
     );
   }
-  if (!user) {
+
+  const summaryLoading = summaryQuery.isLoading;
+
+  if (summaryLoading) {
+    const accountName = getAccountDisplayName(user);
+    const skeletonSeoTitle = `${accountName} | ${COMPANY_NAME}`;
     return (
       <>
         <PageMeta
-          title={profileTitle}
+          title={skeletonSeoTitle}
           description={profileDescription}
           path={PROFILE_PATH}
           noindex
         />
-        <div className="flex min-h-screen items-center justify-center bg-background p-6">
-          <div className="max-w-md rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center sm:p-8">
-            <p className="mb-4 text-white/80">Not signed in.</p>
-            <Link
-              to="/login"
-              className="inline-block rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "rgb(240, 28, 28)" }}
-            >
-              Go to Login
-            </Link>
-          </div>
+        <div className={contentRootClassName}>
+          <ProfileSkeleton />
         </div>
       </>
     );
@@ -431,22 +400,9 @@ export default function Profile() {
 
   const accountName = getAccountDisplayName(user);
   const me: MeResponse = { user };
-  const displayProfile: ProfileSummary = profile
-    ? { ...profile, user: { ...profile.user, displayName: accountName } }
+  const displayProfile: ProfileSummary = profileSummary
+    ? { ...profileSummary, user: { ...profileSummary.user, displayName: accountName } }
     : profileSummaryFromMe(me);
-
-  const memberSince =
-    user.createdAt &&
-    (() => {
-      try {
-        const d = new Date(user.createdAt);
-        return isNaN(d.getTime())
-          ? null
-          : d.toLocaleDateString(undefined, { year: "numeric", month: "long" });
-      } catch {
-        return null;
-      }
-    })();
 
   const avatarUrl = resolveApiUrl((user as AuthUser).avatarUrl) ?? undefined;
   const bioForDisplay =
@@ -473,7 +429,7 @@ export default function Profile() {
         image={avatarUrl}
         noindex
       />
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className={contentRootClassName}>
         <ProfileView
           profile={displayProfile}
           avatarUrl={avatarUrl || undefined}
@@ -482,7 +438,12 @@ export default function Profile() {
           followingCount={publicPreview?.followingCount ?? 0}
           isCurrentUser
           isPro={user.hasPro === true}
+          profileUserId={followsUserId}
           challengeBadges={publicPreview?.challengeBadges}
+          challengeBadgeCount={publicPreview?.challengeBadgeCount}
+          challengeBadgesLoading={
+            Boolean(followsUserId) && publicPreviewLoading
+          }
           onOpenFollowers={() => setOpenList("followers")}
           onOpenFollowing={() => setOpenList("following")}
           onPrefetchFollowers={() =>
@@ -503,175 +464,30 @@ export default function Profile() {
             onPageChange: setRaceHistoryPage,
           }}
         />
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-end gap-2">
-            {memberSince && (
-              <p className="text-sm text-white/50">
-                Member since {memberSince}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "rgb(240, 28, 28)" }}
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-        <FollowListDialog
-          key={`${followsUserId}-${openList ?? "closed"}`}
-          open={openList !== null}
-          onOpenChange={(open) => !open && setOpenList(null)}
-          userId={followsUserId}
-          listKind={openList}
-        />
-
-        {/* Edit Profile modal */}
-        <BaseModal
-          isOpen={editOpen}
-          onClose={() => {
-            clearAvatarSelection();
-            setEditOpen(false);
-          }}
-          title="Edit Profile"
-          description="Update your display name, bio, and profile picture."
-          size="sm"
-          footer={
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  clearAvatarSelection();
-                  setEditOpen(false);
-                }}
-                disabled={editLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="edit-profile-form"
-                disabled={
-                  editLoading ||
-                  profileEditForm.watch("displayName").trim().length < 2
-                }
-              >
-                {editLoading ? "Saving…" : "Save"}
-              </Button>
-            </>
-          }
-        >
-          <Form {...profileEditForm}>
-            <form
-              id="edit-profile-form"
-              onSubmit={profileEditForm.handleSubmit(onSaveProfileSubmit)}
-              className="space-y-4"
-            >
-              <FormRootMessage className="rounded-md bg-red-500/10 px-3 py-2" />
-              {editSuccess && (
-                <p className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-500">
-                  Profile updated.
-                </p>
-              )}
-
-              <FormField
-                control={profileEditForm.control}
-                name="displayName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="edit-displayName">
-                      Display name
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        id="edit-displayName"
-                        type="text"
-                        className="w-full rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        placeholder="Your name"
-                        maxLength={40}
-                        disabled={editLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {field.value.trim().length}/40
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={profileEditForm.control}
-                name="tagline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="edit-tagline">Bio</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        id="edit-tagline"
-                        className="min-h-[80px] w-full resize-y rounded-lg border border-white/20 bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        placeholder="A short bio..."
-                        maxLength={160}
-                        disabled={editLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {field.value.length}/160
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Profile picture
-                </label>
-                <p className="mb-2 text-xs text-muted-foreground">
-                  Choose an image from your device (JPEG, PNG, or WebP, max 5
-                  MB). Images are cropped to a square on upload.
-                </p>
-                <input
-                  ref={avatarInputRef}
-                  id="edit-avatar-file"
-                  type="file"
-                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                  onChange={handleAvatarFileChange}
-                  className="w-full text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground hover:file:bg-white/15"
-                  disabled={editLoading}
-                />
-                {avatarError && (
-                  <p className="mt-1.5 text-sm text-destructive">
-                    {avatarError}
-                  </p>
-                )}
-                {avatarPreview && (
-                  <div className="mt-3 flex items-center gap-3">
-                    <img
-                      src={avatarPreview}
-                      alt="Preview"
-                      className="size-16 rounded-full border border-white/10 bg-muted object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={clearAvatarSelection}
-                      disabled={editLoading}
-                      className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            </form>
-          </Form>
-        </BaseModal>
       </div>
+
+      <FollowListDialog
+        key={`${followsUserId}-${openList ?? "closed"}`}
+        open={openList !== null}
+        onOpenChange={(open) => !open && setOpenList(null)}
+        userId={followsUserId}
+        listKind={openList}
+        profileLinkBase="/user"
+      />
+
+      <ProfileEditModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        profileEditForm={profileEditForm}
+        onSave={onSaveProfileSubmit}
+        editLoading={editLoading}
+        editSuccess={editSuccess}
+        avatarInputRef={avatarInputRef}
+        avatarPreview={avatarPreview}
+        avatarError={avatarError}
+        onAvatarFileChange={handleAvatarFileChange}
+        onClearAvatarSelection={clearAvatarSelection}
+      />
     </>
   );
 }

@@ -439,7 +439,7 @@ test.describe("@community @views", () => {
     }
   });
 
-  test("V11 — V2 route dedupes same as V1", async ({ page, request }) => {
+  test("V11 — discussion route dedupes on revisit", async ({ page, request }) => {
     const auth = await loginPersona(request, "standard");
     const runId = uniqueRunId();
     let discussionId: string | null = null;
@@ -452,7 +452,7 @@ test.describe("@community @views", () => {
       await page.goto(`/discussion/${discussionId}`);
       await viewTracker.waitForFirst();
 
-      await page.goto(`/v2/discussion/${discussionId}`);
+      await page.goto(`/discussion/${discussionId}`);
       await expect(
         page.getByRole("heading", { level: 1, name: `E2E Views ${runId}` }),
       ).toBeVisible();

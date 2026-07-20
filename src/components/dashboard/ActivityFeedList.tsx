@@ -1,0 +1,197 @@
+import DashboardActivityCard, {
+  type SessionPatch,
+} from "@/components/dashboard/DashboardActivityCard";
+import BundledActivityCard from "@/components/dashboard/BundledActivityCard";
+import WeekendGroupHeader from "@/components/WeekendGroupHeader";
+import type { ActivityFeedItem } from "@/lib/api/activityBilling";
+import type { SessionItem } from "@/lib/sessionTypes";
+import { segmentWeekendSessionsForDisplay } from "@/lib/weekendDisplaySegments";
+
+type ActivityOwner = {
+  id?: string | null;
+  displayName?: string | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+};
+
+export type ActivityFeedSession = SessionItem & {
+  authorId?: string | null;
+  authorName?: string | null;
+  authorAvatarUrl?: string | null;
+  owner?: ActivityOwner;
+  carName?: string | null;
+  trackName?: string | null;
+  apexAnalysis?: { locked: false; insights: string[] } | null;
+};
+
+function getActivityFeedItemKey(item: ActivityFeedItem): string {
+  if (item.type === "standalone") {
+    const session = item.session as { id?: string };
+    return `standalone-${session.id ?? "unknown"}`;
+  }
+  const g = item.group;
+  return `weekend-${g.authorId}-${g.trackKey}-${g.lastSessionAt}`;
+}
+
+function timeAgo(createdAt: string | Date): string {
+  const date = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (sec < 60) return "just now";
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  if (sec < 2592000) return `${Math.floor(sec / 86400)}d ago`;
+  return date.toLocaleDateString();
+}
+
+function getProfileOwnerId(session: ActivityFeedSession): string | null {
+  if (typeof session.authorId === "string" && session.authorId.trim()) {
+    return session.authorId.trim();
+  }
+  const oid = session.owner?.id;
+  return typeof oid === "string" && oid.trim() ? oid.trim() : null;
+}
+
+function getActivityHeaderFromOwner(
+  session: ActivityFeedSession,
+  currentUser?: { id: string; avatarUrl?: string | null } | null,
+): { name: string; avatar: string | null } {
+  const sessionOwnerId = getProfileOwnerId(session);
+  const isCurrentUsersSession =
+    Boolean(currentUser?.id) &&
+    Boolean(sessionOwnerId) &&
+    currentUser!.id === sessionOwnerId;
+  const name =
+    session.authorName?.trim() ||
+    session.owner?.displayName?.trim() ||
+    session.owner?.username?.trim() ||
+    session.driverName ||
+    "—";
+  const currentUserAvatar =
+    currentUser?.avatarUrl && currentUser.avatarUrl.trim().length > 0
+      ? currentUser.avatarUrl
+      : null;
+  const avatar =
+    isCurrentUsersSession && currentUserAvatar
+      ? currentUserAvatar
+      : session.authorAvatarUrl && session.authorAvatarUrl.trim().length > 0
+        ? session.authorAvatarUrl
+        : session.owner?.avatarUrl && session.owner.avatarUrl.trim().length > 0
+          ? session.owner.avatarUrl
+          : null;
+  return { name, avatar };
+}
+
+function renderActivityCard(
+  session: ActivityFeedSession,
+  options: {
+    onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
+    currentUser?: { id: string; avatarUrl?: string | null } | null;
+  },
+) {
+  const header = getActivityHeaderFromOwner(session, options.currentUser);
+  const profileOwnerId = getProfileOwnerId(session);
+
+  return (
+    <DashboardActivityCard
+      id={session.id}
+      profileUserId={profileOwnerId}
+      userName={header.name}
+      userAvatar={header.avatar}
+      car={session.car ?? "—"}
+      vehicleDisplay={
+        session.vehicleDisplay ??
+        (typeof session.carName === "string" ? session.carName : undefined)
+      }
+      source={
+        session.source ??
+        (session.sessionType === "MANUAL_ACTIVITY" ? "manual" : "telemetry")
+      }
+      track={session.track ?? "—"}
+      trackName={session.trackName}
+      position={session.position ?? null}
+      qualifyingPosition={session.qualifyingPosition ?? null}
+      totalRacers={session.totalDrivers ?? null}
+      sessionType={session.sessionType}
+      manualSessionKind={session.manualSessionKind ?? null}
+      sim={session.sim}
+      bestLapMs={session.bestLapMs}
+      lapCount={session.lapCount}
+      likeCount={session.likeCount ?? 0}
+      commentCount={session.commentCount ?? 0}
+      likedByMe={session.likedByMe ?? false}
+      timestamp={timeAgo(session.createdAt)}
+      onSessionPatch={options.onSessionPatch}
+      apexAnalysis={session.apexAnalysis ?? null}
+    />
+  );
+}
+
+export type ActivityFeedListProps = {
+  items: ActivityFeedItem[];
+  onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
+  currentUser?: { id: string; avatarUrl?: string | null } | null;
+};
+
+export default function ActivityFeedList({
+  items,
+  onSessionPatch,
+  currentUser,
+}: ActivityFeedListProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      {items.map((item) => {
+        if (item.type === "standalone") {
+          const session = item.session as ActivityFeedSession;
+          return (
+            <div key={getActivityFeedItemKey(item)}>
+              {renderActivityCard(session, {
+                onSessionPatch,
+                currentUser,
+              })}
+            </div>
+          );
+        }
+
+        return (
+          <div
+            key={getActivityFeedItemKey(item)}
+            className="overflow-hidden rounded-2xl border-2 border-apex-outline-variant/25 bg-apex-surface-container-low/40"
+          >
+            <WeekendGroupHeader
+              group={item.group}
+              className="mb-0 rounded-none border-0 border-b border-apex-outline-variant/20 bg-apex-surface-container-low/60"
+            />
+            <div className="flex flex-col gap-6 p-4 sm:p-5">
+              {segmentWeekendSessionsForDisplay(
+                item.group.sessions as SessionItem[],
+              ).map((segment) => {
+                if (segment.type === "single") {
+                  const s = segment.session as ActivityFeedSession;
+                  return (
+                    <div key={s.id}>
+                      {renderActivityCard(s, {
+                        onSessionPatch,
+                        currentUser,
+                      })}
+                    </div>
+                  );
+                }
+
+                const carouselKey = `${segment.kind}-${segment.sessions.map((s) => s.id).join("-")}`;
+                return (
+                  <BundledActivityCard
+                    key={carouselKey}
+                    sessions={segment.sessions}
+                    overflowCount={0}
+                    onSessionPatch={onSessionPatch}
+                    currentUser={currentUser}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

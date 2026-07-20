@@ -1,5 +1,6 @@
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronLeft } from "lucide-react";
 import {
   keepPreviousData,
   useMutation,
@@ -7,21 +8,9 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  Heart,
-  MessageCircle,
-  Reply,
-  Eye,
-  MoreHorizontal,
-  Pencil,
-  Pin,
-  Trash2,
-} from "lucide-react";
-import {
   getDiscussion,
   getDiscussionComments,
   createDiscussionComment,
-  DISCUSSION_CATEGORIES,
   DISCUSSION_COMMENTS_PAGE_SIZE,
   ApiError,
   resolveDiscussionAvatarSrc,
@@ -32,70 +21,88 @@ import {
   deleteDiscussion,
   type Discussion,
   type DiscussionComment,
-  type DiscussionCommentsPageResult,
 } from "@/lib/api";
 import type { AuthRedirectState } from "@/auth/authRedirect";
-import { DiscussionCategoryIcon } from "@/components/DiscussionCategoryIcon";
+import { AUTH_PATHS } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  timeAgo,
   getDiscussionAuthorDisplay,
   getDiscussionAuthorInitials,
-  formatCompactCount,
-  cn,
 } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
-import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
-import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { SkeletonBlock } from "@/components/ui/skeleton";
-import { useRecordDiscussionView } from "@/hooks/useRecordDiscussionView";
+import { appOutlineButtonClassName } from "@/components/app-ui/appButtonClasses";
+import { cn } from "@/lib/utils";
+import DiscussionPostCard from "@/pages/discussion/DiscussionPostCard";
+import DiscussionCommentList from "@/pages/discussion/DiscussionCommentList";
+import DiscussionReplyForm from "@/pages/discussion/DiscussionReplyForm";
+import DiscussionReplyModal from "@/pages/discussion/DiscussionReplyModal";
+import DiscussionReplyFab from "@/pages/discussion/DiscussionReplyFab";
+import DiscussionDetailSkeleton from "@/pages/discussion/DiscussionDetailSkeleton";
+import DiscussionEditModal from "@/pages/discussion/DiscussionEditModal";
+import DiscussionDeleteDialog from "@/pages/discussion/DiscussionDeleteDialog";
+import DiscussionOriginalPostModal from "@/pages/discussion/DiscussionOriginalPostModal";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  normalizeDiscussionReplyBody,
+  DISCUSSION_REPLY_MAX_LENGTH,
+} from "@/pages/discussion/discussionReplyUtils";
+import { useRecordDiscussionView } from "@/hooks/useRecordDiscussionView";
 
-function categoryLabel(value: string) {
-  return DISCUSSION_CATEGORIES.find((c) => c.value === value)?.label ?? value;
-}
-
-const ACCENT_RED = "rgb(240, 28, 28)";
-
-/** Avatar for a comment row: same resolution as /profile when the reply is yours. */
-function CommentAuthorAvatar({ author }: { author: unknown }) {
-  const { user } = useAuth();
-  const label = getDiscussionAuthorDisplay(author);
-  const src = resolveDiscussionAvatarSrc(author, user);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src, user?.id, user?.avatarUrl]);
-  const initials = getDiscussionAuthorInitials(label);
-  if (src?.trim() && !failed) {
-    return (
-      <img
-        src={src}
-        alt={label}
-        className="size-9 shrink-0 rounded-full object-cover"
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-  return (
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-white/70">
-      {initials}
-    </div>
-  );
-}
+const COMMUNITY_PATH = "/community";
+const COMMENTS_SORT = "desc" as const;
+const DEFAULT_REPLY_BAR_HEIGHT = 120;
 
 function discussionLoadErrorMessage(e: unknown): string {
   if (e instanceof ApiError && e.status === 404) return "Discussion not found.";
   if (e instanceof ApiError && e.status === 0)
     return "Failed to load discussion.";
   return "Failed to load discussion.";
+}
+
+function discussionPath(id: string) {
+  return `/discussion/${id}`;
+}
+
+function CommunityBackLink() {
+  return (
+    <Link
+      to={COMMUNITY_PATH}
+      className="inline-flex items-center gap-1.5 font-apex-body text-sm text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
+    >
+      <ChevronLeft className="size-4 shrink-0" aria-hidden />
+      Community
+    </Link>
+  );
+}
+
+function PageShell({
+  children,
+  replyBarPinned,
+  replyBarHeight,
+}: {
+  children: ReactNode;
+  replyBarPinned?: boolean;
+  replyBarHeight?: number;
+}) {
+  return (
+    <div
+      className={cn(
+        "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8",
+        replyBarPinned && "lg:pb-[calc(var(--reply-bar-h,7.5rem)+0.5rem)]",
+      )}
+      style={
+        replyBarPinned && replyBarHeight != null
+          ? ({ "--reply-bar-h": `${replyBarHeight}px` } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <div className="mx-auto w-full max-w-3xl space-y-8">
+        <CommunityBackLink />
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export default function DiscussionDetail() {
@@ -114,13 +121,28 @@ export default function DiscussionDetail() {
   });
 
   const [commentsPage, setCommentsPage] = useState(1);
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [replyBarPinned, setReplyBarPinned] = useState(true);
+  const [replyBarHeight, setReplyBarHeight] = useState(
+    DEFAULT_REPLY_BAR_HEIGHT,
+  );
+  const dockAnchorRef = useRef<HTMLDivElement>(null);
+
+  const handleDockMetricsChange = useCallback(
+    (metrics: { pinned: boolean; barHeight: number }) => {
+      setReplyBarPinned(metrics.pinned);
+      setReplyBarHeight(metrics.barHeight);
+    },
+    [],
+  );
 
   const commentsQuery = useQuery({
-    queryKey: ["discussion", "comments", id ?? "", commentsPage],
+    queryKey: ["discussion", "comments", id ?? "", commentsPage, COMMENTS_SORT],
     queryFn: () =>
       getDiscussionComments(id!, {
         page: commentsPage,
         limit: DISCUSSION_COMMENTS_PAGE_SIZE,
+        sort: COMMENTS_SORT,
       }),
     enabled: Boolean(id),
     placeholderData: keepPreviousData,
@@ -155,25 +177,9 @@ export default function DiscussionDetail() {
     mutationFn: (body: string) => createDiscussionComment(id!, body),
     onSuccess: () => {
       setReplyBody("");
+      setReplyModalOpen(false);
       if (!id) return;
-      const pageResult = queryClient.getQueryData<DiscussionCommentsPageResult>(
-        ["discussion", "comments", id, commentsPage],
-      );
-      const disc = queryClient.getQueryData<Discussion>([
-        "discussion",
-        "detail",
-        id,
-      ]);
-      const prevTotal =
-        pageResult?.total ??
-        disc?.commentsCount ??
-        disc?.commentCount ??
-        disc?.replies ??
-        0;
-      const newTotal = prevTotal + 1;
-      setCommentsPage(
-        Math.max(1, Math.ceil(newTotal / DISCUSSION_COMMENTS_PAGE_SIZE)),
-      );
+      setCommentsPage(1);
       queryClient.setQueryData<Discussion>(
         ["discussion", "detail", id],
         (prev) => {
@@ -193,6 +199,11 @@ export default function DiscussionDetail() {
         queryKey: ["discussion", "comments", id],
       });
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+      requestAnimationFrame(() => {
+        document
+          .getElementById("replies-heading")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     },
     onError: (e: unknown) => {
       console.error(e);
@@ -216,7 +227,11 @@ export default function DiscussionDetail() {
         ["discussion", "detail", id],
         (prev) =>
           prev
-            ? { ...prev, likeCount: data.likeCount, likedByMe: data.likedByMe }
+            ? {
+                ...prev,
+                likeCount: data.likeCount,
+                likedByMe: data.likedByMe,
+              }
             : prev,
       );
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
@@ -236,7 +251,7 @@ export default function DiscussionDetail() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
       setDeleteOpen(false);
-      navigate("/community");
+      navigate(COMMUNITY_PATH);
     },
     onError: (e: unknown) => {
       console.error(e);
@@ -263,9 +278,37 @@ export default function DiscussionDetail() {
     },
   });
 
+  const handleOpenReplyModal = () => {
+    if (!user) {
+      const state: AuthRedirectState = {
+        message: "Sign in to reply.",
+        from: `${location.pathname}${location.search}`,
+      };
+      navigate(AUTH_PATHS.login, { state });
+      return;
+    }
+    setReplyError(null);
+    setReplyModalOpen(true);
+  };
+
+  const handleCloseReplyModal = () => {
+    if (posting) return;
+    setReplyModalOpen(false);
+    setReplyError(null);
+  };
+
   const handlePostReply = () => {
-    const body = replyBody.trim();
-    if (!body || !id) return;
+    const body = normalizeDiscussionReplyBody(replyBody);
+    if (!body || !id) {
+      if (replyBody.trim()) setReplyError("Reply cannot be empty.");
+      return;
+    }
+    if (body.length > DISCUSSION_REPLY_MAX_LENGTH) {
+      setReplyError(
+        `Reply must be ${DISCUSSION_REPLY_MAX_LENGTH} characters or fewer.`,
+      );
+      return;
+    }
     setReplyError(null);
     postMutation.mutate(body);
   };
@@ -276,7 +319,7 @@ export default function DiscussionDetail() {
         message: "Sign in to like posts.",
         from: `${location.pathname}${location.search}`,
       };
-      navigate("/login", { state });
+      navigate(AUTH_PATHS.login, { state });
       return;
     }
     if (!id || likeMutation.isPending) return;
@@ -314,115 +357,62 @@ export default function DiscussionDetail() {
 
   if (!id) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`Community | ${COMPANY_NAME}`}
           description={`Discussions on ${COMPANY_NAME}.`}
-          path="/community"
+          path={COMMUNITY_PATH}
           noindex
         />
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              Back
-            </button>
-          </div>
-          <p className="text-muted-foreground">Invalid post ID.</p>
-        </div>
-      </div>
+        <PageShell>
+          <p className="font-apex-body text-sm text-apex-on-surface-variant">
+            Invalid post ID.
+          </p>
+        </PageShell>
+      </>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`Discussion | ${COMPANY_NAME}`}
           description={`Community discussion on ${COMPANY_NAME}.`}
-          path={`/discussion/${id ?? ""}`}
+          path={discussionPath(id)}
         />
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              Back
-            </button>
-          </div>
-          <div className="border-white/6 overflow-hidden rounded-xl border bg-card/20 shadow-none backdrop-blur-lg">
-            <div className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent" />
-            <div className="border-white/6 flex gap-3 border-b px-5 py-4 sm:px-6">
-              <SkeletonBlock className="size-10 shrink-0 rounded-full" />
-              <div className="flex-1 space-y-2 pt-1">
-                <SkeletonBlock className="h-4 w-32 rounded" />
-                <SkeletonBlock className="h-3 w-24 rounded" />
-              </div>
-            </div>
-            <div className="space-y-3 px-5 py-6 sm:px-6">
-              <SkeletonBlock className="h-8 w-full max-w-md rounded-lg" />
-              <SkeletonBlock className="h-4 w-full rounded" />
-              <SkeletonBlock className="h-4 w-full rounded" />
-              <SkeletonBlock className="h-4 w-3/4 rounded" />
-            </div>
-            <div className="border-white/6 flex gap-4 border-t bg-white/[0.02] px-5 py-4 sm:px-6">
-              <SkeletonBlock className="h-9 w-20 rounded-lg" />
-              <SkeletonBlock className="h-9 w-20 rounded-lg" />
-              <SkeletonBlock className="h-9 w-20 rounded-lg" />
-            </div>
-          </div>
-          <div className="mt-10 space-y-4">
-            <SkeletonBlock className="h-7 w-48 rounded" />
-            <SkeletonBlock className="h-28 w-full rounded-xl" />
-            <SkeletonBlock className="h-28 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
+        <PageShell>
+          <DiscussionDetailSkeleton />
+        </PageShell>
+      </>
     );
   }
 
   if (discussionError || !discussion) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`Discussion | ${COMPANY_NAME}`}
           description={discussionError ?? "Discussion not found."}
-          path={`/discussion/${id ?? ""}`}
+          path={discussionPath(id)}
           noindex
         />
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              Back
-            </button>
-          </div>
-          <div className="border-white/12 rounded-xl border border-dashed bg-card/15 px-6 py-10 text-center backdrop-blur-sm">
-            <p className="text-sm text-muted-foreground">
+        <PageShell>
+          <div className="rounded-xl border border-dashed border-apex-outline-variant/20 bg-apex-surface-container-low px-6 py-10 text-center">
+            <p className="font-apex-body text-sm text-apex-on-surface-variant">
               {discussionError ?? "Post not found."}
             </p>
             <Button
               type="button"
               variant="outline"
-              className="mt-5 border-white/10 bg-card/30"
-              onClick={() => navigate("/community")}
+              className={cn("mt-5", appOutlineButtonClassName)}
+              asChild
             >
-              Back to Community
+              <Link to={COMMUNITY_PATH}>Back to Community</Link>
             </Button>
           </div>
-        </div>
-      </div>
+        </PageShell>
+      </>
     );
   }
 
@@ -467,437 +457,97 @@ export default function DiscussionDetail() {
         };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageMeta
         title={`${discussion.title} | ${COMPANY_NAME}`}
         description={discussionSnippet}
-        path={`/discussion/${id}`}
+        path={discussionPath(id)}
         image={avatarSrc}
         ogType="article"
       />
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="border-white/6 inline-flex w-fit items-center gap-2 rounded-lg border bg-card/20 px-3 py-2 text-sm font-medium text-muted-foreground backdrop-blur-lg transition-colors hover:border-white/10 hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </button>
-        </div>
-
-        <article className="border-white/6 relative overflow-hidden rounded-xl border bg-card/20 shadow-none backdrop-blur-lg">
-          <div
-            className="h-1 bg-gradient-to-r from-[rgb(240,28,28)]/90 via-[rgb(240,28,28)]/35 to-transparent"
-            aria-hidden
-          />
-          {isOwner && (
-            <div className="absolute right-2 top-5 z-10 sm:right-3 sm:top-6">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                    aria-label="Post options"
-                  >
-                    <MoreHorizontal className="size-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[10rem]">
-                  {!alreadyEdited && (
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setEditOpen(true);
-                      }}
-                    >
-                      <Pencil className="mr-2 size-4" />
-                      Edit post
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-
-          <div className="border-white/6 border-b px-5 pb-5 pt-6 sm:px-6 sm:pb-6 sm:pt-7">
-            <button
-              type="button"
-              onClick={() => {
-                if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
-              }}
-              className="group mb-5 flex w-full items-center gap-3 text-left transition-opacity hover:opacity-90 sm:mb-6 sm:gap-4"
-            >
-              {showPostAvatar ? (
-                <img
-                  src={avatarSrc!}
-                  alt={authorDisplay}
-                  className="size-11 rounded-full object-cover ring-2 ring-white/5 transition-all group-hover:ring-[rgba(240,28,28,0.45)] sm:size-12"
-                  onError={() => setPostAvatarFailed(true)}
-                />
-              ) : (
-                <div
-                  className="flex size-11 items-center justify-center rounded-full bg-white/10 text-sm font-medium text-white/80 ring-2 ring-white/5 transition-all group-hover:ring-[rgba(240,28,28,0.45)] sm:size-12 sm:text-base"
-                  aria-label={`Avatar for ${authorDisplay}`}
-                >
-                  {initials}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-foreground transition-colors group-hover:text-[rgb(240,28,28)]">
-                  {authorDisplay}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                  {timeAgo(discussion.createdAt)}
-                </p>
-              </div>
-            </button>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="border-white/8 inline-flex items-center gap-1.5 rounded-md border bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-foreground/90">
-                <DiscussionCategoryIcon
-                  categoryKey={discussion.category ?? "general"}
-                  className="size-3.5 text-white/70"
-                />
-                {categoryLabel(discussion.category)}
-              </span>
-              {discussion.isPinned && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium"
-                  style={{
-                    color: ACCENT_RED,
-                    backgroundColor: "rgba(240, 28, 28, 0.06)",
-                  }}
-                >
-                  <Pin className="size-3.5 shrink-0" aria-hidden />
-                  Pinned
-                </span>
-              )}
-              {showEditedBadge && (
-                <button
-                  type="button"
-                  onClick={() => setOriginalOpen(true)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-muted-foreground underline-offset-2 transition-colors hover:border-white/15 hover:bg-white/[0.07] hover:text-foreground hover:underline"
-                >
-                  Edited
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="px-5 py-6 sm:px-6 sm:py-8">
-            <h1 className="mb-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:mb-5 sm:text-3xl sm:leading-tight">
-              {discussion.title}
-            </h1>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-base">
-              {description}
-            </p>
-          </div>
-
-          <div className="border-white/6 flex flex-wrap items-center gap-2 border-t bg-white/[0.02] px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
-            <button
-              type="button"
-              onClick={handleLikeClick}
-              disabled={likeMutation.isPending}
-              aria-pressed={Boolean(discussion.likedByMe)}
-              aria-label={discussion.likedByMe ? "Unlike post" : "Like post"}
-              className={cn(
-                "border-white/8 hover:border-white/12 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:opacity-60 sm:text-sm",
-                discussion.likedByMe &&
-                  "border-rose-500/25 bg-rose-500/10 text-rose-500 hover:border-rose-500/35 hover:bg-rose-500/15 hover:text-rose-500",
-              )}
-            >
-              <Heart
-                className={cn(
-                  "size-4 shrink-0",
-                  discussion.likedByMe && "fill-current text-rose-500",
-                )}
-              />
-              <span title={String(discussion.likeCount ?? 0)}>
-                {formatCompactCount(discussion.likeCount ?? 0)}
-              </span>
-            </button>
-            <div className="border-white/8 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
-              <MessageCircle
-                className="size-4 shrink-0 opacity-80"
-                aria-hidden
-              />
-              <span
-                title={String(
-                  discussion.commentCount ??
-                    discussion.commentsCount ??
-                    discussion.replies ??
-                    0,
-                )}
-              >
-                {formatCompactCount(
-                  discussion.commentCount ??
-                    discussion.commentsCount ??
-                    discussion.replies ??
-                    0,
-                )}
-              </span>
-            </div>
-            <div className="border-white/8 inline-flex items-center gap-2 rounded-lg border bg-white/[0.03] px-3 py-2 text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
-              <Eye className="size-4 shrink-0 opacity-80" aria-hidden />
-              <span title={String(discussion.views ?? 0)}>
-                {formatCompactCount(discussion.views ?? 0)}
-              </span>
-            </div>
-          </div>
-        </article>
-
-        <section className="mt-10 sm:mt-12" aria-labelledby="replies-heading">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-8">
-            <div className="flex items-center gap-2.5">
-              <div
-                className="border-white/8 flex size-9 items-center justify-center rounded-lg border bg-white/[0.04]"
-                aria-hidden
-              >
-                <Reply className="size-4 text-muted-foreground" />
-              </div>
-              <div>
-                <h2
-                  id="replies-heading"
-                  className="text-lg font-semibold tracking-tight text-foreground sm:text-xl"
-                >
-                  Replies
-                </h2>
-                <p className="text-xs text-muted-foreground sm:text-sm">
-                  {repliesTotal === 0
-                    ? "Start the conversation below."
-                    : `${repliesTotal} ${repliesTotal === 1 ? "reply" : "replies"}`}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {commentsError && (
-            <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-muted-foreground">
-              {commentsError}
-              <button
-                type="button"
-                onClick={loadComments}
-                className="ml-2 font-medium text-[rgb(240,28,28)] hover:underline"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {!commentsError && repliesTotal === 0 && (
-            <div className="border-white/12 mb-8 rounded-xl border border-dashed bg-white/[0.02] px-6 py-12 text-center">
-              <MessageCircle
-                className="mx-auto mb-3 size-10 text-muted-foreground/35"
-                strokeWidth={1.25}
-                aria-hidden
-              />
-              <p className="text-sm font-medium text-foreground">
-                No replies yet
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                Be the first to share your thoughts.
-              </p>
-            </div>
-          )}
-
-          {!commentsError && repliesTotal > 0 && (
-            <ul className="space-y-3 sm:space-y-4">
-              {(comments ?? []).map((c) => (
-                <li key={c.id}>
-                  <div className="border-white/6 overflow-hidden rounded-xl border bg-card/15 backdrop-blur-sm">
-                    <div className="border-l-2 border-l-[rgba(240,28,28,0.35)] bg-card/25 p-4 sm:p-5">
-                      <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
-                        <CommentAuthorAvatar author={c.author} />
-                        <div className="min-w-0 flex-1 pt-0.5">
-                          <p className="font-semibold leading-none text-foreground">
-                            {getDiscussionAuthorDisplay(c.author)}
-                          </p>
-                          <p className="mt-1.5 text-xs text-muted-foreground">
-                            {timeAgo(c.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-                        {c.body}
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {!commentsError && repliesTotal > 0 && (
-            <div className="mt-8 space-y-3">
-              {commentsRange && (
-                <p className="text-center text-xs text-muted-foreground">
-                  Showing {commentsRange.start}–{commentsRange.end} of{" "}
-                  {repliesTotal}
-                </p>
-              )}
-              <RaceHistoryPagination
-                page={commentsPage}
-                totalPages={commentsTotalPages}
-                onPageChange={setCommentsPage}
-                disabled={commentsQuery.isFetching}
-              />
-            </div>
-          )}
-
-          <div className="border-white/6 mt-10 overflow-hidden rounded-xl border bg-card/20 p-5 shadow-none backdrop-blur-lg sm:p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <MessageCircle
-                className="size-4 text-muted-foreground"
-                aria-hidden
-              />
-              <span className="text-sm font-semibold text-foreground">
-                Add a reply
-              </span>
-            </div>
-            {replyError && (
-              <p className="mb-3 text-sm text-destructive/90">{replyError}</p>
-            )}
-            <Textarea
-              className="min-h-[120px] resize-y border-white/10 bg-secondary/40 text-foreground placeholder:text-muted-foreground/70 focus-visible:border-[rgba(240,28,28,0.45)] focus-visible:ring-[rgba(240,28,28,0.25)]"
-              rows={4}
-              placeholder="Write a reply…"
-              value={replyBody}
-              onChange={(e) => setReplyBody(e.target.value)}
-              disabled={posting}
-            />
-            <div className="mt-4 flex justify-end">
-              <Button
-                type="button"
-                onClick={handlePostReply}
-                disabled={!replyBody.trim() || posting}
-                className="min-w-[8.5rem] font-medium text-white"
-                style={{ backgroundColor: ACCENT_RED }}
-              >
-                {posting ? "Posting…" : "Post reply"}
-              </Button>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <BaseModal
-        isOpen={editOpen}
-        onClose={() => setEditOpen(false)}
-        title="Edit discussion"
-        size="md"
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setEditOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => editMutation.mutate()}
-              disabled={
-                editMutation.isPending ||
-                editTitle.trim().length < 3 ||
-                editDescription.trim().length < 10
-              }
-            >
-              {editMutation.isPending ? "Saving…" : "Save"}
-            </Button>
-          </>
-        }
+      <PageShell
+        replyBarPinned={replyBarPinned}
+        replyBarHeight={replyBarHeight}
       >
-        <div className="space-y-4">
-          {editError && <p className="text-sm text-destructive">{editError}</p>}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Title
-            </label>
-            <Input
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              disabled={editMutation.isPending}
-              className="border-white/10 bg-secondary"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Body
-            </label>
-            <Textarea
-              className="min-h-[160px] resize-y border-white/10 bg-secondary"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              disabled={editMutation.isPending}
-            />
-          </div>
-        </div>
-      </BaseModal>
+        <DiscussionPostCard
+          discussion={discussion}
+          authorDisplay={authorDisplay}
+          authorId={authorId}
+          description={description}
+          avatarSrc={avatarSrc}
+          showPostAvatar={showPostAvatar}
+          initials={initials}
+          isOwner={isOwner}
+          alreadyEdited={alreadyEdited}
+          showEditedBadge={showEditedBadge}
+          onPostAvatarError={() => setPostAvatarFailed(true)}
+          onLikeClick={handleLikeClick}
+          likePending={likeMutation.isPending}
+          onEditClick={() => setEditOpen(true)}
+          onDeleteClick={() => setDeleteOpen(true)}
+          onOriginalClick={() => setOriginalOpen(true)}
+        />
 
-      <BaseModal
-        isOpen={originalOpen}
-        onClose={() => setOriginalOpen(false)}
-        title="Original post"
-        size="md"
-        footer={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setOriginalOpen(false)}
-          >
-            Close
-          </Button>
-        }
-        bodyClassName="min-h-0 space-y-3 text-sm"
-      >
-        <p className="font-semibold text-foreground">
-          {discussion.originalTitle ?? discussion.title}
-        </p>
-        <p className="whitespace-pre-wrap text-muted-foreground">
-          {discussion.originalBody ??
-            discussion.content ??
-            discussion.description ??
-            ""}
-        </p>
-      </BaseModal>
+        <DiscussionCommentList
+          repliesTotal={repliesTotal}
+          comments={comments}
+          commentsError={commentsError}
+          commentsPage={commentsPage}
+          commentsTotalPages={commentsTotalPages}
+          commentsFetching={commentsQuery.isFetching}
+          commentsRange={commentsRange}
+          onRetryComments={loadComments}
+          onPageChange={setCommentsPage}
+          dockAnchorRef={dockAnchorRef}
+        />
 
-      <BaseAlertDialog
-        isOpen={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        title="Delete this discussion?"
-        description="This removes the post from the community. You can’t undo this from the site; contact support if you deleted by mistake."
-        footer={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleteMutation.isPending}
-              onClick={() => setDeleteOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate()}
-            >
-              {deleteMutation.isPending ? "Deleting…" : "Delete"}
-            </Button>
-          </>
-        }
+        <DiscussionReplyForm
+          dockAnchorRef={dockAnchorRef}
+          onDockMetricsChange={handleDockMetricsChange}
+          replyBody={replyBody}
+          replyError={replyError}
+          posting={posting}
+          onReplyBodyChange={setReplyBody}
+          onPostReply={handlePostReply}
+        />
+      </PageShell>
+
+      <DiscussionReplyFab onClick={handleOpenReplyModal} />
+
+      <DiscussionReplyModal
+        open={replyModalOpen}
+        onClose={handleCloseReplyModal}
+        replyBody={replyBody}
+        replyError={replyError}
+        posting={posting}
+        onReplyBodyChange={setReplyBody}
+        onPostReply={handlePostReply}
       />
-    </div>
+
+      <DiscussionEditModal
+        open={editOpen}
+        editTitle={editTitle}
+        editDescription={editDescription}
+        editError={editError}
+        saving={editMutation.isPending}
+        onClose={() => setEditOpen(false)}
+        onSave={() => editMutation.mutate()}
+        onTitleChange={setEditTitle}
+        onDescriptionChange={setEditDescription}
+      />
+
+      <DiscussionOriginalPostModal
+        open={originalOpen}
+        discussion={discussion}
+        onClose={() => setOriginalOpen(false)}
+      />
+
+      <DiscussionDeleteDialog
+        open={deleteOpen}
+        deleting={deleteMutation.isPending}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={() => deleteMutation.mutate()}
+      />
+    </>
   );
 }

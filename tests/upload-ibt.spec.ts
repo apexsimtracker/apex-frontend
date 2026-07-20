@@ -40,7 +40,7 @@ test.describe("@upload-ibt", () => {
     const freeAuth = await loginPersona(request, "standard");
     await clearUploadRateLimitViaApi(request, freeAuth).catch(() => undefined);
 
-    await gotoAuthenticated(page, freeAuth, "/v2/upload");
+    await gotoAuthenticated(page, freeAuth, "/upload");
 
     await expect(
       page.getByText(/Manual \.ibt upload is an Apex Pro feature/i),
@@ -81,14 +81,14 @@ test.describe("@upload-ibt", () => {
     expect(body.code).toBe("PRO_REQUIRED");
   });
 
-  test("I2 — Pro upload → v2 redirect → v1 sectors + telemetry charts", async ({
+  test("I2 — Pro upload → session detail sectors + telemetry charts", async ({
     page,
     request,
   }) => {
     const auth = await ensureProSeedHasPro(request);
     await clearUploadRateLimitViaApi(request, auth).catch(() => undefined);
 
-    await gotoAuthenticated(page, auth, "/v2/upload");
+    await gotoAuthenticated(page, auth, "/upload");
     await expect(
       page.getByRole("heading", { name: /Upload session/i }),
     ).toBeVisible({ timeout: 15_000 });
@@ -102,15 +102,15 @@ test.describe("@upload-ibt", () => {
     await page.getByRole("button", { name: "Upload session" }).click();
 
     // Wait for processing + redirect (parse can take a while)
-    await expect(page).toHaveURL(/\/v2\/sessions\/[a-zA-Z0-9_-]+/, {
+    await expect(page).toHaveURL(/\/sessions\/[a-zA-Z0-9_-]+/, {
       timeout: 180_000,
     });
 
-    const v2Url = page.url();
-    const sessionId = v2Url.match(/\/v2\/sessions\/([^/?#]+)/)?.[1];
+    const appUrl = page.url();
+    const sessionId = appUrl.match(/\/sessions\/([^/?#]+)/)?.[1];
     expect(sessionId).toBeTruthy();
 
-    // --- V2 session detail (real data, no dummy laps) ---
+    // --- Session detail (real telemetry data, no dummy laps) ---
     await expect(
       page.getByRole("heading", { name: /Lap history/i }),
     ).toBeVisible({ timeout: 60_000 });
@@ -121,7 +121,7 @@ test.describe("@upload-ibt", () => {
       timeout: 30_000,
     });
 
-    await expect(page.getByTestId("session-telemetry-v2")).toBeVisible({
+    await expect(page.getByTestId("session-telemetry")).toBeVisible({
       timeout: 60_000,
     });
     await expect(page.getByText("Telemetry Analysis").first()).toBeVisible();

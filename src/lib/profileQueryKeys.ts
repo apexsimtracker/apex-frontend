@@ -110,6 +110,24 @@ export function prefetchHomeWeeklyAfterAuth(
 }
 
 /**
+ * Prefetch cache for the post-auth destination so the lander paints faster.
+ * Default redirect is `/profile`; home weekly is warmed only when going `/`.
+ */
+export function prefetchAfterAuthRedirect(
+  queryClient: QueryClient,
+  user: { id?: string | null } | null | undefined,
+  redirectTo: string,
+): void {
+  if (!user) return;
+  const path = (redirectTo.split("?")[0] || "/").replace(/\/$/, "") || "/";
+  if (path === "/" || path === "/home") {
+    prefetchHomeWeeklyAfterAuth(queryClient, user);
+    return;
+  }
+  prefetchOwnProfileQueries(queryClient, user);
+}
+
+/**
  * Warm cache for /profile: summary, race history page 1, and public preview for follow counts.
  * Safe to fire from hover/idle; respects global staleTime.
  */

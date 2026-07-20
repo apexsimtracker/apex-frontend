@@ -392,7 +392,7 @@ function personalBestsQueryString(params?: PersonalBestsParams): string {
   return qs ? `?${qs}` : "";
 }
 
-/** List personal bests. Pass page/limit/q/track/car for paginated + filtered V2 list. */
+/** List personal bests. Pass page/limit/q/track/car for paginated + filtered list. */
 export async function getPersonalBests(
   params?: PersonalBestsParams,
 ): Promise<PersonalBestsResponse> {

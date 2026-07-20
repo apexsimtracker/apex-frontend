@@ -1,32 +1,25 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { authRegister, authMe } from "@/lib/api";
 import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
-import { prefetchHomeWeeklyAfterAuth } from "@/lib/profileQueryKeys";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
+import { prefetchAfterAuthRedirect } from "@/lib/profileQueryKeys";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   signupFormSchema,
   type SignupFormValues,
 } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
 import { persistSessionTokenFromAuthPayload } from "@/auth/token";
+import SignupWelcomePanel from "./signup/SignupWelcomePanel";
+import SignupFormCard from "./signup/SignupFormCard";
+import SignupHelpStrip from "./signup/SignupHelpStrip";
+
+const SIGNUP_PATH = "/signup";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -61,9 +54,10 @@ export default function Signup() {
             queryKey: AUTH_ME_QUERY_KEY,
             queryFn: authMe,
           });
-          prefetchHomeWeeklyAfterAuth(
+          prefetchAfterAuthRedirect(
             queryClient,
             queryClient.getQueryData(AUTH_ME_QUERY_KEY),
+            getSafeReturnPath(authRedirect.from, "/profile"),
           );
         } catch (meErr) {
           localStorage.removeItem("apex_token");
@@ -103,119 +97,46 @@ export default function Signup() {
   }
 
   return (
-    <AuthPageShell>
+    <>
       <PageMeta
         title={`Create account | ${COMPANY_NAME}`}
         description={`Join ${COMPANY_NAME} — sim racing sessions, leaderboards, and community.`}
-        path="/signup"
+        path={SIGNUP_PATH}
         noindex
       />
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full space-y-4"
-        >
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Create account
-          </h1>
-          {authRedirect.message && (
-            <p className="text-sm text-muted-foreground" role="status">
-              {authRedirect.message}
-            </p>
-          )}
-
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name (optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    autoComplete="name"
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="relative flex flex-1 flex-col justify-center overflow-hidden py-4 lg:py-8">
+          <div
+            className="pointer-events-none absolute -left-16 top-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-16 bottom-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
           />
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    autoComplete="email"
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    autoComplete="new-password"
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormRootMessage />
-
-          <AuthPrimaryButton type="submit" disabled={loading}>
-            {loading ? "Creating account…" : "Sign up"}
-          </AuthPrimaryButton>
-
-          <p className="pt-2 text-center text-sm text-muted-foreground">
-            By signing up, you agree to our{" "}
-            <Link
-              to="/terms-and-conditions"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link
-              to="/privacy-policy"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
-              Privacy Policy
-            </Link>
-            .
-          </p>
-
-          <p className="pt-2 text-center">
-            <Link
-              to="/login"
-              state={location.state}
-              className="text-sm text-muted-foreground underline hover:text-foreground"
-            >
-              Already have an account? Sign in
-            </Link>
-          </p>
-        </form>
-      </Form>
-    </AuthPageShell>
+          <div className="relative space-y-8">
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
+              <SignupWelcomePanel />
+              <SignupFormCard
+                form={form}
+                onSubmit={onSubmit}
+                loading={loading}
+                authRedirectMessage={authRedirect.message}
+              />
+            </div>
+            <SignupHelpStrip locationState={location.state} />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

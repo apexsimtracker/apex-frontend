@@ -1,5 +1,9 @@
-import SimBadge from "@/components/SimBadge";
 import { getSimDisplayName } from "@/lib/sim";
+import { cn } from "@/lib/utils";
+import {
+  getDisciplineWinColorClass,
+  sortDisciplineRows,
+} from "@/components/profile/profileDisciplineAssets";
 
 type StatsByGameRow = {
   sim: string;
@@ -12,81 +16,95 @@ type StatsByGameRow = {
   podiumPct: number | null;
 };
 
+function StatRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string | number;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="flex justify-between">
+      <span className="font-apex-body text-xs text-apex-on-surface-variant">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "font-apex-body text-sm font-semibold",
+          valueClassName ?? "text-apex-on-surface",
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export function ProfileStatsByGame({ rows }: { rows: StatsByGameRow[] }) {
   const safeValue = (v: number | null | undefined) =>
     v === null || v === undefined ? "—" : v;
 
+  const sortedRows = sortDisciplineRows(rows ?? []);
+
   return (
-    <div className="border/20 mt-10 border-t pt-10">
-      <h3 className="mb-6 text-xl font-bold text-foreground">Stats by Game</h3>
-      {(rows?.length ?? 0) === 0 ? (
-        <div className="text-sm text-neutral-400">
+    <section className="space-y-4">
+      <h2 className="font-apex-headline text-lg font-semibold text-apex-on-surface">
+        Stats by game
+      </h2>
+
+      {sortedRows.length === 0 ? (
+        <p className="font-apex-body text-sm text-apex-on-surface-variant">
           Stats by game will appear after you record sessions.
-        </div>
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(rows ?? []).map((game) => (
-            <div key={game.sim} className="rounded-2xl bg-secondary/20 p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <h4 className="text-base font-bold text-foreground">
-                  {getSimDisplayName(game.sim)}
-                </h4>
-                <SimBadge sim={game.sim} />
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Races</span>
-                  <span className="font-semibold text-foreground">
-                    {game.races}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Wins</span>
-                  <span className="font-semibold text-yellow-200">
-                    {safeValue(game.wins)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Podiums</span>
-                  <span className="font-semibold text-foreground">
-                    {safeValue(game.podiums)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pole Positions</span>
-                  <span className="font-semibold text-foreground">
-                    {safeValue(game.poles)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fastest Laps</span>
-                  <span className="font-semibold text-purple-500">
-                    {game.fastestLaps}
-                  </span>
-                </div>
-                <div className="mt-2 border pt-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Win %</span>
-                    <span className="font-semibold text-foreground">
-                      {game.winPct != null && Number.isFinite(game.winPct)
+          {sortedRows.map((game) => (
+            <div
+              key={game.sim}
+              className="rounded-lg bg-apex-surface-container-low p-5"
+            >
+              <h3 className="mb-4 font-apex-headline text-sm font-semibold text-apex-on-surface">
+                {getSimDisplayName(game.sim)}
+              </h3>
+              <div className="space-y-2">
+                <StatRow label="Races" value={game.races} />
+                <StatRow
+                  label="Wins"
+                  value={safeValue(game.wins)}
+                  valueClassName={getDisciplineWinColorClass(game.sim)}
+                />
+                <StatRow label="Podiums" value={safeValue(game.podiums)} />
+                <StatRow label="Pole Positions" value={safeValue(game.poles)} />
+                <StatRow
+                  label="Fastest Laps"
+                  value={game.fastestLaps}
+                  valueClassName="text-purple-500"
+                />
+                <div className="mt-2 border-t border-apex-outline-variant/15 pt-2">
+                  <StatRow
+                    label="Win %"
+                    value={
+                      game.winPct != null && Number.isFinite(game.winPct)
                         ? `${game.winPct.toFixed(1)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Podium %</span>
-                    <span className="font-semibold text-foreground">
-                      {game.podiumPct != null && Number.isFinite(game.podiumPct)
+                        : "—"
+                    }
+                  />
+                  <StatRow
+                    label="Podium %"
+                    value={
+                      game.podiumPct != null && Number.isFinite(game.podiumPct)
                         ? `${game.podiumPct.toFixed(1)}%`
-                        : "—"}
-                    </span>
-                  </div>
+                        : "—"
+                    }
+                  />
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

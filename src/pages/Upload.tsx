@@ -7,21 +7,36 @@ import {
   Loader2,
   PenLine,
   CheckCircle,
+  Check,
   Trophy,
+  Gauge,
+  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  appOutlineButtonClassName,
+  appPrimaryButtonClassName,
+} from "@/components/app-ui/appButtonClasses";
 import { uploadSessionFile, ApiError } from "@/lib/api";
+import { isProRequiredError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
+import ChallengeDetailBackLink from "@/pages/challenges/ChallengeDetailBackLink";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { MAX_MANUAL_UPLOAD_BYTES } from "@/lib/uploadLimits";
 import { cn } from "@/lib/utils";
+import { useIsProUser } from "@/contexts/AuthContext";
+
 
 const UPLOAD_PATH = "/upload";
 const uploadTitle = `Upload session | ${COMPANY_NAME}`;
-const uploadDescription = `Upload .ibt telemetry to ${COMPANY_NAME} to process laps and share sessions.`;
+const uploadDescription = `Upload iRacing .ibt or Le Mans Ultimate .duckdb telemetry to ${COMPANY_NAME} to process laps and share sessions.`;
 
 const MAX_MB_LABEL = Math.round(MAX_MANUAL_UPLOAD_BYTES / (1024 * 1024));
 
+const SECTION_LABEL_CLASS =
+  "font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant";
+
+type UploadSim = "iracing" | "lmu";
 type UploadState = "idle" | "uploading" | "success" | "error";
 type UploadPhase = "bytes" | "processing";
 
@@ -31,11 +46,22 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function UploadPage() {
+function expectedExtForSim(sim: UploadSim): string {
+  return sim === "lmu" ? "duckdb" : "ibt";
+}
+
+function simLabel(sim: UploadSim): string {
+  return sim === "lmu" ? "Le Mans Ultimate" : "iRacing";
+}
+
+export default function Upload() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isPro = useIsProUser();
   const challengeId = searchParams.get("challenge")?.trim() || undefined;
+  const isChallengeLinked = Boolean(challengeId);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sim, setSim] = useState<UploadSim>("iracing");
   const [file, setFile] = useState<File | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("bytes");
@@ -49,6 +75,7 @@ export default function UploadPage() {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const isBusy = uploadState === "uploading";
+  const expectedExt = expectedExtForSim(sim);
 
   useEffect(() => {
     if (!isBusy) return;
@@ -72,27 +99,42 @@ export default function UploadPage() {
     };
   }, []);
 
-  const handleFileSelect = useCallback((selectedFile: File | null) => {
-    if (!selectedFile) return;
+  const handleFileSelect = useCallback(
+    (selectedFile: File | null) => {
+      if (!selectedFile) return;
 
-    const ext = selectedFile.name.toLowerCase().split(".").pop();
-    if (ext !== "ibt") {
-      setErrorMessage("Only .ibt files are supported.");
-      setUploadState("error");
-      return;
-    }
+      const ext = selectedFile.name.toLowerCase().split(".").pop();
+      if (ext !== expectedExt) {
+        setErrorMessage(
+          sim === "lmu"
+            ? "Only .duckdb files are supported for Le Mans Ultimate."
+            : "Only .ibt files are supported for iRacing.",
+        );
+        setUploadState("error");
+        return;
+      }
 
-    if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
-      setErrorMessage(
-        `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`,
-      );
-      setUploadState("error");
-      return;
-    }
+      if (selectedFile.size > MAX_MANUAL_UPLOAD_BYTES) {
+        setErrorMessage(
+          `File exceeds maximum size of ${MAX_MB_LABEL} MB (this file is ${formatFileSize(selectedFile.size)}).`,
+        );
+        setUploadState("error");
+        return;
+      }
 
-    setFile(selectedFile);
+      setFile(selectedFile);
+      setUploadState("idle");
+      setErrorMessage(null);
+    },
+    [expectedExt, sim],
+  );
+
+  const handleSimChange = useCallback((next: UploadSim) => {
+    setSim(next);
+    setFile(null);
     setUploadState("idle");
     setErrorMessage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const handleDrop = useCallback(
@@ -126,6 +168,14 @@ export default function UploadPage() {
 
   const handleUpload = useCallback(async () => {
     if (!file || isBusy) return;
+
+    if (!isPro) {
+      setErrorMessage(
+        "Apex Pro is required to upload telemetry files (.ibt / .duckdb).",
+      );
+      setUploadState("error");
+      return;
+    }
 
     if (file.size > MAX_MANUAL_UPLOAD_BYTES) {
       setErrorMessage(
@@ -179,6 +229,13 @@ export default function UploadPage() {
         navigate(`/sessions/${result.sessionId}`);
       }, redirectMs);
     } catch (err) {
+      if (isProRequiredError(err)) {
+        setErrorMessage(
+          "Apex Pro is required to upload telemetry files (.ibt / .duckdb).",
+        );
+        setUploadState("error");
+        return;
+      }
       const message =
         err instanceof ApiError
           ? err.message
@@ -186,7 +243,7 @@ export default function UploadPage() {
       setErrorMessage(message);
       setUploadState("error");
     }
-  }, [file, isBusy, navigate, challengeId]);
+  }, [file, isBusy, isPro, navigate, challengeId]);
 
   const handleReset = useCallback(() => {
     setFile(null);
@@ -205,59 +262,85 @@ export default function UploadPage() {
     }
   }, []);
 
+  const pagePath = isChallengeLinked
+    ? `${UPLOAD_PATH}?challenge=${encodeURIComponent(challengeId!)}`
+    : UPLOAD_PATH;
+
   return (
     <>
       <PageMeta
         title={uploadTitle}
         description={uploadDescription}
-        path={UPLOAD_PATH}
+        path={pagePath}
         noindex
       />
-      <div className="min-h-[calc(100vh-4rem)] bg-background">
-        <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6 sm:py-12 lg:max-w-xl">
-          <div className="mb-8">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-[1.65rem]">
-                Upload session
-              </h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                iRacing{" "}
-                <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">
-                  .ibt
-                </code>{" "}
-                telemetry is processed automatically — session type, positions,
-                and distance when available (max {MAX_MB_LABEL} MB).
-              </p>
-            </div>
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-8 px-6 py-8">
+        {isChallengeLinked && challengeId && (
+          <ChallengeDetailBackLink challengeId={challengeId} />
+        )}
+
+        <div>
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+            Upload session
+          </h1>
+          <p className="mt-2 font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+            Upload{" "}
+            <code className="rounded-apex-sm bg-apex-surface-container-highest px-1.5 py-0.5 font-apex-body text-xs text-apex-on-surface">
+              .ibt
+            </code>{" "}
+            (iRacing) or{" "}
+            <code className="rounded-apex-sm bg-apex-surface-container-highest px-1.5 py-0.5 font-apex-body text-xs text-apex-on-surface">
+              .duckdb
+            </code>{" "}
+            (Le Mans Ultimate) telemetry — laps, sectors, and driving traces
+            when available (max {MAX_MB_LABEL} MB). Apex Pro required.
+          </p>
+        </div>
+
+        {!isPro && uploadState !== "success" && (
+          <div className="flex flex-col gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-apex-body text-sm text-apex-on-surface-variant">
+              Manual telemetry upload is an Apex Pro feature. Upgrade to process
+              .ibt and .duckdb files from the web.
+            </p>
+            <Button
+              type="button"
+              className={cn(appPrimaryButtonClassName, "shrink-0")}
+              onClick={() => navigate("/pricing")}
+            >
+              Upgrade to Pro
+            </Button>
           </div>
+        )}
 
-          <div className="rounded-xl border border-white/10 bg-card/20 p-5 shadow-sm backdrop-blur-lg sm:p-7">
-            {challengeId && uploadState !== "success" && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                <Trophy
-                  className="mt-0.5 size-4 shrink-0 text-amber-400"
-                  aria-hidden
-                />
-                <p className="text-sm text-amber-100/90">
-                  This upload will count toward your active challenge when
-                  processed.
-                </p>
-              </div>
-            )}
+        {challengeId && uploadState !== "success" && (
+          <div className="flex items-start gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high px-4 py-3">
+            <Trophy
+              className="mt-0.5 size-4 shrink-0 text-apex-primary"
+              aria-hidden
+            />
+            <p className="font-apex-body text-sm text-apex-on-surface-variant">
+              This upload will count toward your active challenge when
+              processed.
+            </p>
+          </div>
+        )}
 
-            {uploadState === "success" ? (
-              <div className="py-10 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-green-500/10 ring-1 ring-green-500/20">
-                    <CheckCircle className="size-7 text-green-500" />
-                  </div>
+        <div className="mx-auto w-full max-w-2xl">
+          {uploadState === "success" ? (
+            <div className="rounded-lg bg-apex-surface-container-low py-10 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex size-14 items-center justify-center rounded-full bg-apex-success/10 ring-1 ring-apex-success/20">
+                  <CheckCircle className="size-7 text-apex-success" />
                 </div>
-                <p className="text-lg font-medium text-white">
-                  Session uploaded
-                </p>
-                {challengeAttachWarning ? (
-                  <>
-                    <div className="mt-5 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-left">
+              </div>
+              <p className="text-lg font-medium text-apex-on-surface">
+                Session uploaded
+              </p>
+              {challengeAttachWarning ? (
+                <>
+                  <div className="mx-auto mt-5 max-w-md text-left">
+                    <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
                       <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-400" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-amber-200">
@@ -272,179 +355,259 @@ export default function UploadPage() {
                         </p>
                       </div>
                     </div>
-                    <p className="mt-4 text-sm text-white/50">
-                      Opening session in a few seconds…
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      className="mt-4 w-full border-white/20 text-white hover:bg-white/10"
-                      onClick={() => {
-                        if (postSuccessNavRef.current) {
-                          clearTimeout(postSuccessNavRef.current);
-                          postSuccessNavRef.current = null;
-                        }
-                        if (successSessionId)
-                          navigate(`/sessions/${successSessionId}`);
-                      }}
-                    >
-                      Continue to session
-                    </Button>
-                  </>
-                ) : (
-                  <p className="mt-2 text-sm text-white/50">
-                    Redirecting to your session…
+                  </div>
+                  <p className="mt-4 text-sm text-apex-on-surface-variant">
+                    Opening session in a few seconds…
                   </p>
-                )}
-              </div>
-            ) : uploadState === "uploading" ? (
-              <div className="py-10">
-                <div className="mb-5 flex justify-center">
-                  <Loader2 className="size-10 animate-spin text-white/60" />
-                </div>
-                <p className="text-center text-lg font-medium text-white">
-                  {uploadPhase === "bytes"
-                    ? "Uploading…"
-                    : "Processing telemetry…"}
-                </p>
-                <p className="mt-2 text-center text-sm text-white/50">
-                  {uploadPhase === "bytes"
-                    ? "Sending file to the server."
-                    : "Extracting laps and saving your session."}
-                </p>
-                <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className={cn(
-                      "h-full rounded-full bg-white/70 transition-[width] duration-150 ease-out",
-                      uploadPhase === "processing" && "animate-pulse",
-                    )}
-                    style={{
-                      width:
-                        uploadPhase === "bytes"
-                          ? `${Math.max(0, Math.min(100, uploadPercent))}%`
-                          : "100%",
-                    }}
-                  />
-                </div>
-                <p className="mt-2 text-center text-xs text-white/40">
-                  {uploadPhase === "bytes"
-                    ? `${uploadPercent}%`
-                    : "Hang tight…"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
-                  <header className="mb-4 border-b border-white/5 pb-3">
-                    <h2 className="text-sm font-semibold text-white">
-                      Telemetry file
-                    </h2>
-                    <p className="mt-1 text-xs leading-relaxed text-white/50">
-                      Drag and drop or browse for an iRacing replay file.
-                    </p>
-                  </header>
-
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={cn(
-                      "relative cursor-pointer rounded-xl border-2 border-dashed p-8 transition-colors sm:p-10",
-                      isDragOver
-                        ? "border-white/40 bg-white/5"
-                        : "border-white/10 hover:border-white/25 hover:bg-white/[0.03]",
-                    )}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".ibt"
-                      onChange={handleInputChange}
-                      className="hidden"
-                    />
-
-                    <div className="flex flex-col items-center text-center">
-                      {file ? (
-                        <>
-                          <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
-                            <FileText className="size-6 text-white/60" />
-                          </div>
-                          <p className="max-w-full truncate text-sm font-medium text-white">
-                            {file.name}
-                          </p>
-                          <p className="mt-1 text-xs text-white/50">
-                            {formatFileSize(file.size)}
-                          </p>
-                          <p className="mt-3 text-xs text-white/40">
-                            Click or drop to replace
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
-                            <UploadIcon className="size-6 text-white/60" />
-                          </div>
-                          <p className="text-sm text-white/70">
-                            Drag & drop your .ibt file here
-                          </p>
-                          <p className="mt-1 text-xs text-white/50">
-                            or click to browse (max {MAX_MB_LABEL} MB)
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </section>
-
-                {uploadState === "error" && errorMessage && (
-                  <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
-                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
-                    <p className="text-sm text-red-400">{errorMessage}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3 border-t border-white/10 pt-5">
-                  {file && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="lg"
-                      onClick={handleReset}
-                      className="flex-1 border-white/20 text-white hover:bg-white/10"
-                    >
-                      Clear
-                    </Button>
-                  )}
                   <Button
                     type="button"
-                    size="lg"
-                    onClick={handleUpload}
-                    disabled={!file}
+                    variant="outline"
                     className={cn(
-                      "bg-white text-black hover:bg-white/90 disabled:bg-white/20 disabled:text-white/40",
-                      file ? "flex-1" : "w-full",
+                      "mt-4 w-full rounded-[0.5rem]",
+                      appOutlineButtonClassName,
                     )}
+                    onClick={() => {
+                      if (postSuccessNavRef.current) {
+                        clearTimeout(postSuccessNavRef.current);
+                        postSuccessNavRef.current = null;
+                      }
+                      if (successSessionId)
+                        navigate(`/sessions/${successSessionId}`);
+                    }}
                   >
-                    Upload session
+                    Continue to session
                   </Button>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-apex-on-surface-variant">
+                  Redirecting to your session…
+                </p>
+              )}
+            </div>
+          ) : uploadState === "uploading" ? (
+            <div className="rounded-lg bg-apex-surface-container-low p-6 py-10">
+              <div className="mb-5 flex justify-center">
+                <Loader2 className="size-10 animate-spin text-apex-on-surface-variant" />
+              </div>
+              <p className="text-center text-lg font-medium text-apex-on-surface">
+                {uploadPhase === "bytes"
+                  ? "Uploading…"
+                  : "Processing telemetry…"}
+              </p>
+              <p className="mt-2 text-center text-sm text-apex-on-surface-variant">
+                {uploadPhase === "bytes"
+                  ? "Sending file to the server."
+                  : "Extracting laps and saving your session."}
+              </p>
+              <div className="mt-6 h-2 overflow-hidden rounded-full bg-apex-surface-container-highest">
+                {uploadPhase === "bytes" ? (
+                  <div
+                    className="apex-primary-gradient h-full rounded-full transition-[width] duration-150 ease-out"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, uploadPercent))}%`,
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="apex-upload-indeterminate-track h-full"
+                    role="progressbar"
+                    aria-valuetext="Processing telemetry"
+                    aria-label="Processing telemetry"
+                  >
+                    <div className="apex-upload-indeterminate-bar" />
+                  </div>
+                )}
+              </div>
+              <p className="mt-2 text-center text-xs text-apex-on-surface-variant">
+                {uploadPhase === "bytes"
+                  ? `${uploadPercent}%`
+                  : "Processing on server…"}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5">
+              <header className="mb-4 border-b border-apex-outline-variant/10 pb-3">
+                <h2 className={SECTION_LABEL_CLASS}>Simulator</h2>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {(
+                    [
+                      {
+                        id: "iracing" as const,
+                        label: "iRacing",
+                        ext: ".ibt",
+                        Icon: Gauge,
+                      },
+                      {
+                        id: "lmu" as const,
+                        label: "Le Mans Ultimate",
+                        ext: ".duckdb",
+                        Icon: Car,
+                      },
+                    ] as const
+                  ).map((opt) => {
+                    const selected = sim === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handleSimChange(opt.id)}
+                        aria-pressed={selected}
+                        className={cn(
+                          "group relative flex items-center gap-3 rounded-apex-lg border p-3.5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                          selected
+                            ? "border-apex-primary/60 bg-apex-primary/5 ring-1 ring-apex-primary/30"
+                            : "border-apex-outline-variant/20 bg-apex-surface-container hover:border-apex-outline-variant/50 hover:bg-apex-surface-container-high",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex size-10 shrink-0 items-center justify-center rounded-apex-sm transition-colors",
+                            selected
+                              ? "bg-apex-primary/15 text-apex-primary"
+                              : "bg-apex-surface-container-highest text-apex-on-surface-variant group-hover:text-apex-on-surface",
+                          )}
+                        >
+                          <opt.Icon className="size-5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-apex-body text-sm font-bold text-apex-on-surface">
+                            {opt.label}
+                          </span>
+                          <span className="mt-0.5 block font-apex-body text-[11px] text-apex-on-surface-variant">
+                            {opt.ext} telemetry
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                            selected
+                              ? "border-apex-primary bg-apex-primary text-white"
+                              : "border-apex-outline-variant/40 text-transparent",
+                          )}
+                          aria-hidden
+                        >
+                          <Check className="size-3" strokeWidth={3} />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </header>
+
+              <header className="mb-4 border-b border-apex-outline-variant/10 pb-3">
+                <h2 className={SECTION_LABEL_CLASS}>Telemetry file</h2>
+                <p className="mt-1.5 text-xs leading-relaxed text-apex-on-surface-variant">
+                  Drag and drop or browse for a {simLabel(sim)}{" "}
+                  <code className="rounded-apex-sm bg-apex-surface-container-highest px-1 py-0.5 text-[10px]">
+                    .{expectedExt}
+                  </code>{" "}
+                  file.
+                </p>
+              </header>
+
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={cn(
+                  "relative cursor-pointer rounded-[0.5rem] border-2 border-dashed p-8 transition-colors sm:p-10",
+                  isDragOver
+                    ? "border-apex-primary/50 bg-apex-surface-container-high"
+                    : "border-apex-outline-variant/40 hover:border-apex-outline-variant/70 hover:bg-apex-surface-container-high/60",
+                )}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={`.${expectedExt}`}
+                  onChange={handleInputChange}
+                  className="hidden"
+                />
+
+                <div className="flex flex-col items-center text-center">
+                  {file ? (
+                    <>
+                      <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-apex-surface-container-highest ring-1 ring-apex-outline-variant/20">
+                        <FileText className="size-6 text-apex-on-surface-variant" />
+                      </div>
+                      <p className="max-w-full truncate text-sm font-medium text-apex-on-surface">
+                        {file.name}
+                      </p>
+                      <p className="mt-1 text-xs text-apex-on-surface-variant">
+                        {formatFileSize(file.size)}
+                      </p>
+                      <p className="mt-3 text-xs text-apex-on-surface-variant">
+                        Click or drop to replace
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-apex-surface-container-highest ring-1 ring-apex-outline-variant/20">
+                        <UploadIcon className="size-6 text-apex-on-surface-variant" />
+                      </div>
+                      <p className="text-sm text-apex-on-surface">
+                        Drag &amp; drop your .{expectedExt} file here
+                      </p>
+                      <p className="mt-1 text-xs text-apex-on-surface-variant">
+                        or click to browse (max {MAX_MB_LABEL} MB)
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
 
-          <p className="mt-6 text-center text-sm text-white/45">
+              {uploadState === "error" && errorMessage && (
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-apex-error/20 bg-apex-error/10 p-3">
+                  <AlertCircle className="mt-0.5 size-4 shrink-0 text-apex-error" />
+                  <p className="text-sm text-apex-error">{errorMessage}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 border-t border-apex-outline-variant/10 pt-6">
+                {file && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleReset}
+                    className={cn(
+                      "flex-1 rounded-[0.5rem]",
+                      appOutlineButtonClassName,
+                    )}
+                  >
+                    Clear
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={!file}
+                  className={cn(
+                    appPrimaryButtonClassName,
+                    "rounded-[0.5rem]",
+                    file ? "flex-1" : "w-full",
+                  )}
+                >
+                  Upload session
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {!isChallengeLinked && (
+          <p className="text-center font-apex-body text-sm text-apex-on-surface-variant">
             Don&apos;t have a telemetry file?{" "}
             <Link
               to="/manual"
-              className="inline-flex items-center gap-1 font-medium text-white/70 transition-colors hover:text-white"
+              className="inline-flex items-center gap-1 font-apex-body font-medium text-apex-on-surface transition-colors hover:text-apex-primary"
             >
               <PenLine className="size-3.5" aria-hidden />
               Log manual activity
             </Link>
           </p>
-        </div>
+        )}
       </div>
     </>
   );

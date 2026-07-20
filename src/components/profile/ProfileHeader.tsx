@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Loader2, User } from "lucide-react";
 import {
   Tooltip,
@@ -6,6 +7,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatSimEnum } from "@/lib/enumFormat";
+import ProfileChallengeBadgesModal from "@/components/profile/ProfileChallengeBadgesModal";
+import { ProfileChallengeBadgesSkeleton } from "@/components/profile/ProfileChallengeBadgesSkeleton";
 
 export type ProfileHeaderBadge = {
   challengeId: string;
@@ -34,7 +37,10 @@ type ProfileHeaderProps = {
   onEditProfile?: () => void;
   streakDays: number;
   isPro?: boolean;
+  profileUserId: string;
   challengeBadges?: ProfileHeaderBadge[];
+  challengeBadgeCount?: number;
+  challengeBadgesLoading?: boolean;
 };
 
 const PODIUM_EMOJI = ["🥇", "🥈", "🥉"] as const;
@@ -62,8 +68,12 @@ export function ProfileHeader({
   onEditProfile,
   streakDays,
   isPro = false,
+  profileUserId,
   challengeBadges,
+  challengeBadgeCount,
+  challengeBadgesLoading = false,
 }: ProfileHeaderProps) {
+  const [badgesModalOpen, setBadgesModalOpen] = useState(false);
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
 
   const sortedBadges = (challengeBadges ?? []).slice().sort((a, b) => {
@@ -73,123 +83,157 @@ export function ProfileHeader({
     return a.challengeId.localeCompare(b.challengeId);
   });
 
+  const badgeTotal = challengeBadgeCount ?? sortedBadges.length;
+
+  const streakLabel =
+    streakDays > 0
+      ? streakDays === 1
+        ? "1 day driving streak"
+        : `${streakDays} days driving streak`
+      : null;
+
   return (
-    <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:mb-7 sm:flex-row sm:items-start sm:gap-6">
-      <div className="flex flex-1 flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
-        {showAvatarImg ? (
-          <img
-            src={String(avatarSrc).trim()}
-            alt="Profile"
-            className="size-16 shrink-0 rounded-full object-cover ring-1 ring-white/5 sm:size-20"
-          />
-        ) : (
-          <div
-            className="flex size-16 shrink-0 items-center justify-center rounded-full border border-white/10 bg-muted text-muted-foreground sm:size-20"
-            aria-label="Profile picture placeholder"
-          >
-            <User className="size-8 sm:size-10" />
-          </div>
-        )}
-
-        <div className="flex-1 text-center sm:text-left">
-          <h1 className="mb-0.5 flex flex-wrap items-center justify-center gap-2 text-xl font-bold text-foreground sm:mb-1 sm:justify-start sm:text-2xl">
-            {displayName}
-            {isPro && (
-              <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
-                Pro
-              </span>
-            )}
-          </h1>
-
-          <div className="mb-1 flex flex-wrap items-center justify-center gap-4 text-xs sm:justify-start">
-            {typeof followersCount === "number" &&
-              typeof followingCount === "number" && (
-                <>
-                  <button
-                    type="button"
-                    onClick={onOpenFollowers}
-                    onMouseEnter={onPrefetchFollowers}
-                    onFocus={onPrefetchFollowers}
-                    className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
-                  >
-                    <span className="font-semibold text-foreground">
-                      {followersCount}
-                    </span>
-                    <span className="text-muted-foreground/60">Followers</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onOpenFollowing}
-                    onMouseEnter={onPrefetchFollowing}
-                    onFocus={onPrefetchFollowing}
-                    className="flex items-center gap-1 text-muted-foreground/70 transition-colors hover:text-foreground"
-                  >
-                    <span className="font-semibold text-foreground">
-                      {followingCount}
-                    </span>
-                    <span className="text-muted-foreground/60">Following</span>
-                  </button>
-                </>
+    <section className="flex flex-col py-2">
+      <div
+        className={`flex gap-4 ${isCurrentUser ? "items-center" : "items-start"}`}
+      >
+        <div className="relative shrink-0">
+          {isPro ? (
+            <div className="size-20 rounded-lg border-2 border-apex-primary p-0.5">
+              {showAvatarImg ? (
+                <img
+                  src={String(avatarSrc).trim()}
+                  alt="Profile"
+                  className="size-full rounded-md object-cover"
+                />
+              ) : (
+                <div
+                  className="flex size-full items-center justify-center rounded-md bg-apex-surface-container-highest text-apex-on-surface-variant"
+                  aria-label="Profile picture placeholder"
+                >
+                  <User className="size-8" />
+                </div>
               )}
+            </div>
+          ) : showAvatarImg ? (
+            <img
+              src={String(avatarSrc).trim()}
+              alt="Profile"
+              className="size-20 rounded-lg object-cover ring-1 ring-apex-outline-variant/30"
+            />
+          ) : (
+            <div
+              className="flex size-20 items-center justify-center rounded-lg bg-apex-surface-container-highest text-apex-on-surface-variant ring-1 ring-apex-outline-variant/30"
+              aria-label="Profile picture placeholder"
+            >
+              <User className="size-8" />
+            </div>
+          )}
+          {isPro && (
+            <div className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 rounded-full bg-apex-primary px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest text-white">
+              PRO
+            </div>
+          )}
+        </div>
 
-            {!isCurrentUser && onToggleFollow && (
-              <button
-                type="button"
-                onClick={onToggleFollow}
-                disabled={followLoading}
-                aria-busy={followLoading}
-                className="inline-flex min-w-[7.5rem] items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-white/10 disabled:cursor-wait disabled:opacity-80"
-              >
-                {followLoading ? (
-                  <>
-                    <Loader2
-                      className="size-3.5 shrink-0 animate-spin"
-                      aria-hidden
-                    />
-                    <span>{followStatusLabel}</span>
-                    <span className="sr-only">
-                      Updating follow status, please wait
-                    </span>
-                  </>
-                ) : (
-                  followActionLabel
-                )}
-              </button>
-            )}
-
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-apex-headline text-2xl font-bold tracking-tight text-apex-on-surface">
+              {displayName}
+            </h1>
             {isCurrentUser && onEditProfile && (
               <button
                 type="button"
                 onClick={onEditProfile}
-                className="font-medium text-muted-foreground/70 underline underline-offset-2 transition-colors hover:text-foreground"
+                className="whitespace-nowrap rounded-full border border-apex-primary/40 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-apex-primary transition-colors hover:bg-apex-primary/10"
               >
                 Edit Profile
               </button>
             )}
           </div>
 
-          {streakDays > 0 && (
-            <div className="mt-1 text-xs text-neutral-400">
-              {streakDays === 1
-                ? "1 day driving streak"
-                : `${streakDays} days driving streak`}
-            </div>
+          {streakLabel && (
+            <p className="font-apex-body text-xs text-apex-on-surface-variant">
+              {streakLabel}
+            </p>
           )}
 
-          <p className="mb-2 mt-1 text-sm leading-relaxed text-muted-foreground/80 sm:mb-3">
+          {typeof followersCount === "number" &&
+            typeof followingCount === "number" && (
+              <div className="mt-1 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={onOpenFollowers}
+                  onMouseEnter={onPrefetchFollowers}
+                  onFocus={onPrefetchFollowers}
+                  className="font-apex-body text-[10px] font-medium uppercase text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
+                >
+                  {followersCount.toLocaleString()} Followers
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenFollowing}
+                  onMouseEnter={onPrefetchFollowing}
+                  onFocus={onPrefetchFollowing}
+                  className="font-apex-body text-[10px] font-medium uppercase text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
+                >
+                  {followingCount.toLocaleString()} Following
+                </button>
+              </div>
+            )}
+
+          <p className="mt-2 font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
             {bioText}
           </p>
+
+          {!isCurrentUser && onToggleFollow && (
+            <button
+              type="button"
+              onClick={onToggleFollow}
+              disabled={followLoading}
+              aria-busy={followLoading}
+              className="mt-2 inline-flex min-w-[7.5rem] items-center justify-center gap-1.5 rounded-full border border-apex-outline-variant/30 bg-apex-surface-container-low px-3 py-1 text-xs font-medium text-apex-on-surface transition-colors hover:bg-apex-surface-container disabled:cursor-wait disabled:opacity-80"
+            >
+              {followLoading ? (
+                <>
+                  <Loader2
+                    className="size-3.5 shrink-0 animate-spin"
+                    aria-hidden
+                  />
+                  <span>{followStatusLabel}</span>
+                  <span className="sr-only">
+                    Updating follow status, please wait
+                  </span>
+                </>
+              ) : (
+                followActionLabel
+              )}
+            </button>
+          )}
         </div>
       </div>
 
-      {sortedBadges.length > 0 && (
-        <div className="text-center sm:min-w-max sm:text-right">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-            Podium badges
-          </p>
+      {challengeBadgesLoading ? (
+        <ProfileChallengeBadgesSkeleton />
+      ) : badgeTotal > 0 ? (
+        <div className="mt-4">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-apex-body text-xs font-semibold uppercase tracking-widest text-apex-on-surface-variant">
+              Podium badges
+            </p>
+            <button
+              type="button"
+              onClick={() => setBadgesModalOpen(true)}
+              className="font-apex-body text-xs font-medium text-apex-primary transition-colors hover:text-apex-primary/80"
+            >
+              {badgeTotal > 3
+                ? `View all (${badgeTotal})`
+                : "View history"}
+            </button>
+          </div>
           <TooltipProvider delayDuration={150}>
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">
-              {sortedBadges.map((badge) => {
+            <div className="flex flex-wrap items-center gap-1.5">
+              {sortedBadges.slice(0, 6).map((badge) => {
                 const emoji =
                   badge.place >= 1 && badge.place <= 3
                     ? PODIUM_EMOJI[badge.place - 1]
@@ -205,7 +249,7 @@ export function ProfileHeader({
                       <button
                         type="button"
                         aria-label={ariaLabel}
-                        className="cursor-default rounded-full px-1 text-xl leading-none transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 sm:text-2xl"
+                        className="cursor-default rounded-full px-1 text-xl leading-none transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/30"
                       >
                         <span aria-hidden>{emoji}</span>
                       </button>
@@ -226,8 +270,14 @@ export function ProfileHeader({
               })}
             </div>
           </TooltipProvider>
+          <ProfileChallengeBadgesModal
+            open={badgesModalOpen}
+            onOpenChange={setBadgesModalOpen}
+            userId={profileUserId}
+            totalCount={badgeTotal}
+          />
         </div>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }

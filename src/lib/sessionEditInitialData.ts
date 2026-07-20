@@ -14,7 +14,7 @@ export type ManualActivityLapSectorsMs = {
   sector3Ms?: number | null;
 };
 
-/** V2 edit prefill: V1 initial data plus optional per-lap sectors aligned with `lapsMs`. */
+/** Edit prefill: base initial data plus optional per-lap sectors aligned with `lapsMs`. */
 export type ManualActivityEditInitialData = ManualActivityInitialData & {
   lapsSectorsMs?: Array<ManualActivityLapSectorsMs | null> | null;
   /** Parallel to `lapsMs`: true when the lap is an iRacing out-lap. */

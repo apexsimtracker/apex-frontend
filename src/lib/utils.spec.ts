@@ -24,6 +24,11 @@ describe("cn function", () => {
     expect(cn("px-2 py-1", "px-4")).toBe("py-1 px-4");
   });
 
+  it("should prefer product rounded-apex-* over shadcn rounded-md", () => {
+    expect(cn("rounded-md", "rounded-apex-sm")).toBe("rounded-apex-sm");
+    expect(cn("rounded-apex-sm", "rounded-md")).toBe("rounded-md");
+  });
+
   it("should work with object notation", () => {
     expect(cn("base", { conditional: true, "not-included": false })).toBe(
       "base conditional",

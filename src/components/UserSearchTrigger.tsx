@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { UserSearchModal } from "@/components/UserSearchModal";
+import { UserSearchModal } from "./UserSearchModal";
 
 export function UserSearchTrigger() {
   const [open, setOpen] = useState(false);
@@ -10,11 +10,11 @@ export function UserSearchTrigger() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-lg p-2 transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70"
+        className="flex items-center justify-center text-apex-on-surface-variant transition-colors hover:text-apex-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/70"
         aria-label="Search users"
         title="Find people"
       >
-        <Search className="size-5 text-foreground/70 transition-colors hover:text-foreground" />
+        <Search className="size-6" aria-hidden />
       </button>
       <UserSearchModal open={open} onOpenChange={setOpen} />
     </>

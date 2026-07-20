@@ -1,10 +1,16 @@
-import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { Flag, Home } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { HelpCircle, Home, MessageCircle } from "lucide-react";
 import PageMeta from "@/components/PageMeta";
 import { Button } from "@/components/ui/button";
+import {
+  appOutlineButtonClassName,
+  appPrimaryButtonClassName,
+} from "@/components/app-ui/appButtonClasses";
+import { COMPANY_NAME } from "@/lib/siteMeta";
+import { cn } from "@/lib/utils";
 
-const NotFound = () => {
+export default function NotFound() {
   const location = useLocation();
 
   useEffect(() => {
@@ -17,57 +23,103 @@ const NotFound = () => {
   return (
     <>
       <PageMeta
-        title="404 - Page Not Found"
+        title={`404 - Page Not Found | ${COMPANY_NAME}`}
         description="The page you are looking for could not be found on Apex."
         path={location.pathname || "/"}
         setCanonical={false}
         noindex
       />
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="w-full max-w-lg rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.35)] sm:p-10">
-          <div className="mb-6 flex justify-center">
-            <div className="relative flex size-16 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.02]">
-              <Flag
-                className="size-8 text-white/70"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-[rgba(240,28,28,0.95)] px-1.5 text-[10px] font-bold text-white shadow-[0_0_12px_rgba(240,28,28,0.6)]">
-                404
-              </span>
-            </div>
-          </div>
-
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-            Oops! Page Not Found.
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-white/65">
-            The page you are looking for might have been removed, had its name
-            changed, or is temporarily unavailable.
-          </p>
-          <p className="mt-2 text-xs italic text-white/45">
-            Wrong turn—this sector isn&apos;t on the timetable.
-          </p>
-
-          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <Button
-              asChild
-              size="lg"
-              className="h-11 bg-white px-8 font-medium text-black shadow-sm hover:bg-white/90"
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="flex flex-1 flex-col items-center justify-center space-y-6">
+          <section
+            className="w-full max-w-2xl rounded-xl border border-apex-outline-variant/15 bg-gradient-to-b from-apex-surface-container to-apex-background px-6 py-10 text-center sm:px-10 sm:py-12"
+            aria-labelledby="not-found-heading"
+          >
+            <p
+              className="font-apex-headline text-6xl font-extrabold tabular-nums leading-none sm:text-7xl md:text-8xl"
+              aria-hidden
             >
-              <Link
-                to="/"
-                className="inline-flex items-center justify-center gap-2"
+              <span className="text-apex-on-surface">4</span>
+              <span className="text-apex-primary">0</span>
+              <span className="text-apex-on-surface">4</span>
+            </p>
+
+            <h1
+              id="not-found-heading"
+              className="mt-6 font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface"
+            >
+              Oops! Page Not Found.
+            </h1>
+            <p className="mt-3 font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+              The page you are looking for might have been removed, had its name
+              changed, or is temporarily unavailable.
+            </p>
+            <p className="mt-2 font-apex-body text-xs italic text-apex-on-surface-variant/70">
+              Wrong turn—this sector isn&apos;t on the timetable.
+            </p>
+
+            {location.pathname ? (
+              <p className="mt-5">
+                <span className="inline-block max-w-full truncate rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container px-3 py-1.5 font-apex-body text-xs text-apex-on-surface-variant">
+                  {location.pathname}
+                </span>
+              </p>
+            ) : null}
+
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:justify-center">
+              <Button asChild className={cn("h-11", appPrimaryButtonClassName)}>
+                <Link
+                  to="/"
+                  className="inline-flex items-center justify-center gap-2"
+                >
+                  <Home className="size-4" aria-hidden />
+                  Back to Home
+                </Link>
+              </Button>
+              <Button asChild className={cn("h-11", appOutlineButtonClassName)}>
+                <Link
+                  to="/faq"
+                  className="inline-flex items-center justify-center gap-2 px-6"
+                >
+                  <HelpCircle className="size-4" aria-hidden />
+                  Browse FAQ
+                </Link>
+              </Button>
+            </div>
+          </section>
+
+          <section className="w-full max-w-2xl rounded-xl border border-apex-outline-variant/15 bg-apex-surface-container-low p-6 sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-4">
+                <div
+                  className="flex size-10 shrink-0 items-center justify-center rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container text-apex-primary"
+                  aria-hidden
+                >
+                  <MessageCircle className="size-5" />
+                </div>
+                <div>
+                  <p className="font-apex-headline text-sm font-semibold text-apex-on-surface">
+                    Can&apos;t find what you&apos;re looking for?
+                  </p>
+                  <p className="mt-1 max-w-sm font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+                    Our support team is here to help if you think something is
+                    broken or missing.
+                  </p>
+                </div>
+              </div>
+              <Button
+                asChild
+                className={cn(
+                  "shrink-0 !px-5 !py-2 !text-xs",
+                  appPrimaryButtonClassName,
+                )}
               >
-                <Home className="size-4" aria-hidden />
-                Back to Home
-              </Link>
-            </Button>
-          </div>
+                <Link to="/contact">Contact support</Link>
+              </Button>
+            </div>
+          </section>
         </div>
       </div>
     </>
   );
-};
-
-export default NotFound;
+}

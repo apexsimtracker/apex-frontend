@@ -9,8 +9,8 @@ Apex is a **sim racing web app** (sessions, leaderboards, challenges, community,
 | Runtime            | React 18, TypeScript                                       |
 | Routing            | React Router 7 (SPA, `BrowserRouter`)                      |
 | Build              | Vite 7                                                     |
-| Styling            | Tailwind CSS 3, CSS variables in `src/global.css`          |
-| UI primitives      | Radix UI + shadcn-style components in `src/components/ui/` |
+| Styling            | Tailwind CSS 3; `src/global.css` (shadcn/Admin) + `src/styles/theme.css` (product `.apex-theme` / `--apex-*`) |
+| UI primitives      | Product: `src/components/app-ui/`; Admin/shadcn: `src/components/ui/` |
 | Data fetching      | TanStack Query v5                                          |
 | Forms / validation | react-hook-form + Zod 4                                    |
 | Icons              | lucide-react                                               |
@@ -25,25 +25,26 @@ apex-frontend/
 ├── index.html              # Vite entry; script → /src/main.tsx
 ├── vite.config.ts          # Dev server :8080, /api proxy, @ → src
 ├── vercel.json             # SPA rewrites + no-store on index
-├── tailwind.config.ts
+├── tailwind.config.ts      # shadcn tokens + product `apex.*` colors/fonts/radius
 ├── tsconfig.json           # paths: "@/*" → "./src/*"
 ├── vitest.config.ts
 ├── public/                 # Static assets (logo, sitemap, sim SVGs)
 ├── src/
 │   ├── main.tsx            # Mount + global.css
-│   ├── App.tsx             # Routes, providers, layout shell
-│   ├── global.css          # Theme tokens (--background, --primary, …)
-│   ├── pages/              # Route-level screens (+ pages/admin/)
-│   ├── components/         # Shared UI (Header, ActivityCard, profile/, ui/)
-│   ├── features/           # Cross-page feature modules (settings, session-detail, manual-activity)
+│   ├── App.tsx             # Routes, providers, AppLayout / Admin shells
+│   ├── global.css          # shadcn/Admin tokens (--background, --primary, …)
+│   ├── styles/theme.css    # Product theme (.apex-theme, --apex-*, imported by AppLayout)
+│   ├── pages/              # Product screens + pages/admin/
+│   ├── components/         # AppLayout, HubTopBar, BottomNav, app-ui/, ui/, …
+│   ├── features/           # Cross-page feature modules (settings, session-detail, …)
 │   ├── lib/                # Utilities, API client, validation, grouping logic
 │   ├── auth/               # Route guards (ProtectedRoute, AdminRoute, GuestOnlyRoute)
 │   ├── contexts/           # AuthContext (GET /api/auth/me)
-│   └── config/             # navigation.ts — header/footer link source of truth
+│   └── config/             # navigation.ts — nav/footer link source of truth
 └── .builder/rules/         # Cursor/Builder agent rules (*.mdc)
 ```
 
-There is **no** `client/`, `server/`, or `shared/` folder in this repo anymore.
+There is **no** `client/`, `server/`, `shared/`, `pages/v2/`, or `components/v2/` folder. Product URLs are unprefixed only (no `/v2/*` redirect shim).
 
 ## Architecture
 
@@ -84,24 +85,26 @@ flowchart LR
 
 ### Routing (`src/App.tsx`)
 
-- **Home** — `HomeRoute`: logged-in → `Index` (feed); logged-out → `PublicHome`.
-- **Heavy routes** — lazy-loaded: `Profile`, `SessionDetailPage`, `Settings`, `DiscussionDetail`, etc.
-- **Canonical session URL** — `/sessions/:id` (legacy `/activity/:id` redirects).
-- **Admin** — nested under `/admin/*` with `AdminLayout` + `AdminRoute`.
-- New routes must be added **above** the catch-all `path="*"`.
+- **Product shell** — `AppLayout` (`.apex-theme`) with per-route top bars (`HubTopBar` wrappers) and `BottomNav` where applicable.
+- **Home** — `HomeRoute`: logged-in → `Dashboard`; logged-out → `PublicHome`.
+- **Paths** — unprefixed production URLs (`/sessions/:id`, `/upload`, `/login`, …). Do not add `/v2` routes or legacy path aliases.
+- **Canonical session URL** — `/sessions/:id` (and `/sessions/:id/edit` for edits).
+- **Admin** — sibling tree under `/admin/*` with `AdminLayout` + `AdminRoute` (no product `AppLayout` / `apex-*` theme).
+- New product routes go in the `AppShell` catch-all tree **above** the `*` NotFound route.
 
 ### UI organization
 
-- **`pages/`** — one primary component per route; keep files focused; extract subcomponents into `components/` or `features/`.
+- **`pages/`** — one primary component per route; extract subcomponents into co-located folders (`pages/session/`, `pages/challenges/`, …) or `components/` / `features/`.
 - **`features/`** — settings forms, session-detail insights, manual-activity hooks (co-located logic).
-- **`components/ui/`** — design-system primitives (Button, Dialog, …); extend via `components.json` (shadcn).
-- **`config/navigation.ts`** — update when adding header/footer links.
+- **`components/app-ui/`** — product design-system primitives (AppDialog, AppSwitch, button class helpers).
+- **`components/ui/`** — shadcn primitives used heavily by Admin; do not merge product tokens into these.
+- **`config/navigation.ts`** — update when adding header/footer/account links.
 
-### Activity feed
+### Activity feed / dashboard
 
 - **`lib/sessionTypes.ts`** — shared `SessionItem` type for feed cards.
 - **`lib/weekendDisplaySegments.ts`** — weekend carousel/single segmentation for feed rows.
-- **`ActivityFeedList`**, **`WeekendGroupHeader`**, **`ActivityCard`** — feed rendering with weekend headers; manual vs telemetry via `sessionType` / `source`.
+- Dashboard feed UI lives under `components/dashboard/` (e.g. `ActivityFeedList`, activity cards) and `pages/Dashboard.tsx`.
 
 ## Commands
 
@@ -143,10 +146,10 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 
 ### New page
 
-1. Add `src/pages/MyPage.tsx`.
-2. Register `<Route path="/my-page" element={<MyPage />} />` in `src/App.tsx` (before `*`).
+1. Add `src/pages/MyPage.tsx` (and optional `src/pages/<slug>/MyPageTopBar.tsx` wrapping `HubTopBar`).
+2. Register the route inside the product `AppShell` tree in `src/App.tsx`, wrapped in `AppLayout` with `topBar` / `bottomBar` as needed (before `*`).
 3. If nav-visible, add entry in `src/config/navigation.ts`.
-4. Use `ProtectedRoute` / `AdminRoute` when auth is required.
+4. Use `ProtectedRoute` / `GuestOnlyRoute` / `AdminRoute` when access control applies.
 
 ### New API call
 
@@ -157,13 +160,15 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 ### New UI component
 
 - Prefer small files under `src/components/` or `src/features/<name>/`.
+- Product-styled primitives → `src/components/app-ui/`.
 - Use `cn()` from `@/lib/utils` for class names.
-- Theme colors: extend `src/global.css` and `tailwind.config.ts` if needed.
 
 ### Styling
 
-- App runs in **dark mode** by default (`document.documentElement.classList.add("dark")` in `App.tsx`).
-- Brand accent: `BRAND_RED` in `src/lib/appConfig.ts`.
+- Product UI runs under **`.apex-theme`** (via `AppLayout`): use Tailwind `apex-*` utilities (`bg-apex-background`, `text-apex-on-surface`, `font-apex-headline`, …) backed by `--apex-*` in `src/styles/theme.css`.
+- Admin / shadcn use **`src/global.css`** tokens (`bg-background`, `text-primary`, …). Do not mix product `apex-*` classes into Admin.
+- `<html>` also has `class="dark"` from `App.tsx` (affects shadcn tokens).
+- Brand accent constant: `BRAND_RED` in `src/lib/appConfig.ts`.
 
 ### Android dev (Capacitor)
 

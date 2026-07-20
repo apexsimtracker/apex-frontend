@@ -17,11 +17,12 @@ import {
   XIcon,
   XShareButton,
 } from "react-share";
-import { BaseModal } from "@/components/ui/base-modal";
+import { cn } from "@/lib/utils";
+import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 
 const ICON_SIZE = 32;
 const ROW_CLASS =
-  "flex w-full items-center gap-3 rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/60";
+  "flex w-full items-center gap-3 rounded-apex-sm border border-apex-outline-variant/20 bg-apex-surface-container-low px-3 py-2.5 text-left font-apex-body text-sm text-apex-on-surface transition-colors hover:bg-apex-surface-container";
 
 function splitShareHeadline(shareText: string): {
   headline: string;
@@ -112,7 +113,7 @@ export default function SessionShareModal({
   }
 
   return (
-    <BaseModal
+    <AppBaseModal
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title="Share session"
@@ -123,7 +124,7 @@ export default function SessionShareModal({
       <section aria-labelledby="share-prefill-heading">
         <h3
           id="share-prefill-heading"
-          className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          className="mb-2 font-apex-headline text-xs font-semibold uppercase tracking-wider text-apex-on-surface-variant"
         >
           Prefills in the app
         </h3>
@@ -203,11 +204,11 @@ export default function SessionShareModal({
       <section aria-labelledby="share-no-prefill-heading">
         <h3
           id="share-no-prefill-heading"
-          className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          className="mb-2 font-apex-headline text-xs font-semibold uppercase tracking-wider text-apex-on-surface-variant"
         >
           Does not prefill post text
         </h3>
-        <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+        <p className="mb-3 font-apex-body text-xs leading-relaxed text-apex-on-surface-variant">
           Facebook and LinkedIn open in a new tab with only your link. Your
           session details and link are copied to the clipboard first—paste into
           the post after the window opens.
@@ -239,16 +240,19 @@ export default function SessionShareModal({
         </nav>
       </section>
 
-      <div className="border-t border-white/10 pt-4">
+      <div className="border-t border-apex-outline-variant/15 pt-4">
         <button
           type="button"
           onClick={() => void copyToClipboard()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          className={cn(
+            ROW_CLASS,
+            "justify-center font-medium hover:bg-apex-surface-container-high",
+          )}
           aria-label="Copy session details and link to clipboard"
         >
           {copied ? (
             <>
-              <Check className="size-4 text-primary" aria-hidden />
+              <Check className="size-4 text-apex-primary" aria-hidden />
               Copied
             </>
           ) : (
@@ -259,6 +263,6 @@ export default function SessionShareModal({
           )}
         </button>
       </div>
-    </BaseModal>
+    </AppBaseModal>
   );
 }

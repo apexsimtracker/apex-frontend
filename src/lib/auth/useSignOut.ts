@@ -1,14 +1,12 @@
 import { useCallback, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { clearToken } from "@/auth/token";
 import { useAuth } from "@/contexts/AuthContext";
-import { isV2ShellPath, V2_HOME_PATH } from "@/config/navigation";
 import { authLogout } from "@/lib/api";
 
 /** Clears session locally and navigates home (server logout is best-effort). */
 export function useSignOut() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { setUser } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -23,13 +21,11 @@ export function useSignOut() {
       }
       clearToken();
       setUser(null);
-      navigate(isV2ShellPath(location.pathname) ? V2_HOME_PATH : "/", {
-        replace: true,
-      });
+      navigate("/", { replace: true });
     } finally {
       setIsSigningOut(false);
     }
-  }, [isSigningOut, location.pathname, navigate, setUser]);
+  }, [isSigningOut, navigate, setUser]);
 
   return { signOut, isSigningOut };
 }

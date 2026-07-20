@@ -2,35 +2,39 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Check,
   Cpu,
   Download,
-  Lock,
-  CheckCircle,
+  FileText,
   Loader2,
   Radio,
-  FileText,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { BaseModal } from "@/components/ui/base-modal";
-import { AgentInstallRequirements } from "@/components/agent/AgentInstallRequirements";
-import { AgentPlatformSelector } from "@/components/agent/AgentPlatformSelector";
+import AgentUpgradeModal from "@/pages/agent/AgentUpgradeModal";
+import { AgentInstallRequirements } from "@/components/AgentInstallRequirements";
+import { AgentPlatformSelector } from "@/components/AgentPlatformSelector";
+import AgentProUpgradeCard from "@/components/AgentProUpgradeCard";
+import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { downloadAgentBinary } from "@/lib/api/agentDownload";
 import { ApiError, isProRequiredError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import { BRAND_RED } from "@/lib/appConfig";
+import { AUTH_PATHS } from "@/config/navigation";
 import {
   AGENT_DOWNLOAD_FILENAMES,
-  AGENT_PLATFORM_LABELS,
   type AgentOs,
   useDetectedAgentOs,
 } from "@/hooks/useDetectedAgentOs";
+import { usePlatform } from "@/hooks/usePlatform";
+import { cn } from "@/lib/utils";
 
 const AGENT_PATH = "/agent";
 const agentTitle = `Apex Agent | ${COMPANY_NAME}`;
 const agentDescription = `Download the ${COMPANY_NAME} Agent for macOS, Windows, and Linux — a background service that captures sim telemetry and uploads sessions automatically with Apex Pro.`;
+
+const sectionEyebrowClassName =
+  "font-apex-headline text-xs font-bold uppercase tracking-widest text-apex-on-surface-variant";
 
 const SUPPORTED_SIMS: Array<{
   name: string;
@@ -100,22 +104,18 @@ function simStatusLabel(supported: boolean): string {
   return supported ? "Supported" : "Windows only";
 }
 
-function cardSectionClassName() {
-  return "rounded-xl border border-white/10 bg-card/50 p-6 sm:p-7";
-}
-
 export default function Agent() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const isPro = useIsProUser();
   const { selectedOs, setSelectedOs } = useDetectedAgentOs();
+  const { isWeb } = usePlatform();
   const [isDownloading, setIsDownloading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const showWelcomeBanner = searchParams.get("welcome") === "pro";
 
   const downloadFilename = AGENT_DOWNLOAD_FILENAMES[selectedOs];
-  const platformLabel = AGENT_PLATFORM_LABELS[selectedOs];
 
   async function handleDownloadClick() {
     if (authLoading) return;
@@ -137,7 +137,7 @@ export default function Agent() {
         toast.error("Sign in required", {
           description: "Log in with an Apex Pro account to download the agent.",
         });
-        navigate("/login");
+        navigate(AUTH_PATHS.login);
         return;
       }
       if (err instanceof ApiError && err.code === "AGENT_OBJECT_NOT_FOUND") {
@@ -183,89 +183,94 @@ export default function Agent() {
         path={AGENT_PATH}
         noindex
       />
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
-        <div className="mb-8 text-center sm:mb-10">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-white/10 bg-muted/30">
-            <Cpu className="size-7 text-muted-foreground" aria-hidden />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <section className="mb-8">
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
             Apex Agent
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+          <p className="mt-2 text-sm text-apex-on-surface-variant">
             {platformSubtitle(selectedOs)}
           </p>
-        </div>
+        </section>
 
-        <div className="mb-6">
-          <AgentPlatformSelector
-            selectedOs={selectedOs}
-            onSelect={setSelectedOs}
-          />
-        </div>
-
-        {showWelcomeBanner && isPro && (
-          <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-foreground">
-            <p className="font-medium text-green-400">Welcome to Apex Pro!</p>
-            <p className="mt-1 text-muted-foreground">
-              Download the agent below, then sign in with the same email and
-              password you use on this website.
-            </p>
-            <button
-              type="button"
-              className="mt-2 text-xs text-muted-foreground underline-offset-2 hover:underline"
-              onClick={() => {
-                searchParams.delete("welcome");
-                setSearchParams(searchParams, { replace: true });
-              }}
-            >
-              Dismiss
-            </button>
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="mb-6">
+            <AgentPlatformSelector
+              selectedOs={selectedOs}
+              onSelect={setSelectedOs}
+            />
           </div>
-        )}
 
-        <div className="space-y-6">
-          <section className={cardSectionClassName()}>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-              What it does
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Apex Agent runs quietly in the{" "}
-              {selectedOs === "macos" ? "menu bar" : "system tray"}. When you
-              finish a session in a supported simulator, it detects the
-              completed data and uploads telemetry to your Apex account in the
-              background.
-            </p>
+          {showWelcomeBanner && isPro && (
+            <div className="mb-6 rounded-lg border border-apex-success/30 bg-apex-success/10 px-4 py-3 text-sm">
+              <p className="font-medium text-apex-success">
+                Welcome to Apex Pro!
+              </p>
+              <p className="mt-1 text-apex-on-surface-variant">
+                Download the agent below, then sign in with the same email and
+                password you use on this website.
+              </p>
+              <button
+                type="button"
+                className="mt-2 text-xs text-apex-on-surface-variant underline-offset-2 hover:underline"
+                onClick={() => {
+                  searchParams.delete("welcome");
+                  setSearchParams(searchParams, { replace: true });
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          <section className="mb-8">
+            <div className="rounded-r-lg border-l-4 border-apex-primary bg-apex-surface-container/50 p-4">
+              <h2 className={cn(sectionEyebrowClassName, "mb-2")}>
+                What it does
+              </h2>
+              <p className="text-sm leading-relaxed text-apex-on-surface-variant">
+                The Apex Agent runs locally on your computer and automatically
+                detects when you complete a session in supported simulators. It
+                uploads your telemetry data to Apex so you can track your
+                progress without any manual work.
+              </p>
+            </div>
           </section>
 
-          <section className={cardSectionClassName()}>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+          <section className="mb-8">
+            <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
               Supported simulators
             </h2>
-            <div className="mt-4 space-y-2">
+            <div className="space-y-3">
               {SUPPORTED_SIMS.map((sim) => {
                 const isSupported = sim.support[selectedOs];
                 return (
                   <div
                     key={sim.name}
-                    className="rounded-lg border border-white/10 bg-muted/20 px-4 py-3"
+                    className="rounded-lg border border-[#2a2a2a] bg-apex-surface-container p-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <sim.icon
-                        className={`size-4 shrink-0 ${
-                          isSupported
-                            ? "text-green-500"
-                            : "text-muted-foreground/50"
-                        }`}
-                        aria-hidden
-                      />
-                      <span className="text-sm font-medium text-foreground">
-                        {sim.name}
-                      </span>
-                      <span className="ml-auto text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {isSupported ? (
+                          <Check
+                            className="size-5 shrink-0 text-apex-primary"
+                            aria-hidden
+                          />
+                        ) : (
+                          <sim.icon
+                            className="size-5 shrink-0 text-apex-on-surface-variant/50"
+                            aria-hidden
+                          />
+                        )}
+                        <span className="font-medium text-apex-on-surface">
+                          {sim.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-apex-on-surface-variant">
                         {simStatusLabel(isSupported)}
                       </span>
                     </div>
-                    <p className="mt-1.5 pl-7 text-xs text-muted-foreground">
+                    <p className="mt-1.5 pl-8 text-xs text-apex-on-surface-variant">
                       {sim.detail[selectedOs]}
                     </p>
                   </div>
@@ -274,167 +279,115 @@ export default function Agent() {
             </div>
           </section>
 
-          <section className={cardSectionClassName()}>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
-              After you install
-            </h2>
-            <ol className="mt-4 space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
-                  1
-                </span>
-                <span>
-                  Open Apex Agent from your{" "}
-                  {selectedOs === "macos" ? "menu bar" : "system tray"} (look
-                  for the Apex icon).
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
-                  2
-                </span>
-                <span>
-                  Sign in with the{" "}
-                  <strong className="font-medium text-foreground">
-                    same email and password
-                  </strong>{" "}
-                  as your {COMPANY_NAME} account. No separate activation code is
-                  required.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-xs font-medium text-foreground">
-                  3
-                </span>
-                <span>
-                  The agent minimizes to the{" "}
-                  {selectedOs === "macos" ? "menu bar" : "system tray"} and
-                  uploads sessions automatically while you race.
-                </span>
-              </li>
-            </ol>
-          </section>
+          <div className="mb-10 rounded-lg border border-[#2a2a2a] bg-[#121212] p-4">
+            <p className="text-xs leading-relaxed text-apex-on-surface-variant">
+              <span className="mr-1 font-bold uppercase text-apex-on-surface">
+                Status:
+              </span>
+              Runs locally and uploads sessions automatically when you finish
+              driving.
+            </p>
+          </div>
 
           <AgentInstallRequirements os={selectedOs} />
-        </div>
 
-        <div className="mt-8">
-          {authLoading ? (
-            <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Checking subscription…
+          <section className="mb-8">
+            <h2 className={cn(sectionEyebrowClassName, "mb-4")}>
+              After you install
+            </h2>
+            <div className="rounded-lg border border-[#2a2a2a] bg-apex-surface-container p-6">
+              <ol className="space-y-3 text-sm text-apex-on-surface-variant">
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-apex-on-surface">
+                    1
+                  </span>
+                  <span>
+                    Open Apex Agent from your{" "}
+                    {selectedOs === "macos" ? "menu bar" : "system tray"} (look
+                    for the Apex icon).
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-apex-on-surface">
+                    2
+                  </span>
+                  <span>
+                    Sign in with the{" "}
+                    <strong className="font-medium text-apex-on-surface">
+                      same email and password
+                    </strong>{" "}
+                    as your {COMPANY_NAME} account. No separate activation code
+                    is required.
+                  </span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-[#2a2a2a] text-xs font-medium text-apex-on-surface">
+                    3
+                  </span>
+                  <span>
+                    The agent minimizes to the{" "}
+                    {selectedOs === "macos" ? "menu bar" : "system tray"} and
+                    uploads sessions automatically while you race.
+                  </span>
+                </li>
+              </ol>
             </div>
-          ) : isPro ? (
-            <Button
-              onClick={handleDownloadClick}
-              disabled={isDownloading}
-              className="w-full text-white hover:opacity-90"
-              style={{ backgroundColor: BRAND_RED }}
-            >
-              {isDownloading ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Preparing download…
-                </>
+          </section>
+
+          {isWeb ? (
+            <div className="mb-8">
+              {authLoading ? (
+                <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#121212] px-4 py-3 text-sm text-apex-on-surface-variant">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Checking subscription…
+                </div>
+              ) : isPro ? (
+                <button
+                  type="button"
+                  onClick={handleDownloadClick}
+                  disabled={isDownloading}
+                  className={cn(
+                    appPrimaryButtonClassName,
+                    "flex w-full items-center justify-center gap-2 rounded-lg",
+                  )}
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Preparing download…
+                    </>
+                  ) : (
+                    <>
+                      <Download className="size-4" aria-hidden />
+                      Download {downloadFilename}
+                    </>
+                  )}
+                </button>
               ) : (
-                <>
-                  <Download className="size-4" />
-                  Download {downloadFilename}
-                </>
+                <AgentProUpgradeCard
+                  onUpgradeClick={() => setUpgradeModalOpen(true)}
+                />
               )}
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={handleDownloadClick}
-              className="w-full border-white/15"
+            </div>
+          ) : null}
+
+          <div className="flex justify-center">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-sm text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
             >
-              <Lock className="size-4" />
-              Download for {platformLabel}
-            </Button>
-          )}
-
-          {!authLoading && !isPro && (
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Apex Pro required for automatic telemetry uploads and agent
-              download.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-10 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Back to Home
-          </Link>
+              <ArrowLeft className="size-4" aria-hidden />
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
 
-      <BaseModal
-        isOpen={upgradeModalOpen}
+      <AgentUpgradeModal
+        open={upgradeModalOpen}
         onClose={() => setUpgradeModalOpen(false)}
-        title="Apex Pro Required"
-        description="Automatic telemetry uploads and the Apex Agent installer are available with Apex Pro."
-        footer={
-          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              variant="outline"
-              className="border-white/15"
-              onClick={() => setUpgradeModalOpen(false)}
-            >
-              Not now
-            </Button>
-            <Button
-              className="text-white hover:opacity-90"
-              style={{ backgroundColor: BRAND_RED }}
-              onClick={() => {
-                setUpgradeModalOpen(false);
-                navigate("/pricing");
-              }}
-            >
-              Upgrade to Pro
-            </Button>
-          </div>
-        }
-      >
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li className="flex items-start gap-2">
-            <CheckCircle
-              className="mt-0.5 size-4 shrink-0 text-green-500"
-              aria-hidden
-            />
-            Background F1 25 UDP telemetry capture
-          </li>
-          {selectedOs === "windows" && (
-            <li className="flex items-start gap-2">
-              <CheckCircle
-                className="mt-0.5 size-4 shrink-0 text-green-500"
-                aria-hidden
-              />
-              Automatic iRacing session log uploads
-            </li>
-          )}
-          {selectedOs === "windows" && (
-            <li className="flex items-start gap-2">
-              <CheckCircle
-                className="mt-0.5 size-4 shrink-0 text-green-500"
-                aria-hidden
-              />
-              Automatic Le Mans Ultimate telemetry uploads
-            </li>
-          )}
-          <li className="flex items-start gap-2">
-            <CheckCircle
-              className="mt-0.5 size-4 shrink-0 text-green-500"
-              aria-hidden
-            />
-            Unlimited session history and full analytics
-          </li>
-        </ul>
-      </BaseModal>
+        selectedOs={selectedOs}
+      />
     </>
   );
 }

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { BaseModal } from "@/components/ui/base-modal";
 import { Input } from "@/components/ui/input";
 import {
   resolveApiUrl,
@@ -15,6 +14,9 @@ import { profileKeys } from "@/lib/profileQueryKeys";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { cn } from "@/lib/utils";
+import { appInputClassName } from "@/components/app-ui/appButtonClasses";
+import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -28,11 +30,11 @@ type FollowListDialogProps = {
 
 function FollowRowSkeleton() {
   return (
-    <li className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2">
-      <Skeleton className="size-8 shrink-0 rounded-full" />
+    <li className="flex items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-3 py-2">
+      <Skeleton className="size-8 shrink-0 rounded-full bg-apex-surface-container-high" />
       <div className="min-w-0 flex-1 space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-48" />
+        <Skeleton className="h-4 w-32 bg-apex-surface-container-high" />
+        <Skeleton className="h-3 w-48 bg-apex-surface-container-high" />
       </div>
     </li>
   );
@@ -58,9 +60,9 @@ function FollowRow({
       <Link
         to={`${profileLinkBase}/${encodeURIComponent(f.id)}`}
         onClick={onNavigate}
-        className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/40 px-3 py-2 transition-colors hover:bg-card/60"
+        className="flex items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-3 py-2 transition-colors hover:bg-apex-surface-container"
       >
-        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-semibold text-white/80">
+        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-apex-surface-container-highest text-xs font-semibold text-apex-on-surface-variant">
           {resolveApiUrl(f.avatarUrl) ? (
             <img
               src={resolveApiUrl(f.avatarUrl)!}
@@ -72,9 +74,13 @@ function FollowRow({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">{name}</p>
+          <p className="truncate text-sm font-medium text-apex-on-surface">
+            {name}
+          </p>
           {f.bio && (
-            <p className="truncate text-xs text-muted-foreground">{f.bio}</p>
+            <p className="truncate text-xs text-apex-on-surface-variant">
+              {f.bio}
+            </p>
           )}
         </div>
       </Link>
@@ -149,7 +155,7 @@ export function FollowListDialog({
         : null;
 
   return (
-    <BaseModal
+    <AppBaseModal
       isOpen={open}
       onClose={() => onOpenChange(false)}
       title={
@@ -164,13 +170,13 @@ export function FollowListDialog({
     >
       {enabled && (
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-apex-on-surface-variant" />
           <Input
             type="search"
             placeholder="Search by name or email…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
+            className={cn(appInputClassName, "pl-9")}
             autoComplete="off"
           />
         </div>
@@ -187,9 +193,9 @@ export function FollowListDialog({
             ))}
           </ul>
         ) : errMsg ? (
-          <p className="py-4 text-sm text-destructive">{errMsg}</p>
+          <p className="py-4 font-apex-body text-sm text-apex-error">{errMsg}</p>
         ) : items.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">
+          <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
             {debouncedSearch.trim()
               ? listKind === "followers"
                 ? "No followers match your search."
@@ -212,8 +218,8 @@ export function FollowListDialog({
         )}
       </div>
       {enabled && !errMsg && total > 0 && (data || !isPending) && (
-        <div className="shrink-0 space-y-3 border-t border-border pt-4">
-          <p className="text-center text-xs text-muted-foreground">
+        <div className="shrink-0 space-y-3 border-t border-apex-outline-variant/15 pt-4">
+          <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
             Showing {rangeStart}–{rangeEnd} of {total}
           </p>
           {totalPages > 1 && (
@@ -226,6 +232,6 @@ export function FollowListDialog({
           )}
         </div>
       )}
-    </BaseModal>
+    </AppBaseModal>
   );
 }

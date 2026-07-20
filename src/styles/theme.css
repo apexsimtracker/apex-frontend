@@ -1,0 +1,145 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+.apex-theme {
+  /* Brand — from loveable-ui-architecture/01-design-tokens.md §B.1 */
+  --apex-primary: 0 90% 47%; /* #E10600 */
+  --apex-primary-fixed: 6 100% 69%; /* #ff7763 */
+  --apex-on-primary: 0 100% 20%; /* #650000 — Loveable on-primary */
+  --apex-on-surface: 0 0% 100%;
+  --apex-on-surface-variant: 0 0% 68%; /* #adaaaa */
+  --apex-background: 0 0% 5.5%; /* #0e0e0e */
+  --apex-surface: 0 0% 5.5%;
+  --apex-surface-container-low: 0 0% 7.5%; /* #131313 */
+  --apex-surface-container: 0 0% 10%; /* #1a1919 */
+  --apex-surface-container-high: 0 0% 12%; /* #201f1f */
+  --apex-surface-container-highest: 0 0% 15%; /* #262626 */
+  --apex-outline-variant: 0 0% 28%; /* #484847 */
+  --apex-error: 351 100% 73%; /* #ff6e84 */
+  --apex-success: 142 76% 36%; /* green-500 equivalent */
+  --apex-radius: 0.125rem; /* Loveable DEFAULT 2px */
+}
+
+.apex-theme .apex-kinetic-glass {
+  background: rgba(38, 38, 38, 0.6);
+  backdrop-filter: blur(16px);
+}
+
+/* Log Session sheet — Loveable telemetry.html uses bg-[#0e0e0e] (portal renders outside AppLayout). */
+.apex-theme .apex-log-session-sheet {
+  background-color: #0e0e0e;
+}
+
+.apex-theme .apex-log-session-overlay {
+  background-color: hsl(var(--apex-background) / 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.apex-theme .apex-primary-gradient {
+  background: linear-gradient(135deg, #ff8e7d 0%, #ff7763 100%);
+}
+
+/** Indeterminate upload progress — position slide only (no opacity pulse). */
+.apex-theme .apex-upload-indeterminate-track {
+  position: relative;
+  overflow: hidden;
+}
+
+.apex-theme .apex-upload-indeterminate-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #ff8e7d 0%, #ff7763 100%);
+  animation: apex-upload-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes apex-upload-indeterminate {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-theme .apex-upload-indeterminate-bar {
+    animation: none;
+    left: 30%;
+    width: 40%;
+  }
+}
+
+.apex-theme .apex-red-accent-border {
+  border-left: 3px solid #eb0000;
+}
+
+/* Inputs: single red border on focus — no ring/outline double stroke */
+.apex-theme input:focus,
+.apex-theme input:focus-visible,
+.apex-theme select:focus,
+.apex-theme select:focus-visible,
+.apex-theme textarea:focus,
+.apex-theme textarea:focus-visible {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  box-shadow: none !important;
+}
+
+/* Lap table cells — borderless inline entry (Loveable manual-entry.html) */
+.apex-theme input.manual-lap-cell,
+.apex-theme input.manual-lap-cell:hover,
+.apex-theme input.manual-lap-cell:focus,
+.apex-theme input.manual-lap-cell:focus-visible,
+.apex-theme input.manual-lap-cell:active {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  color-scheme: dark;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-style: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+.apex-theme input.manual-lap-cell-sector {
+  color: hsl(var(--apex-on-surface-variant)) !important;
+  -webkit-text-fill-color: hsl(var(--apex-on-surface-variant)) !important;
+}
+
+.apex-theme input.manual-lap-cell-total {
+  color: hsl(var(--apex-primary)) !important;
+  -webkit-text-fill-color: hsl(var(--apex-primary)) !important;
+}
+
+.apex-theme input.manual-lap-cell-invalid,
+.apex-theme button.manual-lap-cell-invalid {
+  color: hsl(var(--apex-error)) !important;
+  -webkit-text-fill-color: hsl(var(--apex-error)) !important;
+}
+
+.apex-theme input.manual-lap-cell:-webkit-autofill,
+.apex-theme input.manual-lap-cell:-webkit-autofill:hover,
+.apex-theme input.manual-lap-cell:-webkit-autofill:focus,
+.apex-theme input.manual-lap-cell:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  transition: background-color 99999s ease-out 0s;
+}
+
+.apex-theme .hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.apex-theme .hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

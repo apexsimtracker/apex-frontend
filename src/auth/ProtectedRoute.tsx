@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { isV2ShellPath, V2_AUTH_PATHS } from "@/config/navigation";
 import type { AuthRedirectState } from "./authRedirect";
 
 type ProtectedRouteProps = {
@@ -22,13 +21,7 @@ export default function ProtectedRoute({
       message,
       from: `${location.pathname}${location.search}`,
     };
-    return (
-      <Navigate
-        to={isV2ShellPath(location.pathname) ? V2_AUTH_PATHS.login : "/login"}
-        replace
-        state={state}
-      />
-    );
+    return <Navigate to="/login" replace state={state} />;
   }
 
   return children ?? <Outlet />;

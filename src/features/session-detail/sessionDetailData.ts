@@ -1,12 +1,7 @@
 /**
- * Shared session-detail fetch + parse logic for the V2 session page.
+ * Shared session-detail fetch + parse logic for the session page.
  *
- * This is a behavior-preserving copy of the private helpers inside the V1
- * `src/pages/SessionDetailPage.tsx` (which must not be modified during the V2
- * migration). Both pages use the same React Query key `["sessions","detail",id]`
- * and endpoint `/api/sessions/:id`, so the parsed cache is shared.
- *
- * Follow-up: de-duplicate against V1 once the V1 detail page is retired.
+ * Uses React Query key `["sessions","detail",id]` and endpoint `/api/sessions/:id`.
  */
 import { apiGet, ApiError } from "@/lib/api";
 import {

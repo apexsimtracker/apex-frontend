@@ -1,6 +1,9 @@
 import type { ComponentType } from "react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import AdminHeader from "@/pages/admin/AdminHeader";
+import { PageSuspense } from "@/routes/PageSuspense";
+import { AdminRouteSkeleton } from "@/routes/GenericRouteSkeleton";
 
 function useIsLargeScreen(): boolean {
   const [isLg, setIsLg] = useState(false);
@@ -242,14 +245,16 @@ export default function AdminLayout() {
   };
 
   return (
-    <div
-      className={cn(
-        "flex min-h-0 flex-1 flex-col border-t border-white/10 bg-background",
-        /* Mobile: bounded below header + admin toolbar; desktop: fixed shell below header */
-        "max-lg:max-h-[calc(100dvh-4rem)] max-lg:overflow-hidden",
-        "lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:z-0 lg:overflow-hidden",
-      )}
-    >
+    <>
+      <AdminHeader />
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col border-t border-white/10 bg-background",
+          /* Mobile: sit below fixed AdminHeader; desktop: fixed shell below header */
+          "max-lg:mt-16 max-lg:max-h-[calc(100dvh-4rem)] max-lg:overflow-hidden",
+          "lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-16 lg:z-0 lg:overflow-hidden",
+        )}
+      >
       {/* Mobile: pinned directly under site header (not in scroll flow) */}
       <div className="fixed inset-x-0 top-16 z-30 flex h-14 items-center gap-3 border-b border-white/10 bg-background/95 px-4 backdrop-blur-md lg:hidden">
         <button
@@ -357,8 +362,11 @@ export default function AdminLayout() {
           navCollapsed ? "lg:pl-[6.5rem]" : "lg:pl-[17.5rem]",
         )}
       >
-        <Outlet />
+        <PageSuspense fallback={<AdminRouteSkeleton />}>
+          <Outlet />
+        </PageSuspense>
       </div>
     </div>
+    </>
   );
 }

@@ -1,10 +1,25 @@
-import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useMemo, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Trophy, Upload as UploadIcon } from "lucide-react";
-import { createManualActivity, ApiError } from "@/lib/api";
-import ManualActivityForm from "@/components/ManualActivityForm";
+import { createManualActivity, getChallenge, ApiError } from "@/lib/api";
+import type { ManualActivityRequest } from "@/lib/api";
+import type { ManualActivityInitialData } from "@/components/ManualActivityForm";
 import PageMeta from "@/components/PageMeta";
+import ChallengeDetailBackLink from "@/pages/challenges/ChallengeDetailBackLink";
+import {
+  challengeDetailToManualPrefill,
+  challengeManualPrefillToInitialData,
+  type ChallengeManualPrefill,
+} from "@/lib/challenges/challengeManualPrefill";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import ManualActivityForm from "./manual/ManualActivityForm";
+import ManualActivityFormSkeleton from "./manual/ManualActivityFormSkeleton";
 
 const MANUAL_PATH = "/manual";
 const manualTitle = `Log activity | ${COMPANY_NAME}`;
@@ -18,43 +33,74 @@ type LogAgainState = {
   carId?: string;
 };
 
+type ManualNavState = {
+  logAgain?: LogAgainState;
+  challengePrefill?: ChallengeManualPrefill;
+} | null;
+
+function logAgainToInitialData(
+  logAgain: LogAgainState,
+): ManualActivityInitialData {
+  return {
+    sim: logAgain.sim ?? null,
+    trackId: logAgain.trackId ?? null,
+    carId: logAgain.carId ?? null,
+  };
+}
+
 export default function ManualActivity() {
   const navigate = useNavigate();
   const location = useLocation();
-  const navState = location.state as {
-    logAgain?: LogAgainState;
-    challengeId?: string;
-  } | null;
+  const [searchParams] = useSearchParams();
+  const navState = location.state as ManualNavState;
   const logAgain = navState?.logAgain;
-  const challengeId =
-    typeof navState?.challengeId === "string" && navState.challengeId.trim()
-      ? navState.challengeId.trim()
-      : undefined;
+  const challengePrefill = navState?.challengePrefill;
+  const challengeId = searchParams.get("challenge")?.trim() || undefined;
+  const isChallengeLinked = Boolean(challengeId);
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const initialData =
-    logAgain && (logAgain.sim || logAgain.trackId)
-      ? {
-          sim: logAgain.sim ?? null,
-          trackId: logAgain.trackId ?? null,
-          carId: logAgain.carId ?? null,
-        }
-      : undefined;
-  const prefilledFromPrevious = Boolean(initialData);
+  const needsChallengeFetch = Boolean(
+    challengeId && !logAgain && !challengePrefill,
+  );
 
-  async function handleSubmit(data: {
-    sim: string;
-    trackId: string;
-    manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
-    carId?: string;
-    position?: number;
-    totalDrivers?: number;
-    qualifyingPosition?: number;
-    laps?: { lapTimeMs: number }[];
-    bestLapMs?: number;
-    notes?: string;
-  }) {
+  const { data: fetchedChallenge, isPending: challengePrefillLoading } =
+    useQuery({
+      queryKey: ["challenges", "detail", challengeId, "manual-prefill"],
+      queryFn: async () => {
+        const data = await getChallenge(challengeId!);
+        if (!data) throw new Error("Challenge not found");
+        return data;
+      },
+      enabled: needsChallengeFetch,
+    });
+
+  const initialData = useMemo((): ManualActivityInitialData | undefined => {
+    if (logAgain && (logAgain.sim || logAgain.trackId)) {
+      return logAgainToInitialData(logAgain);
+    }
+    if (challengePrefill?.sim && challengePrefill.track) {
+      return challengeManualPrefillToInitialData(challengePrefill);
+    }
+    if (fetchedChallenge && !fetchedChallenge.banned) {
+      return challengeManualPrefillToInitialData(
+        challengeDetailToManualPrefill(fetchedChallenge),
+      );
+    }
+    return undefined;
+  }, [logAgain, challengePrefill, fetchedChallenge]);
+
+  const prefilledFromPrevious = Boolean(
+    logAgain && (logAgain.sim || logAgain.trackId),
+  );
+  const waitingForChallengePrefill =
+    needsChallengeFetch && challengePrefillLoading;
+
+  const pagePath = isChallengeLinked
+    ? `${MANUAL_PATH}?challenge=${encodeURIComponent(challengeId!)}`
+    : MANUAL_PATH;
+
+  async function handleSubmit(data: ManualActivityRequest) {
     setFormState("submitting");
     setErrorMessage(null);
 
@@ -85,79 +131,82 @@ export default function ManualActivity() {
       <PageMeta
         title={manualTitle}
         description={manualDescription}
-        path={MANUAL_PATH}
+        path={pagePath}
         noindex
       />
-      <div className="min-h-[calc(100vh-4rem)] bg-background">
-        <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6 sm:py-12 lg:max-w-xl">
-          <div className="mb-8">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-[1.65rem]">
-                Log manual activity
-              </h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-                Record a session without telemetry. Lap times are saved to your
-                profile and activity feed.
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-8 px-6 py-8">
+        {isChallengeLinked && challengeId && (
+          <ChallengeDetailBackLink challengeId={challengeId} />
+        )}
+
+        <div>
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+            Manual Entry
+          </h1>
+          <p className="mt-2 font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+            Record a session without telemetry. Saved to your sessions library
+            and activity feed — not included in profile stats.
+          </p>
+        </div>
+
+        <div className="mx-auto w-full max-w-4xl space-y-8">
+          {isChallengeLinked && formState !== "success" && (
+            <div className="flex items-start gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high px-4 py-3">
+              <Trophy
+                className="mt-0.5 size-4 shrink-0 text-apex-primary"
+                aria-hidden
+              />
+              <p className="font-apex-body text-sm text-apex-on-surface-variant">
+                This session will count toward your active challenge when saved.
               </p>
             </div>
-          </div>
+          )}
 
-          <div className="rounded-xl border border-white/10 bg-card/20 p-5 shadow-sm backdrop-blur-lg sm:p-7">
-            {challengeId && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                <Trophy
-                  className="mt-0.5 size-4 shrink-0 text-amber-400"
-                  aria-hidden
-                />
-                <p className="text-sm text-amber-100/90">
-                  This session will count toward your active challenge when
-                  saved.
-                </p>
-              </div>
-            )}
-
-            {formState === "success" ? (
-              <div className="py-10 text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-green-500/10 ring-1 ring-green-500/20">
-                    <CheckCircle className="size-7 text-green-500" />
-                  </div>
+          {formState === "success" ? (
+            <div className="rounded-apex-lg bg-apex-surface-container-low py-10 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex size-14 items-center justify-center rounded-full bg-apex-success/10 ring-1 ring-apex-success/20">
+                  <CheckCircle className="size-7 text-apex-success" />
                 </div>
-                <p className="text-lg font-medium text-white">
-                  Activity logged
-                </p>
-                <p className="mt-2 text-sm text-white/50">
-                  Redirecting to your session…
-                </p>
               </div>
-            ) : (
-              <ManualActivityForm
-                layout="page"
-                initialData={initialData}
-                prefilledFromPrevious={prefilledFromPrevious}
-                onSubmit={handleSubmit}
-                submitLabel="Log activity"
-                submittingLabel="Saving…"
-                isSubmitting={formState === "submitting"}
-                errorMessage={errorMessage}
-              />
-            )}
-          </div>
+              <p className="font-apex-body text-lg font-medium text-apex-on-surface">
+                Activity logged
+              </p>
+              <p className="mt-2 font-apex-body text-sm text-apex-on-surface-variant">
+                Redirecting to your session…
+              </p>
+            </div>
+          ) : waitingForChallengePrefill ? (
+            <ManualActivityFormSkeleton />
+          ) : (
+            <ManualActivityForm
+              initialData={initialData}
+              prefilledFromPrevious={prefilledFromPrevious}
+              hideRecentSessions={isChallengeLinked}
+              onSubmit={handleSubmit}
+              submitLabel="Save session"
+              submittingLabel="Saving…"
+              isSubmitting={formState === "submitting"}
+              errorMessage={errorMessage}
+            />
+          )}
 
-          <p className="mt-6 text-center text-sm text-white/45">
-            Have an iRacing{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-white/70">
-              .ibt
-            </code>{" "}
-            file?{" "}
-            <Link
-              to="/upload"
-              className="inline-flex items-center gap-1 font-medium text-white/70 transition-colors hover:text-white"
-            >
-              <UploadIcon className="size-3.5" aria-hidden />
-              Upload telemetry
-            </Link>
-          </p>
+          {!isChallengeLinked && (
+            <p className="text-center font-apex-body text-sm text-apex-on-surface-variant">
+              Have an iRacing{" "}
+              <code className="rounded-apex-sm bg-apex-surface-container-highest px-1.5 py-0.5 font-apex-body text-xs text-apex-on-surface">
+                .ibt
+              </code>{" "}
+              file?{" "}
+              <Link
+                to="/upload"
+                className="inline-flex items-center gap-1 font-apex-body font-medium text-apex-on-surface transition-colors hover:text-apex-primary"
+              >
+                <UploadIcon className="size-3.5" aria-hidden />
+                Upload telemetry
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </>

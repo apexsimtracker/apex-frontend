@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { getLeaderboards, type LeaderboardRow } from "@/lib/api";
-import { formatLapMs } from "@/lib/utils";
+import { formatLapMs, cn } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
+import UserAvatar from "@/components/UserAvatar";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import LeaderboardsListSkeleton from "@/pages/leaderboards/LeaderboardsListSkeleton";
 
 const LEADERBOARDS_PATH = "/leaderboards";
 const leaderboardsTitle = `Leaderboards | ${COMPANY_NAME}`;
@@ -19,6 +22,14 @@ const TAB_METRICS = {
 } as const;
 
 type TabKey = keyof typeof TAB_METRICS;
+
+const TAB_CONFIG: Record<TabKey, { label: string; suffix: string }> = {
+  wins: { label: "Most Wins", suffix: "WINS" },
+  races: { label: "Most Races", suffix: "RACES" },
+  podiums: { label: "Podiums", suffix: "PODIUMS" },
+  fastestlaps: { label: "Fastest Laps", suffix: "LAP" },
+  avgfinish: { label: "Avg Finish", suffix: "AVG" },
+};
 
 const LB_LIMIT = 10;
 
@@ -40,11 +51,19 @@ function formatValue(row: LeaderboardRow, metric: string): string {
     : "—";
 }
 
+function rankBadgeClassName(rank: number): string {
+  if (rank === 1) return "bg-[#ffd700] text-black";
+  if (rank === 2) return "bg-silver text-black";
+  if (rank === 3) return "bg-bronze text-black";
+  return "bg-[#3a3a3a] text-white";
+}
+
 export default function Leaderboards() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>("wins");
 
   const metric = TAB_METRICS[activeTab];
+  const metricSuffix = TAB_CONFIG[activeTab].suffix;
 
   const {
     data: rows = [],
@@ -70,13 +89,6 @@ export default function Leaderboards() {
         ? "Failed to load leaderboard."
         : null;
 
-  const getMedalEmoji = (rank: number) => {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return `#${rank}`;
-  };
-
   return (
     <>
       <PageMeta
@@ -84,188 +96,128 @@ export default function Leaderboards() {
         description={leaderboardsDescription}
         path={LEADERBOARDS_PATH}
       />
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          {/* Header */}
-          <div className="mb-10 sm:mb-16">
-            <h1 className="mb-2 text-3xl font-bold text-foreground sm:mb-3 sm:text-4xl">
-              Leaderboards
-            </h1>
-            <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground/70 sm:text-sm">
-              Compete and climb the rankings.
-            </p>
-          </div>
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <section className="mb-5">
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+            Leaderboards
+          </h1>
+          <p className="mt-1 font-apex-body text-[10px] font-semibold uppercase tracking-widest text-apex-on-surface-variant">
+            Compete and climb the rankings
+          </p>
+        </section>
 
-          {/* Category Tabs */}
-          <div className="border-white/3 mb-8 flex gap-4 overflow-x-auto border-b pb-2 sm:mb-12 sm:gap-8">
-            <button
-              onClick={() => setActiveTab("wins")}
-              className={`whitespace-nowrap pb-2 transition-all ${
-                activeTab === "wins"
-                  ? "border-b-2 text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                activeTab === "wins"
-                  ? { borderBottomColor: "rgb(240, 28, 28)" }
-                  : {}
-              }
-            >
-              <p className="text-sm font-semibold">Most Wins</p>
-            </button>
+        <section className="mb-5 flex gap-2 overflow-x-auto pb-1">
+          {(Object.keys(TAB_CONFIG) as TabKey[]).map((tabKey) => {
+            const isActive = activeTab === tabKey;
+            return (
+              <button
+                key={tabKey}
+                type="button"
+                onClick={() => setActiveTab(tabKey)}
+                className={cn(
+                  "shrink-0 rounded-apex-sm px-4 py-2 font-apex-body text-xs font-bold transition-colors",
+                  isActive
+                    ? "bg-apex-primary text-white"
+                    : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",
+                )}
+              >
+                {TAB_CONFIG[tabKey].label}
+              </button>
+            );
+          })}
+        </section>
 
-            <button
-              onClick={() => setActiveTab("races")}
-              className={`whitespace-nowrap pb-2 transition-all ${
-                activeTab === "races"
-                  ? "border-b-2 text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                activeTab === "races"
-                  ? { borderBottomColor: "rgb(240, 28, 28)" }
-                  : {}
-              }
-            >
-              <p className="text-sm font-semibold">Most Races</p>
-            </button>
+        {loading ? (
+          <LeaderboardsListSkeleton />
+        ) : (
+          <section className="rounded-xl bg-apex-surface-container-low p-2">
+            {updating && rows.length > 0 && (
+              <div className="flex items-center gap-2 px-2 py-1.5 font-apex-body text-xs text-apex-on-surface-variant">
+                <Loader2
+                  className="size-3.5 animate-spin text-apex-primary"
+                  aria-hidden
+                />
+                Refreshing standings…
+              </div>
+            )}
 
-            <button
-              onClick={() => setActiveTab("podiums")}
-              className={`whitespace-nowrap pb-2 transition-all ${
-                activeTab === "podiums"
-                  ? "border-b-2 text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                activeTab === "podiums"
-                  ? { borderBottomColor: "rgb(240, 28, 28)" }
-                  : {}
-              }
-            >
-              <p className="text-sm font-semibold">Podiums</p>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("fastestlaps")}
-              className={`whitespace-nowrap pb-2 transition-all ${
-                activeTab === "fastestlaps"
-                  ? "border-b-2 text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                activeTab === "fastestlaps"
-                  ? { borderBottomColor: "rgb(240, 28, 28)" }
-                  : {}
-              }
-            >
-              <p className="text-sm font-semibold">Fastest Laps</p>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("avgfinish")}
-              className={`whitespace-nowrap pb-2 transition-all ${
-                activeTab === "avgfinish"
-                  ? "border-b-2 text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                activeTab === "avgfinish"
-                  ? { borderBottomColor: "rgb(240, 28, 28)" }
-                  : {}
-              }
-            >
-              <p className="text-sm font-semibold">Avg Finish</p>
-            </button>
-          </div>
-
-          {/* Leaderboard */}
-          <div>
-            {updating && (
-              <p className="mb-2 py-1 text-xs text-muted-foreground/70">
-                Updating…
+            {isError && (
+              <p className="px-2 py-8 font-apex-body text-sm text-apex-on-surface-variant">
+                {err}
               </p>
             )}
 
-            {loading && (
-              <p className="py-8 text-sm text-muted-foreground">Loading…</p>
-            )}
-
-            {!loading && isError && (
-              <p className="py-8 text-sm text-muted-foreground">{err}</p>
-            )}
-
-            {!loading && !isError && rows.length === 0 && (
-              <p className="py-8 text-sm text-muted-foreground">
+            {!isError && rows.length === 0 && (
+              <p className="px-2 py-8 font-apex-body text-sm text-apex-on-surface-variant">
                 No rankings yet.
               </p>
             )}
 
-            {!loading && !isError && rows.length > 0 && (
-              <div className="space-y-0">
-                {rows.map((row) => {
-                  const rank = row.rank ?? 0;
+            {!isError && rows.length > 0 && (
+              <div
+                className={cn(updating && "pointer-events-none opacity-60")}
+                aria-busy={updating || undefined}
+              >
+                {rows.map((row, index) => {
+                  const rank = row.rank ?? index + 1;
                   const name = row.displayName ?? "";
                   const value = formatValue(row, metric ?? "wins");
                   const uid = row.userId?.trim();
+                  const isTopThree = rank <= 3;
 
                   return (
                     <button
-                      key={`${rank}-${name}`}
+                      key={`${rank}-${name}-${index}`}
+                      type="button"
                       onClick={() => {
-                        if (uid) navigate(`/user/${encodeURIComponent(uid)}`);
+                        if (uid) {
+                          navigate(`/user/${encodeURIComponent(uid)}`);
+                        }
                       }}
-                      className={`hover:bg-white/2 border-white/3 w-full border-b px-3 text-left transition-all sm:px-4 ${
-                        rank <= 3 ? "py-3 sm:py-4" : "py-2.5 sm:py-3"
-                      }`}
+                      className={cn(
+                        "flex w-full items-center gap-3 border-b border-apex-outline-variant/10 px-2 py-3 text-left transition-colors last:border-b-0 hover:bg-apex-surface-container-high/50",
+                        !uid && "cursor-default",
+                      )}
                     >
-                      <div className="flex items-center gap-2.5 sm:gap-3">
-                        {/* Rank */}
-                        <div className="flex w-5 shrink-0 items-center justify-center sm:w-6">
-                          <span
-                            className={`font-bold tabular-nums ${
-                              rank <= 3
-                                ? "text-xs text-white sm:text-sm"
-                                : "text-xs text-white/60"
-                            }`}
-                          >
-                            {getMedalEmoji(rank)}
-                          </span>
-                        </div>
-
-                        {/* Driver Name */}
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`truncate text-xs transition-colors sm:text-sm ${
-                              rank <= 3
-                                ? "font-semibold text-white"
-                                : "font-medium text-white/70"
-                            }`}
-                          >
-                            {name || "—"}
-                          </p>
-                        </div>
-
-                        {/* Value */}
-                        <div className="flex min-w-12 shrink-0 items-center justify-end sm:min-w-14">
-                          <p
-                            className={`font-bold tabular-nums ${
-                              rank <= 3
-                                ? "text-base text-white sm:text-lg"
-                                : "text-xs text-white/60 sm:text-sm"
-                            }`}
-                          >
-                            {value}
-                          </p>
-                        </div>
+                      <div
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-xl font-apex-headline text-xs font-bold",
+                          rankBadgeClassName(rank),
+                        )}
+                      >
+                        {rank}
                       </div>
+
+                      <UserAvatar
+                        name={name || "Driver"}
+                        size="md"
+                        className="rounded-xl ring-apex-outline-variant/30"
+                      />
+
+                      <p
+                        className={cn(
+                          "min-w-0 flex-1 truncate font-apex-body text-sm",
+                          isTopThree
+                            ? "font-bold text-apex-on-surface"
+                            : "font-medium text-apex-on-surface",
+                        )}
+                      >
+                        {name || "—"}
+                      </p>
+
+                      <p className="shrink-0 font-apex-headline font-bold text-apex-primary">
+                        {value}
+                        <span className="ml-1 font-apex-body text-[10px] font-medium text-apex-on-surface-variant">
+                          {metricSuffix}
+                        </span>
+                      </p>
                     </button>
                   );
                 })}
               </div>
             )}
-          </div>
-        </div>
+          </section>
+        )}
       </div>
     </>
   );

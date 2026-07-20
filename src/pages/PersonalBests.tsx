@@ -1,30 +1,121 @@
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Trophy } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import PageMeta from "@/components/PageMeta";
-import { Button } from "@/components/ui/button";
-import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-import { BRAND_RED } from "@/lib/appConfig";
-import { formatLapMs, formatCarName } from "@/lib/utils";
-import { formatTrackName } from "@/lib/tracks";
-import { getPersonalBests, isProRequiredError } from "@/lib/api";
+import {
+  getPersonalBests,
+  getPersonalBestsFilterOptions,
+  isProRequiredError,
+} from "@/lib/api";
 import { useIsProUser } from "@/contexts/AuthContext";
 import { ApiError } from "@/lib/api/errors";
+import PersonalBestsProLocked from "./personal-bests/PersonalBestsProLocked";
+import PersonalBestsSummary from "./personal-bests/PersonalBestsSummary";
+import PersonalBestsList from "./personal-bests/PersonalBestsList";
+import PersonalBestsSkeleton from "./personal-bests/PersonalBestsSkeleton";
+import PersonalBestsEmpty from "./personal-bests/PersonalBestsEmpty";
+import PersonalBestsFilters from "./personal-bests/PersonalBestsFilters";
+import PersonalBestsPagination from "./personal-bests/PersonalBestsPagination";
 
-const PATH = "/personal-bests";
+const PERSONAL_BESTS_PATH = "/personal-bests";
 const title = `Personal bests | ${COMPANY_NAME}`;
 const description = `Track your best qualifying laps per track and car on ${COMPANY_NAME}.`;
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
+
+function parsePageParam(raw: string | null): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
 
 export default function PersonalBests() {
   const isPro = useIsProUser();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const { data, isPending, error } = useQuery({
-    queryKey: ["personal-bests"],
-    queryFn: () => getPersonalBests(),
+  const page = parsePageParam(searchParams.get("page"));
+  const track = searchParams.get("track")?.trim() ?? "";
+  const car = searchParams.get("car")?.trim() ?? "";
+  const qFromUrl = searchParams.get("q")?.trim() ?? "";
+
+  const [searchInput, setSearchInput] = useState(qFromUrl);
+  const [searchFlushKey, setSearchFlushKey] = useState(0);
+  const debouncedQ = useDebouncedValue(
+    searchInput,
+    SEARCH_DEBOUNCE_MS,
+    searchFlushKey,
+  );
+
+  useEffect(() => {
+    setSearchInput(qFromUrl);
+  }, [qFromUrl]);
+
+  const updateParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(patch)) {
+            if (value == null || value === "") next.delete(key);
+            else next.set(key, value);
+          }
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const clearSearch = useCallback(() => {
+    setSearchInput("");
+    setSearchFlushKey((key) => key + 1);
+    updateParams({ q: null, page: "1" });
+  }, [updateParams]);
+
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchFlushKey((key) => key + 1);
+    updateParams({
+      q: null,
+      track: null,
+      car: null,
+      page: "1",
+    });
+  }, [updateParams]);
+
+  useEffect(() => {
+    if (debouncedQ === qFromUrl) return;
+    updateParams({ q: debouncedQ || null, page: "1" });
+  }, [debouncedQ, qFromUrl, updateParams]);
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      q: qFromUrl || undefined,
+      track: track || undefined,
+      car: car || undefined,
+    }),
+    [page, qFromUrl, track, car],
+  );
+
+  const { data, isPending, error, isFetching } = useQuery({
+    queryKey: ["personal-bests", listParams],
+    queryFn: () => getPersonalBests(listParams),
     enabled: isPro,
+    placeholderData: keepPreviousData,
     retry: (count, err) =>
       !(err instanceof ApiError && err.status === 403) && count < 1,
+  });
+
+  const { data: filterOptions } = useQuery({
+    queryKey: ["personal-bests", "filter-options"],
+    queryFn: getPersonalBestsFilterOptions,
+    enabled: isPro,
+    staleTime: 60_000,
   });
 
   const locked =
@@ -32,103 +123,101 @@ export default function PersonalBests() {
     (error instanceof ApiError && error.status === 403) ||
     isProRequiredError(error);
 
+  const rows = data?.personalBests ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+  const stats = data?.stats;
+  const hasActiveFilters = Boolean(qFromUrl || track || car);
+  const isInitialLoad = isPending && data === undefined;
+  const showInitialEmpty = !hasActiveFilters && total === 0 && !isInitialLoad;
+  const showFilteredEmpty = hasActiveFilters && total === 0 && !isInitialLoad;
+
   return (
     <>
-      <PageMeta title={title} description={description} path={PATH} noindex />
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
-        <div className="flex items-start gap-3">
-          <Trophy
-            className="mt-1 size-8 shrink-0"
-            style={{ color: BRAND_RED }}
-            aria-hidden
-          />
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Personal bests
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your fastest qualifying laps by track and car, updated
-              automatically from telemetry uploads.
-            </p>
-          </div>
-        </div>
+      <PageMeta
+        title={title}
+        description={description}
+        path={PERSONAL_BESTS_PATH}
+        noindex
+      />
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-6 px-6 py-8">
+        <header>
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+            Personal bests
+          </h1>
+          <p className="mt-1.5 max-w-2xl font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+            Your fastest qualifying laps by track and car, updated automatically
+            from telemetry uploads.
+          </p>
+        </header>
 
         {locked ? (
-          <div className="mt-10">
-            <ProUpgradeCallout
-              layout="card"
-              description="Personal bests tracking is an Apex Pro feature. Upgrade to save and view your best laps across every track and car combination."
-              ctaLabel="View Pro plans"
-            />
-          </div>
-        ) : isPending ? (
-          <div className="mt-10 flex justify-center py-16">
-            <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          </div>
+          <PersonalBestsProLocked />
         ) : error && !isProRequiredError(error) ? (
-          <p className="mt-10 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-center text-sm text-red-300">
-            {error instanceof Error
-              ? error.message
-              : "Could not load personal bests."}
-          </p>
-        ) : !data?.personalBests?.length ? (
-          <div className="mt-10 rounded-xl border border-white/10 bg-card/50 p-8 text-center">
-            <p className="text-muted-foreground">
-              No personal bests recorded yet.
+          <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-6 text-center">
+            <p className="font-apex-body text-sm text-apex-error">
+              {error instanceof Error
+                ? error.message
+                : "Could not load personal bests."}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground/80">
-              Upload a qualifying session with sector data to start tracking
-              PBs.
-            </p>
-            <Button asChild variant="outline" className="mt-6 border-white/15">
-              <Link to="/upload">Upload session</Link>
-            </Button>
           </div>
+        ) : showInitialEmpty ? (
+          <PersonalBestsEmpty />
         ) : (
-          <div className="mt-8 overflow-hidden rounded-xl border border-white/10">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-muted/30 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3">Track</th>
-                  <th className="px-4 py-3">Car</th>
-                  <th className="px-4 py-3 text-right">Best lap</th>
-                  <th className="hidden px-4 py-3 text-right sm:table-cell">
-                    Updated
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.personalBests.map((pb) => (
-                  <tr
-                    key={pb.id}
-                    className="border-b border-white/5 last:border-0"
-                  >
-                    <td className="px-4 py-3 text-foreground">
-                      {pb.trackName ?? formatTrackName(pb.track)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatCarName(pb.car)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono">
-                      {pb.sessionId ? (
-                        <Link
-                          to={`/sessions/${pb.sessionId}`}
-                          className="text-foreground hover:underline"
-                        >
-                          {formatLapMs(pb.bestLapMs)}
-                        </Link>
-                      ) : (
-                        formatLapMs(pb.bestLapMs)
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-right text-muted-foreground sm:table-cell">
-                      {new Date(pb.updatedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <PersonalBestsFilters
+              searchInput={searchInput}
+              onSearchInputChange={setSearchInput}
+              track={track}
+              onTrackChange={(value) =>
+                updateParams({ track: value || null, page: "1" })
+              }
+              car={car}
+              onCarChange={(value) =>
+                updateParams({ car: value || null, page: "1" })
+              }
+              trackOptions={filterOptions?.tracks ?? []}
+              carOptions={filterOptions?.cars ?? []}
+              hasActiveFilters={hasActiveFilters}
+              onClearSearch={clearSearch}
+              onClear={clearAllFilters}
+            />
+
+            {isInitialLoad ? (
+              <PersonalBestsSkeleton contentOnly />
+            ) : (
+              <>
+                {stats ? <PersonalBestsSummary stats={stats} /> : null}
+
+                {isFetching ? (
+                  <p className="font-apex-body text-xs text-apex-on-surface-variant">
+                    Updating…
+                  </p>
+                ) : null}
+
+                {showFilteredEmpty ? (
+                  <div className="rounded-xl border border-apex-outline-variant/15 bg-apex-surface-container-low p-8 text-center">
+                    <p className="font-apex-body text-sm text-apex-on-surface-variant">
+                      No personal bests match your filters.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <PersonalBestsList rows={rows} />
+                    <PersonalBestsPagination
+                      page={page}
+                      totalPages={totalPages}
+                      total={total}
+                      limit={PAGE_SIZE}
+                      onPageChange={(nextPage) =>
+                        updateParams({ page: String(nextPage) })
+                      }
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
     </>

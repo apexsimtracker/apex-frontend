@@ -18,6 +18,7 @@ import {
   type ActiveBroadcast,
   type NotificationSeverity,
 } from "@/lib/api";
+import { useAfterFirstPaint } from "@/hooks/useAfterFirstPaint";
 import { useAuth } from "@/contexts/AuthContext";
 
 function isInternalAppPath(url: string): boolean {
@@ -171,12 +172,14 @@ export default function BroadcastBanner() {
   const onAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
   const enabled = !!user;
+  const chromeIdleReady = useAfterFirstPaint(enabled);
   const { data } = useQuery({
     queryKey: ["broadcasts", "active"],
     queryFn: fetchActiveBroadcasts,
     refetchOnWindowFocus: true,
-    refetchInterval: 5 * 60_000,
-    enabled,
+    refetchInterval: (query) =>
+      query.state.status === "success" ? 5 * 60_000 : false,
+    enabled: enabled && chromeIdleReady,
   });
 
   const dismissMut = useMutation({

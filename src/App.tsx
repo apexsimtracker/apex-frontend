@@ -6,152 +6,183 @@ import {
   Routes,
   Route,
   Navigate,
-  useParams,
   useLocation,
 } from "react-router-dom";
-import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import Header from "./components/Header";
 import ScrollToTop from "./components/ScrollToTop";
-import HomeRoute from "./pages/HomeRoute";
-import Community from "./pages/Community";
-import Challenges from "./pages/Challenges";
-import ChallengeDetail from "./pages/ChallengeDetail";
-import Leaderboards from "./pages/Leaderboards";
-import Sessions from "./pages/Sessions";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import GuestOnlyRoute from "./auth/GuestOnlyRoute";
 import AdminRoute from "./auth/AdminRoute";
-import Upload from "./pages/Upload";
-import Pricing from "./pages/Pricing";
-import Agent from "./pages/Agent";
-import NotFound from "./pages/NotFound";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CookiePolicy from "./pages/CookiePolicy";
-import EULA from "./pages/EULA";
-import FAQPage from "./pages/FAQ";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import ProRequiredBanner from "./components/ProRequiredBanner";
-import BroadcastBanner from "./components/BroadcastBanner";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
-import AppFooter from "./components/AppFooter";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
-import { RevenueCatBootstrap } from "./features/billing/RevenueCatBootstrap";
 import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
-import AdminUserDetail from "./pages/admin/AdminUserDetail";
-import AdminChallenges from "./pages/admin/AdminChallenges";
-import AdminTracks from "./pages/admin/AdminTracks";
-import AdminChallengeDetail from "./pages/admin/AdminChallengeDetail";
-import AdminContact from "./pages/admin/AdminContact";
-import AdminContactDetail from "./pages/admin/AdminContactDetail";
-import AdminCommunity from "./pages/admin/AdminCommunity";
-import AdminCommunityDiscussionDetail from "./pages/admin/AdminCommunityDiscussionDetail";
-import AdminLeaderboards from "./pages/admin/AdminLeaderboards";
-import AdminSessions from "./pages/admin/AdminSessions";
-import AdminSessionDetail from "./pages/admin/AdminSessionDetail";
-import AdminDevices from "./pages/admin/AdminDevices";
-import AdminEmailAuth from "./pages/admin/AdminEmailAuth";
-import AdminFollows from "./pages/admin/AdminFollows";
-import AdminFollowUserDetail from "./pages/admin/AdminFollowUserDetail";
-import AdminNotifications from "./pages/admin/AdminNotifications";
-import AdminSystem from "./pages/admin/AdminSystem";
-import AdminBroadcastDetail from "./pages/admin/AdminBroadcastDetail";
-import AdminCampaignDetail from "./pages/admin/AdminCampaignDetail";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
-import V2Layout from "./components/v2/V2Layout";
-import V2BottomNavV2 from "./components/v2/V2BottomNavV2";
-import HomeRouteV2 from "./pages/v2/HomeRouteV2";
-import AgentV2 from "./pages/v2/AgentV2";
-import AgentTopBarV2 from "./pages/v2/agent/AgentTopBarV2";
-import LeaderboardsV2 from "./pages/v2/LeaderboardsV2";
-import LeaderboardsTopBarV2 from "./pages/v2/leaderboards/LeaderboardsTopBarV2";
-import ChallengesV2 from "./pages/v2/ChallengesV2";
-import ChallengesTopBarV2 from "./pages/v2/challenges/ChallengesTopBarV2";
-import CommunityV2 from "./pages/v2/CommunityV2";
-import CommunityTopBarV2 from "./pages/v2/community/CommunityTopBarV2";
-import DiscussionDetailV2 from "./pages/v2/DiscussionDetailV2";
-import DiscussionDetailTopBarV2 from "./pages/v2/discussion/DiscussionDetailTopBarV2";
-import ChallengeDetailV2 from "./pages/v2/ChallengeDetailV2";
-import ChallengeDetailTopBarV2 from "./pages/v2/challenges/ChallengeDetailTopBarV2";
-import SettingsV2 from "./pages/v2/SettingsV2";
-import SettingsTopBarV2 from "./pages/v2/settings/SettingsTopBarV2";
-import ProfileV2 from "./pages/v2/ProfileV2";
-import ProfileTopBarV2 from "./pages/v2/profile/ProfileTopBarV2";
-import UserProfileV2 from "./pages/v2/UserProfileV2";
-import UserProfileTopBarV2 from "./pages/v2/user/UserProfileTopBarV2";
-import UploadV2 from "./pages/v2/UploadV2";
-import UploadTopBarV2 from "./pages/v2/upload/UploadTopBarV2";
-import ManualActivityV2 from "./pages/v2/ManualActivityV2";
-import ManualTopBarV2 from "./pages/v2/manual/ManualTopBarV2";
-import EditActivityV2 from "./pages/v2/EditActivityV2";
-import EditActivityTopBarV2 from "./pages/v2/session/EditActivityTopBarV2";
-import SessionDetailV2 from "./pages/v2/SessionDetailV2";
-import SessionDetailTopBarV2 from "./pages/v2/session/SessionDetailTopBarV2";
-import SessionsV2 from "./pages/v2/SessionsV2";
-import SessionsTopBarV2 from "./pages/v2/sessions/SessionsTopBarV2";
-import PersonalBestsV2 from "./pages/v2/PersonalBestsV2";
-import PersonalBestsTopBarV2 from "./pages/v2/personal-bests/PersonalBestsTopBarV2";
-import PricingV2 from "./pages/v2/PricingV2";
-import PricingTopBarV2 from "./pages/v2/pricing/PricingTopBarV2";
-import AboutV2 from "./pages/v2/AboutV2";
-import AboutTopBarV2 from "./pages/v2/about/AboutTopBarV2";
-import ContactV2 from "./pages/v2/ContactV2";
-import ContactTopBarV2 from "./pages/v2/contact/ContactTopBarV2";
-import TermsAndConditionsV2 from "./pages/v2/TermsAndConditionsV2";
-import TermsAndConditionsTopBarV2 from "./pages/v2/legal/TermsAndConditionsTopBarV2";
-import PrivacyPolicyV2 from "./pages/v2/PrivacyPolicyV2";
-import PrivacyPolicyTopBarV2 from "./pages/v2/legal/PrivacyPolicyTopBarV2";
-import CookiePolicyV2 from "./pages/v2/CookiePolicyV2";
-import CookiePolicyTopBarV2 from "./pages/v2/legal/CookiePolicyTopBarV2";
-import EULAV2 from "./pages/v2/EULAV2";
-import EULATopBarV2 from "./pages/v2/legal/EULATopBarV2";
-import FAQV2 from "./pages/v2/FAQV2";
-import FAQTopBarV2 from "./pages/v2/faq/FAQTopBarV2";
-import MaintenanceNoticeV2 from "./pages/v2/MaintenanceNoticeV2";
-import MaintenanceNoticeTopBarV2 from "./pages/v2/maintenance/MaintenanceNoticeTopBarV2";
-import LoginV2 from "./pages/v2/LoginV2";
-import LoginTopBarV2 from "./pages/v2/login/LoginTopBarV2";
-import SignupV2 from "./pages/v2/SignupV2";
-import SignupTopBarV2 from "./pages/v2/signup/SignupTopBarV2";
-import ForgotPasswordV2 from "./pages/v2/ForgotPasswordV2";
-import ForgotPasswordTopBarV2 from "./pages/v2/forgot-password/ForgotPasswordTopBarV2";
-import VerifyEmailV2 from "./pages/v2/VerifyEmailV2";
-import VerifyEmailTopBarV2 from "./pages/v2/verify-email/VerifyEmailTopBarV2";
-import NotFoundV2 from "./pages/v2/NotFoundV2";
-import NotFoundTopBarV2 from "./pages/v2/not-found/NotFoundTopBarV2";
-import V2ErrorBoundaryFallback from "./components/v2/V2ErrorBoundaryFallback";
+import AppLayout from "./components/AppLayout";
+import BottomNav from "./components/BottomNav";
+import HomeRoute from "./pages/HomeRoute";
+import AgentTopBar from "./pages/agent/AgentTopBar";
+import LeaderboardsTopBar from "./pages/leaderboards/LeaderboardsTopBar";
+import ChallengesTopBar from "./pages/challenges/ChallengesTopBar";
+import CommunityTopBar from "./pages/community/CommunityTopBar";
+import DiscussionDetailTopBar from "./pages/discussion/DiscussionDetailTopBar";
+import ChallengeDetailTopBar from "./pages/challenges/ChallengeDetailTopBar";
+import SettingsTopBar from "./pages/settings/SettingsTopBar";
+import ProfileTopBar from "./pages/profile/ProfileTopBar";
+import UserProfileTopBar from "./pages/user/UserProfileTopBar";
+import UploadTopBar from "./pages/upload/UploadTopBar";
+import ManualTopBar from "./pages/manual/ManualTopBar";
+import EditActivityTopBar from "./pages/session/EditActivityTopBar";
+import SessionDetailTopBar from "./pages/session/SessionDetailTopBar";
+import SessionsTopBar from "./pages/sessions/SessionsTopBar";
+import PersonalBestsTopBar from "./pages/personal-bests/PersonalBestsTopBar";
+import PricingTopBar from "./pages/pricing/PricingTopBar";
+import AboutTopBar from "./pages/about/AboutTopBar";
+import ContactTopBar from "./pages/contact/ContactTopBar";
+import TermsAndConditionsTopBar from "./pages/legal/TermsAndConditionsTopBar";
+import PrivacyPolicyTopBar from "./pages/legal/PrivacyPolicyTopBar";
+import CookiePolicyTopBar from "./pages/legal/CookiePolicyTopBar";
+import EULATopBar from "./pages/legal/EULATopBar";
+import FAQTopBar from "./pages/faq/FAQTopBar";
+import MaintenanceNoticeTopBar from "./pages/maintenance/MaintenanceNoticeTopBar";
+import LoginTopBar from "./pages/login/LoginTopBar";
+import SignupTopBar from "./pages/signup/SignupTopBar";
+import ForgotPasswordTopBar from "./pages/forgot-password/ForgotPasswordTopBar";
+import VerifyEmailTopBar from "./pages/verify-email/VerifyEmailTopBar";
+import NotFound from "./pages/NotFound";
+import NotFoundTopBar from "./pages/not-found/NotFoundTopBar";
+import AppErrorBoundaryFallback from "./components/AppErrorBoundaryFallback";
 import { isGuestAuthPath } from "./auth/guestAuthRoutes";
+import { PageSuspense } from "./routes/PageSuspense";
+import SessionsPageSkeleton from "./pages/sessions/SessionsPageSkeleton";
+import ChallengeDetailSkeleton from "./pages/challenges/ChallengeDetailSkeleton";
+import DiscussionDetailSkeleton from "./pages/discussion/DiscussionDetailSkeleton";
+import LeaderboardsListSkeleton from "./pages/leaderboards/LeaderboardsListSkeleton";
+import ChallengesSeasonStatsSkeleton from "./pages/challenges/ChallengesSeasonStatsSkeleton";
+import ChallengeBrowseListSkeleton from "./pages/challenges/ChallengeBrowseListSkeleton";
+import { DiscussionCardSkeleton } from "./pages/community/DiscussionCardSkeleton";
+import {
+  ProfileRouteSkeleton,
+  SessionDetailRouteSkeleton,
+  PricingRouteSkeleton,
+  PersonalBestsRouteSkeleton,
+  ManualActivityRouteSkeleton,
+  UploadRouteSkeleton,
+} from "./routes/routePageSkeletons";
+import SettingsPageSkeleton from "./pages/settings/SettingsPageSkeleton";
+import AgentPageSkeleton from "./pages/agent/AgentPageSkeleton";
+import {
+  AdminDashboard,
+  AdminUsers,
+  AdminSubscriptions,
+  AdminUserDetail,
+  AdminSessions,
+  AdminSessionDetail,
+  AdminTracks,
+  AdminChallenges,
+  AdminChallengeDetail,
+  AdminContact,
+  AdminContactDetail,
+  AdminCommunity,
+  AdminCommunityDiscussionDetail,
+  AdminLeaderboards,
+  AdminNotifications,
+  AdminBroadcastDetail,
+  AdminCampaignDetail,
+  AdminFollows,
+  AdminFollowUserDetail,
+  AdminDevices,
+  AdminEmailAuth,
+  AdminSystem,
+  Agent,
+  Leaderboards,
+  Challenges,
+  Community,
+  DiscussionDetail,
+  Pricing,
+  FAQ,
+  About,
+  MaintenanceNotice,
+  Contact,
+  TermsAndConditions,
+  PrivacyPolicy,
+  CookiePolicy,
+  EULA,
+  ChallengeDetail,
+  Upload,
+  ManualActivity,
+  Sessions,
+  EditActivity,
+  SessionDetail,
+  Settings,
+  PersonalBests,
+  Profile,
+  UserProfile,
+  Login,
+  Signup,
+  ForgotPassword,
+  VerifyEmail,
+} from "./routes/lazyPages";
 
-const Profile = lazy(() => import("./pages/Profile"));
-const SessionDetailPage = lazy(() => import("./pages/SessionDetailPage"));
-const DiscussionDetail = lazy(() => import("./pages/DiscussionDetail"));
-const UserProfile = lazy(() => import("./pages/UserProfile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const PersonalBests = lazy(() => import("./pages/PersonalBests"));
-const ManualActivity = lazy(() => import("./pages/ManualActivity"));
-const EditActivity = lazy(() => import("./pages/EditActivity"));
-const MaintenanceNotice = lazy(() => import("./pages/MaintenanceNotice"));
-
-function RouteFallback() {
-  return <AppLoadingScreen variant="inline" />;
+function ChallengesPageSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8">
+      <ChallengesSeasonStatsSkeleton />
+      <ChallengeBrowseListSkeleton />
+    </div>
+  );
 }
 
-function V2RouteShell({ children }: { children: ReactNode }) {
-  const { loading } = useAuth();
+function CommunityPageSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      <DiscussionCardSkeleton count={3} />
+    </div>
+  );
+}
+
+function LeaderboardsPageSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-5xl space-y-4 px-6 py-8">
+      <LeaderboardsListSkeleton />
+    </div>
+  );
+}
+
+/** Primary user-facing shell (formerly AppRouteShell). */
+function AppShell({ children }: { children: ReactNode }) {
+  const { loading, user } = useAuth();
   const location = useLocation();
   const onGuestAuthPage = isGuestAuthPath(location.pathname);
+  const isHomePath =
+    location.pathname === "/" || location.pathname === "";
+  const [homeReady, setHomeReady] = useState(!isHomePath);
 
-  if (loading && !onGuestAuthPage) {
+  useEffect(() => {
+    if (loading) {
+      if (!isHomePath) setHomeReady(true);
+      else setHomeReady(false);
+      return;
+    }
+    if (!isHomePath) {
+      setHomeReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    const load = user
+      ? import("@/pages/Dashboard")
+      : import("@/pages/PublicHome");
+    void load.then(() => {
+      if (!cancelled) setHomeReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, isHomePath]);
+
+  if ((loading && !onGuestAuthPage) || (isHomePath && !homeReady && !onGuestAuthPage)) {
     return <AppLoadingScreen />;
   }
 
@@ -160,29 +191,30 @@ function V2RouteShell({ children }: { children: ReactNode }) {
       <ScrollToTop />
       <ImpersonationExitFab />
       <GlobalErrorBoundary
-        fallback={V2ErrorBoundaryFallback}
+        fallback={AppErrorBoundaryFallback}
         resetKey={location.pathname}
       >
-        <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+        {children}
       </GlobalErrorBoundary>
     </>
   );
 }
 
-/** Old bookmarks: `/manual/:sessionId/edit` → `/sessions/:id/edit`. */
-function LegacyManualSessionEditRedirect() {
-  const { sessionId } = useParams<{ sessionId: string }>();
-  const id = sessionId?.trim();
-  if (!id) return <Navigate to="/" replace />;
-  return <Navigate to={`/sessions/${id}/edit`} replace />;
-}
+/** Admin dashboard shell — no site Header/Footer; AdminLayout owns chrome. */
+function AdminRouteShell({ children }: { children: ReactNode }) {
+  const { loading } = useAuth();
 
-/** Old bookmarks: `/activity/:id` → `/sessions/:id` (canonical session detail + Apex Analysis). */
-function LegacyActivityDetailRedirect() {
-  const { id } = useParams<{ id: string }>();
-  const sessionId = id?.trim();
-  if (!sessionId) return <Navigate to="/" replace />;
-  return <Navigate to={`/sessions/${sessionId}`} replace />;
+  if (loading) {
+    return <AppLoadingScreen />;
+  }
+
+  return (
+    <>
+      <ScrollToTop />
+      <ImpersonationExitFab />
+      <GlobalErrorBoundary resetKey="admin">{children}</GlobalErrorBoundary>
+    </>
+  );
 }
 
 const queryClient = new QueryClient({
@@ -194,233 +226,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppShell() {
-  const { loading } = useAuth();
-  const location = useLocation();
-  const onGuestAuthPage = isGuestAuthPath(location.pathname);
-
-  // Keep guest auth forms mounted while the session resolves so fields and button
-  // loading state are not wiped by the global splash screen.
-  if (loading && !onGuestAuthPage) {
-    return <AppLoadingScreen />;
-  }
-
-  return (
-    <>
-      <ScrollToTop />
-      <ImpersonationExitFab />
-      <div className="flex min-h-screen flex-col bg-background pb-[env(safe-area-inset-bottom)]">
-        <Header />
-        <ProRequiredBanner />
-        <BroadcastBanner />
-        <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
-          <GlobalErrorBoundary>
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<HomeRoute />} />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute message="Sign in to view your profile and stats.">
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/user/:userId" element={<UserProfile />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/challenges" element={<Challenges />} />
-                <Route path="/challenge/:id" element={<ChallengeDetail />} />
-                <Route path="/leaderboards" element={<Leaderboards />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route
-                  path="/personal-bests"
-                  element={
-                    <ProtectedRoute message="Sign in to view your personal bests.">
-                      <PersonalBests />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute message="Sign in to manage your account settings.">
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/login"
-                  element={
-                    <GuestOnlyRoute>
-                      <Login />
-                    </GuestOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/signup"
-                  element={
-                    <GuestOnlyRoute>
-                      <Signup />
-                    </GuestOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/forgot-password"
-                  element={
-                    <GuestOnlyRoute>
-                      <ForgotPassword />
-                    </GuestOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/verify-email"
-                  element={
-                    <GuestOnlyRoute>
-                      <VerifyEmail />
-                    </GuestOnlyRoute>
-                  }
-                />
-                <Route
-                  path="/upload"
-                  element={
-                    <ProtectedRoute message="Sign in to upload sessions.">
-                      <Upload />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/manual"
-                  element={
-                    <ProtectedRoute message="Sign in to log a session.">
-                      <ManualActivity />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/sessions/:id/edit"
-                  element={
-                    <ProtectedRoute message="Sign in to edit your session.">
-                      <EditActivity />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/manual/:sessionId/edit"
-                  element={
-                    <ProtectedRoute message="Sign in to edit your session.">
-                      <LegacyManualSessionEditRedirect />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/upgrade"
-                  element={<Navigate to="/pricing" replace />}
-                />
-                <Route path="/agent" element={<Agent />} />
-                <Route
-                  path="/activity/:id"
-                  element={<LegacyActivityDetailRedirect />}
-                />
-                <Route
-                  path="/sessions"
-                  element={
-                    <ProtectedRoute message="Sign in to view your sessions.">
-                      <Sessions />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/sessions/:id" element={<SessionDetailPage />} />
-                <Route path="/discussion/:id" element={<DiscussionDetail />} />
-                <Route
-                  path="/status/maintenance/:maintenanceId"
-                  element={<MaintenanceNotice />}
-                />
-                <Route
-                  path="/terms-and-conditions"
-                  element={<TermsAndConditions />}
-                />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/cookie-policy" element={<CookiePolicy />} />
-                <Route path="/eula" element={<EULA />} />
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <AdminRoute message="Sign in to access the admin dashboard." />
-                  }
-                >
-                  <Route element={<AdminLayout />}>
-                    <Route index element={<AdminDashboard />} />
-                    <Route path="users" element={<AdminUsers />} />
-                    <Route
-                      path="subscriptions"
-                      element={<AdminSubscriptions />}
-                    />
-                    <Route path="users/:userId" element={<AdminUserDetail />} />
-                    <Route path="sessions" element={<AdminSessions />} />
-                    <Route
-                      path="sessions/:sessionId"
-                      element={<AdminSessionDetail />}
-                    />
-                    <Route path="tracks" element={<AdminTracks />} />
-                    <Route path="challenges" element={<AdminChallenges />} />
-                    <Route
-                      path="challenges/:challengeId"
-                      element={<AdminChallengeDetail />}
-                    />
-                    <Route path="contact" element={<AdminContact />} />
-                    <Route
-                      path="contact/:contactId"
-                      element={<AdminContactDetail />}
-                    />
-                    <Route path="community" element={<AdminCommunity />} />
-                    <Route
-                      path="community/:discussionId"
-                      element={<AdminCommunityDiscussionDetail />}
-                    />
-                    <Route
-                      path="leaderboards"
-                      element={<AdminLeaderboards />}
-                    />
-                    <Route
-                      path="notifications"
-                      element={<AdminNotifications />}
-                    />
-                    <Route
-                      path="notifications/broadcasts/:broadcastId"
-                      element={<AdminBroadcastDetail />}
-                    />
-                    <Route
-                      path="notifications/campaigns/:campaignId"
-                      element={<AdminCampaignDetail />}
-                    />
-                    <Route path="follows" element={<AdminFollows />} />
-                    <Route
-                      path="follows/users/:userId"
-                      element={<AdminFollowUserDetail />}
-                    />
-                    <Route path="devices" element={<AdminDevices />} />
-                    <Route path="email-auth" element={<AdminEmailAuth />} />
-                    <Route path="system" element={<AdminSystem />} />
-                  </Route>
-                </Route>
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </GlobalErrorBoundary>
-        </main>
-        <AppFooter />
-      </div>
-    </>
-  );
-}
-
 export default function App() {
   useEffect(() => {
-    // Set dark mode on app load
     document.documentElement.classList.add("dark");
   }, []);
 
@@ -428,248 +235,347 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <RevenueCatBootstrap />
           <SessionDataCacheSync />
           <Toaster theme="dark" />
           <BrowserRouter>
             <Routes>
               <Route
-                path="/v2/*"
+                path="/admin"
                 element={
-                  <V2RouteShell>
+                  <AdminRouteShell>
+                    <AdminRoute message="Sign in to access the admin dashboard." />
+                  </AdminRouteShell>
+                }
+              >
+                <Route element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route
+                    path="subscriptions"
+                    element={<AdminSubscriptions />}
+                  />
+                  <Route path="users/:userId" element={<AdminUserDetail />} />
+                  <Route path="sessions" element={<AdminSessions />} />
+                  <Route
+                    path="sessions/:sessionId"
+                    element={<AdminSessionDetail />}
+                  />
+                  <Route path="tracks" element={<AdminTracks />} />
+                  <Route path="challenges" element={<AdminChallenges />} />
+                  <Route
+                    path="challenges/:challengeId"
+                    element={<AdminChallengeDetail />}
+                  />
+                  <Route path="contact" element={<AdminContact />} />
+                  <Route
+                    path="contact/:contactId"
+                    element={<AdminContactDetail />}
+                  />
+                  <Route path="community" element={<AdminCommunity />} />
+                  <Route
+                    path="community/:discussionId"
+                    element={<AdminCommunityDiscussionDetail />}
+                  />
+                  <Route path="leaderboards" element={<AdminLeaderboards />} />
+                  <Route
+                    path="notifications"
+                    element={<AdminNotifications />}
+                  />
+                  <Route
+                    path="notifications/broadcasts/:broadcastId"
+                    element={<AdminBroadcastDetail />}
+                  />
+                  <Route
+                    path="notifications/campaigns/:campaignId"
+                    element={<AdminCampaignDetail />}
+                  />
+                  <Route path="follows" element={<AdminFollows />} />
+                  <Route
+                    path="follows/users/:userId"
+                    element={<AdminFollowUserDetail />}
+                  />
+                  <Route path="devices" element={<AdminDevices />} />
+                  <Route path="email-auth" element={<AdminEmailAuth />} />
+                  <Route path="system" element={<AdminSystem />} />
+                </Route>
+              </Route>
+              <Route
+                path="*"
+                element={
+                  <AppShell>
                     <Routes>
-                      <Route index element={<HomeRouteV2 />} />
+                      <Route index element={<HomeRoute />} />
                       <Route
                         path="home"
-                        element={<Navigate to="/v2" replace />}
+                        element={<Navigate to="/" replace />}
                       />
                       <Route
                         path="agent"
                         element={
-                          <V2Layout
-                            topBar={<AgentTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<AgentTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <AgentV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<AgentPageSkeleton />}>
+                              <Agent />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="leaderboards"
                         element={
-                          <V2Layout
-                            topBar={<LeaderboardsTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<LeaderboardsTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <LeaderboardsV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<LeaderboardsPageSkeleton />}>
+                              <Leaderboards />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="challenges"
                         element={
-                          <V2Layout
-                            topBar={<ChallengesTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<ChallengesTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <ChallengesV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<ChallengesPageSkeleton />}>
+                              <Challenges />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="community"
                         element={
-                          <V2Layout
-                            topBar={<CommunityTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<CommunityTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <CommunityV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<CommunityPageSkeleton />}>
+                              <Community />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="discussion/:id"
                         element={
-                          <V2Layout
-                            topBar={<DiscussionDetailTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<DiscussionDetailTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <DiscussionDetailV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<DiscussionDetailSkeleton />}>
+                              <DiscussionDetail />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="pricing"
                         element={
-                          <V2Layout
-                            topBar={<PricingTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<PricingTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <PricingV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<PricingRouteSkeleton />}>
+                              <Pricing />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="faq"
                         element={
-                          <V2Layout
-                            topBar={<FAQTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<FAQTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <FAQV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <FAQ />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="about"
                         element={
-                          <V2Layout
-                            topBar={<AboutTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<AboutTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <AboutV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <About />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="status/maintenance/:maintenanceId"
                         element={
-                          <V2Layout
-                            topBar={<MaintenanceNoticeTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<MaintenanceNoticeTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <MaintenanceNoticeV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <MaintenanceNotice />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="contact"
                         element={
-                          <V2Layout
-                            topBar={<ContactTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<ContactTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <ContactV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <Contact />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="login"
                         element={
-                          <GuestOnlyRoute redirectTo="/v2/profile">
-                            <V2Layout
-                              topBar={<LoginTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                          <GuestOnlyRoute redirectTo="/profile">
+                            <AppLayout
+                              topBar={<LoginTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <LoginV2 />
-                            </V2Layout>
+                              <PageSuspense>
+                                <Login />
+                              </PageSuspense>
+                            </AppLayout>
                           </GuestOnlyRoute>
                         }
                       />
                       <Route
                         path="signup"
                         element={
-                          <GuestOnlyRoute redirectTo="/v2/profile">
-                            <V2Layout
-                              topBar={<SignupTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                          <GuestOnlyRoute redirectTo="/profile">
+                            <AppLayout
+                              topBar={<SignupTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <SignupV2 />
-                            </V2Layout>
+                              <PageSuspense>
+                                <Signup />
+                              </PageSuspense>
+                            </AppLayout>
                           </GuestOnlyRoute>
                         }
                       />
                       <Route
                         path="forgot-password"
                         element={
-                          <GuestOnlyRoute redirectTo="/v2/profile">
-                            <V2Layout
-                              topBar={<ForgotPasswordTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                          <GuestOnlyRoute redirectTo="/profile">
+                            <AppLayout
+                              topBar={<ForgotPasswordTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <ForgotPasswordV2 />
-                            </V2Layout>
+                              <PageSuspense>
+                                <ForgotPassword />
+                              </PageSuspense>
+                            </AppLayout>
                           </GuestOnlyRoute>
                         }
                       />
                       <Route
                         path="verify-email"
                         element={
-                          <GuestOnlyRoute redirectTo="/v2/profile">
-                            <V2Layout
-                              topBar={<VerifyEmailTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                          <GuestOnlyRoute redirectTo="/profile">
+                            <AppLayout
+                              topBar={<VerifyEmailTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <VerifyEmailV2 />
-                            </V2Layout>
+                              <PageSuspense>
+                                <VerifyEmail />
+                              </PageSuspense>
+                            </AppLayout>
                           </GuestOnlyRoute>
                         }
                       />
                       <Route
                         path="terms-and-conditions"
                         element={
-                          <V2Layout
-                            topBar={<TermsAndConditionsTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<TermsAndConditionsTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <TermsAndConditionsV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <TermsAndConditions />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="privacy-policy"
                         element={
-                          <V2Layout
-                            topBar={<PrivacyPolicyTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<PrivacyPolicyTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <PrivacyPolicyV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <PrivacyPolicy />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="cookie-policy"
                         element={
-                          <V2Layout
-                            topBar={<CookiePolicyTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<CookiePolicyTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <CookiePolicyV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <CookiePolicy />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="eula"
                         element={
-                          <V2Layout
-                            topBar={<EULATopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<EULATopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <EULAV2 />
-                          </V2Layout>
+                            <PageSuspense>
+                              <EULA />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="challenge/:id"
                         element={
-                          <V2Layout
-                            topBar={<ChallengeDetailTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<ChallengeDetailTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <ChallengeDetailV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<ChallengeDetailSkeleton />}>
+                              <ChallengeDetail />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="upload"
                         element={
                           <ProtectedRoute message="Sign in to upload sessions.">
-                            <V2Layout
-                              topBar={<UploadTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<UploadTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <UploadV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<UploadRouteSkeleton />}>
+                                <Upload />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -677,12 +583,14 @@ export default function App() {
                         path="manual"
                         element={
                           <ProtectedRoute message="Sign in to log a session.">
-                            <V2Layout
-                              topBar={<ManualTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<ManualTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <ManualActivityV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<ManualActivityRouteSkeleton />}>
+                                <ManualActivity />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -690,12 +598,14 @@ export default function App() {
                         path="sessions"
                         element={
                           <ProtectedRoute message="Sign in to view your sessions.">
-                            <V2Layout
-                              topBar={<SessionsTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<SessionsTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <SessionsV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<SessionsPageSkeleton />}>
+                                <Sessions />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -703,36 +613,42 @@ export default function App() {
                         path="sessions/:id/edit"
                         element={
                           <ProtectedRoute message="Sign in to edit your session.">
-                            <V2Layout
-                              topBar={<EditActivityTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<EditActivityTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <EditActivityV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<ManualActivityRouteSkeleton />}>
+                                <EditActivity />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="sessions/:id"
                         element={
-                          <V2Layout
-                            topBar={<SessionDetailTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<SessionDetailTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <SessionDetailV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<SessionDetailRouteSkeleton />}>
+                              <SessionDetail />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="settings"
                         element={
                           <ProtectedRoute message="Sign in to manage your account settings.">
-                            <V2Layout
-                              topBar={<SettingsTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<SettingsTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <SettingsV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<SettingsPageSkeleton />}>
+                                <Settings />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -740,12 +656,14 @@ export default function App() {
                         path="personal-bests"
                         element={
                           <ProtectedRoute message="Sign in to view your personal bests.">
-                            <V2Layout
-                              topBar={<PersonalBestsTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<PersonalBestsTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <PersonalBestsV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<PersonalBestsRouteSkeleton />}>
+                                <PersonalBests />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -753,42 +671,45 @@ export default function App() {
                         path="profile"
                         element={
                           <ProtectedRoute message="Sign in to view your profile and stats.">
-                            <V2Layout
-                              topBar={<ProfileTopBarV2 />}
-                              bottomBar={<V2BottomNavV2 />}
+                            <AppLayout
+                              topBar={<ProfileTopBar />}
+                              bottomBar={<BottomNav />}
                             >
-                              <ProfileV2 />
-                            </V2Layout>
+                              <PageSuspense fallback={<ProfileRouteSkeleton />}>
+                                <Profile />
+                              </PageSuspense>
+                            </AppLayout>
                           </ProtectedRoute>
                         }
                       />
                       <Route
                         path="user/:userId"
                         element={
-                          <V2Layout
-                            topBar={<UserProfileTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<UserProfileTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <UserProfileV2 />
-                          </V2Layout>
+                            <PageSuspense fallback={<ProfileRouteSkeleton showBackLink />}>
+                              <UserProfile />
+                            </PageSuspense>
+                          </AppLayout>
                         }
                       />
                       <Route
                         path="*"
                         element={
-                          <V2Layout
-                            topBar={<NotFoundTopBarV2 />}
-                            bottomBar={<V2BottomNavV2 />}
+                          <AppLayout
+                            topBar={<NotFoundTopBar />}
+                            bottomBar={<BottomNav />}
                           >
-                            <NotFoundV2 />
-                          </V2Layout>
+                            <NotFound />
+                          </AppLayout>
                         }
                       />
                     </Routes>
-                  </V2RouteShell>
+                  </AppShell>
                 }
               />
-              <Route path="*" element={<AppShell />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

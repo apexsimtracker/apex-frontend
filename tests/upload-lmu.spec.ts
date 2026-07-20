@@ -52,7 +52,7 @@ test.describe("@upload-lmu", () => {
     const freeAuth = await loginPersona(request, "standard");
     await clearUploadRateLimitViaApi(request, freeAuth).catch(() => undefined);
 
-    await gotoAuthenticated(page, freeAuth, "/v2/upload");
+    await gotoAuthenticated(page, freeAuth, "/upload");
 
     await expect(
       page.getByText(/Manual telemetry upload is an Apex Pro feature/i),
@@ -104,7 +104,7 @@ test.describe("@upload-lmu", () => {
     const pageErrors: Error[] = [];
     page.on("pageerror", (err) => pageErrors.push(err));
 
-    await gotoAuthenticated(page, auth, "/v2/upload");
+    await gotoAuthenticated(page, auth, "/upload");
     await expect(
       page.getByRole("heading", { name: /Upload session/i }),
     ).toBeVisible({ timeout: 15_000 });
@@ -123,12 +123,12 @@ test.describe("@upload-lmu", () => {
       page.getByText(/Processing telemetry/i).first(),
     ).toBeVisible({ timeout: 30_000 });
 
-    await expect(page).toHaveURL(/\/v2\/sessions\/lmu_[a-f0-9]{32}/, {
+    await expect(page).toHaveURL(/\/sessions\/lmu_[a-f0-9]{32}/, {
       timeout: 180_000,
     });
 
-    const v2Url = page.url();
-    const sessionId = v2Url.match(/\/v2\/sessions\/([^/?#]+)/)?.[1];
+    const appUrl = page.url();
+    const sessionId = appUrl.match(/\/sessions\/([^/?#]+)/)?.[1];
     expect(sessionId).toBeTruthy();
     expect(sessionId).toMatch(/^lmu_[a-f0-9]{32}$/);
     createdSessionIds.push(sessionId!);
@@ -145,7 +145,7 @@ test.describe("@upload-lmu", () => {
       timeout: 30_000,
     });
 
-    await expect(page.getByTestId("session-telemetry-v2")).toBeVisible({
+    await expect(page.getByTestId("session-telemetry")).toBeVisible({
       timeout: 60_000,
     });
     await expect(page.getByText("Telemetry Analysis").first()).toBeVisible();
@@ -190,11 +190,11 @@ test.describe("@upload-lmu", () => {
     expect(speedMax - speedMin).toBeGreaterThan(1);
 
     await page.getByRole("tab", { name: /^Driving$/i }).click();
-    await expect(page.getByTestId("telemetry-driving-charts-v2")).toBeVisible({
+    await expect(page.getByTestId("telemetry-driving-charts")).toBeVisible({
       timeout: 60_000,
     });
     await expect(
-      page.getByTestId("telemetry-driving-charts-v2").locator("canvas").first(),
+      page.getByTestId("telemetry-driving-charts").locator("canvas").first(),
     ).toBeVisible({ timeout: 30_000 });
 
     // Synced cursor copy across distance-based charts

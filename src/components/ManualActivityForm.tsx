@@ -112,7 +112,7 @@ export type ManualActivityInitialData = {
   /** Ordered lap times in ms (e.g. from session detail). */
   lapsMs?: number[] | null;
   notes?: string | null;
-  /** Track weather conditions (edit prefill for V2 form). */
+  /** Track weather conditions (edit prefill). */
   conditions?: "DRY" | "WET" | "MIXED" | null;
   /** Edit: floor for max lap rows when session has more laps than the manual-create cap. */
   telemetryMinLapRows?: number | null;

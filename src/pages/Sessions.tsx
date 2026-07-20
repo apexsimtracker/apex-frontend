@@ -1,97 +1,173 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import type { InfiniteData } from "@tanstack/react-query";
-import { Upload, PenLine, Cpu, X } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Upload, PenLine, Cpu, Search, LayoutGrid, List } from "lucide-react";
 import { ProUpgradeCallout } from "@/components/marketing/ProUpgradeCallout";
-import { BRAND_RED } from "@/lib/appConfig";
-import ActivityFeedList from "@/components/ActivityFeedList";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SkeletonBlock } from "@/components/ui/skeleton";
+
+import OnboardingEmptyState from "@/components/dashboard/OnboardingEmptyState";
+import MySessionCard from "@/components/sessions/MySessionCard";
+import SessionsLibraryTable from "@/components/sessions/SessionsLibraryTable";
+import { ProfileKeyStats } from "@/components/profile/ProfileKeyStats";
+import { ProfileStatsByGame } from "@/components/profile/ProfileStatsByGame";
 import {
-  getActivityFeedPage,
-  ACTIVITY_FEED_DEFAULT_LIMIT,
+  appOutlineButtonClassName,
+  appPrimaryButtonClassName,
+} from "@/components/app-ui/appButtonClasses";
+import AppNativeSelect from "@/components/app-ui/AppNativeSelect";
+import SessionsOverviewStats from "@/pages/sessions/SessionsOverviewStats";
+import SessionsOverviewStatsSkeleton from "@/pages/sessions/SessionsOverviewStatsSkeleton";
+import { SessionsListSkeleton } from "@/pages/sessions/SessionsPageSkeleton";
+import SessionsWeeklyStatsPanel from "@/pages/sessions/SessionsWeeklyStatsPanel";
+import DiscussionCommentsPagination from "@/pages/discussion/DiscussionCommentsPagination";
+import {
+  getSessionsLibraryMeta,
+  getSessionsLibraryList,
+  getSessionsLibraryStats,
   isNetworkError,
-  type ActivityFeedPageResult,
-  type ActivityFeedItem,
-  type SessionsFilterType,
+  SESSIONS_LIBRARY_DEFAULT_LIMIT,
+  type SessionsLibraryTypeFilter,
+  type SessionsLibrarySessionKind,
+  type SessionsLibraryIngest,
+  type SessionsLibraryStatsTab,
+  type SessionsLibraryView,
+  type SessionsLibraryFilters,
+  type SessionsLibraryWeeklyStats,
+  type SessionsLibraryRacingStats,
+  type SessionsLibraryBySimStats,
 } from "@/lib/api";
-import { patchActivityFeedInfiniteData } from "@/lib/activityFeedCache";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
-
-const ONBOARDED_KEY = "apex_onboarded";
+import { cn } from "@/lib/utils";
 
 const SESSIONS_PATH = "/sessions";
 const sessionsTitle = `Sessions | ${COMPANY_NAME}`;
 const sessionsDescription = `Browse your sim racing sessions and telemetry on ${COMPANY_NAME}.`;
+const META_STALE_MS = 5 * 60_000;
 
-function setOnboarded() {
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(ONBOARDED_KEY, "true");
+function formatQueryError(err: unknown, fallback: string): string {
+  if (isNetworkError(err)) {
+    return "Can't reach Apex backend. Check it's running.";
   }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message;
+  }
+  return fallback;
 }
 
-function SessionCardSkeleton() {
-  return (
-    <div className="border-white/6 mb-6 overflow-hidden rounded-lg border bg-card/20">
-      <div className="flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
-        <SkeletonBlock height={36} width={36} rounded="full" />
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <SkeletonBlock height={14} width={80} />
-          <SkeletonBlock height={12} width={56} />
-        </div>
-      </div>
-      <div className="px-4 pb-4 pt-1.5 sm:px-5 sm:pb-5">
-        <SkeletonBlock height={12} width={64} className="mb-2" />
-        <SkeletonBlock height={20} width="75%" className="mb-3" />
-        <SkeletonBlock height={14} width={112} className="mb-4" />
-        <div className="flex gap-4">
-          <SkeletonBlock height={64} className="flex-1" rounded="lg" />
-          <SkeletonBlock height={64} className="flex-1" rounded="lg" />
-        </div>
-      </div>
-      <div className="flex items-center gap-4 border-t border-white/5 px-4 py-2.5 sm:px-5">
-        <SkeletonBlock height={14} width={48} />
-        <SkeletonBlock height={14} width={56} />
-      </div>
-    </div>
+function hasLibrarySubFilters(
+  debouncedQ: string,
+  sessionKind: SessionsLibrarySessionKind,
+  sim: string,
+  ingest: SessionsLibraryIngest,
+): boolean {
+  return Boolean(
+    debouncedQ || sessionKind !== "all" || sim || ingest !== "all",
   );
 }
 
-function SessionsListSkeleton() {
-  return (
-    <div className="space-y-0">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <SessionCardSkeleton key={i} />
-      ))}
-    </div>
-  );
+const TYPE_TABS: { value: SessionsLibraryTypeFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "telemetry", label: "Telemetry" },
+  { value: "manual", label: "Manual" },
+];
+
+const STATS_TABS: { value: SessionsLibraryStatsTab; label: string }[] = [
+  { value: "overview", label: "Overview" },
+  { value: "weekly", label: "This Week" },
+  { value: "racing", label: "Racing" },
+  { value: "bySim", label: "By Sim" },
+];
+
+const SESSION_KIND_OPTIONS: {
+  value: SessionsLibrarySessionKind;
+  label: string;
+}[] = [
+  { value: "all", label: "All kinds" },
+  { value: "practice", label: "Practice" },
+  { value: "qualify", label: "Qualify" },
+  { value: "race", label: "Race" },
+];
+
+const SIM_OPTIONS = [
+  { value: "", label: "All sims" },
+  { value: "iracing", label: "iRacing" },
+  { value: "f1_25", label: "F1 25" },
+  { value: "lmu", label: "Le Mans Ultimate" },
+];
+
+const INGEST_OPTIONS: { value: SessionsLibraryIngest; label: string }[] = [
+  { value: "all", label: "All uploads" },
+  { value: "agent_upload", label: "Agent" },
+  { value: "manual_upload_ibt", label: "IBT file" },
+  { value: "manual_form", label: "Manual form" },
+];
+
+const FIELD_CLASS =
+  "h-12 rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container font-apex-body text-sm text-apex-on-surface transition-colors placeholder:text-apex-on-surface-variant/60 focus:border-apex-primary/40 focus:outline-none";
+
+function parseType(v: string | null): SessionsLibraryTypeFilter {
+  if (v === "telemetry" || v === "manual" || v === "all") return v;
+  return "all";
+}
+
+function parseSessionKind(v: string | null): SessionsLibrarySessionKind {
+  if (v === "practice" || v === "qualify" || v === "race" || v === "all") {
+    return v;
+  }
+  return "all";
+}
+
+function parseIngest(v: string | null): SessionsLibraryIngest {
+  if (
+    v === "manual_form" ||
+    v === "agent_upload" ||
+    v === "manual_upload_ibt" ||
+    v === "all"
+  ) {
+    return v;
+  }
+  return "all";
+}
+
+function parseStatsTab(v: string | null): SessionsLibraryStatsTab {
+  if (v === "overview" || v === "weekly" || v === "racing" || v === "bySim") {
+    return v;
+  }
+  return "overview";
+}
+
+function parseView(v: string | null): SessionsLibraryView {
+  return v === "table" ? "table" : "cards";
+}
+
+function parsePage(v: string | null): number {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
 }
 
 function EmptyManual() {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8 text-center">
-      <p className="text-white/70">No manual activities yet.</p>
+    <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 text-center">
+      <p className="font-apex-body text-sm text-apex-on-surface-variant">
+        No manual activities yet.
+      </p>
       <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <Button asChild className="bg-white text-black hover:bg-white/90">
-          <Link to="/manual">
-            <PenLine className="mr-2 size-4" />
-            Log Manual Activity
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          asChild
-          className="border-white/10 text-white/80 hover:bg-white/10"
+        <Link
+          to="/manual"
+          className={`${appPrimaryButtonClassName} inline-flex h-11 items-center justify-center px-6`}
         >
-          <Link to="/upload">
-            <Upload className="mr-2 size-4" />
-            Upload Session
-          </Link>
-        </Button>
+          <PenLine className="mr-2 size-4" />
+          Log Manual Activity
+        </Link>
+        <Link
+          to="/upload"
+          className={`${appOutlineButtonClassName} inline-flex h-11 items-center justify-center px-6`}
+        >
+          <Upload className="mr-2 size-4" />
+          Upload Session
+        </Link>
       </div>
     </div>
   );
@@ -100,137 +176,218 @@ function EmptyManual() {
 function EmptyTelemetry() {
   const isPro = useIsProUser();
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-8 text-center">
-      <p className="text-white/70">No telemetry sessions yet.</p>
+    <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 text-center">
+      <p className="font-apex-body text-sm text-apex-on-surface-variant">
+        No telemetry sessions yet.
+      </p>
       <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <Button asChild className="bg-white text-black hover:bg-white/90">
-          <Link to="/upload">
-            <Upload className="mr-2 size-4" />
-            Upload Session
-          </Link>
-        </Button>
+        <Link
+          to="/upload"
+          className={`${appPrimaryButtonClassName} inline-flex h-11 items-center justify-center px-6`}
+        >
+          <Upload className="mr-2 size-4" />
+          Upload Session
+        </Link>
         {isPro ? (
-          <Button
-            variant="outline"
-            asChild
-            className="border-white/10 text-white/80 hover:bg-white/10"
+          <Link
+            to="/agent"
+            className={`${appOutlineButtonClassName} inline-flex h-11 items-center justify-center px-6`}
           >
-            <Link to="/agent">
-              <Cpu className="mr-2 size-4" />
-              Get the Agent
-            </Link>
-          </Button>
+            <Cpu className="mr-2 size-4" />
+            Get the Agent
+          </Link>
         ) : (
-          <Button
-            asChild
-            variant="outline"
-            className="border-white/15 text-foreground hover:bg-muted/30"
-            style={{ color: BRAND_RED }}
+          <Link
+            to={"/pricing"}
+            className={`${appOutlineButtonClassName} inline-flex h-11 items-center justify-center px-6 text-apex-primary`}
           >
-            <Link to="/pricing">Upgrade for Agent</Link>
-          </Button>
+            Upgrade for Agent
+          </Link>
         )}
       </div>
     </div>
   );
 }
 
-const TAB_VALUES: { value: SessionsFilterType; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "telemetry", label: "Telemetry" },
-  { value: "manual", label: "Manual" },
-];
-
 export default function Sessions() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
   const isPro = useIsProUser();
   const [searchParams, setSearchParams] = useSearchParams();
-  const sessionsType =
-    (searchParams.get("sessionsType") as SessionsFilterType) || "all";
-  const validType = TAB_VALUES.some((t) => t.value === sessionsType)
-    ? sessionsType
-    : "all";
 
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
-
-  const {
-    data: activityPages,
-    isLoading: loading,
-    error: activityError,
-    refetch: refetchSessions,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["activity", "feed", validType, ACTIVITY_FEED_DEFAULT_LIMIT],
-    queryFn: ({ pageParam }) =>
-      getActivityFeedPage({
-        type: validType,
-        page: pageParam as number,
-        limit: ACTIVITY_FEED_DEFAULT_LIMIT,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.hasMore ? lastPage.page + 1 : undefined,
-  });
-
-  const activity = useMemo(
-    () =>
-      (activityPages?.pages.flatMap((p) => p.items) ??
-        []) as ActivityFeedItem[],
-    [activityPages],
+  const type = parseType(
+    searchParams.get("type") ?? searchParams.get("sessionsType"),
   );
+  const sessionKind = parseSessionKind(searchParams.get("sessionKind"));
+  const sim = searchParams.get("sim") ?? "";
+  const ingest = parseIngest(searchParams.get("ingest"));
+  const statsTab = parseStatsTab(searchParams.get("statsTab"));
+  const view = parseView(searchParams.get("view"));
+  const page = parsePage(searchParams.get("page"));
+  const qParam = searchParams.get("q") ?? "";
 
-  const error = useMemo(() => {
-    if (!activityError) return null;
-    return isNetworkError(activityError)
-      ? "Can't reach Apex backend. Check it's running."
-      : activityError instanceof Error
-        ? activityError.message
-        : "Failed to load sessions.";
-  }, [activityError]);
+  const [searchInput, setSearchInput] = useState(qParam);
+  const [debouncedQ, setDebouncedQ] = useState(qParam);
 
   useEffect(() => {
-    if (
-      user &&
-      !loading &&
-      validType === "all" &&
-      activity.length === 0 &&
-      typeof localStorage !== "undefined" &&
-      !localStorage.getItem(ONBOARDED_KEY)
-    ) {
-      setShowOnboardingBanner(true);
-    }
-  }, [user, loading, validType, activity.length]);
+    setSearchInput(qParam);
+    setDebouncedQ(qParam);
+  }, [qParam]);
 
-  const dismissOnboarding = useCallback(() => {
-    setOnboarded();
-    setShowOnboardingBanner(false);
-  }, []);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim();
+      setDebouncedQ(next);
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
 
-  const setTab = useCallback(
-    (value: string) => {
-      const next = value as SessionsFilterType;
-      setSearchParams({ sessionsType: next }, { replace: true });
+  const patchParams = useCallback(
+    (patch: Record<string, string | null>) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (next.has("sessionsType") && !next.has("type")) {
+            next.set("type", next.get("sessionsType")!);
+          }
+          next.delete("sessionsType");
+
+          for (const [k, v] of Object.entries(patch)) {
+            const shouldOmit =
+              v == null ||
+              v === "" ||
+              (k === "type" && v === "all") ||
+              (k === "sessionKind" && v === "all") ||
+              (k === "ingest" && v === "all") ||
+              (k === "page" && v === "1") ||
+              (k === "view" && v === "cards") ||
+              (k === "statsTab" && v === "overview");
+            if (shouldOmit) next.delete(k);
+            else next.set(k, v);
+          }
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setSearchParams],
   );
 
-  const isEmpty = !loading && activity.length === 0;
-  const showEmptyManual = isEmpty && validType === "manual";
-  const showEmptyTelemetry = isEmpty && validType === "telemetry";
+  // Sync debounced search into URL (resets page)
+  useEffect(() => {
+    const current = (searchParams.get("q") ?? "").trim();
+    if (debouncedQ === current) return;
+    patchParams({ q: debouncedQ || null, page: "1" });
+  }, [debouncedQ, searchParams, patchParams]);
+
+  const filters: SessionsLibraryFilters = useMemo(
+    () => ({
+      type,
+      sessionKind,
+      sim: sim || undefined,
+      ingest,
+      q: debouncedQ || undefined,
+    }),
+    [type, sessionKind, sim, ingest, debouncedQ],
+  );
+
+  const {
+    data: meta,
+    isPending: metaLoading,
+    error: metaError,
+    refetch: refetchMeta,
+  } = useQuery({
+    queryKey: ["sessions-library", "meta", user?.id, filters],
+    queryFn: () => getSessionsLibraryMeta(filters),
+    enabled: Boolean(user?.id),
+    staleTime: META_STALE_MS,
+  });
+
+  const {
+    data: listData,
+    isPending: listLoading,
+    isFetching: listFetching,
+    error: listError,
+    refetch: refetchList,
+  } = useQuery({
+    queryKey: [
+      "sessions-library",
+      "list",
+      user?.id,
+      filters,
+      page,
+      SESSIONS_LIBRARY_DEFAULT_LIMIT,
+    ],
+    queryFn: () =>
+      getSessionsLibraryList({
+        ...filters,
+        page,
+        limit: SESSIONS_LIBRARY_DEFAULT_LIMIT,
+      }),
+    enabled: Boolean(user?.id),
+  });
+
+  const needsLazyStats = statsTab !== "overview";
+  const { data: statsData, isPending: statsLoading } = useQuery({
+    queryKey: ["sessions-library", "stats", statsTab, user?.id, filters],
+    queryFn: () => getSessionsLibraryStats(statsTab, filters),
+    enabled: Boolean(user?.id) && needsLazyStats,
+    staleTime: META_STALE_MS,
+  });
+
+  const listErrorMessage = useMemo(
+    () =>
+      listError
+        ? formatQueryError(listError, "Failed to load sessions.")
+        : null,
+    [listError],
+  );
+
+  const metaErrorMessage = useMemo(
+    () =>
+      metaError
+        ? formatQueryError(metaError, "Failed to load session stats.")
+        : null,
+    [metaError],
+  );
+
+  const items = listData?.items ?? [];
+  const total = listData?.total ?? 0;
+  const totalPages = listData?.totalPages ?? 1;
+  const pageSize = listData?.limit ?? SESSIONS_LIBRARY_DEFAULT_LIMIT;
+  const listRange =
+    total === 0
+      ? null
+      : {
+          start: (page - 1) * pageSize + 1,
+          end: Math.min(page * pageSize, total),
+        };
+  const isEmpty = !listLoading && !listError && items.length === 0;
+
+  const emptyMessage = useMemo(() => {
+    if (hasLibrarySubFilters(debouncedQ, sessionKind, sim, ingest)) {
+      return "No sessions match these filters.";
+    }
+    if (type === "manual") return "manual";
+    if (type === "telemetry") return "telemetry";
+    return "all";
+  }, [type, debouncedQ, sessionKind, sim, ingest]);
+
+  const setType = (value: SessionsLibraryTypeFilter) =>
+    patchParams({ type: value, page: "1" });
+  const setStatsTab = (value: SessionsLibraryStatsTab) =>
+    patchParams({ statsTab: value });
+  const setView = (value: SessionsLibraryView) => patchParams({ view: value });
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <PageMeta
         title={sessionsTitle}
         description={sessionsDescription}
         path={SESSIONS_PATH}
         noindex
       />
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
         {user && !isPro && (
           <ProUpgradeCallout
             className="mb-6"
@@ -239,157 +396,355 @@ export default function Sessions() {
             ctaLabel="View Pro plans"
           />
         )}
-        {showOnboardingBanner && (
-          <div className="relative mb-6 rounded-xl border border-white/10 bg-card/50 p-4 sm:p-5">
-            <button
-              type="button"
-              onClick={dismissOnboarding}
-              className="absolute right-3 top-3 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Dismiss"
-            >
-              <X className="size-4" />
-            </button>
-            <h2 className="pr-8 text-base font-semibold text-foreground">
-              Welcome to Apex
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Track your sim racing performance automatically or log sessions
-              manually.
+
+        <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+              Sessions
+            </h1>
+            <p className="mt-1 font-apex-body text-sm text-apex-on-surface-variant">
+              Your sim racing library — filter by sim, session type, and upload
+              method
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                onClick={() => {
-                  setOnboarded();
-                  setShowOnboardingBanner(false);
-                  navigate("/upload");
-                }}
-                className="bg-white text-sm text-black hover:bg-white/90"
-              >
-                <Upload className="mr-1.5 size-4" />
-                Upload Session
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOnboarded();
-                  setShowOnboardingBanner(false);
-                  navigate("/manual");
-                }}
-                className="border-white/20 text-sm text-white/80 hover:bg-white/10"
-              >
-                <PenLine className="mr-1.5 size-4" />
-                Log Manual Activity
-              </Button>
-              {isPro ? (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setOnboarded();
-                    setShowOnboardingBanner(false);
-                    navigate("/agent");
-                  }}
-                  className="border-white/20 text-sm text-white/80 hover:bg-white/10"
-                >
-                  <Cpu className="mr-1.5 size-4" />
-                  Set up Apex Agent
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setOnboarded();
-                    setShowOnboardingBanner(false);
-                    navigate("/pricing");
-                  }}
-                  className="border-white/15 text-sm text-foreground hover:bg-muted/30"
-                >
-                  See Apex Pro
-                </Button>
-              )}
-            </div>
           </div>
-        )}
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/upload"
+              className={`${appPrimaryButtonClassName} inline-flex h-10 items-center px-4`}
+            >
+              <Upload className="mr-2 size-4" />
+              Upload
+            </Link>
+            <Link
+              to="/manual"
+              className={`${appOutlineButtonClassName} inline-flex h-10 items-center px-4`}
+            >
+              <PenLine className="mr-2 size-4" />
+              Manual
+            </Link>
+          </div>
+        </section>
 
-        <h1 className="mb-6 text-xl font-semibold text-foreground sm:text-2xl">
-          Sessions
-        </h1>
+        <div className="mb-6">
+          {metaLoading ? (
+            <SessionsOverviewStatsSkeleton />
+          ) : metaErrorMessage ? (
+            <div className="rounded-apex-lg border border-apex-error/30 bg-apex-error/10 px-4 py-4 text-center">
+              <p className="font-apex-body text-sm text-apex-error">
+                {metaErrorMessage}
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetchMeta()}
+                className={`${appOutlineButtonClassName} mt-3 px-6 py-2`}
+              >
+                Retry stats
+              </button>
+            </div>
+          ) : (
+            <SessionsOverviewStats overview={meta?.overview ?? null} />
+          )}
+        </div>
 
-        <Tabs value={validType} onValueChange={setTab} className="w-full">
-          <TabsList className="h-auto rounded-lg border border-white/10 bg-white/5 p-0.5">
-            {TAB_VALUES.map((tab) => (
-              <TabsTrigger
+        <div
+          className="mb-4 inline-flex w-full gap-2 p-1"
+          role="tablist"
+          aria-label="Stats"
+        >
+          {STATS_TABS.map((tab) => {
+            const isActive = statsTab === tab.value;
+            return (
+              <button
                 key={tab.value}
-                value={tab.value}
-                className="rounded-md px-4 py-2 text-sm text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setStatsTab(tab.value)}
+                className={cn(
+                  "flex flex-1 items-center justify-center rounded p-2 font-apex-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
+                  isActive
+                    ? "bg-apex-primary text-white"
+                    : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",
+                )}
               >
                 {tab.label}
-              </TabsTrigger>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mb-6 min-h-[80px]" role="tabpanel">
+          {statsTab === "overview" && (
+            <p className="font-apex-body text-sm text-apex-on-surface-variant">
+              Overview KPIs above update with your active filters. Switch tabs
+              for weekly goals, racing results, or per-sim breakdowns.
+            </p>
+          )}
+          {statsTab === "weekly" && (
+            <SessionsWeeklyStatsPanel
+              data={
+                (statsData as SessionsLibraryWeeklyStats | undefined) ?? null
+              }
+              loading={statsLoading}
+            />
+          )}
+          {statsTab === "racing" &&
+            (statsLoading ? (
+              <p className="font-apex-body text-sm text-apex-on-surface-variant">
+                Loading racing stats…
+              </p>
+            ) : (
+              <ProfileKeyStats
+                profileLocked={false}
+                races={
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.races ?? 0
+                }
+                wins={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.wins
+                }
+                podiums={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.podiums
+                }
+                poles={
+                  (statsData as SessionsLibraryRacingStats | undefined)?.poles
+                }
+                fastestLaps={
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.fastestLaps ?? 0
+                }
+                avgFinish={
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.avgFinish
+                }
+              />
             ))}
-          </TabsList>
+          {statsTab === "bySim" &&
+            (statsLoading ? (
+              <p className="font-apex-body text-sm text-apex-on-surface-variant">
+                Loading stats by sim…
+              </p>
+            ) : (
+              <ProfileStatsByGame
+                rows={
+                  (statsData as SessionsLibraryBySimStats | undefined)
+                    ?.statsByGame ?? []
+                }
+              />
+            ))}
+        </div>
 
-          <TabsContent value={validType} className="mt-6">
-            <div className="min-h-[280px]">
-              {loading && <SessionsListSkeleton />}
-
-              {!loading && error && (
-                <div className="rounded-lg border border-white/10 bg-white/[0.02] p-6 text-center">
-                  <p className="text-sm text-red-400/90">{error}</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-white/20 text-white/80"
-                    onClick={() => void refetchSessions()}
+        <div
+          className="mb-4 inline-flex w-full gap-2 p-1"
+          role="tablist"
+          aria-label="Session type"
+        >
+          {TYPE_TABS.map((tab) => {
+            const isActive = type === tab.value;
+            const count = meta?.filterCounts.byType[tab.value];
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setType(tab.value)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded p-2 font-apex-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
+                  isActive
+                    ? "bg-apex-primary text-white"
+                    : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",
+                )}
+              >
+                {tab.label}
+                {count != null ? (
+                  <span
+                    className={cn(
+                      "tabular-nums text-[10px]",
+                      isActive
+                        ? "text-white/80"
+                        : "text-apex-on-surface-variant/70",
+                    )}
                   >
-                    Retry
-                  </Button>
-                </div>
-              )}
+                    {count}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
 
-              {!loading && !error && showEmptyManual && <EmptyManual />}
-              {!loading && !error && showEmptyTelemetry && <EmptyTelemetry />}
-
-              {!loading && !error && !isEmpty && (
-                <div className="space-y-0">
-                  <ActivityFeedList
-                    items={activity}
-                    linkCards
-                    currentUser={user ?? null}
-                    onSessionPatch={(id, patch) => {
-                      queryClient.setQueryData<
-                        InfiniteData<ActivityFeedPageResult>
-                      >(
-                        [
-                          "activity",
-                          "feed",
-                          validType,
-                          ACTIVITY_FEED_DEFAULT_LIMIT,
-                        ],
-                        (prev) =>
-                          patchActivityFeedInfiniteData(
-                            prev,
-                            id,
-                            patch as Record<string, unknown>,
-                          ),
-                      );
-                    }}
-                  />
-                  {hasNextPage && (
-                    <div className="flex justify-center py-6">
-                      <button
-                        type="button"
-                        onClick={() => void fetchNextPage()}
-                        disabled={isFetchingNextPage}
-                        className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/90 transition-colors hover:bg-white/[0.08] disabled:pointer-events-none disabled:opacity-50"
-                      >
-                        {isFetchingNextPage ? "Loading…" : "Load more"}
-                      </button>
-                    </div>
-                  )}
-                </div>
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-apex-on-surface-variant" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search track or car…"
+              className={cn(FIELD_CLASS, "w-full pl-10 pr-3")}
+              aria-label="Search track or car"
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[420px]">
+            <AppNativeSelect
+              value={sessionKind}
+              onChange={(e) =>
+                patchParams({
+                  sessionKind: e.target.value,
+                  page: "1",
+                })
+              }
+              className="w-full"
+              aria-label="Session kind"
+            >
+              {SESSION_KIND_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </AppNativeSelect>
+            <AppNativeSelect
+              value={sim}
+              onChange={(e) =>
+                patchParams({ sim: e.target.value || null, page: "1" })
+              }
+              className="w-full"
+              aria-label="Simulator"
+            >
+              {SIM_OPTIONS.map((o) => (
+                <option key={o.value || "all"} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </AppNativeSelect>
+            <AppNativeSelect
+              value={ingest}
+              onChange={(e) =>
+                patchParams({ ingest: e.target.value, page: "1" })
+              }
+              className="w-full"
+              aria-label="Upload method"
+            >
+              {INGEST_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </AppNativeSelect>
+          </div>
+          <div
+            className="inline-flex shrink-0 rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-1"
+            role="group"
+            aria-label="View mode"
+          >
+            <button
+              type="button"
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-2 font-apex-body text-xs transition-colors",
+                view === "cards"
+                  ? "bg-apex-primary font-bold text-white"
+                  : "text-apex-on-surface-variant hover:text-apex-on-surface",
               )}
+            >
+              <LayoutGrid className="size-3.5" aria-hidden />
+              Cards
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-2 font-apex-body text-xs transition-colors",
+                view === "table"
+                  ? "bg-apex-primary font-bold text-white"
+                  : "text-apex-on-surface-variant hover:text-apex-on-surface",
+              )}
+            >
+              <List className="size-3.5" aria-hidden />
+              Table
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-[280px]">
+          {listLoading && <SessionsListSkeleton />}
+
+          {!listLoading && listErrorMessage && (
+            <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-6 text-center">
+              <p className="font-apex-body text-sm text-apex-error">
+                {listErrorMessage}
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetchList()}
+                className={`${appOutlineButtonClassName} mt-4 px-6 py-2`}
+              >
+                Retry
+              </button>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+
+          {!listLoading && !listError && isEmpty && emptyMessage === "all" && (
+            <OnboardingEmptyState />
+          )}
+          {!listLoading &&
+            !listError &&
+            isEmpty &&
+            emptyMessage === "manual" && <EmptyManual />}
+          {!listLoading &&
+            !listError &&
+            isEmpty &&
+            emptyMessage === "telemetry" && <EmptyTelemetry />}
+          {!listLoading &&
+            !listError &&
+            isEmpty &&
+            emptyMessage !== "all" &&
+            emptyMessage !== "manual" &&
+            emptyMessage !== "telemetry" && (
+              <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 text-center">
+                <p className="font-apex-body text-sm text-apex-on-surface-variant">
+                  {emptyMessage}
+                </p>
+              </div>
+            )}
+
+          {!listLoading && !listError && !isEmpty && view === "cards" && (
+            <div className="space-y-4">
+              {items.map((row) => (
+                <MySessionCard key={row.id} session={row} />
+              ))}
+            </div>
+          )}
+
+          {!listLoading && !listError && !isEmpty && view === "table" && (
+            <SessionsLibraryTable
+              items={items}
+              loading={false}
+              emptyMessage="No sessions yet."
+              onOpenSession={(id) => navigate(`/sessions/${id}`)}
+            />
+          )}
+
+          {!listLoading && !listError && !isEmpty && total > 0 && (
+            <div className="mb-4 space-y-3 pt-2">
+              {listRange && (
+                <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
+                  Showing {listRange.start}–{listRange.end} of {total}
+                </p>
+              )}
+              <DiscussionCommentsPagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(p) => patchParams({ page: String(p) })}
+                disabled={listFetching}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

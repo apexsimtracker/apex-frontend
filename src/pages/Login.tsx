@@ -1,37 +1,25 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Link,
-  useNavigate,
-  useLocation,
-  useSearchParams,
-} from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { authLogin, authMe, ApiError } from "@/lib/api";
 import { AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
-import { prefetchHomeWeeklyAfterAuth } from "@/lib/profileQueryKeys";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
+import { prefetchAfterAuthRedirect } from "@/lib/profileQueryKeys";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   loginFormSchema,
   type LoginFormValues,
 } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { getSafeReturnPath, parseAuthRedirectState } from "@/auth/authRedirect";
 import { persistSessionTokenFromAuthPayload } from "@/auth/token";
+import LoginWelcomePanel from "./login/LoginWelcomePanel";
+import LoginFormCard from "./login/LoginFormCard";
+import LoginHelpStrip from "./login/LoginHelpStrip";
+
+const LOGIN_PATH = "/login";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -89,9 +77,10 @@ export default function Login() {
           queryKey: AUTH_ME_QUERY_KEY,
           queryFn: authMe,
         });
-        prefetchHomeWeeklyAfterAuth(
+        prefetchAfterAuthRedirect(
           queryClient,
           queryClient.getQueryData(AUTH_ME_QUERY_KEY),
+          postLoginPath,
         );
       } catch (meErr) {
         localStorage.removeItem("apex_token");
@@ -134,139 +123,49 @@ export default function Login() {
   }
 
   return (
-    <AuthPageShell>
+    <>
       <PageMeta
         title={`Sign in | ${COMPANY_NAME}`}
         description={`Sign in to ${COMPANY_NAME} — your sim racing hub.`}
-        path="/login"
+        path={LOGIN_PATH}
         noindex
       />
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full space-y-4"
-          aria-busy={loading || undefined}
-        >
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Sign in
-          </h1>
-          {emailVerifiedMessage && (
-            <p className="text-sm text-green-500" role="status">
-              Email verified. You can sign in now.
-            </p>
-          )}
-          {authRedirect.message && (
-            <p className="text-sm text-muted-foreground" role="status">
-              {authRedirect.message}
-            </p>
-          )}
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    autoComplete="email"
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="relative flex flex-1 flex-col justify-center overflow-hidden py-4 lg:py-8">
+          <div
+            className="pointer-events-none absolute -left-16 top-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-16 bottom-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
           />
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    autoComplete="current-password"
-                    disabled={loading}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormRootMessage />
-          {suspendedReason !== undefined && (
-            <div
-              className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100"
-              role="alert"
-            >
-              <p className="font-medium text-red-50">
-                Your account has been suspended from this platform.
-              </p>
-              {suspendedReason ? (
-                <p className="mt-2 text-red-100/90">
-                  <span className="text-white/70">Reason: </span>
-                  {suspendedReason}
-                </p>
-              ) : null}
-              <p className="mt-3 text-red-100/90">
-                If you believe this is a mistake, please visit our{" "}
-                <Link
-                  to="/contact"
-                  className="font-medium text-red-50 underline hover:no-underline"
-                >
-                  contact page
-                </Link>{" "}
-                and reach out to the team.
-              </p>
+          <div className="relative space-y-8">
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
+              <LoginWelcomePanel />
+              <LoginFormCard
+                form={form}
+                onSubmit={onSubmit}
+                loading={loading}
+                emailVerifiedMessage={emailVerifiedMessage}
+                authRedirectMessage={authRedirect.message}
+                emailNotVerified={emailNotVerified}
+                suspendedReason={suspendedReason}
+              />
             </div>
-          )}
-          {emailNotVerified && (
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const e = form.getValues("email").trim();
-                  if (e) sessionStorage.setItem("apex_verify_email", e);
-                  navigate("/verify-email", { state: { email: e } });
-                }}
-                className="text-left text-sm font-medium text-foreground underline hover:no-underline"
-              >
-                Go to verification
-              </button>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between text-sm">
-            <button
-              type="button"
-              onClick={() => navigate("/forgot-password")}
-              className="text-muted-foreground underline hover:text-foreground"
-            >
-              Forgot password?
-            </button>
+            <LoginHelpStrip locationState={location.state} />
           </div>
-
-          <AuthPrimaryButton type="submit" loading={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </AuthPrimaryButton>
-
-          <p className="pt-2 text-center">
-            <Link
-              to="/signup"
-              state={location.state}
-              className="text-sm text-muted-foreground underline hover:text-foreground"
-            >
-              Don&apos;t have an account? Create one
-            </Link>
-          </p>
-        </form>
-      </Form>
-    </AuthPageShell>
+        </div>
+      </div>
+    </>
   );
 }

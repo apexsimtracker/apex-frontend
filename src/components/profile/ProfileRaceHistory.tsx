@@ -1,8 +1,9 @@
-import { CheckCircle } from "lucide-react";
 import SimBadge from "@/components/SimBadge";
 import SessionTypeTag from "@/components/SessionTypeTag";
-import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
+import { ProfilePositionBadge } from "@/components/profile/ProfilePositionBadge";
+import DiscussionCommentsPagination from "@/pages/discussion/DiscussionCommentsPagination";
 import { formatLapMs, formatCarName, formatTrackName } from "@/lib/utils";
+import { getSimShortName } from "@/lib/sim";
 
 type RaceRow = {
   id: string;
@@ -17,20 +18,21 @@ type RaceRow = {
   manualSessionKind?: string | null;
 };
 
+function formatRaceDate(date: string): string {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return date;
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 function RaceSessionBadges({ race }: { race: RaceRow }) {
   const isManual = race.source === "MANUAL_ACTIVITY";
+  if (!isManual) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5">
       <SessionTypeTag
         sessionType={race.source}
         manualSessionKind={race.manualSessionKind}
       />
-      <SimBadge sim={race.sim} size="md" />
-      {isManual && (
-        <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-white/60">
-          Manual
-        </span>
-      )}
     </div>
   );
 }
@@ -60,50 +62,42 @@ export function ProfileRaceHistory({
 }: ProfileRaceHistoryProps) {
   const total = pagination?.total ?? raceHistory.length;
 
+  const thClass =
+    "py-2 text-[10px] font-bold uppercase tracking-wider text-apex-on-surface-variant";
+
   return (
-    <>
-      <h2 className="mb-8 text-2xl font-bold text-foreground">Race History</h2>
+    <section className="space-y-3">
+      <h2 className="font-apex-headline text-lg font-semibold text-apex-on-surface">
+        Race History
+      </h2>
 
       <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border">
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Date
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                SIM
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Car
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Track
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Position
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Quali Pos
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                Best Lap
-              </th>
+            <tr className="border-b border-apex-outline-variant/15">
+              <th className={thClass}>Track</th>
+              <th className={thClass}>Sim</th>
+              <th className={thClass}>Car</th>
+              <th className={thClass}>Pos</th>
+              <th className={`${thClass} text-right`}>Best Lap</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-apex-outline-variant/5">
             {raceHistoryLoading && raceHistory.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
-                  className="py-10 text-center text-sm text-muted-foreground"
+                  colSpan={5}
+                  className="py-10 text-center font-apex-body text-sm text-apex-on-surface-variant"
                 >
                   Loading race history…
                 </td>
               </tr>
             ) : raceHistory.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-10 text-center text-neutral-400">
+                <td
+                  colSpan={5}
+                  className="py-10 text-center font-apex-body text-sm text-apex-on-surface-variant"
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -112,42 +106,34 @@ export function ProfileRaceHistory({
                 <tr
                   key={race.id}
                   onClick={() => onOpenSession(race.id)}
-                  className="cursor-pointer border transition-colors hover:bg-secondary"
+                  className="cursor-pointer transition-colors hover:bg-apex-surface-container-low/50"
                 >
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {new Date(race.date).toLocaleDateString()}
+                  <td className="whitespace-nowrap py-4 align-middle">
+                    <div className="flex flex-col justify-center">
+                      <span className="font-apex-body text-xs font-bold text-apex-on-surface">
+                        {formatTrackName(race.track)}
+                      </span>
+                      <span className="font-apex-body text-[9px] text-apex-on-surface-variant">
+                        {formatRaceDate(race.date)}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap py-4 align-middle">
+                    <SimBadge sim={race.sim} size="sm" />
+                  </td>
+                  <td className="whitespace-nowrap py-4 align-middle">
+                    <span className="font-apex-body text-xs font-medium text-apex-on-surface">
+                      {formatCarName(race.car)}
+                    </span>
                     <RaceSessionBadges race={race} />
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {formatCarName(race.car)}
+                  <td className="whitespace-nowrap py-4 align-middle">
+                    <ProfilePositionBadge position={race.position} />
                   </td>
-                  <td className="px-4 py-3 text-sm text-foreground">
-                    {formatTrackName(race.track)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
-                        race.position === 1
-                          ? "bg-yellow-50 text-gold dark:bg-yellow-950/20"
-                          : race.position === 2
-                            ? "bg-gray-100 text-silver dark:bg-gray-800/40"
-                            : race.position === 3
-                              ? "bg-orange-50 text-bronze dark:bg-orange-950/20"
-                              : "bg-secondary text-foreground"
-                      }`}
-                    >
-                      {race.position ?? "—"}
+                  <td className="whitespace-nowrap py-4 text-right align-middle">
+                    <span className="font-apex-body text-xs font-medium text-apex-on-surface">
+                      {formatLapMs(race.bestLapMs)}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="text-sm font-bold text-foreground">
-                      {race.qualiPos ?? "—"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
-                    {formatLapMs(race.bestLapMs)}
                   </td>
                 </tr>
               ))
@@ -156,13 +142,13 @@ export function ProfileRaceHistory({
         </table>
       </div>
 
-      <div className="space-y-4 lg:hidden">
+      <div className="space-y-3 lg:hidden">
         {raceHistoryLoading && raceHistory.length === 0 ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">
+          <div className="py-10 text-center font-apex-body text-sm text-apex-on-surface-variant">
             Loading race history…
           </div>
         ) : raceHistory.length === 0 ? (
-          <div className="py-10 text-center text-sm text-neutral-400">
+          <div className="py-10 text-center font-apex-body text-sm text-apex-on-surface-variant">
             {emptyMessage}
           </div>
         ) : (
@@ -170,81 +156,59 @@ export function ProfileRaceHistory({
             <div
               key={race.id}
               onClick={() => onOpenSession(race.id)}
-              className="border/40 cursor-pointer rounded-lg border p-4 transition-colors hover:bg-secondary/20"
+              className="cursor-pointer rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <div className="mb-1">
-                    <RaceSessionBadges race={race} />
-                  </div>
-                  <p className="text-xs text-muted-foreground sm:text-sm">
-                    {new Date(race.date).toLocaleDateString()}
+                  <p className="font-apex-body text-xs font-bold text-apex-on-surface">
+                    {formatTrackName(race.track)}
+                  </p>
+                  <p className="font-apex-body text-[9px] text-apex-on-surface-variant">
+                    {formatRaceDate(race.date)}
                   </p>
                 </div>
-                <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${
-                    race.position === 1
-                      ? "bg-yellow-50 text-gold dark:bg-yellow-950/20"
-                      : race.position === 2
-                        ? "bg-gray-100 text-silver dark:bg-gray-800/40"
-                        : race.position === 3
-                          ? "bg-orange-50 text-bronze dark:bg-orange-950/20"
-                          : "bg-secondary text-foreground"
-                  }`}
-                >
-                  P{race.position ?? "—"}
-                </span>
+                <ProfilePositionBadge position={race.position} />
               </div>
-              <div className="mb-3">
-                <p className="text-sm font-semibold text-foreground">
-                  {formatTrackName(race.track)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatCarName(race.car)}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs min-[480px]:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2 text-xs">
                 <div>
-                  <p className="text-muted-foreground">Quali</p>
-                  <p className="font-bold text-foreground">
-                    {race.qualiPos ?? "—"}
+                  <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
+                    Sim
+                  </p>
+                  <p className="font-apex-body font-medium text-apex-on-surface">
+                    {getSimShortName(race.sim)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Best Lap</p>
-                  <p className="font-bold text-foreground">
-                    {race.bestLapMs != null ? formatLapMs(race.bestLapMs) : "—"}
+                  <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
+                    Car
+                  </p>
+                  <p className="font-apex-body font-medium text-apex-on-surface">
+                    {formatCarName(race.car)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">
-                    {race.source === "MANUAL_ACTIVITY" ? "Manual" : "Status"}
+                <div className="text-right">
+                  <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
+                    Best Lap
                   </p>
-                  <p className="font-bold text-foreground">
-                    {race.source === "MANUAL_ACTIVITY" ? (
-                      "—"
-                    ) : (
-                      <CheckCircle
-                        className="inline-block size-5 text-green-600 dark:text-green-500"
-                        aria-label="Completed"
-                      />
-                    )}
+                  <p className="font-apex-body font-medium text-apex-on-surface">
+                    {formatLapMs(race.bestLapMs)}
                   </p>
                 </div>
               </div>
+              <RaceSessionBadges race={race} />
             </div>
           ))
         )}
       </div>
 
       {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 space-y-3">
+        <div className="mt-4 space-y-3">
           {range && total > 0 && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
               Showing {range.start}–{range.end} of {total}
             </p>
           )}
-          <RaceHistoryPagination
+          <DiscussionCommentsPagination
             page={pagination.page}
             totalPages={pagination.totalPages}
             onPageChange={pagination.onPageChange}
@@ -252,6 +216,6 @@ export function ProfileRaceHistory({
           />
         </div>
       )}
-    </>
+    </section>
   );
 }

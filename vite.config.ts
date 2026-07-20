@@ -26,6 +26,20 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/@revenuecat")) return "revenuecat";
+          if (id.includes("node_modules/react-share")) return "share";
+          if (
+            id.includes("node_modules/react-dom") ||
+            id.includes("node_modules/react/")
+          ) {
+            return "react-vendor";
+          }
+        },
+      },
+    },
   },
 
   resolve: {

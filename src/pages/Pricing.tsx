@@ -2,18 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BRAND_RED } from "@/lib/appConfig";
 import { useQuery } from "@tanstack/react-query";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import { AUTH_PATHS } from "@/config/navigation";
 import type { BillingInterval } from "@/lib/api";
 import { getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
 import { useRevenueCat } from "@/features/billing/useRevenueCat";
-import { FreePlanCard } from "@/features/billing/components/FreePlanCard";
-import { PricingHero } from "@/features/billing/components/PricingHero";
-import { PricingPageSkeleton } from "@/features/billing/components/PricingPageSkeleton";
-import { ProPlanCard } from "@/features/billing/components/ProPlanCard";
 import {
   computeAnnualSavingsPercent,
   packageForInterval,
@@ -25,6 +21,11 @@ import {
   isSubscriptionCanceled,
 } from "@/features/billing/subscriptionStatusDisplay";
 import { useAuth } from "@/contexts/AuthContext";
+import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
+import { cn } from "@/lib/utils";
+import { FreePlanCard } from "./pricing/FreePlanCard";
+import { PricingPageSkeleton } from "./pricing/PricingPageSkeleton";
+import { ProPlanCard } from "./pricing/ProPlanCard";
 
 const PRICING_PATH = "/pricing";
 const title = `Pricing | ${COMPANY_NAME}`;
@@ -148,30 +149,45 @@ export default function Pricing() {
 
   function handleSignInToSubscribe() {
     if (!user) {
-      navigate(`/login?next=${encodeURIComponent(PRICING_PATH)}`);
+      navigate(
+        `${AUTH_PATHS.login}?next=${encodeURIComponent(PRICING_PATH)}`,
+      );
     }
   }
 
   return (
     <>
-      <PageMeta title={title} description={description} path={PRICING_PATH} />
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
-        <PricingHero />
+      <PageMeta
+        title={title}
+        description={description}
+        path={PRICING_PATH}
+      />
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="mb-10">
+          <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
+            Choose your plan
+          </h1>
+          <p className="mt-2 text-sm tracking-wide text-apex-on-surface-variant">
+            Start free. Upgrade to Pro for unlimited history, analytics, and
+            more.
+          </p>
+        </div>
 
         {showAgentCta && message && !error && (
-          <div className="mt-8 rounded-xl border border-green-500/30 bg-green-500/10 p-5 sm:p-6">
+          <div className="mb-8 rounded-apex-lg border border-apex-success/30 bg-apex-success/10 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium text-green-400">{message}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="font-apex-headline font-medium text-apex-success">
+                  {message}
+                </p>
+                <p className="mt-1 font-apex-body text-sm text-apex-on-surface-variant">
                   Download the Apex Agent and sign in with your website email
                   and password to start automatic telemetry uploads.
                 </p>
               </div>
               <Button
                 asChild
-                className="shrink-0 text-white hover:opacity-90"
-                style={{ backgroundColor: BRAND_RED }}
+                className={cn("shrink-0", appPrimaryButtonClassName)}
               >
                 <Link to="/agent?welcome=pro">
                   <Cpu className="size-4" />
@@ -185,7 +201,7 @@ export default function Pricing() {
         {plansLoading ? (
           <PricingPageSkeleton />
         ) : (
-          <div className="mt-10 grid gap-6 md:grid-cols-2 md:items-stretch">
+          <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
             <FreePlanCard
               name={plans?.free.name ?? "Free"}
               priceLabel={plans?.free.priceLabel ?? "£0"}

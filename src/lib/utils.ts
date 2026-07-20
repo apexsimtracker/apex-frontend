@@ -1,5 +1,18 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * Custom radii/fonts must be registered so they conflict with Tailwind defaults
+ * (e.g. shadcn `rounded-md` vs product `rounded-apex-sm`).
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      rounded: [{ rounded: ["apex", "apex-sm", "apex-lg"] }],
+      "font-family": [{ font: ["apex-headline", "apex-body"] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

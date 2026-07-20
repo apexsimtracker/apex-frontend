@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  LogLevel,
+import type {
+  Offerings,
+  Package as RevenueCatPackage,
   Purchases,
-  type Offerings,
-  type Package as RevenueCatPackage,
 } from "@revenuecat/purchases-js";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -46,6 +45,10 @@ async function ensureRevenueCatReady(params: {
     throw new Error("Billing is not configured for this environment.");
   }
 
+  const { Purchases, LogLevel } = await import(
+    /* webpackChunkName: "revenuecat" */ "@revenuecat/purchases-js"
+  );
+
   Purchases.setLogLevel(LogLevel.Silent);
 
   let purchases: Purchases;
@@ -73,45 +76,20 @@ async function ensureRevenueCatReady(params: {
   return purchases;
 }
 
-function useBillingConfigQuery() {
+function useBillingConfigQuery(enabled: boolean) {
   return useQuery({
     queryKey: BILLING_CONFIG_QUERY_KEY,
     queryFn: getBillingConfig,
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 
-export function useRevenueCatBootstrap(): void {
-  const { user } = useAuth();
-  const billingConfigQuery = useBillingConfigQuery();
-
-  useQuery({
-    queryKey: [
-      "billing",
-      "revenuecat",
-      "ready",
-      user?.id ?? null,
-      billingConfigQuery.data?.mode ?? null,
-    ],
-    queryFn: async () =>
-      ensureRevenueCatReady({
-        config: billingConfigQuery.data as BillingConfigResponse,
-        userId: user?.id as string,
-        email: user?.email ?? null,
-      }),
-    enabled:
-      Boolean(user?.id) &&
-      Boolean(billingConfigQuery.data?.enabled) &&
-      Boolean(billingConfigQuery.data?.revenueCatPublicApiKey),
-    staleTime: Infinity,
-    retry: false,
-  });
-}
-
+/** Loads RevenueCat only when Pricing (or another purchase UI) mounts. */
 export function useRevenueCat() {
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
-  const billingConfigQuery = useBillingConfigQuery();
+  const billingConfigQuery = useBillingConfigQuery(Boolean(user?.id));
 
   const offeringsQuery = useQuery({
     queryKey: [

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { BaseAlertDialog } from "@/components/ui/base-modal";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  appDestructiveButtonClassName,
+  appOutlineButtonClassName,
+} from "@/components/app-ui/appButtonClasses";
+import { AppBaseAlertDialog } from "@/components/app-ui/AppBaseModal";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -50,7 +54,7 @@ export default function DeleteConfirmModal({
   }
 
   return (
-    <BaseAlertDialog
+    <AppBaseAlertDialog
       isOpen={isOpen}
       onClose={handleClose}
       title={title}
@@ -58,12 +62,23 @@ export default function DeleteConfirmModal({
       size="sm"
       footer={
         <>
-          <Button variant="outline" onClick={handleClose} disabled={isDeleting}>
-            Cancel
-          </Button>
-          <Button
+          <button
             type="button"
-            variant="destructive"
+            className={cn(
+              appOutlineButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
+            onClick={handleClose}
+            disabled={isDeleting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={cn(
+              appDestructiveButtonClassName,
+              "inline-flex items-center justify-center px-4 py-2",
+            )}
             onClick={handleConfirm}
             disabled={isDeleting}
           >
@@ -75,21 +90,23 @@ export default function DeleteConfirmModal({
             ) : (
               "Delete"
             )}
-          </Button>
+          </button>
         </>
       }
       bodyClassName="space-y-4 text-center"
     >
       <div className="flex justify-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
-          <AlertTriangle className="size-6 text-destructive" />
+        <div className="flex size-12 items-center justify-center rounded-full bg-apex-error/10">
+          <AlertTriangle className="size-6 text-apex-error" />
         </div>
       </div>
       {error && (
-        <div className="rounded-lg bg-destructive/10 px-3 py-2">
-          <p className="text-center text-sm text-destructive">{error}</p>
+        <div className="rounded-apex-sm bg-apex-error/10 px-3 py-2">
+          <p className="text-center font-apex-body text-sm text-apex-error">
+            {error}
+          </p>
         </div>
       )}
-    </BaseAlertDialog>
+    </AppBaseAlertDialog>
   );
 }

@@ -1,23 +1,12 @@
 import { useState, useEffect } from "react";
-import { useForm, type UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
 import {
   requestPasswordReset,
   verifyPasswordResetCode,
   resetPasswordWithCode,
   ApiError,
 } from "@/lib/api";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormRootMessage,
-} from "@/components/ui/form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   forgotEmailFormSchema,
@@ -28,256 +17,17 @@ import {
   type ForgotResetFormValues,
 } from "@/lib/validation/authPages";
 import PageMeta from "@/components/PageMeta";
-import { AuthPageShell } from "@/components/auth/AuthPageShell";
-import { AuthPrimaryButton } from "@/components/auth/AuthPrimaryButton";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+import ForgotPasswordWelcomePanel from "./forgot-password/ForgotPasswordWelcomePanel";
+import ForgotPasswordFormCard, {
+  type ForgotPasswordStep,
+} from "./forgot-password/ForgotPasswordFormCard";
+import ForgotPasswordHelpStrip from "./forgot-password/ForgotPasswordHelpStrip";
 
-type Step = "email" | "code" | "reset" | "done";
-
-function EmailStepForm({
-  form,
-  loading,
-  success,
-  onSubmit,
-}: {
-  form: UseFormReturn<WithRootError<ForgotEmailFormValues>>;
-  loading: boolean;
-  success: string | null;
-  onSubmit: (email: string) => Promise<void>;
-}) {
-  const navigate = useNavigate();
-
-  return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(values.email.trim());
-        })}
-        className="w-full space-y-4"
-      >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Forgot password
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Enter your email and we&apos;ll send you a verification code to reset
-          your password.
-        </p>
-
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  autoComplete="email"
-                  disabled={loading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormRootMessage />
-        {success && (
-          <div className="text-sm text-green-500" role="status">
-            {success}
-          </div>
-        )}
-
-        <AuthPrimaryButton type="submit" disabled={loading}>
-          {loading ? "Sending code…" : "Send code"}
-        </AuthPrimaryButton>
-
-        <p className="pt-2 text-center text-sm text-muted-foreground">
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className="underline hover:text-foreground"
-          >
-            Back to sign in
-          </button>
-        </p>
-      </form>
-    </Form>
-  );
-}
-
-function CodeStepForm({
-  form,
-  emailDisplay,
-  loading,
-  success,
-  onSubmit,
-  onBack,
-  onResend,
-}: {
-  form: UseFormReturn<WithRootError<ForgotCodeFormValues>>;
-  emailDisplay: string;
-  loading: boolean;
-  success: string | null;
-  onSubmit: (code: string) => Promise<void>;
-  onBack: () => void;
-  onResend: () => Promise<void>;
-}) {
-  return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(values.code.trim());
-        })}
-        className="w-full space-y-4"
-      >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Check your email
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          We sent a 6‑digit verification code to:
-        </p>
-        <p className="break-all text-sm font-medium text-foreground">
-          {emailDisplay}
-        </p>
-
-        <FormField
-          control={form.control}
-          name="code"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Verification code</FormLabel>
-              <FormControl>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoComplete="one-time-code"
-                  disabled={loading}
-                  placeholder="Enter 6‑digit code"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormRootMessage />
-        {success && (
-          <div className="text-sm text-green-500" role="status">
-            {success}
-          </div>
-        )}
-
-        <AuthPrimaryButton type="submit" disabled={loading}>
-          {loading ? "Verifying…" : "Verify code"}
-        </AuthPrimaryButton>
-
-        <div className="flex items-center justify-between pt-2 text-sm">
-          <button
-            type="button"
-            onClick={onBack}
-            className="text-muted-foreground underline hover:text-foreground"
-          >
-            Change email
-          </button>
-          <button
-            type="button"
-            onClick={() => void onResend()}
-            className="text-muted-foreground underline hover:text-foreground"
-          >
-            Resend code
-          </button>
-        </div>
-      </form>
-    </Form>
-  );
-}
-
-function ResetStepForm({
-  form,
-  loading,
-  success,
-  onSubmit,
-}: {
-  form: UseFormReturn<WithRootError<ForgotResetFormValues>>;
-  loading: boolean;
-  success: string | null;
-  onSubmit: (password: string) => Promise<void>;
-}) {
-  return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(async (values) => {
-          await onSubmit(values.password);
-        })}
-        className="w-full space-y-4"
-      >
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Reset password
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Choose a new password for your Apex account.
-        </p>
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>New password</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  disabled={loading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm password</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  disabled={loading}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormRootMessage />
-        {success && (
-          <div className="text-sm text-green-500" role="status">
-            {success}
-          </div>
-        )}
-
-        <AuthPrimaryButton type="submit" disabled={loading}>
-          {loading ? "Saving…" : "Reset password"}
-        </AuthPrimaryButton>
-      </form>
-    </Form>
-  );
-}
+const FORGOT_PASSWORD_PATH = "/forgot-password";
 
 export default function ForgotPassword() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<ForgotPasswordStep>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -431,68 +181,62 @@ export default function ForgotPassword() {
     }
   }
 
-  let content: React.ReactNode;
-  if (step === "email") {
-    content = (
-      <EmailStepForm
-        form={emailForm}
-        loading={loading}
-        success={success}
-        onSubmit={handleEmailSubmit}
-      />
-    );
-  } else if (step === "code") {
-    content = (
-      <CodeStepForm
-        form={codeForm}
-        emailDisplay={trimmedEmail}
-        loading={loading}
-        success={success}
-        onSubmit={handleCodeSubmit}
-        onBack={() => {
-          setStep("email");
-          codeForm.clearErrors("root");
-          emailForm.clearErrors("root");
-          setSuccess(null);
-        }}
-        onResend={handleResendCode}
-      />
-    );
-  } else if (step === "reset") {
-    content = (
-      <ResetStepForm
-        form={resetForm}
-        loading={loading}
-        success={success}
-        onSubmit={handleResetSubmit}
-      />
-    );
-  } else {
-    content = (
-      <div className="w-full space-y-4 text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Password reset
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Your password has been updated. You can now sign in with your new
-          password.
-        </p>
-        <AuthPrimaryButton type="button" onClick={() => navigate("/login")}>
-          Back to sign in
-        </AuthPrimaryButton>
-      </div>
-    );
+  function handleBackToEmail() {
+    setStep("email");
+    codeForm.clearErrors("root");
+    emailForm.clearErrors("root");
+    setSuccess(null);
   }
 
   return (
-    <AuthPageShell>
+    <>
       <PageMeta
         title={`Reset password | ${COMPANY_NAME}`}
         description={`Reset your ${COMPANY_NAME} account password.`}
-        path="/forgot-password"
+        path={FORGOT_PASSWORD_PATH}
         noindex
       />
-      {content}
-    </AuthPageShell>
+      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
+        <div className="relative flex flex-1 flex-col justify-center overflow-hidden py-4 lg:py-8">
+          <div
+            className="pointer-events-none absolute -left-16 top-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -right-16 bottom-1/4 size-48 rounded-full opacity-40 blur-[64px] lg:size-64 lg:opacity-50"
+            style={{
+              background:
+                "radial-gradient(closest-side, hsl(var(--apex-primary) / 0.12) 0%, transparent 75%)",
+            }}
+            aria-hidden
+          />
+
+          <div className="relative space-y-8">
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12">
+              <ForgotPasswordWelcomePanel />
+              <ForgotPasswordFormCard
+                step={step}
+                emailForm={emailForm}
+                codeForm={codeForm}
+                resetForm={resetForm}
+                emailDisplay={trimmedEmail}
+                loading={loading}
+                success={success}
+                onEmailSubmit={handleEmailSubmit}
+                onCodeSubmit={handleCodeSubmit}
+                onResetSubmit={handleResetSubmit}
+                onBackToEmail={handleBackToEmail}
+                onResendCode={handleResendCode}
+              />
+            </div>
+            <ForgotPasswordHelpStrip />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

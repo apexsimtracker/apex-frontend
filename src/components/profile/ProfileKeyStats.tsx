@@ -1,4 +1,5 @@
 import { formatAvgFinishOneDecimal } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 type ProfileKeyStatsProps = {
   profileLocked: boolean;
@@ -9,6 +10,31 @@ type ProfileKeyStatsProps = {
   fastestLaps: number;
   avgFinish: number | null | undefined;
 };
+
+type StatCellProps = {
+  label: string;
+  value: string | number;
+  align?: "left" | "center" | "right";
+};
+
+function StatCell({ label, value, align = "left" }: StatCellProps) {
+  return (
+    <div
+      className={cn(
+        "space-y-0.5 lg:rounded-xl lg:border lg:border-apex-outline-variant/15 lg:bg-apex-surface-container-low lg:p-4 lg:text-left lg:shadow-lg",
+        align === "center" && "text-center",
+        align === "right" && "text-right",
+      )}
+    >
+      <p className="font-apex-body text-[10px] uppercase tracking-wider text-apex-on-surface-variant">
+        {label}
+      </p>
+      <span className="font-apex-headline text-3xl font-bold text-apex-on-surface">
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export function ProfileKeyStats({
   profileLocked,
@@ -24,7 +50,7 @@ export function ProfileKeyStats({
 
   if (profileLocked) {
     return (
-      <div className="rounded-lg border border-amber-500/15 bg-amber-500/5 px-4 py-3 text-center text-sm text-muted-foreground">
+      <div className="rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-4 py-3 text-center font-apex-body text-sm text-apex-on-surface-variant">
         Stats are hidden because this profile is private. Follow this account to
         see sessions and results when your request is approved.
       </div>
@@ -32,45 +58,17 @@ export function ProfileKeyStats({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-5">
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">Races</p>
-        <p className="text-sm font-semibold text-foreground sm:text-base">
-          {races}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">Wins</p>
-        <p className="text-sm font-semibold text-yellow-200 sm:text-base">
-          {safeValue(wins)}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">
-          Podiums
-        </p>
-        <p className="text-sm font-semibold text-foreground sm:text-base">
-          {safeValue(podiums)}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">Poles</p>
-        <p className="text-sm font-semibold text-foreground sm:text-base">
-          {safeValue(poles)}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">FL</p>
-        <p className="text-sm font-semibold text-foreground sm:text-base">
-          {fastestLaps}
-        </p>
-      </div>
-      <div className="text-center sm:text-left">
-        <p className="mb-1 text-xs uppercase text-muted-foreground/50">Avg</p>
-        <p className="text-sm font-semibold text-foreground sm:text-base">
-          {formatAvgFinishOneDecimal(avgFinish)}
-        </p>
-      </div>
-    </div>
+    <section className="grid grid-cols-3 gap-y-2 border-y border-apex-outline-variant/15 py-4 lg:gap-3 lg:border-0 lg:py-0">
+      <StatCell label="Races" value={races} align="left" />
+      <StatCell label="Wins" value={safeValue(wins)} align="center" />
+      <StatCell label="Podiums" value={safeValue(podiums)} align="right" />
+      <StatCell label="Poles" value={safeValue(poles)} align="left" />
+      <StatCell label="Fastest Laps" value={fastestLaps} align="center" />
+      <StatCell
+        label="Avg Finish"
+        value={formatAvgFinishOneDecimal(avgFinish)}
+        align="right"
+      />
+    </section>
   );
 }

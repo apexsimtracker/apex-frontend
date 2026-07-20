@@ -1,11 +1,10 @@
 import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
-import { ProfileView } from "@/components/ProfileView";
+import { ProfileView } from "@/components/profile/ProfileView";
 import { FollowListDialog } from "@/components/FollowListDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import AppLoadingScreen from "@/components/AppLoadingScreen";
 import {
   resolveApiUrl,
   getProfileSummaryForUser,
@@ -18,8 +17,14 @@ import {
   type ProfileSummary,
 } from "@/lib/api";
 import { profileKeys, prefetchFollowList } from "@/lib/profileQueryKeys";
+import ProfileSkeleton from "@/pages/profile/ProfileSkeleton";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
+
+const USER_PROFILE_PATH = "/user";
+
+const contentRootClassName =
+  "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8";
 
 function emptyProfileSummary(id: string, displayName: string): ProfileSummary {
   const emptyBuckets = {
@@ -143,7 +148,7 @@ export default function UserProfile() {
         : "Failed to load profile."
       : null;
 
-  const loading = Boolean(id) && previewQuery.isPending;
+  const previewLoading = Boolean(id) && previewQuery.isPending;
 
   const handleToggleFollow = useCallback(async () => {
     if (!currentUser || !id || currentUser.id === id) return;
@@ -193,19 +198,19 @@ export default function UserProfile() {
 
   if (!id) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`Profile | ${COMPANY_NAME}`}
           description={`${COMPANY_NAME} driver profiles and race history.`}
-          path="/"
+          path={USER_PROFILE_PATH}
           noindex
         />
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-center text-lg text-foreground">
+        <div className={contentRootClassName}>
+          <p className="text-center font-apex-headline text-lg text-apex-on-surface">
             Invalid profile link.
           </p>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -213,83 +218,96 @@ export default function UserProfile() {
     return <Navigate to="/profile" replace />;
   }
 
-  if (loading || authLoading) {
+  if (previewLoading || authLoading) {
     return (
       <>
         <PageMeta
           title={`Profile | ${COMPANY_NAME}`}
           description={`${COMPANY_NAME} driver profile, stats, and race history.`}
-          path={`/user/${id}`}
+          path={`${USER_PROFILE_PATH}/${id}`}
         />
-        <AppLoadingScreen />
+        <div className={contentRootClassName}>
+          <ProfileSkeleton showBackLink />
+        </div>
       </>
     );
   }
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`User not found | ${COMPANY_NAME}`}
           description="This profile does not exist or was removed."
-          path={`/user/${id}`}
+          path={`${USER_PROFILE_PATH}/${id}`}
           setCanonical={false}
           noindex
         />
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
+        <div className={contentRootClassName}>
           <div className="text-center">
-            <p className="text-lg text-foreground">User not found</p>
+            <p className="font-apex-headline text-lg text-apex-on-surface">
+              User not found
+            </p>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  const combinedError = loadError || followActionError;
-
-  if (combinedError || !preview) {
+  if (loadError || !preview) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <PageMeta
           title={`Profile | ${COMPANY_NAME}`}
-          description={combinedError ?? "Could not load profile."}
-          path={`/user/${id}`}
+          description={loadError ?? "Could not load profile."}
+          path={`${USER_PROFILE_PATH}/${id}`}
           noindex
         />
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-8 flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-5" />
-            <span className="font-medium">Back</span>
-          </button>
+        <div className={contentRootClassName}>
           <div className="mx-auto max-w-md text-center">
-            <p className="mb-4 text-sm text-destructive">
-              {combinedError ?? "Something went wrong."}
+            <p className="mb-4 font-apex-body text-sm text-apex-error">
+              {loadError ?? "Something went wrong."}
             </p>
             <Link
               to="/community"
-              className="text-sm text-primary underline underline-offset-2"
+              className="font-apex-body text-sm text-apex-primary transition-colors hover:text-apex-primary/80"
             >
               Back to community
             </Link>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   const profileLocked = !viewerHasAccess;
+
+  // Keep skeleton until summary stats load — preview alone is not enough for full profiles.
+  const summaryLoading = viewerHasAccess && summaryQuery.isLoading;
+
+  if (summaryLoading) {
+    const skeletonDisplayName = preview.displayName?.trim() || "Driver";
+    return (
+      <>
+        <PageMeta
+          title={`${skeletonDisplayName} | ${COMPANY_NAME}`}
+          description={`${COMPANY_NAME} driver profile, stats, and race history.`}
+          path={`${USER_PROFILE_PATH}/${id}`}
+        />
+        <div className={contentRootClassName}>
+          <ProfileSkeleton
+            showBackLink
+            showChallengeBadges={
+              (preview.challengeBadgeCount ??
+                preview.challengeBadges?.length ??
+                0) > 0
+            }
+          />
+        </div>
+      </>
+    );
+  }
+
   const profileData: ProfileSummary =
     viewerHasAccess && summaryQuery.data
       ? summaryQuery.data
@@ -325,61 +343,86 @@ export default function UserProfile() {
   })();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <>
       <PageMeta
         title={`${displayName} | ${COMPANY_NAME}`}
         description={userSeoDescription}
-        path={`/user/${id}`}
+        path={`${USER_PROFILE_PATH}/${id}`}
         image={avatarUrl}
       />
-      <ProfileView
-        profile={displayProfile}
-        onBack={() => navigate(-1)}
-        avatarUrl={avatarUrl || undefined}
-        bio={bio}
-        followersCount={preview.followersCount}
-        followingCount={preview.followingCount}
-        isCurrentUser={false}
-        isFollowing={preview.isFollowing}
-        profileLocked={profileLocked}
-        followRelationship={preview.followRelationship}
-        targetPrivateProfile={preview.privateProfile}
-        followLoading={followLoading}
-        onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
-        onOpenFollowers={
-          viewerHasAccess ? () => setOpenList("followers") : undefined
-        }
-        onOpenFollowing={
-          viewerHasAccess ? () => setOpenList("following") : undefined
-        }
-        onPrefetchFollowers={
-          viewerHasAccess
-            ? () => prefetchFollowList(queryClient, id, "followers")
-            : undefined
-        }
-        onPrefetchFollowing={
-          viewerHasAccess
-            ? () => prefetchFollowList(queryClient, id, "following")
-            : undefined
-        }
-        raceHistoryPagination={
-          viewerHasAccess
-            ? {
-                page: raceHistoryData?.page ?? raceHistoryPage,
-                limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
-                totalPages: raceHistoryData?.totalPages ?? 1,
-                total: raceHistoryData?.total ?? 0,
-                items: raceHistoryData?.items ?? [],
-                loading: raceHistoryLoading,
-                fetching: raceHistoryFetching,
-                onPageChange: setRaceHistoryPage,
-              }
-            : undefined
-        }
-        raceHistoryForbiddenCode={raceHistoryForbiddenCode}
-        isPro={preview.isPro}
-        challengeBadges={preview.challengeBadges}
-      />
+      <div className={contentRootClassName}>
+        {followActionError && (
+          <div className="mb-6 flex items-start justify-between gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-error/10 px-4 py-3">
+            <p className="font-apex-body text-sm text-apex-error">
+              {followActionError}
+            </p>
+            <button
+              type="button"
+              onClick={() => setFollowActionError(null)}
+              className="shrink-0 font-apex-body text-sm font-medium text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 inline-flex items-center gap-1.5 font-apex-body text-sm text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
+        >
+          <ChevronLeft className="size-4 shrink-0" aria-hidden />
+          Back
+        </button>
+        <ProfileView
+          profile={displayProfile}
+          avatarUrl={avatarUrl || undefined}
+          bio={bio}
+          followersCount={preview.followersCount}
+          followingCount={preview.followingCount}
+          isCurrentUser={false}
+          isFollowing={preview.isFollowing}
+          profileLocked={profileLocked}
+          followRelationship={preview.followRelationship}
+          targetPrivateProfile={preview.privateProfile}
+          followLoading={followLoading}
+          onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
+          onOpenFollowers={
+            viewerHasAccess ? () => setOpenList("followers") : undefined
+          }
+          onOpenFollowing={
+            viewerHasAccess ? () => setOpenList("following") : undefined
+          }
+          onPrefetchFollowers={
+            viewerHasAccess
+              ? () => prefetchFollowList(queryClient, id, "followers")
+              : undefined
+          }
+          onPrefetchFollowing={
+            viewerHasAccess
+              ? () => prefetchFollowList(queryClient, id, "following")
+              : undefined
+          }
+          raceHistoryPagination={
+            viewerHasAccess
+              ? {
+                  page: raceHistoryData?.page ?? raceHistoryPage,
+                  limit: raceHistoryData?.limit ?? RACE_HISTORY_PAGE_SIZE,
+                  totalPages: raceHistoryData?.totalPages ?? 1,
+                  total: raceHistoryData?.total ?? 0,
+                  items: raceHistoryData?.items ?? [],
+                  loading: raceHistoryLoading,
+                  fetching: raceHistoryFetching,
+                  onPageChange: setRaceHistoryPage,
+                }
+              : undefined
+          }
+          raceHistoryForbiddenCode={raceHistoryForbiddenCode}
+          isPro={preview.isPro}
+          profileUserId={id}
+          challengeBadges={preview.challengeBadges}
+          challengeBadgeCount={preview.challengeBadgeCount}
+        />
+      </div>
 
       <FollowListDialog
         key={`${id}-${openList ?? "closed"}`}
@@ -387,7 +430,8 @@ export default function UserProfile() {
         onOpenChange={(open) => !open && setOpenList(null)}
         userId={id}
         listKind={openList}
+        profileLinkBase="/user"
       />
-    </div>
+    </>
   );
 }

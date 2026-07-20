@@ -61,38 +61,39 @@ export default {
         gold: "#FFB800",
         silver: "#C0C0C0",
         bronze: "#CD7F32",
-        v2: {
-          primary: "hsl(var(--v2-primary) / <alpha-value>)",
-          "primary-fixed": "hsl(var(--v2-primary-fixed) / <alpha-value>)",
-          "on-surface": "hsl(var(--v2-on-surface) / <alpha-value>)",
+        apex: {
+          primary: "hsl(var(--apex-primary) / <alpha-value>)",
+          "primary-fixed": "hsl(var(--apex-primary-fixed) / <alpha-value>)",
+          "on-primary": "hsl(var(--apex-on-primary) / <alpha-value>)",
+          "on-surface": "hsl(var(--apex-on-surface) / <alpha-value>)",
           "on-surface-variant":
-            "hsl(var(--v2-on-surface-variant) / <alpha-value>)",
-          background: "hsl(var(--v2-background) / <alpha-value>)",
-          surface: "hsl(var(--v2-surface) / <alpha-value>)",
+            "hsl(var(--apex-on-surface-variant) / <alpha-value>)",
+          background: "hsl(var(--apex-background) / <alpha-value>)",
+          surface: "hsl(var(--apex-surface) / <alpha-value>)",
           "surface-container-low":
-            "hsl(var(--v2-surface-container-low) / <alpha-value>)",
+            "hsl(var(--apex-surface-container-low) / <alpha-value>)",
           "surface-container":
-            "hsl(var(--v2-surface-container) / <alpha-value>)",
+            "hsl(var(--apex-surface-container) / <alpha-value>)",
           "surface-container-high":
-            "hsl(var(--v2-surface-container-high) / <alpha-value>)",
+            "hsl(var(--apex-surface-container-high) / <alpha-value>)",
           "surface-container-highest":
-            "hsl(var(--v2-surface-container-highest) / <alpha-value>)",
-          "outline-variant": "hsl(var(--v2-outline-variant) / <alpha-value>)",
-          error: "hsl(var(--v2-error) / <alpha-value>)",
-          success: "hsl(var(--v2-success) / <alpha-value>)",
+            "hsl(var(--apex-surface-container-highest) / <alpha-value>)",
+          "outline-variant": "hsl(var(--apex-outline-variant) / <alpha-value>)",
+          error: "hsl(var(--apex-error) / <alpha-value>)",
+          success: "hsl(var(--apex-success) / <alpha-value>)",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        v2: "var(--v2-radius)",
-        "v2-sm": "0.125rem",
-        "v2-lg": "0.25rem",
+        apex: "var(--apex-radius)",
+        "apex-sm": "0.125rem",
+        "apex-lg": "0.25rem",
       },
       fontFamily: {
-        "v2-headline": ["Space Grotesk", "sans-serif"],
-        "v2-body": ["Inter", "sans-serif"],
+        "apex-headline": ["Space Grotesk", "sans-serif"],
+        "apex-body": ["Inter", "sans-serif"],
       },
       fontSize: {
         xs: ["12px", { lineHeight: "16px" }],
