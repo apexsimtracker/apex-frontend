@@ -217,11 +217,23 @@ export async function getActivityHomeFeedPage(options: {
 /** Default page size for GET /api/sessions/:id/comments (must match server). */
 export const SESSION_COMMENTS_PAGE_DEFAULT_LIMIT = 5;
 
+export const SESSION_COMMENT_MAX_LENGTH = 700;
+
+export type SessionCommentAuthor = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+export type SessionCommentFilter = "all" | "mine" | "owner";
+
 export type SessionCommentItem = {
   id: string;
   userId: string;
   body: string;
   createdAt: string;
+  isSessionOwner?: boolean;
+  author?: SessionCommentAuthor;
 };
 
 export type SessionCommentsPageResult = {
@@ -234,10 +246,16 @@ export type SessionCommentsPageResult = {
 
 /**
  * Paginated session comments (GET /api/sessions/:id/comments).
+ * Newest first. Optional filter: all | mine | owner. Optional q searches body text.
  */
 export async function getSessionCommentsPage(
   sessionId: string,
-  options: { page?: number; limit?: number } = {},
+  options: {
+    page?: number;
+    limit?: number;
+    filter?: SessionCommentFilter;
+    q?: string;
+  } = {},
 ): Promise<SessionCommentsPageResult> {
   const page = options.page ?? 1;
   const limit = options.limit ?? SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
@@ -245,6 +263,11 @@ export async function getSessionCommentsPage(
     page: String(page),
     limit: String(limit),
   });
+  if (options.filter && options.filter !== "all") {
+    q.set("filter", options.filter);
+  }
+  const search = options.q?.trim();
+  if (search) q.set("q", search);
   const raw = await apiGet<{
     comments?: SessionCommentItem[];
     page?: number;

@@ -1,6 +1,4 @@
-import DashboardActivityCard, {
-  type SessionPatch,
-} from "@/components/dashboard/DashboardActivityCard";
+import DashboardActivityCard from "@/components/dashboard/DashboardActivityCard";
 import BundledActivityCard from "@/components/dashboard/BundledActivityCard";
 import WeekendGroupHeader from "@/components/WeekendGroupHeader";
 import type { ActivityFeedItem } from "@/lib/api/activityBilling";
@@ -84,7 +82,6 @@ function getActivityHeaderFromOwner(
 function renderActivityCard(
   session: ActivityFeedSession,
   options: {
-    onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
     currentUser?: { id: string; avatarUrl?: string | null } | null;
   },
 ) {
@@ -116,11 +113,7 @@ function renderActivityCard(
       sim={session.sim}
       bestLapMs={session.bestLapMs}
       lapCount={session.lapCount}
-      likeCount={session.likeCount ?? 0}
-      commentCount={session.commentCount ?? 0}
-      likedByMe={session.likedByMe ?? false}
       timestamp={timeAgo(session.createdAt)}
-      onSessionPatch={options.onSessionPatch}
       apexAnalysis={session.apexAnalysis ?? null}
     />
   );
@@ -128,13 +121,11 @@ function renderActivityCard(
 
 export type ActivityFeedListProps = {
   items: ActivityFeedItem[];
-  onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
   currentUser?: { id: string; avatarUrl?: string | null } | null;
 };
 
 export default function ActivityFeedList({
   items,
-  onSessionPatch,
   currentUser,
 }: ActivityFeedListProps) {
   return (
@@ -145,7 +136,6 @@ export default function ActivityFeedList({
           return (
             <div key={getActivityFeedItemKey(item)}>
               {renderActivityCard(session, {
-                onSessionPatch,
                 currentUser,
               })}
             </div>
@@ -170,7 +160,6 @@ export default function ActivityFeedList({
                   return (
                     <div key={s.id}>
                       {renderActivityCard(s, {
-                        onSessionPatch,
                         currentUser,
                       })}
                     </div>
@@ -183,7 +172,6 @@ export default function ActivityFeedList({
                     key={carouselKey}
                     sessions={segment.sessions}
                     overflowCount={0}
-                    onSessionPatch={onSessionPatch}
                     currentUser={currentUser}
                   />
                 );

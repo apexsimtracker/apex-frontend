@@ -16,11 +16,13 @@ import {
   getDiscussionCategoryCounts,
   DISCUSSIONS_PAGE_DEFAULT_LIMIT,
   createDiscussion,
+  uploadDiscussionImage,
   getDiscussionListSortLabel,
   type Discussion,
   type DiscussionCategory,
   type DiscussionListSort,
 } from "@/lib/api";
+import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
@@ -68,6 +70,9 @@ export default function Community() {
   const searchQuery = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
   const [showNewDiscussionModal, setShowNewDiscussionModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [newDiscussionImage, setNewDiscussionImage] = useState<File | null>(
+    null,
+  );
 
   const newDiscussionForm = useForm<WithRootError<NewDiscussionFormValues>>({
     resolver: zodResolver(newDiscussionFormSchema),
@@ -150,13 +155,25 @@ export default function Community() {
     newDiscussionForm.clearErrors("root");
     try {
       setCreating(true);
-      await createDiscussion({
+      const created = await createDiscussion({
         category: values.category,
         title: values.title.trim(),
         description: values.description.trim(),
       });
+      if (newDiscussionImage) {
+        try {
+          await uploadDiscussionImage(created.id, newDiscussionImage);
+        } catch (imgErr) {
+          toast.error(
+            imgErr instanceof Error
+              ? imgErr.message
+              : "Discussion created, but image upload failed.",
+          );
+        }
+      }
       await queryClient.invalidateQueries({ queryKey: ["discussions"] });
       setShowNewDiscussionModal(false);
+      setNewDiscussionImage(null);
       newDiscussionForm.reset({
         category: "setup",
         title: "",
@@ -178,6 +195,7 @@ export default function Community() {
   const closeModal = () => {
     if (creating) return;
     setShowNewDiscussionModal(false);
+    setNewDiscussionImage(null);
     newDiscussionForm.clearErrors("root");
   };
 
@@ -340,6 +358,8 @@ export default function Community() {
           }}
           form={newDiscussionForm}
           creating={creating}
+          imageFile={newDiscussionImage}
+          onImageFileChange={setNewDiscussionImage}
           onSubmit={onCreateDiscussion}
         />
       </div>

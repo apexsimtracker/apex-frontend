@@ -19,6 +19,8 @@ import {
   unlikeDiscussion,
   updateDiscussion,
   deleteDiscussion,
+  uploadDiscussionImage,
+  deleteDiscussionImage,
   type Discussion,
   type DiscussionComment,
 } from "@/lib/api";
@@ -170,6 +172,8 @@ export default function DiscussionDetail() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editError, setEditError] = useState<string | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editRemoveImage, setEditRemoveImage] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [originalOpen, setOriginalOpen] = useState(false);
 
@@ -206,8 +210,13 @@ export default function DiscussionDetail() {
       });
     },
     onError: (e: unknown) => {
-      console.error(e);
-      setReplyError(e instanceof Error ? e.message : "Failed to post reply.");
+      setReplyError(
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Failed to post reply.",
+      );
     },
   });
 
@@ -259,16 +268,29 @@ export default function DiscussionDetail() {
   });
 
   const editMutation = useMutation({
-    mutationFn: () =>
-      updateDiscussion(id!, {
+    mutationFn: async () => {
+      if (!id) throw new Error("Missing discussion id");
+      const data = await updateDiscussion(id, {
         title: editTitle.trim(),
         description: editDescription.trim(),
-      }),
+      });
+      if (editRemoveImage) {
+        await deleteDiscussionImage(id);
+        return { ...data, imageUrl: null };
+      }
+      if (editImageFile) {
+        const { imageUrl } = await uploadDiscussionImage(id, editImageFile);
+        return { ...data, imageUrl };
+      }
+      return data;
+    },
     onSuccess: (data) => {
       if (!id) return;
       queryClient.setQueryData<Discussion>(["discussion", "detail", id], data);
       setEditOpen(false);
       setEditError(null);
+      setEditImageFile(null);
+      setEditRemoveImage(false);
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
     onError: (e: unknown) => {
@@ -353,6 +375,8 @@ export default function DiscussionDetail() {
       (discussion.content ?? discussion.description ?? "").trim() || "",
     );
     setEditError(null);
+    setEditImageFile(null);
+    setEditRemoveImage(false);
   }, [editOpen, discussion]);
 
   if (!id) {
@@ -530,10 +554,15 @@ export default function DiscussionDetail() {
         editDescription={editDescription}
         editError={editError}
         saving={editMutation.isPending}
+        currentImageUrl={discussion.imageUrl}
+        imageFile={editImageFile}
+        removeImage={editRemoveImage}
         onClose={() => setEditOpen(false)}
         onSave={() => editMutation.mutate()}
         onTitleChange={setEditTitle}
         onDescriptionChange={setEditDescription}
+        onImageFileChange={setEditImageFile}
+        onRemoveImageChange={setEditRemoveImage}
       />
 
       <DiscussionOriginalPostModal

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -8,9 +8,12 @@ import {
   restoreAdminCommunityDiscussion,
   hardDeleteAdminCommunityDiscussion,
   deleteAdminCommunityComment,
+  uploadAdminCommunityDiscussionImage,
+  deleteAdminCommunityDiscussionImage,
   getDiscussionCategoryLabel,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
+import { validateDiscussionImageFile } from "@/lib/api/community";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { BaseAlertDialog, BaseModal } from "@/components/ui/base-modal";
@@ -25,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const TITLE_BASE = `Admin · Discussion | ${COMPANY_NAME}`;
 
@@ -45,6 +49,8 @@ export default function AdminCommunityDiscussionDetail() {
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<{
     id: string;
   } | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageBusy, setImageBusy] = useState(false);
 
   const { data, isPending, isError, error, refetch } = useQuery({
     queryKey: ["admin", "community", "discussion", discussionId, commentsPage],
@@ -247,6 +253,90 @@ export default function AdminCommunityDiscussionDetail() {
                 {new Date(d.profanityFlaggedAt).toLocaleString()}
               </div>
             )}
+
+            <div className="mb-6 rounded-xl border border-white/10 bg-card p-4 sm:p-6">
+              <h2 className="mb-3 text-sm font-medium text-muted-foreground">
+                Cover image
+              </h2>
+              {d.imageUrl?.trim() ? (
+                <img
+                  src={d.imageUrl.trim()}
+                  alt=""
+                  className="mb-3 aspect-[16/9] max-h-64 w-full rounded-lg object-cover"
+                />
+              ) : (
+                <p className="mb-3 text-sm text-muted-foreground">
+                  No cover image.
+                </p>
+              )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  const err = validateDiscussionImageFile(file);
+                  if (err) {
+                    toast.error(err);
+                    return;
+                  }
+                  setImageBusy(true);
+                  void uploadAdminCommunityDiscussionImage(discussionId, file)
+                    .then(async () => {
+                      toast.success("Image updated");
+                      await refetch();
+                    })
+                    .catch((err: unknown) => {
+                      toast.error(
+                        err instanceof Error
+                          ? err.message
+                          : "Image upload failed",
+                      );
+                    })
+                    .finally(() => setImageBusy(false));
+                }}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={imageBusy}
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  {d.imageUrl?.trim() ? "Replace image" : "Upload image"}
+                </Button>
+                {d.imageUrl?.trim() ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    disabled={imageBusy}
+                    onClick={() => {
+                      setImageBusy(true);
+                      void deleteAdminCommunityDiscussionImage(discussionId)
+                        .then(async () => {
+                          toast.success("Image removed");
+                          await refetch();
+                        })
+                        .catch((err: unknown) => {
+                          toast.error(
+                            err instanceof Error
+                              ? err.message
+                              : "Could not remove image",
+                          );
+                        })
+                        .finally(() => setImageBusy(false));
+                    }}
+                  >
+                    Remove image
+                  </Button>
+                ) : null}
+              </div>
+            </div>
 
             <div className="mb-8 rounded-xl border border-white/10 bg-card p-4 sm:p-6">
               <h2 className="mb-3 text-sm font-medium text-muted-foreground">

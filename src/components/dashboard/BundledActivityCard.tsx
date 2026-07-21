@@ -1,9 +1,7 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import DashboardActivityCard, {
-  type SessionPatch,
-} from "@/components/dashboard/DashboardActivityCard";
+import DashboardActivityCard from "@/components/dashboard/DashboardActivityCard";
 import { type SessionItem } from "@/lib/sessionTypes";
 
 type ActivityOwner = {
@@ -72,14 +70,12 @@ function timeAgo(createdAt: string | Date): string {
 interface BundledActivityCardProps {
   sessions: SessionItem[];
   overflowCount: number;
-  onSessionPatch?: (sessionId: string, patch: SessionPatch) => void;
   currentUser?: { id: string; avatarUrl?: string | null } | null;
 }
 
 export default function BundledActivityCard({
   sessions,
   overflowCount,
-  onSessionPatch,
   currentUser,
 }: BundledActivityCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -192,11 +188,7 @@ export default function BundledActivityCard({
           source={currentSession.source}
           bestLapMs={currentSession.bestLapMs}
           lapCount={currentSession.lapCount}
-          likeCount={currentSession.likeCount ?? 0}
-          commentCount={currentSession.commentCount ?? 0}
-          likedByMe={currentSession.likedByMe ?? false}
           timestamp={timeAgo(currentSession.createdAt)}
-          onSessionPatch={onSessionPatch}
           apexAnalysis={sessionAny.apexAnalysis ?? null}
         />
       </div>

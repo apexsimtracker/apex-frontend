@@ -1,8 +1,8 @@
-import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
-import { deleteManualActivity, ApiError } from "@/lib/api";
+import { deleteManualActivity, ApiError, apiPost } from "@/lib/api";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildPageTitle } from "@/lib/seo";
@@ -43,6 +43,7 @@ import SessionDetailLapConsistency, {
 } from "./session/SessionDetailLapConsistency";
 import SessionDetailSkeleton from "./session/SessionDetailSkeleton";
 import SessionLapTable from "./session/SessionLapTable";
+import { SessionCommentsModal } from "./session/SessionCommentsModal";
 import {
   aggregateTyreWearPct,
   telemetryOverviewFromTraces,
@@ -62,6 +63,7 @@ const SessionShareModal = lazy(() =>
 );
 
 const SESSIONS_PATH = "/sessions";
+const HOME_PATH = "/";
 
 const PAGE_SHELL_CLASS =
   "mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-4 px-6 py-8";
@@ -82,22 +84,30 @@ function ordinalSuffix(n: number): string {
   }
 }
 
-function SessionsBackLink() {
+type SessionNavState = { from?: string } | null;
+
+function SessionBackLink({ fromHome }: { fromHome: boolean }) {
   return (
     <Link
-      to={SESSIONS_PATH}
+      to={fromHome ? HOME_PATH : SESSIONS_PATH}
       className="inline-flex items-center gap-1.5 font-apex-body text-sm text-apex-on-surface-variant transition-colors hover:text-apex-on-surface"
     >
       <ChevronLeft className="size-4 shrink-0" aria-hidden />
-      Sessions
+      {fromHome ? "Home" : "Sessions"}
     </Link>
   );
 }
 
-function PageShell({ children }: { children: ReactNode }) {
+function PageShell({
+  children,
+  fromHome,
+}: {
+  children: ReactNode;
+  fromHome: boolean;
+}) {
   return (
     <div className={PAGE_SHELL_CLASS}>
-      <SessionsBackLink />
+      <SessionBackLink fromHome={fromHome} />
       {children}
     </div>
   );
@@ -106,6 +116,9 @@ function PageShell({ children }: { children: ReactNode }) {
 export default function SessionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromHome =
+    (location.state as SessionNavState)?.from === "home";
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isPro = useIsProUser();
@@ -113,6 +126,11 @@ export default function SessionDetail() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLap, setSelectedLap] = useState<number | null>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [likePending, setLikePending] = useState(false);
+  const [likedByMe, setLikedByMe] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
 
   const sid = id?.trim() ?? "";
   const detailPath = sid ? `/sessions/${sid}` : SESSIONS_PATH;
@@ -132,11 +150,45 @@ export default function SessionDetail() {
   const apexAnalysis = sessionPayload?.apexAnalysis ?? null;
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked ?? false;
 
+  useEffect(() => {
+    if (!session) return;
+    setLikedByMe(Boolean(session.likedByMe));
+    setLikeCount(Number(session.likeCount ?? 0));
+    setCommentCount(Number(session.commentCount ?? 0));
+  }, [session]);
+
   const shareUrl = useMemo(() => (sid ? publicSessionUrl(sid) : ""), [sid]);
 
   const onSelectLap = useCallback((lapNumber: number) => {
     setSelectedLap(lapNumber);
   }, []);
+
+  const handleLike = useCallback(async () => {
+    if (!sid || likePending) return;
+    setLikePending(true);
+    const prevLiked = likedByMe;
+    const prevCount = likeCount;
+    const nextLiked = !prevLiked;
+    setLikedByMe(nextLiked);
+    setLikeCount(Math.max(0, prevCount + (nextLiked ? 1 : -1)));
+    try {
+      const data = await apiPost<{ liked: boolean; likeCount: number }>(
+        `/api/sessions/${sid}/like`,
+        {},
+      );
+      setLikedByMe(Boolean(data.liked));
+      setLikeCount(Number(data.likeCount ?? 0));
+      void queryClient.invalidateQueries({
+        queryKey: ["sessions", "detail", sid],
+      });
+    } catch {
+      setLikedByMe(prevLiked);
+      setLikeCount(prevCount);
+      toast.error("Could not update like. Please try again.");
+    } finally {
+      setLikePending(false);
+    }
+  }, [sid, likePending, likedByMe, likeCount, queryClient]);
 
   const laps = useMemo(() => {
     if (!session) return [];
@@ -201,7 +253,7 @@ export default function SessionDetail() {
 
   if (!sid) {
     return (
-      <PageShell>
+      <PageShell fromHome={fromHome}>
         <p className="font-apex-body text-sm text-apex-on-surface-variant">
           Missing session ID.
         </p>
@@ -218,7 +270,7 @@ export default function SessionDetail() {
           path={detailPath}
           noindex
         />
-        <PageShell>
+        <PageShell fromHome={fromHome}>
           <SessionDetailSkeleton />
         </PageShell>
       </>
@@ -242,7 +294,7 @@ export default function SessionDetail() {
           path={detailPath}
           noindex
         />
-        <PageShell>
+        <PageShell fromHome={fromHome}>
           <div className="rounded-xl bg-apex-surface-container-low p-6 font-apex-body text-sm text-apex-on-surface-variant shadow-lg">
             {errorMessage ?? "Session not found."}
           </div>
@@ -278,7 +330,16 @@ export default function SessionDetail() {
   const visibleLaps = showAllLaps ? laps : laps.slice(0, 6);
   const canShowMoreLaps = !showAllLaps && laps.length > 6;
 
-  const lapTimes = sanitizeLapTimesForConsistency(laps.map((l) => l.timeMs));
+  const lapTimes = sanitizeLapTimesForConsistency(
+    laps
+      .filter(
+        (l) =>
+          l.lap > 1 &&
+          l.isOutLap !== true &&
+          l.isValid !== false,
+      )
+      .map((l) => l.timeMs),
+  );
   const realConsistency =
     session.consistencyScore != null &&
     Number.isFinite(session.consistencyScore)
@@ -291,9 +352,10 @@ export default function SessionDetail() {
     bestLapMsFromLaps,
   );
 
-  // Baseline = first competitive (non-out) lap — Lap 1 is often an out-lap.
+  // Baseline = first competitive lap from Lap 2 onwards (not standing start / out-lap).
   const baselineLap = laps.find(
     (l) =>
+      l.lap > 1 &&
       l.isOutLap !== true &&
       l.timeMs > 0 &&
       l.isValid !== false,
@@ -412,7 +474,7 @@ export default function SessionDetail() {
         path={detailPath}
       />
 
-      <PageShell>
+      <PageShell fromHome={fromHome}>
         <SessionDetailBadges
           session={session}
           resolved={resolved}
@@ -425,6 +487,12 @@ export default function SessionDetail() {
           sim={resolved.sim ?? session.sim ?? undefined}
           canEditSession={canEditSession}
           canManualExtras={canManualExtras}
+          likeCount={likeCount}
+          commentCount={commentCount}
+          likedByMe={likedByMe}
+          likePending={likePending}
+          onLike={() => void handleLike()}
+          onComment={() => setCommentsOpen(true)}
           onShare={() => setShareModalOpen(true)}
           onEdit={() => navigate(`/sessions/${sid}/edit`)}
           onDelete={() => setShowDeleteModal(true)}
@@ -592,6 +660,18 @@ export default function SessionDetail() {
         onConfirm={handleDelete}
         title="Delete this manual activity?"
         message="This cannot be undone."
+      />
+
+      <SessionCommentsModal
+        sessionId={sid}
+        isOpen={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        onCommentAdded={() => setCommentCount((c) => c + 1)}
+        onRefreshSession={() => {
+          void queryClient.invalidateQueries({
+            queryKey: ["sessions", "detail", sid],
+          });
+        }}
       />
 
       {shareModalOpen ? (

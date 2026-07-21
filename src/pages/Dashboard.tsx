@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import { CheckCircle, X } from "lucide-react";
 import ActivityFeedList from "@/components/dashboard/ActivityFeedList";
@@ -13,10 +9,7 @@ import OnboardingEmptyState from "@/components/dashboard/OnboardingEmptyState";
 import PageMeta from "@/components/PageMeta";
 import { SkeletonBlock } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  patchActivityFeedInfiniteData,
-  flattenFeedItemSessions,
-} from "@/lib/activityFeedCache";
+import { flattenFeedItemSessions } from "@/lib/activityFeedCache";
 import {
   isNetworkError,
   getActivityHomeFeedPage,
@@ -193,7 +186,6 @@ function DashboardGoalsSection({
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [showUploadBanner, setShowUploadBanner] = useState(false);
   const [homeTrendEnabled, setHomeTrendEnabled] = useState(false);
@@ -587,17 +579,6 @@ export default function Dashboard() {
                 <ActivityFeedList
                   items={activity}
                   currentUser={user ?? null}
-                  onSessionPatch={(id, patch) => {
-                    queryClient.setQueryData<
-                      InfiniteData<ActivityFeedPageResult>
-                    >(homeActivityFeedQueryKey, (prev) =>
-                      patchActivityFeedInfiniteData(
-                        prev,
-                        id,
-                        patch as Record<string, unknown>,
-                      ),
-                    );
-                  }}
                 />
               )}
               {!error && !feedError && hasNextPage && (

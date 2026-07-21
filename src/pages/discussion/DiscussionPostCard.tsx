@@ -181,6 +181,17 @@ export default function DiscussionPostCard({
       <h1 className="mb-4 font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
         {discussion.title}
       </h1>
+
+      {discussion.imageUrl?.trim() ? (
+        <div className="mb-5 overflow-hidden rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container">
+          <img
+            src={discussion.imageUrl.trim()}
+            alt=""
+            className="aspect-[16/9] w-full object-cover"
+          />
+        </div>
+      ) : null}
+
       <p className="mb-5 whitespace-pre-wrap font-apex-body text-sm leading-relaxed text-apex-on-surface-variant sm:text-base">
         {description}
       </p>

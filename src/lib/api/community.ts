@@ -1,4 +1,7 @@
 import { apiGet, apiPost, apiDelete, apiPatch } from "./httpVerbs";
+import { buildApiAuthHeaders } from "./fetchClient";
+import { API_BASE } from "./config";
+import { ApiError } from "./errors";
 
 // Community discussions — category query params match backend: all | setup | guides | general
 export const DISCUSSION_CATEGORIES = [
@@ -52,6 +55,8 @@ export type Discussion = {
   wasEdited?: boolean;
   originalTitle?: string | null;
   originalBody?: string | null;
+  /** Optional cover image public URL. */
+  imageUrl?: string | null;
 };
 
 /** Default page size for GET /api/community/discussions (must match server default). */
@@ -173,6 +178,70 @@ export async function createDiscussion(
   body: CreateDiscussionBody,
 ): Promise<Discussion> {
   return apiPost<Discussion>("/api/community/discussions", body);
+}
+
+export const DISCUSSION_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const DISCUSSION_IMAGE_ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+export function validateDiscussionImageFile(file: File): string | null {
+  if (
+    !(DISCUSSION_IMAGE_ACCEPTED_TYPES as readonly string[]).includes(file.type)
+  ) {
+    return "Invalid file type. Allowed: JPEG, PNG, WebP.";
+  }
+  if (file.size > DISCUSSION_IMAGE_MAX_BYTES) {
+    return "File too large. Maximum size is 5MB.";
+  }
+  return null;
+}
+
+export async function uploadDiscussionImage(
+  discussionId: string,
+  file: File,
+): Promise<{ imageUrl: string | null }> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const headers = buildApiAuthHeaders();
+  const url = `${API_BASE}/api/community/discussions/${encodeURIComponent(discussionId)}/image`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = "Image upload failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text) as { message?: string; error?: string };
+          message = json.message ?? json.error ?? message;
+        } catch {
+          message = text;
+        }
+      }
+    } catch {
+      // keep default
+    }
+    throw new ApiError(res.status, message);
+  }
+
+  return (await res.json()) as { imageUrl: string | null };
+}
+
+export async function deleteDiscussionImage(
+  discussionId: string,
+): Promise<{ imageUrl: null }> {
+  return apiDelete<{ imageUrl: null }>(
+    `/api/community/discussions/${encodeURIComponent(discussionId)}/image`,
+  );
 }
 
 export async function getDiscussion(id: string): Promise<Discussion> {

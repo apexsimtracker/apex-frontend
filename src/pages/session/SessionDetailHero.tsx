@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Share2, Pencil, Trash2, Repeat } from "lucide-react";
+import { Share2, Pencil, Trash2, Repeat, Heart, MessageCircle } from "lucide-react";
 import { formatTrackName } from "@/lib/tracks";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
+import { cn, formatCompactCount } from "@/lib/utils";
 
 type SessionDetailHeroProps = {
   trackName: string | null;
@@ -9,6 +10,12 @@ type SessionDetailHeroProps = {
   sim?: string | null;
   canEditSession: boolean;
   canManualExtras: boolean;
+  likeCount: number;
+  commentCount: number;
+  likedByMe: boolean;
+  likePending?: boolean;
+  onLike: () => void;
+  onComment: () => void;
   onShare: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -21,6 +28,12 @@ export default function SessionDetailHero({
   sim,
   canEditSession,
   canManualExtras,
+  likeCount,
+  commentCount,
+  likedByMe,
+  likePending = false,
+  onLike,
+  onComment,
   onShare,
   onEdit,
   onDelete,
@@ -66,45 +79,80 @@ export default function SessionDetailHero({
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-apex-background via-apex-background/50 to-transparent" />
 
-      <div className="relative z-10 flex items-center justify-end gap-2 px-4 pt-4 sm:px-6 sm:pt-6">
-        {canManualExtras && (
-          <>
-            <button
-              type="button"
-              onClick={onLogAgain}
-              className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-              aria-label="Log again"
-            >
-              <Repeat className="size-5" aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="flex items-center justify-center rounded-full p-2 text-apex-error transition-colors hover:bg-apex-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-              aria-label="Delete session"
-            >
-              <Trash2 className="size-5" aria-hidden />
-            </button>
-          </>
-        )}
-        {canEditSession && (
+      <div className="relative z-10 flex items-center justify-between gap-2 px-4 pt-4 sm:px-6 sm:pt-6">
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={onEdit}
-            className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-            aria-label="Edit session"
+            disabled={likePending}
+            onClick={onLike}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-2.5 py-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95",
+              likedByMe && "text-apex-error",
+              likePending && "cursor-not-allowed opacity-50",
+            )}
+            aria-label={likedByMe ? "Unlike session" : "Like session"}
           >
-            <Pencil className="size-5" aria-hidden />
+            <Heart
+              className={cn("size-5", likedByMe && "fill-current")}
+              aria-hidden
+            />
+            <span className="font-apex-body text-xs font-medium tabular-nums">
+              {formatCompactCount(likeCount)}
+            </span>
           </button>
-        )}
-        <button
-          type="button"
-          onClick={onShare}
-          className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-          aria-label="Share session"
-        >
-          <Share2 className="size-5" aria-hidden />
-        </button>
+          <button
+            type="button"
+            onClick={onComment}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+            aria-label="Comments"
+          >
+            <MessageCircle className="size-5" aria-hidden />
+            <span className="font-apex-body text-xs font-medium tabular-nums">
+              {formatCompactCount(commentCount)}
+            </span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {canManualExtras && (
+            <>
+              <button
+                type="button"
+                onClick={onLogAgain}
+                className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+                aria-label="Log again"
+              >
+                <Repeat className="size-5" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="flex items-center justify-center rounded-full p-2 text-apex-error transition-colors hover:bg-apex-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+                aria-label="Delete session"
+              >
+                <Trash2 className="size-5" aria-hidden />
+              </button>
+            </>
+          )}
+          {canEditSession && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+              aria-label="Edit session"
+            >
+              <Pencil className="size-5" aria-hidden />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onShare}
+            className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+            aria-label="Share session"
+          >
+            <Share2 className="size-5" aria-hidden />
+          </button>
+        </div>
       </div>
 
       <div className="absolute bottom-6 left-4 z-10 sm:left-6">

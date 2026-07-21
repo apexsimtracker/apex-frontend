@@ -1,5 +1,7 @@
 import { apiPatch, apiPost } from "./httpVerbs";
-import { fetchApi } from "./fetchClient";
+import { fetchApi, buildApiAuthHeaders } from "./fetchClient";
+import { API_BASE } from "./config";
+import { ApiError } from "./errors";
 import type { DiscussionAuthor } from "./community";
 
 export type AdminCommunityDiscussionListItem = {
@@ -32,6 +34,7 @@ export type AdminCommunityDiscussionDetail = {
   category: string;
   title: string;
   body: string;
+  imageUrl?: string | null;
   views: number;
   createdAt: string;
   updatedAt: string;
@@ -217,4 +220,53 @@ export async function resolveAdminCommunityModerationFlag(
     `/api/admin/community/moderation-flags/${encodeURIComponent(flagId)}/resolve`,
     undefined,
   );
+}
+
+export async function uploadAdminCommunityDiscussionImage(
+  discussionId: string,
+  file: File,
+): Promise<{ imageUrl: string | null }> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const headers = buildApiAuthHeaders();
+  const url = `${API_BASE}/api/admin/community/discussions/${encodeURIComponent(discussionId)}/image`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = "Image upload failed";
+    try {
+      const text = await res.text();
+      if (text) {
+        try {
+          const json = JSON.parse(text) as { message?: string; error?: string };
+          message = json.message ?? json.error ?? message;
+        } catch {
+          message = text;
+        }
+      }
+    } catch {
+      // keep default
+    }
+    throw new ApiError(res.status, message);
+  }
+
+  return (await res.json()) as { imageUrl: string | null };
+}
+
+export async function deleteAdminCommunityDiscussionImage(
+  discussionId: string,
+): Promise<{ imageUrl: null }> {
+  await fetchApi(
+    "DELETE",
+    `/api/admin/community/discussions/${encodeURIComponent(discussionId)}/image`,
+    undefined,
+    false,
+  );
+  return { imageUrl: null };
 }

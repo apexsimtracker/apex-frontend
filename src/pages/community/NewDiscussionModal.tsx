@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
 import {
   Form,
   FormControl,
@@ -10,7 +11,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DISCUSSION_CATEGORIES } from "@/lib/api";
+import {
+  DISCUSSION_CATEGORIES,
+  DISCUSSION_IMAGE_ACCEPTED_TYPES,
+  validateDiscussionImageFile,
+} from "@/lib/api";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { NewDiscussionFormValues } from "@/lib/validation/community";
 import { cn } from "@/lib/utils";
@@ -21,6 +26,7 @@ import {
   appPrimaryButtonClassName,
 } from "@/components/app-ui/appButtonClasses";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
+import { ImagePlus, X } from "lucide-react";
 
 const createCategories = DISCUSSION_CATEGORIES.filter((c) => c.value !== "all");
 
@@ -29,6 +35,8 @@ type NewDiscussionModalProps = {
   onOpenChange: (open: boolean) => void;
   form: UseFormReturn<WithRootError<NewDiscussionFormValues>>;
   creating: boolean;
+  imageFile: File | null;
+  onImageFileChange: (file: File | null) => void;
   onSubmit: (values: NewDiscussionFormValues) => void | Promise<void>;
 };
 
@@ -37,12 +45,52 @@ export default function NewDiscussionModal({
   onOpenChange,
   form,
   creating,
+  imageFile,
+  onImageFileChange,
   onSubmit,
 }: NewDiscussionModalProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  useEffect(() => {
+    if (!open) {
+      setImageError(null);
+      setDragOver(false);
+    }
+  }, [open]);
+
   const closeModal = () => {
     if (creating) return;
     onOpenChange(false);
     form.clearErrors("root");
+  };
+
+  const applyFile = (file: File | null) => {
+    if (!file) {
+      onImageFileChange(null);
+      setImageError(null);
+      return;
+    }
+    const err = validateDiscussionImageFile(file);
+    if (err) {
+      setImageError(err);
+      onImageFileChange(null);
+      return;
+    }
+    setImageError(null);
+    onImageFileChange(file);
   };
 
   if (!open) return null;
@@ -164,6 +212,75 @@ export default function NewDiscussionModal({
               </FormItem>
             )}
           />
+
+          <div className="mb-2">
+            <p className="mb-2 font-apex-body text-sm font-medium text-apex-on-surface">
+              Cover image{" "}
+              <span className="font-normal text-apex-on-surface-variant">
+                (optional)
+              </span>
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={DISCUSSION_IMAGE_ACCEPTED_TYPES.join(",")}
+              className="hidden"
+              disabled={creating}
+              onChange={(e) => {
+                applyFile(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+            {previewUrl ? (
+              <div className="relative overflow-hidden rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container">
+                <img
+                  src={previewUrl}
+                  alt="Cover preview"
+                  className="aspect-[16/9] w-full object-cover"
+                />
+                <button
+                  type="button"
+                  disabled={creating}
+                  onClick={() => applyFile(null)}
+                  className="absolute right-2 top-2 rounded-full bg-apex-background/80 p-1.5 text-apex-on-surface hover:bg-apex-background"
+                  aria-label="Remove image"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={creating}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  applyFile(e.dataTransfer.files?.[0] ?? null);
+                }}
+                className={cn(
+                  "flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-4 py-8 font-apex-body text-sm text-apex-on-surface-variant transition-colors",
+                  dragOver
+                    ? "border-apex-primary bg-apex-primary/10"
+                    : "border-apex-outline-variant/30 bg-apex-surface-container hover:border-apex-outline-variant/50",
+                )}
+              >
+                <ImagePlus className="size-6 text-apex-on-surface-variant" />
+                <span>Drop an image here, or click to browse</span>
+                <span className="text-xs">JPEG, PNG, or WebP · max 5MB</span>
+              </button>
+            )}
+            {imageError ? (
+              <p className="mt-2 font-apex-body text-xs text-apex-error">
+                {imageError}
+              </p>
+            ) : null}
+          </div>
         </form>
       </Form>
     </AppBaseModal>
