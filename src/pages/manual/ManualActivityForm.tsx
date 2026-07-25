@@ -300,6 +300,7 @@ function buildDefaults(
         : "",
     laps,
     notes: initial?.notes ?? "",
+    caption: initial?.caption ?? "",
     conditions:
       initial?.conditions === "DRY" ||
       initial?.conditions === "WET" ||
@@ -531,6 +532,7 @@ export default function ManualActivityForm({
           : undefined,
       laps: lapsOut,
       notes: values.notes.trim() || undefined,
+      caption: values.caption.trim(),
       conditions: values.conditions,
     });
   }
@@ -1094,6 +1096,35 @@ export default function ManualActivityForm({
               </p>
             );
           })}
+        </FormBlock>
+
+        <FormBlock
+          title="Caption"
+          description="Public remark shown on your session card (optional, max 280 characters)."
+        >
+          <FormField
+            control={form.control}
+            name="caption"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel htmlFor="caption" className="sr-only">
+                  Caption (optional)
+                </FormLabel>
+                <FormControl>
+                  <textarea
+                    id="caption"
+                    disabled={isSubmitting}
+                    placeholder="Share what made this session special…"
+                    rows={2}
+                    maxLength={280}
+                    className={appManualTextareaClassName}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs text-apex-error" />
+              </FormItem>
+            )}
+          />
         </FormBlock>
 
         <FormBlock

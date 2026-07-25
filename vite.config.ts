@@ -31,6 +31,11 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes("node_modules/@revenuecat")) return "revenuecat";
           if (id.includes("node_modules/react-share")) return "share";
+          if (id.includes("node_modules/@tanstack/react-query")) {
+            return "query";
+          }
+          if (id.includes("node_modules/@radix-ui/")) return "radix";
+          if (id.includes("node_modules/lucide-react")) return "lucide";
           if (
             id.includes("node_modules/react-dom") ||
             id.includes("node_modules/react/")

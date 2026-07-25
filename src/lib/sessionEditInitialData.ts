@@ -40,6 +40,7 @@ export type PublicSessionDetailForEdit = {
   bestLapMs?: number | null;
   sessionType?: string | null;
   notes?: string | null;
+  caption?: string | null;
   conditions?: "DRY" | "WET" | "MIXED" | null;
   laps?: Array<{
     lap?: number;
@@ -142,6 +143,7 @@ export function manualActivityInitialFromPublicDetail(
     lapsCanEditOutLap: lapsMs.length > 0 ? lapsCanEditOutLap : undefined,
     bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
     notes: data.notes,
+    caption: data.caption,
     conditions:
       data.conditions === "DRY" ||
       data.conditions === "WET" ||
@@ -192,7 +194,8 @@ export function manualActivityInitialFromAdminDetail(
     totalDrivers: d.totalDrivers,
     qualifyingPosition: d.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
-    notes: undefined,
+    notes: d.notes,
+    caption: d.caption,
     telemetryMinLapRows,
   };
 }

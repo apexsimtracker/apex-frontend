@@ -205,6 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  const value = useMemo(
+    () => ({ user, loading, error, refreshUser, refreshMe, setUser }),
+    [user, loading, error, refreshUser, refreshMe, setUser],
+  );
+
   // Register global auth expired handler
   useEffect(() => {
     registerAuthExpiredHandler(async () => {
@@ -235,11 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applyTokenStorageToQueryClient]);
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, error, refreshUser, refreshMe, setUser }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 }
 

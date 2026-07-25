@@ -1,6 +1,6 @@
 import { ChevronDown, Download, Loader2, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { DataExportFormat } from "@/lib/api";
+import type { DataExportDepth, DataExportJob } from "@/lib/api";
 import { SettingsSectionChrome } from "./SettingsSectionChrome";
 import {
   appDangerCardClassName,
@@ -8,24 +8,69 @@ import {
   appTertiaryIconClassName,
 } from "@/components/app-ui/appButtonClasses";
 import { cn } from "@/lib/utils";
+import { formatRetryAfterMs } from "@/features/settings/utils";
+import { useMemo } from "react";
 
 type SettingsAccountActionsSectionProps = {
-  exportFormat: DataExportFormat;
-  onExportFormatChange: (format: DataExportFormat) => void;
-  exportLoading: boolean;
-  onExportData: () => void | Promise<void>;
+  exportDepth: DataExportDepth;
+  onExportDepthChange: (depth: DataExportDepth) => void;
+  exportJob: DataExportJob | null;
+  exportRequesting: boolean;
+  exportPolling: boolean;
+  cooldownMs: number | null;
+  onRequestExport: () => void | Promise<void>;
+  onDownloadExport: () => void | Promise<void>;
   onLogout: () => void | Promise<void>;
   onDeleteAccount: () => void;
 };
 
+function expiresInLabel(expiresAt: string | undefined): string | null {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "Expired";
+  return `Expires in ${formatRetryAfterMs(ms)}`;
+}
+
 export default function SettingsAccountActionsSection({
-  exportFormat,
-  onExportFormatChange,
-  exportLoading,
-  onExportData,
+  exportDepth,
+  onExportDepthChange,
+  exportJob,
+  exportRequesting,
+  exportPolling,
+  cooldownMs,
+  onRequestExport,
+  onDownloadExport,
   onLogout,
   onDeleteAccount,
 }: SettingsAccountActionsSectionProps) {
+  const status = exportJob?.status;
+  const busy =
+    exportRequesting ||
+    exportPolling ||
+    status === "pending" ||
+    status === "processing";
+  const ready = status === "ready" && !!exportJob?.downloadUrl;
+  const failed = status === "failed";
+  const onCooldown = cooldownMs != null && cooldownMs > 0 && !ready && !busy;
+
+  const statusCopy = useMemo(() => {
+    if (busy) return "Preparing your export…";
+    if (ready) return expiresInLabel(exportJob?.expiresAt) ?? "Download ready";
+    if (failed) {
+      return (
+        exportJob?.error?.message ??
+        "Export failed. You can try again after the cooldown."
+      );
+    }
+    if (status === "expired") {
+      return "Your previous export expired. Request a new one when the cooldown ends.";
+    }
+    if (onCooldown && cooldownMs != null) {
+      return `You can export again in ${formatRetryAfterMs(cooldownMs)}.`;
+    }
+    return "Creates a zip archive. Full exports include lap telemetry and take longer.";
+  }, [busy, ready, failed, status, exportJob, onCooldown, cooldownMs]);
+
   return (
     <SettingsSectionChrome title="Account actions" bare>
       <div className="space-y-4">
@@ -41,17 +86,17 @@ export default function SettingsAccountActionsSection({
           </div>
           <div className="relative">
             <select
-              id="export-format"
-              value={exportFormat}
+              id="export-depth"
+              value={exportDepth}
               onChange={(e) =>
-                onExportFormatChange(e.target.value as DataExportFormat)
+                onExportDepthChange(e.target.value as DataExportDepth)
               }
-              disabled={exportLoading}
+              disabled={busy || onCooldown}
               className="w-full appearance-none rounded-apex-sm border border-transparent bg-apex-surface-container-highest px-4 py-3 font-apex-body text-sm text-apex-on-surface shadow-none focus:border-apex-primary focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
             >
-              <option value="xlsx">Excel workbook (.xlsx) — full data</option>
-              <option value="pdf">
-                Summary PDF (.pdf) — printable overview
+              <option value="summary">Account summary — no telemetry</option>
+              <option value="full">
+                Full export — includes raw telemetry
               </option>
             </select>
             <ChevronDown
@@ -59,33 +104,51 @@ export default function SettingsAccountActionsSection({
               aria-hidden
             />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className={cn(
-              "mt-4 w-full",
-              appOutlineButtonClassName,
-              exportLoading && "cursor-not-allowed opacity-60",
-            )}
-            onClick={() => void onExportData()}
-            disabled={exportLoading}
-            aria-busy={exportLoading}
-          >
-            {exportLoading ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                Exporting…
-              </>
-            ) : (
-              <>
-                <Download
-                  className={cn("mr-2 size-4", appTertiaryIconClassName)}
-                  aria-hidden
-                />
-                Export data
-              </>
-            )}
-          </Button>
+          <p className="mt-3 font-apex-body text-xs text-apex-on-surface-variant">
+            {statusCopy}
+          </p>
+          {ready ? (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn("mt-4 w-full", appOutlineButtonClassName)}
+              onClick={() => void onDownloadExport()}
+            >
+              <Download
+                className={cn("mr-2 size-4", appTertiaryIconClassName)}
+                aria-hidden
+              />
+              Download ready
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                "mt-4 w-full",
+                appOutlineButtonClassName,
+                (busy || onCooldown) && "cursor-not-allowed opacity-60",
+              )}
+              onClick={() => void onRequestExport()}
+              disabled={busy || onCooldown}
+              aria-busy={busy}
+            >
+              {busy ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+                  Processing…
+                </>
+              ) : (
+                <>
+                  <Download
+                    className={cn("mr-2 size-4", appTertiaryIconClassName)}
+                    aria-hidden
+                  />
+                  Request export
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
         <button
@@ -106,19 +169,17 @@ export default function SettingsAccountActionsSection({
           type="button"
           onClick={onDeleteAccount}
           className={cn(
-            "group flex w-full items-center justify-between",
+            "group flex w-full items-center justify-between rounded-apex-lg p-6 transition-colors",
             appDangerCardClassName,
           )}
         >
-          <div className="text-left">
-            <span className="block font-apex-headline text-sm font-bold text-[#ff6e84]">
-              Delete account
-            </span>
-            <span className="mt-1 block text-[10px] font-medium uppercase tracking-tighter text-[#ff6e84]/60">
-              This action is permanent and irreversible
-            </span>
-          </div>
-          <Trash2 className="size-5 text-[#ff6e84]" aria-hidden />
+          <span className="font-apex-headline text-sm font-bold text-apex-error">
+            Delete account
+          </span>
+          <Trash2
+            className="size-5 text-apex-error/70 transition-colors group-hover:text-apex-error"
+            aria-hidden
+          />
         </button>
       </div>
     </SettingsSectionChrome>

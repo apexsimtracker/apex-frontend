@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
   ChevronDown,
@@ -17,6 +18,7 @@ import { getAccountMenuItemsForUser, getPrimaryNavItems, isNavPathActive, logSes
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatform } from "@/hooks/usePlatform";
 import { useSessionsNavActive } from "@/hooks/useSessionsNavActive";
+import { prefetchNavIntent } from "@/lib/navIntentPrefetch";
 import { useSignOut } from "@/lib/auth/useSignOut";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +61,7 @@ export default function MobileNavDrawer({
 }: AppMobileNavDrawerProps) {
   const location = useLocation();
   const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
   const { isNative } = usePlatform();
   const { signOut, isSigningOut } = useSignOut();
   const sessionsNavActive = useSessionsNavActive();
@@ -68,6 +71,10 @@ export default function MobileNavDrawer({
   const accountItems = user
     ? getAccountMenuItemsForUser(user.role === "ADMIN", isNative)
     : [];
+
+  const onIntent = (to: string) => {
+    prefetchNavIntent(to, queryClient, { userId: user?.id });
+  };
 
   useEffect(() => {
     onClose();
@@ -116,6 +123,9 @@ export default function MobileNavDrawer({
               <Link
                 key={item.to}
                 to={item.to}
+                onPointerEnter={() => onIntent(item.to)}
+                onPointerDown={() => onIntent(item.to)}
+                onFocus={() => onIntent(item.to)}
                 onClick={onClose}
                 className={cn(
                   "rounded-apex-sm px-4 py-2.5 font-apex-headline text-sm font-medium transition-colors",
@@ -161,6 +171,9 @@ export default function MobileNavDrawer({
                         <Link
                           key={item.to}
                           to={item.to}
+                          onPointerEnter={() => onIntent(item.to)}
+                          onPointerDown={() => onIntent(item.to)}
+                          onFocus={() => onIntent(item.to)}
                           onClick={() => {
                             onClose();
                             setIsCreateOpen(false);
@@ -194,6 +207,9 @@ export default function MobileNavDrawer({
                     <Link
                       key={item.to}
                       to={to}
+                      onPointerEnter={() => onIntent(to)}
+                      onPointerDown={() => onIntent(to)}
+                      onFocus={() => onIntent(to)}
                       onClick={onClose}
                       className="flex items-center gap-2 rounded-apex-sm px-4 py-2.5 text-sm font-medium text-apex-on-surface-variant transition-colors hover:bg-apex-surface-container hover:text-apex-on-surface"
                     >

@@ -44,4 +44,6 @@ export type SessionItem = {
   totalTimeMs?: number | null;
   /** Gated Apex Analysis insights from home feed (Pro viewers only). */
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  /** Public owner/admin caption shown on cards. */
+  caption?: string | null;
 };

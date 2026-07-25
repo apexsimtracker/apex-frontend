@@ -124,7 +124,7 @@ Copy `.env.example` → `.env`. Only **`VITE_*`** variables are read by this app
 
 | Variable                    | Required         | Description                                                                    |
 | --------------------------- | ---------------- | ------------------------------------------------------------------------------ |
-| `VITE_API_URL`              | Prod recommended | Fastify API base URL, no trailing slash (e.g. `https://your-api.onrender.com`) |
+| `VITE_API_URL`              | Prod recommended | Fastify API base URL, no trailing slash (e.g. `https://apex-1-y319.onrender.com`) |
 | `VITE_APEX_API_BASE_URL`    | No               | Alias for API base (legacy name)                                               |
 | `VITE_DEV_API_PROXY_TARGET` | No               | Dev proxy target for `/api` (default `http://127.0.0.1:10000`)                 |
 | `VITE_SUPPORT_EMAIL`        | No               | Footer mailto (default `support@apexsimtracker.com`)                           |

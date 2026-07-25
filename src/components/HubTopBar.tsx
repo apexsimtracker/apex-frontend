@@ -35,7 +35,7 @@ export default function HubTopBar() {
             <ApexLogo className="h-10 w-auto min-w-[80px] transition-transform group-hover:scale-[1.03]" />
           ) : (
             <img
-              src="/logo.png?v=4"
+              src="/logo.png?v=5"
               alt="Apex Logo"
               className="h-10 w-auto max-w-[112px] object-contain object-center transition-transform group-hover:scale-[1.03]"
               onError={() => setLogoImgFailed(true)}

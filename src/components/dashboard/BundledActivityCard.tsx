@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import DashboardActivityCard from "@/components/dashboard/DashboardActivityCard";
@@ -73,7 +73,7 @@ interface BundledActivityCardProps {
   currentUser?: { id: string; avatarUrl?: string | null } | null;
 }
 
-export default function BundledActivityCard({
+export default memo(function BundledActivityCard({
   sessions,
   overflowCount,
   currentUser,
@@ -190,6 +190,7 @@ export default function BundledActivityCard({
           lapCount={currentSession.lapCount}
           timestamp={timeAgo(currentSession.createdAt)}
           apexAnalysis={sessionAny.apexAnalysis ?? null}
+          caption={sessionAny.caption ?? null}
         />
       </div>
 
@@ -233,4 +234,4 @@ export default function BundledActivityCard({
       </div>
     </div>
   );
-}
+});

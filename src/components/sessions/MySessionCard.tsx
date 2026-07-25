@@ -24,6 +24,7 @@ import {
   shouldShowSessionPosition,
 } from "@/lib/sessionKind";
 import type { SessionsLibraryRow } from "@/lib/api";
+import SessionCaption from "@/components/sessions/SessionCaption";
 
 function SessionTypePill({
   sessionType,
@@ -132,6 +133,7 @@ export default function MySessionCard({ session }: MySessionCardProps) {
     lapCount,
     totalTimeMs,
     createdAt,
+    caption,
   } = session;
 
   const isPractice =
@@ -323,6 +325,8 @@ export default function MySessionCard({ session }: MySessionCardProps) {
             ))}
           </div>
         ) : null}
+
+        <SessionCaption caption={caption} />
       </div>
     </article>
   );

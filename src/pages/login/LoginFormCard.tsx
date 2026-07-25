@@ -2,6 +2,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, Loader2, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -129,8 +130,7 @@ export default function LoginFormCard({
               <FormItem className="space-y-1">
                 <label className={formLabelClassName}>Password</label>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     autoComplete="current-password"
                     placeholder="Your password"
                     disabled={loading}

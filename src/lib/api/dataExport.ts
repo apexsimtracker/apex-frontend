@@ -6,26 +6,75 @@ import {
   notifyAuthExpired,
 } from "./fetchClient";
 
-export type DataExportFormat = "xlsx" | "pdf";
+export type DataExportDepth = "summary" | "full";
+
+export type DataExportJobStatus =
+  | "pending"
+  | "processing"
+  | "ready"
+  | "failed"
+  | "expired";
+
+export type DataExportJob = {
+  id: string;
+  depth: DataExportDepth;
+  scope: "user" | "session";
+  sessionId?: string;
+  status: DataExportJobStatus;
+  requestedAt: string;
+  completedAt?: string;
+  expiresAt?: string;
+  byteSize?: number;
+  downloadUrl?: string;
+  error?: { code: string; message: string };
+};
+
+async function parseJobResponse(res: Response): Promise<DataExportJob | null> {
+  const body = (await res.json()) as { job?: DataExportJob | null };
+  return body.job ?? null;
+}
 
 /**
- * GET /api/settings/data-export — downloads Excel (.xlsx) or summary PDF.
- * Lap telemetry is only included for Excel when `includeTelemetry` is true (large payloads).
+ * POST /api/settings/data-export — enqueue an async zip export (202).
  */
-export async function downloadUserDataExport(options?: {
-  format?: DataExportFormat;
-  includeTelemetry?: boolean;
-}): Promise<void> {
-  const format = options?.format ?? "xlsx";
-  const includeTelemetry = options?.includeTelemetry === true;
-  const params = new URLSearchParams();
-  params.set("format", format);
-  if (includeTelemetry) params.set("includeTelemetry", "1");
-  const qs = `?${params.toString()}`;
-  const path = `/api/settings/data-export${qs}`;
-  const url = path.startsWith("http")
-    ? path
-    : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+export async function requestUserDataExport(options?: {
+  depth?: DataExportDepth;
+}): Promise<DataExportJob> {
+  const depth = options?.depth ?? "summary";
+  const url = `${API_BASE}/api/settings/data-export`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...buildApiAuthHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ depth }),
+    });
+  } catch {
+    throw new ApiError(0, "Connection lost. Please try again.");
+  }
+
+  if (!res.ok) {
+    const { message, code, retryAfterMs } = await extractErrorInfo(res);
+    await notifyAuthExpired(false, res.status);
+    throw new ApiError(res.status, message, code, retryAfterMs);
+  }
+
+  const job = await parseJobResponse(res);
+  if (!job) {
+    throw new ApiError(500, "Invalid export response.");
+  }
+  return job;
+}
+
+/**
+ * GET /api/settings/data-export/latest — latest job for the current user (or null).
+ */
+export async function fetchLatestUserDataExport(): Promise<DataExportJob | null> {
+  const url = `${API_BASE}/api/settings/data-export/latest`;
 
   let res: Response;
   try {
@@ -43,34 +92,50 @@ export async function downloadUserDataExport(options?: {
     throw new ApiError(res.status, message, code, retryAfterMs);
   }
 
-  const blob = await res.blob();
-  const defaultExt = format === "pdf" ? "pdf" : "xlsx";
-  let filename = `apex-data-export-${new Date().toISOString().slice(0, 10)}.${defaultExt}`;
-  const cd = res.headers.get("Content-Disposition");
-  if (cd) {
-    const star = /filename\*=UTF-8''([^;\s]+)/i.exec(cd);
-    if (star?.[1]) {
-      try {
-        filename = decodeURIComponent(star[1]);
-      } catch {
-        /* keep default filename */
-      }
-    } else {
-      const quoted = /filename="([^"]+)"/i.exec(cd);
-      if (quoted?.[1]) filename = quoted[1];
-    }
+  return parseJobResponse(res);
+}
+
+/**
+ * GET /api/settings/data-export/:jobId
+ */
+export async function fetchUserDataExportJob(
+  jobId: string
+): Promise<DataExportJob> {
+  const url = `${API_BASE}/api/settings/data-export/${encodeURIComponent(jobId)}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "GET",
+      headers: buildApiAuthHeaders(),
+    });
+  } catch {
+    throw new ApiError(0, "Connection lost. Please try again.");
   }
 
-  const objectUrl = URL.createObjectURL(blob);
-  try {
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.download = filename;
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(objectUrl);
+  if (!res.ok) {
+    const { message, code, retryAfterMs } = await extractErrorInfo(res);
+    await notifyAuthExpired(false, res.status);
+    throw new ApiError(res.status, message, code, retryAfterMs);
   }
+
+  const job = await parseJobResponse(res);
+  if (!job) {
+    throw new ApiError(404, "Export job not found.");
+  }
+  return job;
+}
+
+/** Open a ready export download URL in a new navigation (presigned R2). */
+export function openDataExportDownload(job: DataExportJob): void {
+  if (!job.downloadUrl) {
+    throw new ApiError(400, "Download is not ready yet.");
+  }
+  const a = document.createElement("a");
+  a.href = job.downloadUrl;
+  a.rel = "noopener";
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }

@@ -45,6 +45,8 @@ export type ManualActivityRequest = {
   /** Ordered laps (ms); optional sectors when provided. */
   laps?: ManualActivityLapPayload[];
   notes?: string;
+  /** Public caption shown on activity/session cards. */
+  caption?: string;
   /** Track weather conditions. */
   conditions?: "DRY" | "WET" | "MIXED";
   /** Link session to a challenge (must be active; you must have joined; track/car must match). */
@@ -86,6 +88,10 @@ export function buildManualActivityRequestBody(
   }
   if (data.notes != null && String(data.notes).trim() !== "") {
     body.notes = String(data.notes).trim();
+  }
+  if (data.caption !== undefined) {
+    // Empty string clears caption on update; omit only when undefined.
+    body.caption = String(data.caption).trim();
   }
   if (
     data.conditions === "DRY" ||
@@ -158,6 +164,18 @@ export async function updateManualActivity(
   data: ManualActivityRequest,
 ): Promise<ManualActivityResponse> {
   return updateActivity(sessionId, data);
+}
+
+/** Owner or admin: set/clear public session caption. */
+export async function patchSessionCaption(
+  sessionId: string,
+  caption: string | null,
+): Promise<{ ok: boolean; caption: string | null }> {
+  return fetchApi(
+    "PATCH",
+    `/api/sessions/${encodeURIComponent(sessionId)}/caption`,
+    { caption },
+  );
 }
 
 export async function deleteManualActivity(sessionId: string): Promise<void> {

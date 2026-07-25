@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import { Trophy } from "lucide-react";
 import DashboardSessionApexPanel from "@/components/dashboard/DashboardSessionApexPanel";
 import {
@@ -21,6 +21,7 @@ import {
   isPracticeKind,
   shouldShowSessionPosition,
 } from "@/lib/sessionKind";
+import SessionCaption from "@/components/sessions/SessionCaption";
 
 function isManualSessionItem(props: {
   sessionType?: string | null;
@@ -255,9 +256,10 @@ export type DashboardActivityCardProps = {
   timestamp: string;
   profileUserId?: string | null;
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  caption?: string | null;
 };
 
-export default function DashboardActivityCard(
+export default memo(function DashboardActivityCard(
   props: DashboardActivityCardProps,
 ) {
   const {
@@ -279,6 +281,7 @@ export default function DashboardActivityCard(
     timestamp,
     profileUserId,
     apexAnalysis,
+    caption,
   } = props;
 
   const navigate = useNavigate();
@@ -463,6 +466,8 @@ export default function DashboardActivityCard(
           showCar={statsShowCar}
           positionRank={positionRank}
         />
+
+        <SessionCaption caption={caption} />
       </div>
 
       {embeddedInsight ? (
@@ -470,4 +475,4 @@ export default function DashboardActivityCard(
       ) : null}
     </article>
   );
-}
+});

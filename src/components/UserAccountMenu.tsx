@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePlatform } from "@/hooks/usePlatform";
 import { getAccountMenuItemsForUser, type AccountMenuItem } from "@/config/navigation";
 import { prefetchOwnProfileQueries } from "@/lib/profileQueryKeys";
+import { preloadProfile } from "@/routes/routePreload";
 import { useSignOut } from "@/lib/auth/useSignOut";
 import type { AuthUser } from "@/lib/api";
 import {
@@ -68,6 +69,7 @@ export default function UserAccountMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const prefetchOwnProfile = useCallback(() => {
+    void preloadProfile();
     prefetchOwnProfileQueries(queryClient, user);
   }, [queryClient, user]);
 

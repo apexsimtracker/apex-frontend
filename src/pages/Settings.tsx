@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -10,11 +10,14 @@ import {
   updateMe,
   changePassword,
   deleteAccount,
-  downloadUserDataExport,
+  requestUserDataExport,
+  fetchLatestUserDataExport,
+  openDataExportDownload,
   ApiError,
   patchPrivacySettings,
   patchNotificationSettings,
-  type DataExportFormat,
+  type DataExportDepth,
+  type DataExportJob,
   type SessionVisibility,
 } from "@/lib/api";
 import { getApexSettings, type ApexSettings, DEFAULT_IN_APP_NOTIFICATION_PREFS } from "@/lib/settingsStorage";
@@ -56,6 +59,11 @@ import { SettingsSectionChrome } from "./settings/SettingsSectionChrome";
 import { SubscriptionCard } from "./settings/SubscriptionCard";
 
 const SETTINGS_PATH = "/settings";
+const EXPORT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+function isInFlightExport(job: DataExportJob | null | undefined): boolean {
+  return job?.status === "pending" || job?.status === "processing";
+}
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -71,8 +79,12 @@ export default function Settings() {
   const [changePwSuccess, setChangePwSuccess] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState<DataExportFormat>("xlsx");
+  const [exportRequesting, setExportRequesting] = useState(false);
+  const [exportPolling, setExportPolling] = useState(false);
+  const [exportDepth, setExportDepth] = useState<DataExportDepth>("summary");
+  const [exportJob, setExportJob] = useState<DataExportJob | null>(null);
+  const [cooldownMs, setCooldownMs] = useState<number | null>(null);
+  const exportPollRef = useRef<number | null>(null);
   const [privacySaving, setPrivacySaving] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
@@ -332,12 +344,90 @@ export default function Settings() {
     navigate(AUTH_PATHS.login, { replace: true });
   }, [navigate]);
 
-  const handleExportData = useCallback(async () => {
-    if (exportLoading) return;
-    setExportLoading(true);
+  const syncCooldownFromJob = useCallback((job: DataExportJob | null) => {
+    if (!job) {
+      setCooldownMs(null);
+      return;
+    }
+    const remaining =
+      new Date(job.requestedAt).getTime() + EXPORT_COOLDOWN_MS - Date.now();
+    setCooldownMs(remaining > 0 ? remaining : null);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const job = await fetchLatestUserDataExport();
+        if (cancelled) return;
+        setExportJob(job);
+        syncCooldownFromJob(job);
+      } catch {
+        /* ignore hydrate errors */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, syncCooldownFromJob]);
+
+  useEffect(() => {
+    if (!isInFlightExport(exportJob)) {
+      setExportPolling(false);
+      if (exportPollRef.current != null) {
+        window.clearInterval(exportPollRef.current);
+        exportPollRef.current = null;
+      }
+      return;
+    }
+    setExportPolling(true);
+    const poll = async () => {
+      try {
+        const latest = await fetchLatestUserDataExport();
+        setExportJob(latest);
+        syncCooldownFromJob(latest);
+        if (!isInFlightExport(latest)) {
+          if (latest?.status === "ready") {
+            toast.success("Your data export is ready to download.");
+          } else if (latest?.status === "failed") {
+            toast.error(latest.error?.message ?? "Export failed.");
+          }
+        }
+      } catch {
+        /* keep polling */
+      }
+    };
+    void poll();
+    exportPollRef.current = window.setInterval(() => void poll(), 3000);
+    return () => {
+      if (exportPollRef.current != null) {
+        window.clearInterval(exportPollRef.current);
+        exportPollRef.current = null;
+      }
+    };
+  }, [exportJob?.id, exportJob?.status, syncCooldownFromJob]);
+
+  useEffect(() => {
+    if (cooldownMs == null || cooldownMs <= 0) return;
+    const id = window.setInterval(() => {
+      setCooldownMs((prev) => {
+        if (prev == null) return null;
+        const next = prev - 30_000;
+        return next > 0 ? next : null;
+      });
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [cooldownMs]);
+
+  const handleRequestExport = useCallback(async () => {
+    if (exportRequesting || isInFlightExport(exportJob)) return;
+    setExportRequesting(true);
     try {
-      await downloadUserDataExport({ format: exportFormat });
-      toast.success("Your data export has downloaded.");
+      const job = await requestUserDataExport({ depth: exportDepth });
+      setExportJob(job);
+      syncCooldownFromJob(job);
+      toast.success("Export requested. We’ll prepare your download.");
     } catch (e) {
       const msg =
         e instanceof ApiError && e.status === 429 && e.retryAfterMs != null
@@ -346,12 +436,26 @@ export default function Settings() {
             ? e.message
             : e instanceof Error
               ? e.message
-              : "Could not export data.";
+              : "Could not request export.";
+      if (e instanceof ApiError && e.status === 429 && e.retryAfterMs != null) {
+        setCooldownMs(e.retryAfterMs);
+      }
       toast.error(msg);
     } finally {
-      setExportLoading(false);
+      setExportRequesting(false);
     }
-  }, [exportFormat, exportLoading]);
+  }, [exportDepth, exportJob, exportRequesting, syncCooldownFromJob]);
+
+  const handleDownloadExport = useCallback(() => {
+    if (!exportJob?.downloadUrl) return;
+    try {
+      openDataExportDownload(exportJob);
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Could not start download.",
+      );
+    }
+  }, [exportJob]);
 
   const resetDeleteDialog = useCallback(() => {
     deleteAccountForm.reset({ password: "", confirmPhrase: "" });
@@ -558,10 +662,14 @@ export default function Settings() {
             />
 
             <SettingsAccountActionsSection
-              exportFormat={exportFormat}
-              onExportFormatChange={setExportFormat}
-              exportLoading={exportLoading}
-              onExportData={handleExportData}
+              exportDepth={exportDepth}
+              onExportDepthChange={setExportDepth}
+              exportJob={exportJob}
+              exportRequesting={exportRequesting}
+              exportPolling={exportPolling}
+              cooldownMs={cooldownMs}
+              onRequestExport={handleRequestExport}
+              onDownloadExport={handleDownloadExport}
               onLogout={handleLogout}
               onDeleteAccount={() => setDeleteDialogOpen(true)}
             />

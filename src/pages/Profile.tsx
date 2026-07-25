@@ -1,21 +1,19 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, lazy, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
+import { resolveApiUrl } from "@/lib/api/config";
+import { authMe, updateMe, uploadProfileAvatar } from "@/lib/api/authAndContact";
 import {
-  resolveApiUrl,
-  authMe,
   getProfileSummary,
   getProfileRaceHistory,
   getUserPublicProfile,
   RACE_HISTORY_PAGE_SIZE,
-  updateMe,
-  uploadProfileAvatar,
   type ProfileSummary,
-  type AuthUser,
-} from "@/lib/api";
+} from "@/lib/api/profile";
+import type { AuthUser } from "@/lib/api/authAndContact";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   profileEditFormSchema,
@@ -23,7 +21,6 @@ import {
 } from "@/lib/validation/profileEdit";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FollowListDialog } from "@/components/FollowListDialog";
-import ProfileEditModal from "@/pages/profile/ProfileEditModal";
 import ProfileSkeleton from "@/pages/profile/ProfileSkeleton";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -33,6 +30,8 @@ import {
   prefetchFollowList,
   PROFILE_SUMMARY_ALL_QUERY_FILTER,
 } from "@/lib/profileQueryKeys";
+
+const ProfileEditModal = lazy(() => import("@/pages/profile/ProfileEditModal"));
 
 const PROFILE_PATH = "/profile";
 const contentRootClassName =
@@ -378,26 +377,6 @@ export default function Profile() {
     );
   }
 
-  const summaryLoading = summaryQuery.isLoading;
-
-  if (summaryLoading) {
-    const accountName = getAccountDisplayName(user);
-    const skeletonSeoTitle = `${accountName} | ${COMPANY_NAME}`;
-    return (
-      <>
-        <PageMeta
-          title={skeletonSeoTitle}
-          description={profileDescription}
-          path={PROFILE_PATH}
-          noindex
-        />
-        <div className={contentRootClassName}>
-          <ProfileSkeleton />
-        </div>
-      </>
-    );
-  }
-
   const accountName = getAccountDisplayName(user);
   const me: MeResponse = { user };
   const displayProfile: ProfileSummary = profileSummary
@@ -444,6 +423,7 @@ export default function Profile() {
           challengeBadgesLoading={
             Boolean(followsUserId) && publicPreviewLoading
           }
+          summaryLoading={summaryQuery.isPending}
           onOpenFollowers={() => setOpenList("followers")}
           onOpenFollowing={() => setOpenList("following")}
           onPrefetchFollowers={() =>
@@ -475,19 +455,23 @@ export default function Profile() {
         profileLinkBase="/user"
       />
 
-      <ProfileEditModal
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        profileEditForm={profileEditForm}
-        onSave={onSaveProfileSubmit}
-        editLoading={editLoading}
-        editSuccess={editSuccess}
-        avatarInputRef={avatarInputRef}
-        avatarPreview={avatarPreview}
-        avatarError={avatarError}
-        onAvatarFileChange={handleAvatarFileChange}
-        onClearAvatarSelection={clearAvatarSelection}
-      />
+      {editOpen ? (
+        <Suspense fallback={null}>
+          <ProfileEditModal
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            profileEditForm={profileEditForm}
+            onSave={onSaveProfileSubmit}
+            editLoading={editLoading}
+            editSuccess={editSuccess}
+            avatarInputRef={avatarInputRef}
+            avatarPreview={avatarPreview}
+            avatarError={avatarError}
+            onAvatarFileChange={handleAvatarFileChange}
+            onClearAvatarSelection={clearAvatarSelection}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

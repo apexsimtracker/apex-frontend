@@ -6,9 +6,11 @@ import {
   deleteAdminSession,
   deleteAdminSessionLap,
   fetchAdminSessionDetail,
+  fetchAdminSessionDataExportJob,
   patchAdminSessionLap,
   postAdminReconcileChallengeLeaderboard,
   putAdminSessionActivity,
+  requestAdminSessionDataExport,
   type AdminSessionDetail,
   type AdminSessionLapRow,
 } from "@/lib/api";
@@ -147,6 +149,7 @@ export default function AdminSessionDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [exportBusy, setExportBusy] = useState(false);
 
   const [lapDialog, setLapDialog] = useState<
     { mode: "edit"; lap: AdminSessionLapRow } | { mode: "create" } | null
@@ -178,6 +181,7 @@ export default function AdminSessionDetail() {
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
+    caption?: string;
   }): Promise<void> {
     setEditFormError(null);
     try {
@@ -423,6 +427,88 @@ export default function AdminSessionDetail() {
                     "Load telemetry JSON"
                   )}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={exportBusy}
+                  onClick={() => {
+                    if (!id || exportBusy) return;
+                    setExportBusy(true);
+                    void (async () => {
+                      try {
+                        const job = await requestAdminSessionDataExport(id, {
+                          depth: "full",
+                        });
+                        toast.success("Session export queued.");
+                        let pollFailures = 0;
+                        const poll = async () => {
+                          try {
+                            const latest = await fetchAdminSessionDataExportJob(
+                              job.id,
+                            );
+                            pollFailures = 0;
+                            if (
+                              latest.status === "pending" ||
+                              latest.status === "processing"
+                            ) {
+                              window.setTimeout(() => void poll(), 2500);
+                              return;
+                            }
+                            setExportBusy(false);
+                            if (
+                              latest.status === "ready" &&
+                              latest.downloadUrl
+                            ) {
+                              toast.success("Session export ready.");
+                              window.open(
+                                latest.downloadUrl,
+                                "_blank",
+                                "noopener",
+                              );
+                            } else {
+                              toast.error(
+                                latest.error?.message ??
+                                  "Session export failed.",
+                              );
+                            }
+                          } catch {
+                            // Keep polling on transient errors (matches Settings).
+                            pollFailures += 1;
+                            if (pollFailures >= 8) {
+                              setExportBusy(false);
+                              toast.error(
+                                "Could not check export status. Try again.",
+                              );
+                              return;
+                            }
+                            window.setTimeout(() => void poll(), 2500);
+                          }
+                        };
+                        void poll();
+                      } catch (e) {
+                        setExportBusy(false);
+                        toast.error(
+                          e instanceof ApiError
+                            ? e.message
+                            : "Could not start session export.",
+                        );
+                      }
+                    })();
+                  }}
+                >
+                  {exportBusy ? (
+                    <>
+                      <Loader2
+                        className="mr-1.5 size-4 animate-spin"
+                        aria-hidden
+                      />
+                      Exporting…
+                    </>
+                  ) : (
+                    "Export telemetry zip"
+                  )}
+                </Button>
                 {data.challengeId && (
                   <Button
                     type="button"
@@ -603,6 +689,16 @@ export default function AdminSessionDetail() {
                   </h2>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
                     {data.notes.trim()}
+                  </p>
+                </div>
+              )}
+              {data.caption?.trim() && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Caption
+                  </h2>
+                  <p className="mt-1 whitespace-pre-wrap text-sm italic text-foreground">
+                    &ldquo;{data.caption.trim()}&rdquo;
                   </p>
                 </div>
               )}

@@ -139,7 +139,7 @@ export function ApexLogoImage({
 
   return (
     <img
-      src="/logo.png?v=4"
+      src="/logo.png?v=5"
       alt="Apex Logo"
       width={112}
       height={40}

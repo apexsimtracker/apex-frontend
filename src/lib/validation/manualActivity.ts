@@ -13,6 +13,9 @@ export const MANUAL_LAPS_MAX_F1_25 = 100;
 /** Aligned with apex MANUAL_LAPS_MAX.lmu */
 export const MANUAL_LAPS_MAX_LMU = 100;
 
+/** Aligned with apex SESSION_CAPTION_MAX_LENGTH */
+export const SESSION_CAPTION_MAX_LENGTH = 280;
+
 const LAP_FORMAT_MSG =
   "Use exactly: m:ss.mmm (e.g. 1:32.456 or 0:59.900) or ss.mmm (e.g. 92.456). Seconds must be two digits with a colon; milliseconds must be three digits.";
 
@@ -66,6 +69,10 @@ export function createManualActivityFormSchema(
       qualifyingPosition: z.string(),
       laps: z.array(lapRowSchema),
       notes: z.string(),
+      caption: z.string().max(
+        SESSION_CAPTION_MAX_LENGTH,
+        `Caption must be at most ${SESSION_CAPTION_MAX_LENGTH} characters.`,
+      ),
     })
     .superRefine((data, ctx) => {
       if (!data.sim?.trim()) {

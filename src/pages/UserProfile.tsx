@@ -5,17 +5,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ProfileView } from "@/components/profile/ProfileView";
 import { FollowListDialog } from "@/components/FollowListDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveApiUrl } from "@/lib/api/config";
+import { ApiError } from "@/lib/api/errors";
 import {
-  resolveApiUrl,
   getProfileSummaryForUser,
   getProfileRaceHistoryForUser,
   RACE_HISTORY_PAGE_SIZE,
   getUserPublicProfile,
-  followUser,
-  unfollowUser,
-  ApiError,
   type ProfileSummary,
-} from "@/lib/api";
+} from "@/lib/api/profile";
+import { followUser, unfollowUser } from "@/lib/api/followAndLeaderboards";
 import { profileKeys, prefetchFollowList } from "@/lib/profileQueryKeys";
 import ProfileSkeleton from "@/pages/profile/ProfileSkeleton";
 import PageMeta from "@/components/PageMeta";
@@ -101,7 +100,7 @@ export default function UserProfile() {
   const viewerHasAccess = preview?.viewerHasAccess ?? false;
 
   const summaryQuery = useQuery({
-    queryKey: ["userProfile", "summary", id],
+    queryKey: profileKeys.userSummary(id),
     queryFn: () => getProfileSummaryForUser(id),
     enabled: Boolean(id) && viewerHasAccess,
     retry: (failureCount, err) =>
@@ -167,18 +166,8 @@ export default function UserProfile() {
       void queryClient.invalidateQueries({
         queryKey: ["profile", "followList", id],
       });
-      void queryClient.invalidateQueries({
-        queryKey: profileKeys.publicPreview(id),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["userProfile", "summary", id],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: profileKeys.userRaceHistory(id, raceHistoryPage),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["activity", "feed", "home"],
-      });
+      // Preview counts come from mutation response / setQueryData — avoid
+      // refetching race-history / home feed on follow toggle.
     } catch (e) {
       setFollowActionError(
         e instanceof Error ? e.message : "Could not update follow status.",
@@ -191,7 +180,6 @@ export default function UserProfile() {
     id,
     preview,
     queryClient,
-    raceHistoryPage,
     setFollowLoading,
     setFollowActionError,
   ]);
@@ -282,32 +270,6 @@ export default function UserProfile() {
 
   const profileLocked = !viewerHasAccess;
 
-  // Keep skeleton until summary stats load — preview alone is not enough for full profiles.
-  const summaryLoading = viewerHasAccess && summaryQuery.isLoading;
-
-  if (summaryLoading) {
-    const skeletonDisplayName = preview.displayName?.trim() || "Driver";
-    return (
-      <>
-        <PageMeta
-          title={`${skeletonDisplayName} | ${COMPANY_NAME}`}
-          description={`${COMPANY_NAME} driver profile, stats, and race history.`}
-          path={`${USER_PROFILE_PATH}/${id}`}
-        />
-        <div className={contentRootClassName}>
-          <ProfileSkeleton
-            showBackLink
-            showChallengeBadges={
-              (preview.challengeBadgeCount ??
-                preview.challengeBadges?.length ??
-                0) > 0
-            }
-          />
-        </div>
-      </>
-    );
-  }
-
   const profileData: ProfileSummary =
     viewerHasAccess && summaryQuery.data
       ? summaryQuery.data
@@ -382,6 +344,7 @@ export default function UserProfile() {
           isCurrentUser={false}
           isFollowing={preview.isFollowing}
           profileLocked={profileLocked}
+          summaryLoading={viewerHasAccess && summaryQuery.isPending}
           followRelationship={preview.followRelationship}
           targetPrivateProfile={preview.privateProfile}
           followLoading={followLoading}

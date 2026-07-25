@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, lazy, Suspense, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PenLine, Plus, Upload, Zap } from "lucide-react";
 import {
@@ -7,13 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import LogSessionSheet from "@/components/LogSessionSheet";
 import {
   appDropdownContentClassName,
   appDropdownItemClassName,
 } from "@/components/app-ui/appButtonClasses";
 import { logSessionMenuItems, type LogSessionMenuIcon } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+
+const LogSessionSheet = lazy(() => import("@/components/LogSessionSheet"));
 
 const createPlusButtonClassName = cn(
   "flex size-8 items-center justify-center rounded-xl border border-apex-outline-variant/30 bg-apex-primary text-white transition-colors hover:bg-apex-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/70",
@@ -55,7 +56,11 @@ export default function CreateMenu() {
     <>
       <div className="md:hidden">
         <CreatePlusButton onClick={() => setSheetOpen(true)} />
-        <LogSessionSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+        {sheetOpen ? (
+          <Suspense fallback={null}>
+            <LogSessionSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+          </Suspense>
+        ) : null}
       </div>
 
       <DropdownMenu>

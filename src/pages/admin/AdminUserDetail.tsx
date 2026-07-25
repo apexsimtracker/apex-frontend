@@ -38,6 +38,7 @@ import { COMPANY_NAME } from "@/lib/siteMeta";
 import { BaseAlertDialog } from "@/components/ui/base-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -871,23 +872,23 @@ export default function AdminUserDetail() {
                   </p>
                   <label className="block text-xs text-muted-foreground">
                     New password
-                    <Input
-                      className="mt-1"
-                      type="password"
-                      autoComplete="new-password"
-                      value={editPassword}
-                      onChange={(e) => setEditPassword(e.target.value)}
-                    />
+                    <div className="mt-1">
+                      <PasswordInput
+                        autoComplete="new-password"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                      />
+                    </div>
                   </label>
                   <label className="block text-xs text-muted-foreground">
                     Confirm password
-                    <Input
-                      className="mt-1"
-                      type="password"
-                      autoComplete="new-password"
-                      value={editPasswordConfirm}
-                      onChange={(e) => setEditPasswordConfirm(e.target.value)}
-                    />
+                    <div className="mt-1">
+                      <PasswordInput
+                        autoComplete="new-password"
+                        value={editPasswordConfirm}
+                        onChange={(e) => setEditPasswordConfirm(e.target.value)}
+                      />
+                    </div>
                   </label>
                   <Button
                     type="button"

@@ -63,6 +63,14 @@ export async function getChallengesMeta(): Promise<ChallengesMeta> {
   return apiGet<ChallengesMeta>("/api/challenges/meta");
 }
 
+export type ChallengesSeasonRank = {
+  yourRank: number | null;
+};
+
+export async function getChallengesSeasonRank(): Promise<ChallengesSeasonRank> {
+  return apiGet<ChallengesSeasonRank>("/api/challenges/season-rank");
+}
+
 export type ChallengeSocialPreview = {
   preview: { id: string; displayName: string }[];
   moreCount: number;

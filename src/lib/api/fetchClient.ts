@@ -2,6 +2,7 @@ import { getApiBase } from "./config";
 import { getOrCreateDeviceId } from "@/auth/deviceId";
 import { APEX_SESSION_TOKEN_KEY } from "@/auth/token";
 import { ApiError, ProRequiredError } from "./errors";
+import { recordApiTiming } from "@/lib/apexRum";
 
 // Auth expiry handler registration (e.g. AuthProvider: re-fetch /api/auth/me or clear user).
 let authExpiredHandler: (() => void | Promise<void>) | null = null;
@@ -124,6 +125,7 @@ export async function fetchApi<T>(
     ? path
     : `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
 
+  const rumStarted = performance.now();
   let res: Response;
   try {
     res = await fetch(url, {
@@ -135,6 +137,7 @@ export async function fetchApi<T>(
   } catch {
     throw new ApiError(0, "Connection lost. Please try again.");
   }
+  recordApiTiming(method, path, res, rumStarted);
 
   if (res.ok) {
     const text = await res.text();

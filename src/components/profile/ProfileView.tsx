@@ -13,6 +13,7 @@ import { ProfileWeeklyActivity } from "@/components/profile/ProfileWeeklyActivit
 import { ProfileMainDisciplines } from "@/components/profile/ProfileMainDisciplines";
 import { ProfileRaceHistory } from "@/components/profile/ProfileRaceHistory";
 import { ProfileStatsByGame } from "@/components/profile/ProfileStatsByGame";
+import { ProfileSummarySectionsSkeleton } from "@/components/profile/ProfileSummarySectionsSkeleton";
 import { cn } from "@/lib/utils";
 
 type ProfileViewProps = {
@@ -34,6 +35,8 @@ type ProfileViewProps = {
   onPrefetchFollowers?: () => void;
   onPrefetchFollowing?: () => void;
   onEditProfile?: () => void;
+  /** When true, paint header but skeleton key stats / weekly / disciplines. */
+  summaryLoading?: boolean;
   raceHistoryPagination?: {
     page: number;
     limit: number;
@@ -80,6 +83,7 @@ export function ProfileView({
   onPrefetchFollowers,
   onPrefetchFollowing,
   onEditProfile,
+  summaryLoading = false,
   raceHistoryPagination,
   raceHistoryForbiddenCode,
   isPro = false,
@@ -184,7 +188,7 @@ export function ProfileView({
           onPrefetchFollowers={onPrefetchFollowers}
           onPrefetchFollowing={onPrefetchFollowing}
           onEditProfile={onEditProfile}
-          streakDays={profile.user.streakDays ?? 0}
+          streakDays={summaryLoading ? 0 : (profile.user.streakDays ?? 0)}
           isPro={isPro}
           profileUserId={profileUserId}
           challengeBadges={challengeBadges}
@@ -192,60 +196,9 @@ export function ProfileView({
           challengeBadgesLoading={challengeBadgesLoading}
         />
 
-        <ProfileKeyStats
-          profileLocked={profileLocked}
-          races={profile.totals?.races ?? 0}
-          wins={profile.totals?.wins}
-          podiums={profile.totals?.podiums}
-          poles={profile.totals?.poles}
-          fastestLaps={profile.totals?.fastestLaps ?? 0}
-          avgFinish={profile.totals?.avgFinish}
-        />
-
-        {!profileLocked &&
-          profile.insight &&
-          profile.insight.title &&
-          profile.insight.body && (
-            <Link
-              to={`/sessions/${profile.insight.sessionId}`}
-              className="block rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container"
-            >
-              <div className="font-apex-body text-xs uppercase tracking-wide text-apex-on-surface-variant">
-                {profile.insight.title.toUpperCase()}
-              </div>
-              <div className="mt-1 font-apex-body text-sm text-apex-on-surface">
-                {profile.insight.body}
-              </div>
-            </Link>
-          )}
-
-        {!profileLocked && (
+        {summaryLoading && !profileLocked ? (
           <>
-            <ProfileWeeklyActivity
-              weeklySnapshot={profile.weeklySnapshot}
-              weeklyGoals={profile.weeklyGoals}
-              totalRaces={profile.weekly?.totalRaces ?? 0}
-              buckets={
-                profile.weekly?.buckets ?? {
-                  Mon: 0,
-                  Tue: 0,
-                  Wed: 0,
-                  Thu: 0,
-                  Fri: 0,
-                  Sat: 0,
-                  Sun: 0,
-                }
-              }
-            />
-
-            <ProfileMainDisciplines
-              rows={
-                (profile.mostPlayed ?? []) as Parameters<
-                  typeof ProfileMainDisciplines
-                >[0]["rows"]
-              }
-            />
-
+            <ProfileSummarySectionsSkeleton />
             <ProfileRaceHistory
               raceHistory={
                 raceHistory as Parameters<
@@ -268,14 +221,95 @@ export function ProfileView({
                   : undefined
               }
             />
-
-            <ProfileStatsByGame
-              rows={
-                (profile.statsByGame ?? []) as Parameters<
-                  typeof ProfileStatsByGame
-                >[0]["rows"]
-              }
+          </>
+        ) : (
+          <>
+            <ProfileKeyStats
+              profileLocked={profileLocked}
+              races={profile.totals?.races ?? 0}
+              wins={profile.totals?.wins}
+              podiums={profile.totals?.podiums}
+              poles={profile.totals?.poles}
+              fastestLaps={profile.totals?.fastestLaps ?? 0}
+              avgFinish={profile.totals?.avgFinish}
             />
+
+            {!profileLocked &&
+              profile.insight &&
+              profile.insight.title &&
+              profile.insight.body && (
+                <Link
+                  to={`/sessions/${profile.insight.sessionId}`}
+                  className="block rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container"
+                >
+                  <div className="font-apex-body text-xs uppercase tracking-wide text-apex-on-surface-variant">
+                    {profile.insight.title.toUpperCase()}
+                  </div>
+                  <div className="mt-1 font-apex-body text-sm text-apex-on-surface">
+                    {profile.insight.body}
+                  </div>
+                </Link>
+              )}
+
+            {!profileLocked && (
+              <>
+                <ProfileWeeklyActivity
+                  weeklySnapshot={profile.weeklySnapshot}
+                  weeklyGoals={profile.weeklyGoals}
+                  totalRaces={profile.weekly?.totalRaces ?? 0}
+                  buckets={
+                    profile.weekly?.buckets ?? {
+                      Mon: 0,
+                      Tue: 0,
+                      Wed: 0,
+                      Thu: 0,
+                      Fri: 0,
+                      Sat: 0,
+                      Sun: 0,
+                    }
+                  }
+                />
+
+                <ProfileMainDisciplines
+                  rows={
+                    (profile.mostPlayed ?? []) as Parameters<
+                      typeof ProfileMainDisciplines
+                    >[0]["rows"]
+                  }
+                />
+
+                <ProfileRaceHistory
+                  raceHistory={
+                    raceHistory as Parameters<
+                      typeof ProfileRaceHistory
+                    >[0]["raceHistory"]
+                  }
+                  raceHistoryLoading={raceHistoryLoading}
+                  emptyMessage={raceHistoryEmptyMessage}
+                  onOpenSession={(sid) => navigate(`/sessions/${sid}`)}
+                  range={raceHistoryRange}
+                  pagination={
+                    raceHistoryPagination
+                      ? {
+                          page: raceHistoryPage,
+                          totalPages: raceHistoryTotalPages,
+                          disabled: raceHistoryFetching,
+                          onPageChange: raceHistoryPagination.onPageChange,
+                          total: raceHistoryTotal,
+                        }
+                      : undefined
+                  }
+                />
+
+                <ProfileStatsByGame
+                  rows={
+                    (profile.statsByGame ?? []) as Parameters<
+                      typeof ProfileStatsByGame
+                    >[0]["rows"]
+                  }
+                />
+              </>
+            )}
           </>
         )}
       </div>

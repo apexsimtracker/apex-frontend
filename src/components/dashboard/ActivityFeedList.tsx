@@ -115,6 +115,7 @@ function renderActivityCard(
       lapCount={session.lapCount}
       timestamp={timeAgo(session.createdAt)}
       apexAnalysis={session.apexAnalysis ?? null}
+      caption={session.caption ?? null}
     />
   );
 }

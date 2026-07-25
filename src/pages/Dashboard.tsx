@@ -11,15 +11,18 @@ import { SkeletonBlock } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { flattenFeedItemSessions } from "@/lib/activityFeedCache";
 import {
-  isNetworkError,
-  getActivityHomeFeedPage,
   ACTIVITY_FEED_DEFAULT_LIMIT,
   ACTIVITY_FEED_INITIAL_MAX_SESSIONS,
+  getActivityHomeFeedPage,
+  type ActivityFeedItem,
+  type ActivityFeedPageResult,
+} from "@/lib/api/activityBilling";
+import {
   getProfileHomeWeekly,
   getProfileTrendInsight,
-  type ActivityFeedPageResult,
-  type ActivityFeedItem,
-} from "@/lib/api";
+  isNetworkError,
+} from "@/lib/api/profile";
+import { homeActivityFeedQueryKey as homeActivityFeedQueryKeyForUser } from "@/lib/prefetchHome";
 import { ownedProfileUserKey, profileKeys } from "@/lib/profileQueryKeys";
 import { isRaceKind } from "@/lib/sessionKind";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -191,15 +194,7 @@ export default function Dashboard() {
   const [homeTrendEnabled, setHomeTrendEnabled] = useState(false);
 
   const homeActivityFeedQueryKey = useMemo(
-    () =>
-      [
-        "activity",
-        "feed",
-        "home",
-        user?.id ?? "_",
-        "all",
-        ACTIVITY_FEED_DEFAULT_LIMIT,
-      ] as const,
+    () => homeActivityFeedQueryKeyForUser(user?.id ?? "_"),
     [user?.id],
   );
 

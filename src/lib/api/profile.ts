@@ -101,8 +101,7 @@ export type ProfileSummary = {
     | { locked: true; message: string };
 };
 
-// Profile summary endpoint is optional; current backend may not implement it yet.
-// Prefer authMe() for current user; this function is not used by the main profile page.
+/** GET /api/profile/summary — owned profile stats (SQL aggregates). */
 export async function getProfileSummary(): Promise<ProfileSummary> {
   return apiGet<ProfileSummary>("/api/profile/summary");
 }
@@ -356,8 +355,11 @@ export type NotificationItem = {
 
 export async function getNotifications(): Promise<{
   notifications: NotificationItem[];
+  unreadCount: number;
 }> {
-  return apiGet<{ notifications: NotificationItem[] }>("/api/notifications");
+  return apiGet<{ notifications: NotificationItem[]; unreadCount: number }>(
+    "/api/notifications"
+  );
 }
 
 export async function markNotificationsRead(

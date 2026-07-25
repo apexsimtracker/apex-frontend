@@ -89,6 +89,7 @@ export type ManualActivityFormData = {
   qualifyingPosition: string;
   laps: { lapTime: string }[];
   notes: string;
+  caption: string;
 };
 
 export type ManualActivityInitialData = {
@@ -112,6 +113,8 @@ export type ManualActivityInitialData = {
   /** Ordered lap times in ms (e.g. from session detail). */
   lapsMs?: number[] | null;
   notes?: string | null;
+  /** Public caption shown on activity/session cards. */
+  caption?: string | null;
   /** Track weather conditions (edit prefill). */
   conditions?: "DRY" | "WET" | "MIXED" | null;
   /** Edit: floor for max lap rows when session has more laps than the manual-create cap. */
@@ -134,6 +137,7 @@ interface ManualActivityFormProps {
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
     notes?: string;
+    caption?: string;
   }) => Promise<void>;
   submitLabel: string;
   submittingLabel: string;
@@ -229,6 +233,7 @@ function buildDefaults(
         : "",
     laps,
     notes: initial?.notes ?? "",
+    caption: initial?.caption ?? "",
   };
 }
 
@@ -367,6 +372,7 @@ export default function ManualActivityForm({
           : undefined,
       ...(lapsOut.length > 0 ? { laps: lapsOut, bestLapMs } : {}),
       notes: values.notes.trim() || undefined,
+      caption: values.caption.trim(),
     });
   }
 
@@ -852,6 +858,39 @@ export default function ManualActivityForm({
               Add lap
             </Button>
           </div>
+        </FormBlock>
+
+        <FormBlock
+          layout={layout}
+          title="Caption"
+          description="Public remark shown on your session card (optional)."
+        >
+          <FormField
+            control={form.control}
+            name="caption"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel
+                  htmlFor="caption"
+                  className={layout === "page" ? "sr-only" : "text-white/80"}
+                >
+                  Caption <span className="text-white/40">(optional)</span>
+                </FormLabel>
+                <FormControl>
+                  <textarea
+                    id="caption"
+                    disabled={isSubmitting}
+                    placeholder="Share what made this session special…"
+                    rows={2}
+                    maxLength={280}
+                    className={cn(INPUT_CLASS, "resize-none")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage className="text-xs text-red-500" />
+              </FormItem>
+            )}
+          />
         </FormBlock>
 
         <FormBlock

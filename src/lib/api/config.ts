@@ -4,8 +4,8 @@
  */
 import { Capacitor } from "@capacitor/core";
 
-/** Production backend (Render). Used when VITE_API_URL is unset in production builds. */
-const DEFAULT_PROD_API = "https://apex-25ft.onrender.com";
+/** Production backend (Render Frankfurt). Used when VITE_API_URL is unset in production builds. */
+const DEFAULT_PROD_API = "https://apex-1-y319.onrender.com";
 
 /** Default local API port (matches apex `PORT` default 10000, not the Vite dev port 8080). */
 const DEFAULT_DEV_API = "http://localhost:10000";

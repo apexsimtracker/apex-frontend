@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import { memo } from "react";
 import { UserRound } from "lucide-react";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { formatSimEnum } from "@/lib/enumFormat";
 import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
-import type { ChallengeApiStatus, ChallengeListItem } from "@/lib/api";
-import { useChallengeLiveState } from "@/hooks/useChallengeLiveState";
+import type { ChallengeApiStatus, ChallengeListItem } from "@/lib/api/challenges";
+import { secondsRemainingUntil } from "@/hooks/useSharedNowMs";
 
 type BrowseTab = "upcoming" | "live" | "past" | "joined";
 
@@ -17,6 +18,8 @@ interface ChallengeBrowseRowProps {
   joiningId?: string | null;
   detailTo?: string;
   showStatusChip?: boolean;
+  /** Shared page clock (ms) for live countdown. */
+  nowMs?: number;
 }
 
 function statusLabel(
@@ -44,16 +47,12 @@ const STATUS_CHIP_CLASS: Record<ReturnType<typeof statusLabel>, string> = {
 function ChallengeRowTimeDisplay({
   item,
   activeTab,
+  nowMs,
 }: {
   item: ChallengeListItem;
   activeTab: BrowseTab;
+  nowMs: number;
 }) {
-  const { timeRemainingSec } = useChallengeLiveState({
-    status: item.status,
-    startsAt: item.startsAt,
-    endsAt: item.endsAt,
-  });
-
   if (activeTab === "upcoming") {
     return (
       <p className="mt-1 font-apex-body text-[11px] text-apex-on-surface-variant">
@@ -63,8 +62,9 @@ function ChallengeRowTimeDisplay({
   }
 
   if (activeTab === "live") {
+    const fromClock = secondsRemainingUntil(item.endsAt, nowMs);
     const remaining =
-      timeRemainingSec ??
+      fromClock ??
       (item.timeRemainingSec != null
         ? Math.max(0, Math.floor(item.timeRemainingSec))
         : null);
@@ -96,7 +96,7 @@ function ChallengeRowTimeDisplay({
   return null;
 }
 
-export default function ChallengeBrowseRow({
+function ChallengeBrowseRow({
   item,
   activeTab,
   isLoggedIn,
@@ -104,6 +104,7 @@ export default function ChallengeBrowseRow({
   joiningId,
   detailTo,
   showStatusChip = false,
+  nowMs = Date.now(),
 }: ChallengeBrowseRowProps) {
   const linkTo = detailTo ?? `/challenge/${item.id}`;
   const label = statusLabel(item.status);
@@ -151,7 +152,11 @@ export default function ChallengeBrowseRow({
               </>
             )}
           </p>
-          <ChallengeRowTimeDisplay item={item} activeTab={activeTab} />
+          <ChallengeRowTimeDisplay
+            item={item}
+            activeTab={activeTab}
+            nowMs={nowMs}
+          />
           {social && (
             <p className="mt-2 flex items-start gap-1.5 font-apex-body text-[11px] text-apex-primary">
               <UserRound className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -220,3 +225,5 @@ export default function ChallengeBrowseRow({
     </article>
   );
 }
+
+export default memo(ChallengeBrowseRow);

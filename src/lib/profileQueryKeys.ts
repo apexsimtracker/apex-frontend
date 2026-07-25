@@ -40,6 +40,7 @@ export const profileKeys = {
   challengeBadges: (userId: string, page: number) =>
     ["profile", "challengeBadges", userId, page] as const,
   userBundle: (id: string) => ["userProfile", "bundle", id] as const,
+  userSummary: (id: string) => ["userProfile", "summary", id] as const,
   userRaceHistory: (id: string, page: number) =>
     ["userProfile", "raceHistory", id, page] as const,
 } as const;

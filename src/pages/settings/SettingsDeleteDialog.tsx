@@ -9,6 +9,7 @@ import {
   FormRootMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { DeleteAccountFormValues } from "@/lib/validation/settingsForms";
 import { cn } from "@/lib/utils";
@@ -101,8 +102,7 @@ export default function SettingsDeleteDialog({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     autoComplete="current-password"
                     placeholder="Current password"
                     disabled={submitting}

@@ -81,7 +81,10 @@ export function NotificationsBell() {
 
   const notifications = notifQuery.data?.notifications ?? [];
   const requests = requestsQuery.data?.requests ?? [];
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount =
+    typeof notifQuery.data?.unreadCount === "number"
+      ? notifQuery.data.unreadCount
+      : notifications.filter((n) => !n.read).length;
   const showBadge = user?.showNotificationBadge !== false && unreadCount > 0;
   const activityTotalPages = Math.max(
     1,

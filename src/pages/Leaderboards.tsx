@@ -77,8 +77,8 @@ export default function Leaderboards() {
       const data = await getLeaderboards(metric, LB_LIMIT);
       return Array.isArray(data) ? data : [];
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 90_000,
+    refetchOnWindowFocus: false,
   });
 
   const updating = isFetching && !loading;

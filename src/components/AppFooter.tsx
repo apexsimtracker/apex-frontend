@@ -63,7 +63,7 @@ export default function AppFooter() {
                 className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/70"
               >
                 <img
-                  src="/logo.png?v=4"
+                  src="/logo.png?v=5"
                   alt={`${COMPANY_NAME} logo`}
                   className="h-9 w-auto max-w-[104px] object-contain"
                 />

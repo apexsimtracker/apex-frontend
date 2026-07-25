@@ -89,6 +89,7 @@ export function createManualActivityFormSchema(
       qualifyingPosition: z.string(),
       laps: z.array(appLapRowSchema),
       notes: z.string(),
+      caption: z.string().max(280, "Caption must be at most 280 characters."),
       /** Persisted as Session.conditions. */
       conditions: z.enum(["DRY", "WET", "MIXED"]),
     })
@@ -105,6 +106,7 @@ export function createManualActivityFormSchema(
         qualifyingPosition: data.qualifyingPosition,
         laps: data.laps.map((row) => ({ lapTime: row.lapTime })),
         notes: data.notes,
+        caption: data.caption,
       });
       if (!coreResult.success) {
         // Re-emit shared validation issues, preserving message + field path so

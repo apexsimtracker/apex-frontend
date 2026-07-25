@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { getPrimaryNavItems, isNavPathActive, type NavLinkItem } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSessionsNavActive } from "@/hooks/useSessionsNavActive";
+import { prefetchNavIntent } from "@/lib/navIntentPrefetch";
 import { cn } from "@/lib/utils";
 
 const activeUnderline =
@@ -10,13 +12,18 @@ const activeUnderline =
 function NavLinkDesktop({
   item,
   active,
+  onIntent,
 }: {
   item: NavLinkItem;
   active: boolean;
+  onIntent: (to: string) => void;
 }) {
   return (
     <Link
       to={item.to}
+      onPointerEnter={() => onIntent(item.to)}
+      onPointerDown={() => onIntent(item.to)}
+      onFocus={() => onIntent(item.to)}
       className={cn(
         "relative select-none font-apex-headline text-xs font-medium uppercase tracking-widest transition-colors",
         active
@@ -33,8 +40,13 @@ function NavLinkDesktop({
 export default function HubTopBarNavLinks() {
   const location = useLocation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const items = getPrimaryNavItems(Boolean(user));
   const sessionsNavActive = useSessionsNavActive();
+
+  const onIntent = (to: string) => {
+    prefetchNavIntent(to, queryClient, { userId: user?.id });
+  };
 
   return (
     <nav
@@ -45,6 +57,7 @@ export default function HubTopBarNavLinks() {
         <NavLinkDesktop
           key={item.to}
           item={item}
+          onIntent={onIntent}
           active={
             item.to === "/sessions"
               ? sessionsNavActive

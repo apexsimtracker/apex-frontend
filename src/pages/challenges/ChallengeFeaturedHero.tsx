@@ -1,18 +1,21 @@
 import { Link } from "react-router-dom";
+import { memo } from "react";
 import { CheckCircle } from "lucide-react";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { formatSimEnum } from "@/lib/enumFormat";
 import { resolveChallengeCoverUrl } from "@/lib/challenges/coverImage";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
-import type { ChallengeListItem } from "@/lib/api";
-import { useChallengeLiveState } from "@/hooks/useChallengeLiveState";
+import type { ChallengeListItem } from "@/lib/api/challenges";
+import { secondsRemainingUntil } from "@/hooks/useSharedNowMs";
 
 interface ChallengeFeaturedHeroProps {
   item: ChallengeListItem;
   onJoin?: (id: string) => void;
   joiningId?: string | null;
   detailTo?: string;
+  /** Shared page clock (ms) for live countdown. */
+  nowMs?: number;
 }
 
 function thirdStatLabel(item: ChallengeListItem): string {
@@ -27,20 +30,20 @@ function thirdStatValue(item: ChallengeListItem): string {
   return String(item.participants);
 }
 
-export default function ChallengeFeaturedHero({
+function ChallengeFeaturedHero({
   item,
   onJoin,
   joiningId,
   detailTo,
+  nowMs = Date.now(),
 }: ChallengeFeaturedHeroProps) {
   const linkTo = detailTo ?? `/challenge/${item.id}`;
   const isJoining = joiningId === item.id;
   const canJoin = onJoin && item.status !== "ENDED";
-  const { timeRemainingSec } = useChallengeLiveState({
-    status: item.status,
-    startsAt: item.startsAt,
-    endsAt: item.endsAt,
-  });
+  const timeRemainingSec =
+    item.status === "ACTIVE"
+      ? secondsRemainingUntil(item.endsAt, nowMs)
+      : null;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-apex-outline-variant/15 bg-apex-surface-container">
@@ -132,3 +135,5 @@ export default function ChallengeFeaturedHero({
     </section>
   );
 }
+
+export default memo(ChallengeFeaturedHero);

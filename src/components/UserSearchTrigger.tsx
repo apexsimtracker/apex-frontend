@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Search } from "lucide-react";
-import { UserSearchModal } from "./UserSearchModal";
+
+const UserSearchModal = lazy(() =>
+  import("./UserSearchModal").then((m) => ({ default: m.UserSearchModal })),
+);
 
 export function UserSearchTrigger() {
   const [open, setOpen] = useState(false);
@@ -16,7 +19,11 @@ export function UserSearchTrigger() {
       >
         <Search className="size-6" aria-hidden />
       </button>
-      <UserSearchModal open={open} onOpenChange={setOpen} />
+      {open ? (
+        <Suspense fallback={null}>
+          <UserSearchModal open={open} onOpenChange={setOpen} />
+        </Suspense>
+      ) : null}
     </>
   );
 }

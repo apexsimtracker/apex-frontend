@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Trophy } from "lucide-react";
@@ -12,10 +12,12 @@ import AppNativeSelect from "@/components/app-ui/AppNativeSelect";
 import {
   getChallengeList,
   getChallengesMeta,
+  getChallengesSeasonRank,
   getChallengesSocialPreview,
   joinChallenge,
   type ChallengeListParams,
-} from "@/lib/api";
+  type ChallengesMeta,
+} from "@/lib/api/challenges";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +27,8 @@ import { MANUAL_ACTIVITY_SIMS } from "@/lib/manualActivityData";
 import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { challengeLiveRefetchIntervalMs } from "@/hooks/useChallengeLiveState";
+import { useAfterFirstPaint } from "@/hooks/useAfterFirstPaint";
+import { useSharedNowMs } from "@/hooks/useSharedNowMs";
 
 const CHALLENGES_PATH = "/challenges";
 const challengesTitle = `Challenges | ${COMPANY_NAME}`;
@@ -75,13 +79,16 @@ export default function Challenges() {
   const location = useLocation();
   const { user } = useAuth();
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [tab, setTab] = useState<BrowseTab | null>(null);
+  /** Provisional "upcoming" so list can start in parallel with meta. */
+  const [tab, setTab] = useState<BrowseTab | null>("upcoming");
+  const userPickedTabRef = useRef(false);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const debouncedQ = useDebouncedValue(searchInput.trim(), 300);
   const [simFilter, setSimFilter] = useState<string>("");
   const [carClassFilter, setCarClassFilter] = useState("");
   const debouncedCarClass = useDebouncedValue(carClassFilter.trim(), 300);
+  const seasonRankReady = useAfterFirstPaint(Boolean(user));
 
   const hasActiveFilters = Boolean(
     debouncedQ || simFilter || debouncedCarClass,
@@ -93,17 +100,19 @@ export default function Challenges() {
     staleTime: META_STALE_MS,
   });
 
-  const isResolvingTab =
-    !hasActiveFilters && tab === null && metaLoading;
-
   useEffect(() => {
     if (hasActiveFilters) {
       if (tab === null) setTab("upcoming");
       return;
     }
-    if (tab !== null || !meta) return;
+    if (userPickedTabRef.current || !meta) return;
     setTab(meta.defaultTab);
   }, [hasActiveFilters, tab, meta]);
+
+  const selectTab = useCallback((key: BrowseTab) => {
+    userPickedTabRef.current = true;
+    setTab(key);
+  }, []);
 
   const joinedTabLoggedOut = tab === "joined" && !user;
 
@@ -137,11 +146,6 @@ export default function Challenges() {
     [user?.id, tab, page, debouncedQ, simFilter, debouncedCarClass],
   );
 
-  const listQueryKeySerialized = JSON.stringify(listQueryKey);
-  const [settledListQueryKey, setSettledListQueryKey] = useState(
-    listQueryKeySerialized,
-  );
-
   const {
     data: listData,
     isPending: listLoading,
@@ -152,6 +156,21 @@ export default function Challenges() {
     queryKey: listQueryKey,
     queryFn: () => getChallengeList(listParams!),
     enabled: Boolean(listParams) && !joinedTabLoggedOut,
+    // Soft-keep only for page flips within the same tab+filters.
+    // Tab/filter changes must clear so the list skeleton shows (not stale cards).
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      if (
+        prev[3] === tab &&
+        prev[5] === debouncedQ &&
+        prev[6] === simFilter &&
+        prev[7] === debouncedCarClass
+      ) {
+        return previousData;
+      }
+      return undefined;
+    },
     refetchInterval: (query) => {
       const items = query.state.data?.items ?? [];
       const hasLive = items.some((c) => c.status === "ACTIVE");
@@ -162,12 +181,6 @@ export default function Challenges() {
     },
   });
 
-  useEffect(() => {
-    if (!listFetching) {
-      setSettledListQueryKey(listQueryKeySerialized);
-    }
-  }, [listFetching, listQueryKeySerialized]);
-
   const challengeIds = useMemo(
     () => (listData?.items ?? []).map((c) => c.id),
     [listData?.items],
@@ -177,6 +190,13 @@ export default function Challenges() {
     queryKey: ["challenges", "social", user?.id, challengeIds],
     queryFn: () => getChallengesSocialPreview(challengeIds),
     enabled: Boolean(user) && challengeIds.length > 0,
+  });
+
+  const { data: seasonRank } = useQuery({
+    queryKey: ["challenges", "season-rank", user?.id],
+    queryFn: getChallengesSeasonRank,
+    enabled: Boolean(user) && seasonRankReady,
+    staleTime: META_STALE_MS,
   });
 
   const joinMutation = useMutation({
@@ -201,18 +221,23 @@ export default function Challenges() {
     },
   });
 
-  function handleJoin(challengeId: string) {
-    if (!user) {
-      const state: AuthRedirectState = {
-        message: "Sign in to join challenges and track your results.",
-        from: `${location.pathname}${location.search}`,
-      };
-      navigate(AUTH_PATHS.login, { state });
-      return;
-    }
-    setJoinError(null);
-    joinMutation.mutate(challengeId);
-  }
+  const joinMutate = joinMutation.mutate;
+
+  const handleJoin = useCallback(
+    (challengeId: string) => {
+      if (!user) {
+        const state: AuthRedirectState = {
+          message: "Sign in to join challenges and track your results.",
+          from: `${location.pathname}${location.search}`,
+        };
+        navigate(AUTH_PATHS.login, { state });
+        return;
+      }
+      setJoinError(null);
+      joinMutate(challengeId);
+    },
+    [user, location.pathname, location.search, navigate, joinMutate],
+  );
 
   const joiningId = joinMutation.isPending
     ? (joinMutation.variables ?? null)
@@ -238,24 +263,36 @@ export default function Challenges() {
     });
   }, [listData?.items, socialData]);
 
+  const needsLiveClock = useMemo(
+    () =>
+      items.some(
+        (c) => c.status === "ACTIVE" || c.status === "UPCOMING",
+      ),
+    [items],
+  );
+  const nowMs = useSharedNowMs(needsLiveClock);
+
   const totalPages = listData?.totalPages ?? 1;
   const total = joinedTabLoggedOut ? 0 : (listData?.total ?? 0);
   const listQueryEnabled = Boolean(listParams) && !joinedTabLoggedOut;
-  const listQueryStale = settledListQueryKey !== listQueryKeySerialized;
 
   const allTabsEmpty =
-    tab === null && !hasActiveFilters && !metaLoading && meta?.defaultTab === null;
+    !hasActiveFilters &&
+    !metaLoading &&
+    meta?.defaultTab === null &&
+    tab === null;
 
   const showListSkeleton =
     !joinedTabLoggedOut &&
     !listFailed &&
     !allTabsEmpty &&
-    (isResolvingTab ||
-      (listQueryEnabled && (listLoading || listQueryStale)));
+    listQueryEnabled &&
+    listLoading &&
+    !listData;
 
   const yourRank =
-    meta?.yourRank != null && Number.isFinite(meta.yourRank)
-      ? meta.yourRank
+    seasonRank?.yourRank != null && Number.isFinite(seasonRank.yourRank)
+      ? seasonRank.yourRank
       : null;
 
   const showFeatured =
@@ -275,6 +312,8 @@ export default function Challenges() {
       : tab === "joined"
         ? "You haven't joined any challenges yet."
         : "No challenges in this tab right now.";
+
+  const seasonMeta: ChallengesMeta | null = meta ?? null;
 
   return (
     <>
@@ -299,7 +338,7 @@ export default function Challenges() {
           (metaLoading ? (
             <ChallengesSeasonStatsSkeleton />
           ) : (
-            <ChallengesSeasonStats meta={meta ?? null} yourRank={yourRank} />
+            <ChallengesSeasonStats meta={seasonMeta} yourRank={yourRank} />
           ))}
 
         <section className="flex gap-2 overflow-x-auto pb-1">
@@ -309,7 +348,7 @@ export default function Challenges() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setTab(key)}
+                onClick={() => selectTab(key)}
                 className={cn(
                   "shrink-0 rounded-apex-sm px-4 py-2 font-apex-body text-xs font-bold transition-colors",
                   isActive
@@ -424,7 +463,7 @@ export default function Challenges() {
 
         {!showListSkeleton && !error && !allTabsEmpty && total > 0 && (
           <div className="space-y-8">
-            {showFeatured && (
+            {showFeatured && items[0] && (
               <div className="space-y-3">
                 <h2 className="font-apex-body text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
                   Live challenge
@@ -434,6 +473,7 @@ export default function Challenges() {
                   onJoin={handleJoin}
                   joiningId={joiningId}
                   detailTo={`/challenge/${items[0].id}`}
+                  nowMs={nowMs}
                 />
               </div>
             )}
@@ -454,6 +494,7 @@ export default function Challenges() {
                       joiningId={joiningId}
                       detailTo={`/challenge/${c.id}`}
                       showStatusChip={tab !== "live"}
+                      nowMs={nowMs}
                     />
                   ))}
                 </div>

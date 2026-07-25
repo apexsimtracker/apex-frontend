@@ -48,6 +48,7 @@ export type SessionsLibraryRow = {
   lapCount: number;
   bestLapMs: number | null;
   totalTimeMs: number | null;
+  caption: string | null;
 };
 
 export type SessionsLibraryOverview = {

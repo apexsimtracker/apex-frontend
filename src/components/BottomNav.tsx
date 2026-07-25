@@ -1,7 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { BarChart2, Home, Menu, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppNav } from "@/components/appNavContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { prefetchNavIntent } from "@/lib/navIntentPrefetch";
 
 type BottomNavItem = {
   to: string;
@@ -22,6 +25,12 @@ export default function BottomNav() {
   const { pathname } = useLocation();
   const appNav = useAppNav();
   const menuOpen = appNav?.mobileNavOpen ?? false;
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const onIntent = (to: string) => {
+    prefetchNavIntent(to, queryClient, { userId: user?.id });
+  };
 
   return (
     <nav
@@ -40,6 +49,9 @@ export default function BottomNav() {
             key={to}
             to={to}
             end={end}
+            onPointerEnter={() => onIntent(to)}
+            onPointerDown={() => onIntent(to)}
+            onFocus={() => onIntent(to)}
             className={cn(
               "flex flex-col items-center justify-center transition-transform",
               active

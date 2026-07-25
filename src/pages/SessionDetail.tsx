@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNo
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
-import { deleteManualActivity, ApiError, apiPost } from "@/lib/api";
+import { deleteManualActivity, ApiError, apiPost, patchSessionCaption } from "@/lib/api";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildPageTitle } from "@/lib/seo";
@@ -36,6 +36,7 @@ import { PageSuspense } from "@/routes/PageSuspense";
 import SessionDetailBadges from "./session/SessionDetailBadges";
 import SessionDetailHero from "./session/SessionDetailHero";
 import SessionDetailHeroStats from "./session/SessionDetailHeroStats";
+import SessionCaptionEditor from "@/components/sessions/SessionCaptionEditor";
 import SessionDetailSectorBreakdown from "./session/SessionDetailSectorBreakdown";
 import SessionDetailAnalysisGrid from "./session/SessionDetailAnalysisGrid";
 import SessionDetailLapConsistency, {
@@ -131,6 +132,7 @@ export default function SessionDetail() {
   const [likedByMe, setLikedByMe] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
+  const [captionPending, setCaptionPending] = useState(false);
 
   const sid = id?.trim() ?? "";
   const detailPath = sid ? `/sessions/${sid}` : SESSIONS_PATH;
@@ -310,7 +312,9 @@ export default function SessionDetail() {
       : laps.length;
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
+  const isAdmin = user?.role === "ADMIN";
   const canEditSession = isOwner;
+  const canEditCaption = isOwner || isAdmin;
   const canManualExtras = isManual && isOwner;
 
   const apexDisplay = parseApexAnalysisDisplay(apexAnalysis);
@@ -466,6 +470,40 @@ export default function SessionDetail() {
     }
   }
 
+  async function handleCaptionSave(next: string | null): Promise<boolean> {
+    if (!sid || captionPending) return false;
+    setCaptionPending(true);
+    try {
+      const result = await patchSessionCaption(sid, next);
+      queryClient.setQueryData(
+        ["sessions", "detail", sid],
+        (prev: typeof sessionPayload) => {
+          if (!prev?.session) return prev;
+          return {
+            ...prev,
+            session: { ...prev.session, caption: result.caption },
+          };
+        },
+      );
+      invalidateSessionDerivedCaches(queryClient, {
+        sessionId: sid,
+        ownerUserId: session.userId ?? user?.id ?? null,
+        removeSessionQueries: false,
+      });
+      toast.success(result.caption ? "Caption saved" : "Caption cleared");
+      return true;
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Failed to save caption. Please try again.";
+      toast.error(message);
+      return false;
+    } finally {
+      setCaptionPending(false);
+    }
+  }
+
   return (
     <>
       <PageMeta
@@ -519,6 +557,13 @@ export default function SessionDetail() {
           improvementMs={improvementMs}
           improvementFromLap={improvementFromLap}
           totalKm={session.totalKm}
+        />
+
+        <SessionCaptionEditor
+          caption={session.caption}
+          canEdit={canEditCaption}
+          isSaving={captionPending}
+          onSave={handleCaptionSave}
         />
 
         <SessionDetailSectorBreakdown

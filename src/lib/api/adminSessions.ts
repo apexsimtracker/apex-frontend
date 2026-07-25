@@ -120,6 +120,7 @@ export type AdminSessionDetail = {
   totalDrivers: number | null;
   challengeId: string | null;
   notes: string | null;
+  caption: string | null;
   ingestSource: string | null;
   challengeTitle: string | null;
   challengeStatus: string | null;
@@ -148,6 +149,47 @@ export async function fetchAdminSessionDetail(
   );
 }
 
+export type AdminSessionExportJob = {
+  id: string;
+  depth: "summary" | "full";
+  scope: "user" | "session";
+  sessionId?: string;
+  status: "pending" | "processing" | "ready" | "failed" | "expired";
+  requestedAt: string;
+  completedAt?: string;
+  expiresAt?: string;
+  byteSize?: number;
+  downloadUrl?: string;
+  error?: { code: string; message: string };
+};
+
+/** POST /api/admin/sessions/:id/data-export — async telemetry zip (202). */
+export async function requestAdminSessionDataExport(
+  sessionId: string,
+  options?: { depth?: "summary" | "full" },
+): Promise<AdminSessionExportJob> {
+  const res = await fetchApi<{ job: AdminSessionExportJob }>(
+    "POST",
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}/data-export`,
+    { depth: options?.depth ?? "full" },
+    false,
+  );
+  return res.job;
+}
+
+/** GET /api/admin/sessions/data-export/:jobId */
+export async function fetchAdminSessionDataExportJob(
+  jobId: string,
+): Promise<AdminSessionExportJob> {
+  const res = await fetchApi<{ job: AdminSessionExportJob }>(
+    "GET",
+    `/api/admin/sessions/data-export/${encodeURIComponent(jobId)}`,
+    undefined,
+    false,
+  );
+  return res.job;
+}
+
 /** Same body shape as {@link updateActivity} / PUT `/api/sessions/:id`; admin-only route applies edits on behalf of the session owner. */
 export async function putAdminSessionActivity(
   sessionId: string,
@@ -172,6 +214,8 @@ export type AdminSessionPatchBody = {
   qualifyingPosition?: number | null;
   totalDrivers?: number | null;
   challengeId?: string | null;
+  notes?: string | null;
+  caption?: string | null;
 };
 
 export async function patchAdminSession(

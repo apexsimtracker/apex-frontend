@@ -9,7 +9,7 @@ import {
   FormMessage,
   FormRootMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { SettingsChangePasswordValues } from "@/lib/validation/settingsForms";
 import { PASSWORD_MIN, PASSWORD_MAX } from "@/lib/validation/settingsForms";
@@ -71,8 +71,7 @@ export default function SettingsPasswordSection({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     autoComplete="current-password"
                     placeholder="Current password"
                     disabled={changePwSubmitting}
@@ -101,8 +100,7 @@ export default function SettingsPasswordSection({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     autoComplete="new-password"
                     placeholder="New password"
                     disabled={changePwSubmitting}
