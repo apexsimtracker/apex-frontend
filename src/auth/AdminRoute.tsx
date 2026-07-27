@@ -3,7 +3,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { AuthRedirectState } from "./authRedirect";
 
 type AdminRouteProps = {
-  /** Shown on the login page after redirect */
   message?: string;
 };
 
