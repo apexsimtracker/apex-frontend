@@ -167,6 +167,9 @@ export type AdminSystemOverview = {
   build: {
     apiVersion: string;
     environment: string;
+    nodeEnv?: string;
+    appEnv?: string;
+    billingMode?: string;
     backendProvider: string;
     frontendProvider: string;
     databaseProvider: string;

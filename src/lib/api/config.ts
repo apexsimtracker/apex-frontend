@@ -1,22 +1,43 @@
 /**
  * API base URL resolution (unchanged from monolithic `api.ts`).
- * Relevant env vars: `VITE_API_URL`, `VITE_APEX_API_BASE_URL` (see Vite `import.meta.env`), `import.meta.env.PROD`.
+ * Relevant env vars: `VITE_API_URL`, `VITE_APEX_API_BASE_URL`, `VITE_APP_ENV`, `import.meta.env.PROD`.
  */
 import { Capacitor } from "@capacitor/core";
 
 /** Production backend (Render Frankfurt). Used when VITE_API_URL is unset in production builds. */
 const DEFAULT_PROD_API = "https://apex-1-y319.onrender.com";
 
+/** Staging backend (Render Free). Used when VITE_APP_ENV=staging and VITE_API_URL is unset. */
+const DEFAULT_STAGING_API = "https://staging-y01y.onrender.com";
+
 /** Default local API port (matches apex `PORT` default 10000, not the Vite dev port 8080). */
 const DEFAULT_DEV_API = "http://localhost:10000";
 
 function resolveInitialApiBase(): string {
-  return (
+  const fromEnv =
     import.meta.env.VITE_API_URL ??
     // Back-compat: some envs use this name in local dev.
-    import.meta.env.VITE_APEX_API_BASE_URL ??
-    (import.meta.env.PROD ? DEFAULT_PROD_API : DEFAULT_DEV_API)
-  );
+    import.meta.env.VITE_APEX_API_BASE_URL;
+  if (fromEnv) return fromEnv;
+
+  if (import.meta.env.VITE_APP_ENV === "staging") return DEFAULT_STAGING_API;
+  return import.meta.env.PROD ? DEFAULT_PROD_API : DEFAULT_DEV_API;
+}
+
+/** Resolved logical app tier for admin UI banners. */
+export function getAppEnv(): "development" | "staging" | "production" {
+  const explicit = String(import.meta.env.VITE_APP_ENV ?? "")
+    .trim()
+    .toLowerCase();
+  if (explicit === "development" || explicit === "staging" || explicit === "production") {
+    return explicit;
+  }
+  const api = resolveInitialApiBase();
+  if (api.includes("staging-y01y") || api.includes("localhost") || api.includes("127.0.0.1")) {
+    if (api.includes("staging-y01y")) return "staging";
+    return "development";
+  }
+  return import.meta.env.PROD ? "production" : "development";
 }
 
 /** Android emulator: 127.0.0.1 is the emulator itself; 10.0.2.2 is the host Mac. */

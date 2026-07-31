@@ -15,7 +15,7 @@ export default function OnboardingEmptyState() {
   if (!user) return null;
 
   return (
-    <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 sm:p-10">
+    <div className="rounded-2xl border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 sm:p-10">
       <div className="mx-auto max-w-md text-center">
         <h2 className="font-apex-headline text-2xl font-semibold text-apex-on-surface">
           Welcome to Apex
@@ -29,7 +29,7 @@ export default function OnboardingEmptyState() {
           <button
             type="button"
             onClick={() => navigate("/upload")}
-            className={`${appPrimaryButtonClassName} h-11 w-full`}
+            className={`${appPrimaryButtonClassName} inline-flex h-11 w-full items-center justify-center`}
           >
             <Upload className="mr-2 size-4" />
             Upload a Session
@@ -38,7 +38,7 @@ export default function OnboardingEmptyState() {
           <button
             type="button"
             onClick={() => navigate("/manual")}
-            className={`${appOutlineButtonClassName} h-11 w-full`}
+            className={`${appOutlineButtonClassName} inline-flex h-11 w-full items-center justify-center`}
           >
             <PenLine className="mr-2 size-4" />
             Log Manual Activity

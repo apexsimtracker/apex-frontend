@@ -400,8 +400,22 @@ function OverviewTab({ data }: { data: AdminSystemOverview }) {
         >
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Environment</span>
-              <span className="font-medium">{data.build.environment}</span>
+              <span className="text-muted-foreground">App environment</span>
+              <span className="font-medium">
+                {data.build.appEnv ?? data.build.environment}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Node environment</span>
+              <span className="font-medium">
+                {data.build.nodeEnv ?? "—"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Billing mode</span>
+              <span className="font-medium">
+                {data.build.billingMode ?? "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Backend version</span>
