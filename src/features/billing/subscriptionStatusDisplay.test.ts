@@ -41,4 +41,30 @@ describe("subscriptionStatusDisplay", () => {
     ).toBe("Access until");
     expect(formatAccessUntilLabel("2026-07-01T00:00:00.000Z")).toMatch(/2026/);
   });
+
+  it("labels an active beta trial as a 1-month free trial", () => {
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    expect(
+      subscriptionStatusLabel({
+        hasPro: true,
+        subscriptionStatus: "EXPIRED",
+        cancelAtPeriodEnd: false,
+        isBetaUser: true,
+        betaTrialExpiresAt: future,
+      }),
+    ).toBe("Pro (1-month free trial)");
+  });
+
+  it("uses paid Pro label after beta trial has ended", () => {
+    const past = new Date(Date.now() - 60_000).toISOString();
+    expect(
+      subscriptionStatusLabel({
+        hasPro: true,
+        subscriptionStatus: "ACTIVE",
+        cancelAtPeriodEnd: false,
+        isBetaUser: true,
+        betaTrialExpiresAt: past,
+      }),
+    ).toBe("Pro (active)");
+  });
 });

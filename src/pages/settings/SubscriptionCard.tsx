@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 
 import { createBillingPortalSession, getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
+import {
+  formatBetaTrialEndsLabel,
+  isActiveBetaTrial,
+  isPaidProUser,
+} from "@/features/billing/betaTrial";
 import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -17,7 +22,9 @@ import { cn } from "@/lib/utils";
 
 export function SubscriptionCard() {
   const { user } = useAuth();
-  const hasPro = user?.hasPro === true;
+  const onBetaTrial = isActiveBetaTrial(user);
+  const isPaidPro = isPaidProUser(user);
+  const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
 
   const portalMutation = useMutation({
     mutationFn: async () => {
@@ -50,20 +57,32 @@ export function SubscriptionCard() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-apex-on-surface-variant">
-        Manage your Apex Pro plan on the pricing page.
+        {onBetaTrial
+          ? "You have a 1-month free trial of full Pro access. Subscribe on the pricing page anytime — your trial ends when paid Pro starts."
+          : "Manage your Apex Pro plan on the pricing page."}
       </p>
       <div>
         <span className="text-xs text-apex-on-surface-variant">Plan</span>
         <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
           {subscriptionStatusLabel(user)}
         </p>
-        {hasPro && currentSubscriptionLabel && (
+        {isPaidPro && currentSubscriptionLabel && (
           <p className="mt-0.5 text-sm text-apex-on-surface">
             {currentSubscriptionLabel}
           </p>
         )}
       </div>
-      {hasPro && billingInterval && (
+      {onBetaTrial && betaTrialEndsLabel && (
+        <div>
+          <span className="text-xs text-apex-on-surface-variant">
+            Trial ends
+          </span>
+          <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
+            {betaTrialEndsLabel}
+          </p>
+        </div>
+      )}
+      {isPaidPro && billingInterval && (
         <div>
           <span className="text-xs text-apex-on-surface-variant">Billing</span>
           <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
@@ -71,7 +90,7 @@ export function SubscriptionCard() {
           </p>
         </div>
       )}
-      {hasPro && accessUntilLabel && (
+      {isPaidPro && accessUntilLabel && (
         <div>
           <span className="text-xs text-apex-on-surface-variant">
             {subscriptionPeriodEndLabel(user)}
@@ -81,7 +100,7 @@ export function SubscriptionCard() {
           </p>
         </div>
       )}
-      {hasPro ? (
+      {isPaidPro ? (
         <>
           <Button
             type="button"
@@ -111,8 +130,13 @@ export function SubscriptionCard() {
           asChild
           variant="outline"
           className={cn("mt-2", appOutlineButtonClassName)}
+          data-testid={
+            onBetaTrial ? "billing-view-pro-plans" : "billing-upgrade-to-pro"
+          }
         >
-          <Link to={"/pricing"}>Upgrade to Pro</Link>
+          <Link to={"/pricing"}>
+            {onBetaTrial ? "View Pro plans" : "Upgrade to Pro"}
+          </Link>
         </Button>
       )}
     </div>

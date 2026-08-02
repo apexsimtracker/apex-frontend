@@ -31,6 +31,9 @@ type ProPlanCardProps = {
   selectedPackage: RevenueCatPackage | null;
   annualSavingsPercent: number | null;
   isPro: boolean;
+  /** Active code-level beta trial (has Pro access but not a paid subscription). */
+  onBetaTrial?: boolean;
+  betaTrialEndsLabel?: string | null;
   isLoggedIn: boolean;
   authLoading: boolean;
   offeringsPending: boolean;
@@ -60,6 +63,8 @@ export function ProPlanCard({
   selectedPackage,
   annualSavingsPercent,
   isPro,
+  onBetaTrial = false,
+  betaTrialEndsLabel = null,
   isLoggedIn,
   authLoading,
   offeringsPending,
@@ -179,6 +184,17 @@ export function ProPlanCard({
           >
             {`Billed annually · save ${annualSavingsPercent ?? 0}% vs paying monthly`}
           </p>
+          {onBetaTrial ? (
+            <p
+              className="mt-3 font-apex-body text-sm text-apex-on-surface"
+              data-testid="billing-beta-trial-note"
+            >
+              Your 1-month free trial is active
+              {betaTrialEndsLabel ? ` until ${betaTrialEndsLabel}` : ""}.
+              Subscribe now to keep Pro after the trial — your trial ends when
+              paid Pro starts.
+            </p>
+          ) : null}
         </>
       )}
 

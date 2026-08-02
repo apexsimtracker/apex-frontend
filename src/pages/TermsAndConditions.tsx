@@ -283,9 +283,12 @@ export default function TermsAndConditions() {
                 By subscribing, you agree to RevenueCat’s and Stripe’s
                 applicable terms for checkout and payment. Prices, billing
                 intervals, and trial offers are displayed at purchase.
-                Subscriptions renew automatically unless cancelled before the
-                renewal date through the billing self-service portal or as
-                otherwise described at checkout.
+                Separately, we may grant invited beta users a time-limited
+                complimentary Pro trial at signup (not via Stripe/RevenueCat
+                promotional checkout). Starting a paid Pro subscription ends
+                that complimentary trial. Subscriptions renew automatically
+                unless cancelled before the renewal date through the billing
+                self-service portal or as otherwise described at checkout.
               </p>
               <p className="font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
                 Refund eligibility is determined by applicable consumer law and

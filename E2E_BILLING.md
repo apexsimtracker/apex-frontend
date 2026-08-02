@@ -1,5 +1,7 @@
 # Billing E2E tests (Playwright)
 
+> Code-level invited beta trials (no RevenueCat subscription row) are covered by unit tests, not a seeded Playwright persona. See `apex/docs/beta-trial.md`.
+
 End-to-end tests for Apex Pro billing: Stripe checkout, customer portal redirect, and RevenueCat webhooks.
 
 ## Prerequisites

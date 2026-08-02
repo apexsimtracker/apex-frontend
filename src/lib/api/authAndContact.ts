@@ -23,6 +23,11 @@ export type AuthUser = {
   subscriptionStatus?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
   cancelAtPeriodEnd?: boolean;
   currentPeriodEnd?: string | null;
+  /** Beta cohort; may remain true after trial ends. */
+  isBetaUser?: boolean;
+  betaTrialStartedAt?: string | null;
+  betaTrialExpiresAt?: string | null;
+  hasSeenBetaWelcomeModal?: boolean;
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;
@@ -65,6 +70,18 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
     "PATCH",
     "/api/auth/me",
     body,
+    true,
+  );
+  const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
+  return user;
+}
+
+/** POST /api/auth/me/beta-welcome — mark beta welcome modal as seen. Returns updated user. */
+export async function dismissBetaWelcome(): Promise<AuthUser> {
+  const data = await fetchApi<AuthUser | { user?: AuthUser }>(
+    "POST",
+    "/api/auth/me/beta-welcome",
+    undefined,
     true,
   );
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);

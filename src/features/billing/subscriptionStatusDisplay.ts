@@ -1,10 +1,16 @@
 import type { AuthUser } from "@/lib/api";
+import { isActiveBetaTrial } from "./betaTrial";
 
 export type SubscriptionStatus = "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
 
 type SubscriptionUserFields = Pick<
   AuthUser,
-  "hasPro" | "subscriptionStatus" | "cancelAtPeriodEnd" | "currentPeriodEnd"
+  | "hasPro"
+  | "subscriptionStatus"
+  | "cancelAtPeriodEnd"
+  | "currentPeriodEnd"
+  | "isBetaUser"
+  | "betaTrialExpiresAt"
 >;
 
 export function isSubscriptionCanceled(
@@ -29,6 +35,9 @@ export function subscriptionStatusLabel(
   user: SubscriptionUserFields | null | undefined,
 ): string {
   if (!user?.hasPro) return "Free";
+  if (isActiveBetaTrial(user)) {
+    return "Pro (1-month free trial)";
+  }
   if (user.subscriptionStatus === "CANCELED" || user.cancelAtPeriodEnd) {
     return "Pro (canceled — access until period end)";
   }

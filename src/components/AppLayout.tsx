@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import "@/styles/theme.css";
+import BetaWelcomeModal from "@/components/BetaWelcomeModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import ProRequiredBanner from "@/components/ProRequiredBanner";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,7 @@ export default function AppLayout({
         ) : null}
         <ProRequiredBanner />
         <BroadcastBanner />
+        <BetaWelcomeModal />
         <main
           className={cn(
             "flex min-h-0 flex-1 flex-col overflow-x-clip",

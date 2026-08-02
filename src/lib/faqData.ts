@@ -89,6 +89,13 @@ export const FAQ_ITEMS: FaqItem[] = [
       "Yes. You can cancel your Apex Pro subscription at any time. You'll retain access until the end of your current billing period.",
   },
   {
+    id: "beta-free-trial",
+    category: "Apex Pro",
+    question: "What is the Apex beta free trial?",
+    answer:
+      "Invited beta users receive a 1-month free trial of full Apex Pro access when they sign up. You can subscribe to a paid Pro plan anytime from Pricing; starting a paid subscription ends the free trial and continues Pro under your normal billing.",
+  },
+  {
     id: "change-password",
     category: "Account",
     question: "How do I change my password?",

@@ -20,6 +20,11 @@ import {
   formatAccessUntilLabel,
   isSubscriptionCanceled,
 } from "@/features/billing/subscriptionStatusDisplay";
+import {
+  formatBetaTrialEndsLabel,
+  isActiveBetaTrial,
+  isPaidProUser,
+} from "@/features/billing/betaTrial";
 import { useAuth } from "@/contexts/AuthContext";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { cn } from "@/lib/utils";
@@ -58,7 +63,10 @@ export default function Pricing() {
     isRefreshingSubscription,
   } = useRevenueCat();
 
-  const isPro = user?.hasPro === true;
+  const onBetaTrial = isActiveBetaTrial(user);
+  const isPaidPro = isPaidProUser(user);
+  const hasProAccess = user?.hasPro === true;
+  const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
   const currentSubscriptionLabel = formatCurrentSubscriptionLabel(
     user
       ? {
@@ -168,8 +176,11 @@ export default function Pricing() {
             Choose your plan
           </h1>
           <p className="mt-2 text-sm tracking-wide text-apex-on-surface-variant">
-            Start free. Upgrade to Pro for unlimited history, analytics, and
-            more.
+            {onBetaTrial
+              ? `You're on a 1-month free trial of full Pro access${
+                  betaTrialEndsLabel ? ` (ends ${betaTrialEndsLabel})` : ""
+                }. Subscribe anytime — your trial ends when paid Pro starts.`
+              : "Start free. Upgrade to Pro for unlimited history, analytics, and more."}
           </p>
         </div>
 
@@ -207,7 +218,7 @@ export default function Pricing() {
               priceLabel={plans?.free.priceLabel ?? "£0"}
               features={plans?.free.features ?? []}
               isLoggedIn={Boolean(user)}
-              isPro={isPro}
+              isPro={hasProAccess}
             />
             <ProPlanCard
               features={plans?.pro.features ?? []}
@@ -218,7 +229,9 @@ export default function Pricing() {
               onBillingIntervalChange={setBillingInterval}
               selectedPackage={selectedPackage}
               annualSavingsPercent={annualSavingsPercent}
-              isPro={isPro}
+              isPro={isPaidPro}
+              onBetaTrial={onBetaTrial}
+              betaTrialEndsLabel={betaTrialEndsLabel}
               isLoggedIn={Boolean(user)}
               authLoading={authLoading}
               offeringsPending={offeringsQuery.isLoading}
