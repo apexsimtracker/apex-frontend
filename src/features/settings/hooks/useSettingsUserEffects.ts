@@ -3,32 +3,36 @@ import type { UseFormReturn } from "react-hook-form";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { SessionVisibility, AuthUser, InAppNotificationPrefs } from "@/lib/api";
 import type {
-  SettingsDisplayNameValues,
+  SettingsAccountFormValues,
   DeleteAccountFormValues,
 } from "@/lib/validation/settingsForms";
 import type { ApexSettings } from "@/lib/settingsStorage";
 import { setApexSettings } from "@/lib/settingsStorage";
 
 /**
- * Resets the display name field when the signed-in `user` changes.
+ * Resets Account form fields when the signed-in `user` changes.
  */
-export function useDisplayNameFormResetEffect(
+export function useAccountFormResetEffect(
   user: AuthUser | null,
-  displayNameForm: UseFormReturn<
-    WithRootError<SettingsDisplayNameValues>,
+  accountForm: UseFormReturn<
+    WithRootError<SettingsAccountFormValues>,
     unknown,
-    WithRootError<SettingsDisplayNameValues>
+    WithRootError<SettingsAccountFormValues>
   >,
 ) {
   useEffect(() => {
     if (user) {
-      displayNameForm.reset({
-        displayName:
-          (user as { displayName?: string }).displayName ?? user.email ?? "",
+      const bio = user.bio?.trim() ?? user.tagline?.trim() ?? "";
+      accountForm.reset({
+        displayName: user.displayName ?? user.email ?? "",
+        tagline: bio,
       });
     }
-  }, [user, displayNameForm]);
+  }, [user, accountForm]);
 }
+
+/** @deprecated Use useAccountFormResetEffect */
+export const useDisplayNameFormResetEffect = useAccountFormResetEffect;
 
 /**
  * Merges server user privacy/notification fields into local Apex settings state.

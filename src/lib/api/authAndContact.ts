@@ -8,7 +8,7 @@ import { API_BASE } from "./config";
 import { ApiError } from "./errors";
 import type { SessionVisibility, InAppNotificationPrefs } from "./profile";
 
-// Auth — backend may return { id, email, displayName?, createdAt? } at top level (no user wrapper)
+// Auth — backend may return { id, email, displayName? } at top level (no user wrapper)
 export type AuthUser = {
   id: string;
   email: string;
@@ -16,7 +16,6 @@ export type AuthUser = {
   role?: "USER" | "ADMIN";
   displayName?: string;
   name?: string;
-  createdAt?: string;
   hasPro?: boolean;
   effectivePlan?: "FREE" | "PRO";
   billingInterval?: "MONTHLY" | "ANNUAL" | null;

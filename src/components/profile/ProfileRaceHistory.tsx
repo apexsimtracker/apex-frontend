@@ -169,29 +169,31 @@ export function ProfileRaceHistory({
                 </div>
                 <ProfilePositionBadge position={race.position} />
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div>
-                  <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
-                    Sim
-                  </p>
-                  <p className="font-apex-body font-medium text-apex-on-surface">
-                    {getSimShortName(race.sim)}
-                  </p>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
+                      Sim
+                    </p>
+                    <p className="font-apex-body font-medium text-apex-on-surface">
+                      {getSimShortName(race.sim)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
+                      Best Lap
+                    </p>
+                    <p className="font-apex-body font-medium text-apex-on-surface">
+                      {formatLapMs(race.bestLapMs)}
+                    </p>
+                  </div>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
                     Car
                   </p>
-                  <p className="font-apex-body font-medium text-apex-on-surface">
+                  <p className="truncate font-apex-body font-medium text-apex-on-surface">
                     {formatCarName(race.car)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-apex-body text-[10px] uppercase text-apex-on-surface-variant">
-                    Best Lap
-                  </p>
-                  <p className="font-apex-body font-medium text-apex-on-surface">
-                    {formatLapMs(race.bestLapMs)}
                   </p>
                 </div>
               </div>

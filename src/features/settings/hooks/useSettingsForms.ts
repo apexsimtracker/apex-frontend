@@ -2,10 +2,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
-  settingsDisplayNameSchema,
+  settingsAccountFormSchema,
   settingsChangePasswordSchema,
   deleteAccountSchema,
-  type SettingsDisplayNameValues,
+  type SettingsAccountFormValues,
   type SettingsChangePasswordValues,
   type DeleteAccountFormValues,
 } from "@/lib/validation/settingsForms";
@@ -14,9 +14,9 @@ import { DELETE_CONFIRM_PHRASE } from "../constants";
 export function useSettingsForms(
   confirmPhrase: string = DELETE_CONFIRM_PHRASE,
 ) {
-  const displayNameForm = useForm<WithRootError<SettingsDisplayNameValues>>({
-    resolver: zodResolver(settingsDisplayNameSchema),
-    defaultValues: { displayName: "" },
+  const accountForm = useForm<WithRootError<SettingsAccountFormValues>>({
+    resolver: zodResolver(settingsAccountFormSchema),
+    defaultValues: { displayName: "", tagline: "" },
     mode: "onChange",
   });
 
@@ -32,5 +32,5 @@ export function useSettingsForms(
     defaultValues: { password: "", confirmPhrase: "" },
   });
 
-  return { displayNameForm, changePasswordForm, deleteAccountForm };
+  return { accountForm, changePasswordForm, deleteAccountForm };
 }

@@ -18,6 +18,13 @@ const STAT_LABEL =
 
 const CARD = "rounded-xl bg-apex-surface-container-low p-4 shadow-lg";
 
+type StatItem = {
+  key: string;
+  label: string;
+  value: string;
+  highlight?: boolean;
+};
+
 export default function SessionDetailHeroStats({
   bestLapMs,
   lapCount,
@@ -29,55 +36,75 @@ export default function SessionDetailHeroStats({
   improvementFromLap,
   totalKm,
 }: SessionDetailHeroStatsProps) {
+  const stats: StatItem[] = [];
+
+  if (positionLabel) {
+    stats.push({ key: "position", label: "Position", value: positionLabel });
+  }
+  if (qualiGridLabel) {
+    stats.push({ key: "quali", label: "Quali", value: qualiGridLabel });
+  }
+  stats.push({
+    key: "bestLap",
+    label: "Best lap",
+    value: bestLapMs != null ? formatLapMs(bestLapMs) : "—",
+    highlight: true,
+  });
+  stats.push({
+    key: "laps",
+    label: "Laps",
+    value: lapCount > 0 ? String(lapCount) : "—",
+  });
+  stats.push({
+    key: "car",
+    label: "Car",
+    value: formatCarName(carName) || "—",
+  });
+
   return (
     <section className="space-y-3">
       <div className={CARD}>
-        <div className="flex items-start justify-between gap-4 overflow-x-auto">
-          {positionLabel ? (
-            <>
-              <div className="min-w-fit flex-1">
-                <p className={STAT_LABEL}>Position</p>
-                <h2 className="font-apex-headline text-xl font-bold leading-none text-apex-on-surface sm:text-2xl">
-                  {positionLabel}
+        {/* Mobile: 2×2 (or wrapping) grid — no scroll */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:hidden">
+          {stats.map((stat) => (
+            <div key={stat.key} className="min-w-0">
+              <p className={STAT_LABEL}>{stat.label}</p>
+              <h2
+                className={
+                  stat.key === "car"
+                    ? "truncate font-apex-headline text-sm font-bold leading-none text-apex-on-surface"
+                    : "font-apex-headline text-xl font-bold leading-none text-apex-on-surface"
+                }
+                style={stat.highlight ? { color: "#FFD700" } : undefined}
+              >
+                {stat.value}
+              </h2>
+            </div>
+          ))}
+        </div>
+
+        {/* sm+: single row with dividers */}
+        <div className="hidden items-start justify-between gap-4 sm:flex">
+          {stats.map((stat, index) => (
+            <div key={stat.key} className="contents">
+              {index > 0 ? (
+                <div className="h-8 w-px self-center bg-apex-outline-variant/20" />
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p className={STAT_LABEL}>{stat.label}</p>
+                <h2
+                  className={
+                    stat.key === "car"
+                      ? "truncate font-apex-headline text-sm font-bold leading-none text-apex-on-surface sm:text-lg"
+                      : "font-apex-headline text-xl font-bold leading-none text-apex-on-surface sm:text-2xl"
+                  }
+                  style={stat.highlight ? { color: "#FFD700" } : undefined}
+                >
+                  {stat.value}
                 </h2>
               </div>
-              <div className="h-8 w-px self-center bg-apex-outline-variant/20" />
-            </>
-          ) : null}
-          {qualiGridLabel ? (
-            <>
-              <div className="min-w-fit flex-1">
-                <p className={STAT_LABEL}>Quali</p>
-                <h2 className="font-apex-headline text-xl font-bold leading-none text-apex-on-surface sm:text-2xl">
-                  {qualiGridLabel}
-                </h2>
-              </div>
-              <div className="h-8 w-px self-center bg-apex-outline-variant/20" />
-            </>
-          ) : null}
-          <div className="min-w-fit flex-1">
-            <p className={STAT_LABEL}>Best lap</p>
-            <h2
-              className="font-apex-headline text-xl font-bold leading-none sm:text-2xl"
-              style={{ color: "#FFD700" }}
-            >
-              {bestLapMs != null ? formatLapMs(bestLapMs) : "—"}
-            </h2>
-          </div>
-          <div className="h-8 w-px self-center bg-apex-outline-variant/20" />
-          <div className="min-w-fit flex-1">
-            <p className={STAT_LABEL}>Laps</p>
-            <h2 className="font-apex-headline text-xl font-bold leading-none text-apex-on-surface sm:text-2xl">
-              {lapCount > 0 ? lapCount : "—"}
-            </h2>
-          </div>
-          <div className="h-8 w-px self-center bg-apex-outline-variant/20" />
-          <div className="min-w-fit flex-1">
-            <p className={STAT_LABEL}>Car</p>
-            <h2 className="whitespace-nowrap font-apex-headline text-sm font-bold leading-none text-apex-on-surface sm:text-lg">
-              {formatCarName(carName) || "—"}
-            </h2>
-          </div>
+            </div>
+          ))}
         </div>
       </div>
       {(bestLapLapNumber != null ||

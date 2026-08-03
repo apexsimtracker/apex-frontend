@@ -20,8 +20,7 @@ import {
   appPrimaryButtonClassName,
 } from "@/components/app-ui/appButtonClasses";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
-
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import { ACCEPTED_IMAGE_TYPES } from "@/lib/avatarUpload";
 
 type ProfileEditModalProps = {
   open: boolean;
@@ -149,7 +148,7 @@ export default function ProfileEditModal({
                 <FormControl>
                   <Textarea
                     id="edit-tagline"
-                    className={cn(appInputClassName, "min-h-[80px] resize-y")}
+                    className={cn(appInputClassName, "h-20 resize-none")}
                     placeholder="A short bio..."
                     maxLength={160}
                     disabled={editLoading}

@@ -5,7 +5,16 @@ import {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/auth";
+import { profileEditFormSchema } from "@/lib/validation/profileEdit";
 
+/** Account card: display name + bio (same shape as Profile edit). */
+export const settingsAccountFormSchema = profileEditFormSchema;
+
+export type SettingsAccountFormValues = z.infer<
+  typeof settingsAccountFormSchema
+>;
+
+/** @deprecated Prefer settingsAccountFormSchema — kept for any name-only call sites. */
 export const settingsDisplayNameSchema = z.object({
   displayName: displayNameSchema,
 });

@@ -25,7 +25,7 @@ export default function SettingsPageSkeleton() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="space-y-10 lg:col-span-7">
           <SkeletonBlock
-            height={200}
+            height={360}
             className={`rounded-apex-lg ${sk}`}
           />
           <SkeletonBlock
@@ -44,6 +44,10 @@ export default function SettingsPageSkeleton() {
           />
           <SkeletonBlock
             height={220}
+            className={`rounded-apex-lg ${sk}`}
+          />
+          <SkeletonBlock
+            height={240}
             className={`rounded-apex-lg ${sk}`}
           />
           <SkeletonBlock

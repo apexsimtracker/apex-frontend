@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import type { MeResponse } from "@/auth/api";
 import { resolveApiUrl } from "@/lib/api/config";
-import { authMe, updateMe, uploadProfileAvatar } from "@/lib/api/authAndContact";
 import {
   getProfileSummary,
   getProfileRaceHistory,
@@ -28,8 +27,9 @@ import {
   ownedProfileUserKey,
   profileKeys,
   prefetchFollowList,
-  PROFILE_SUMMARY_ALL_QUERY_FILTER,
 } from "@/lib/profileQueryKeys";
+import { useAvatarFileSelection } from "@/features/profile/useAvatarFileSelection";
+import { saveProfileIdentity } from "@/features/profile/saveProfileIdentity";
 
 const ProfileEditModal = lazy(() => import("@/pages/profile/ProfileEditModal"));
 
@@ -95,39 +95,6 @@ function profileSummaryFromMe(me: MeResponse): ProfileSummary {
   };
 }
 
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5MB (matches API)
-
-function withCacheBust(url: string, stamp: number): string {
-  return `${url}${url.includes("?") ? "&" : "?"}t=${stamp}`;
-}
-
-function stripQuery(url: string | null | undefined): string | undefined {
-  if (!url) return undefined;
-  const idx = url.indexOf("?");
-  return idx >= 0 ? url.slice(0, idx) : url;
-}
-
-async function readImageDimensions(
-  file: File,
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const width = img.naturalWidth || img.width;
-      const height = img.naturalHeight || img.height;
-      URL.revokeObjectURL(objectUrl);
-      resolve({ width, height });
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Invalid image file."));
-    };
-    img.src = objectUrl;
-  });
-}
-
 export default function Profile() {
   const queryClient = useQueryClient();
   const { user, loading, refreshMe, setUser } = useAuth();
@@ -172,10 +139,14 @@ export default function Profile() {
   );
 
   const [editOpen, setEditOpen] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const {
+    avatarFile,
+    avatarPreview,
+    avatarError,
+    avatarInputRef,
+    handleAvatarFileChange,
+    clearAvatarSelection,
+  } = useAvatarFileSelection();
   const profileSaveInFlightRef = useRef(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
@@ -190,6 +161,8 @@ export default function Profile() {
     if (!user) return;
     const name = getAccountDisplayName(user);
     const currentBio =
+      (user as AuthUser).bio?.trim() ??
+      (user as AuthUser).tagline?.trim() ??
       (profileSummary?.user as { tagline?: string; bio?: string })?.bio?.trim() ??
       (profileSummary?.user as { tagline?: string; bio?: string })?.tagline?.trim() ??
       "";
@@ -197,164 +170,35 @@ export default function Profile() {
       displayName: name,
       tagline: currentBio,
     });
-    setAvatarFile(null);
-    setAvatarPreview(null);
-    setAvatarError(null);
+    clearAvatarSelection();
     profileEditForm.clearErrors("root");
     setEditSuccess(false);
     setEditOpen(true);
-  }, [user, profileSummary, profileEditForm]);
-
-  const handleAvatarFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      setAvatarError(null);
-      if (avatarPreview) {
-        URL.revokeObjectURL(avatarPreview);
-        setAvatarPreview(null);
-      }
-      setAvatarFile(null);
-      if (!file) return;
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        setAvatarError("Please choose a JPEG, PNG, or WebP image.");
-        return;
-      }
-      if (file.size > MAX_AVATAR_SIZE_BYTES) {
-        setAvatarError("Image must be 5 MB or smaller.");
-        return;
-      }
-      void (async () => {
-        try {
-          await readImageDimensions(file);
-          setAvatarFile(file);
-          setAvatarPreview(URL.createObjectURL(file));
-        } catch {
-          setAvatarError("Invalid image file.");
-        }
-      })();
-    },
-    [avatarPreview],
-  );
-
-  const clearAvatarSelection = useCallback(() => {
-    if (avatarPreview) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-    setAvatarPreview(null);
-    setAvatarFile(null);
-    setAvatarError(null);
-    if (avatarInputRef.current) avatarInputRef.current.value = "";
-  }, [avatarPreview]);
+  }, [user, profileSummary, profileEditForm, clearAvatarSelection]);
 
   const onSaveProfileSubmit = async (values: ProfileEditFormValues) => {
     if (!user || profileSaveInFlightRef.current) return;
-    const previousAvatarUrl = (user as AuthUser).avatarUrl ?? undefined;
-    const trimmedName = values.displayName.trim();
-    if (avatarError) return;
     profileSaveInFlightRef.current = true;
     setEditLoading(true);
-    profileEditForm.clearErrors("root");
     try {
-      let avatarUrlToSet: string | undefined;
-      let uploadedAvatarForSession: string | undefined;
-      if (avatarFile) {
-        try {
-          const uploadRes = await uploadProfileAvatar(avatarFile);
-          avatarUrlToSet = uploadRes.avatarUrl;
-          uploadedAvatarForSession = withCacheBust(avatarUrlToSet, Date.now());
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "Avatar upload failed.";
-          profileEditForm.setError("root", { type: "server", message: msg });
-          return;
-        }
-      }
-      const bioValue = values.tagline.trim() || undefined;
-      const payload = {
-        displayName: trimmedName,
-        tagline: bioValue,
-        bio: bioValue,
-        avatarUrl: avatarUrlToSet ?? undefined,
-      };
-
-      const updated = await updateMe(payload);
-
-      const u = updated as { tagline?: string; bio?: string };
-      const savedBio =
-        (u.bio?.trim() ?? u.tagline?.trim() ?? values.tagline.trim()) ||
-        undefined;
-
-      const userWithAvatar = {
-        ...updated,
-        avatarUrl:
-          uploadedAvatarForSession ??
-          (updated as AuthUser).avatarUrl ??
-          undefined,
-      };
-      setUser(userWithAvatar);
-      queryClient.setQueryData<ProfileSummary>(
-        profileKeys.summary(ownedProfileUserKey(user)),
-        (prev) =>
-          prev
-            ? {
-                ...prev,
-                user: {
-                  ...prev.user,
-                  displayName: updated.displayName ?? trimmedName,
-                  tagline: savedBio,
-                  bio: savedBio,
-                },
-              }
-            : profileSummaryFromMe({ user: userWithAvatar }),
-      );
-
-      if (avatarUrlToSet) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        try {
-          const freshUser = await authMe();
-          const freshAvatar = freshUser.avatarUrl ?? undefined;
-          const freshAvatarBase = stripQuery(freshAvatar);
-          const previousAvatarBase = stripQuery(previousAvatarUrl);
-          const shouldPreserveUploadedAvatar =
-            !freshAvatarBase || freshAvatarBase === previousAvatarBase;
-          setUser(
-            shouldPreserveUploadedAvatar
-              ? {
-                  ...freshUser,
-                  avatarUrl:
-                    uploadedAvatarForSession ??
-                    withCacheBust(avatarUrlToSet, Date.now()),
-                }
-              : freshUser,
-          );
-        } catch {
-          // Keep optimistic user state if refresh fails.
-        }
-      } else {
-        await refreshMe();
-      }
-
-      void queryClient.invalidateQueries(PROFILE_SUMMARY_ALL_QUERY_FILTER);
-      const followsId = user.id?.trim();
-      if (followsId) {
-        void queryClient.invalidateQueries({
-          queryKey: profileKeys.publicPreview(followsId),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["profile", "followList", followsId],
-        });
-      }
-
+      const ok = await saveProfileIdentity({
+        user,
+        values,
+        avatarFile,
+        avatarError,
+        form: profileEditForm,
+        queryClient,
+        setUser,
+        refreshMe,
+        emptySummaryFromUser: (u) => profileSummaryFromMe({ user: u }),
+      });
+      if (!ok) return;
       setEditSuccess(true);
       clearAvatarSelection();
       setTimeout(() => {
         setEditOpen(false);
         setEditSuccess(false);
       }, 800);
-    } catch (e) {
-      profileEditForm.setError("root", {
-        type: "server",
-        message: e instanceof Error ? e.message : "Failed to update profile.",
-      });
     } finally {
       setEditLoading(false);
       profileSaveInFlightRef.current = false;

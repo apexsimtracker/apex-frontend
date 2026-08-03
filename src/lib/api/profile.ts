@@ -115,6 +115,33 @@ export async function getProfileHomeWeekly(): Promise<ProfileHomeWeekly> {
   return apiGet<ProfileHomeWeekly>("/api/profile/home-weekly");
 }
 
+/** Body for PATCH /api/profile/weekly-goals (partial updates allowed). */
+export type WeeklyGoalsPatchBody = {
+  weeklyRacesTarget?: number;
+  weeklyPodiumsTarget?: number;
+  weeklyLapsTarget?: number;
+};
+
+export type WeeklyGoalsPatchResponse = {
+  ok: true;
+  weeklyGoals: {
+    races: { target: number };
+    podiums: { target: number };
+    laps: { target: number };
+  };
+};
+
+/** PATCH /api/profile/weekly-goals — update weekly goal targets. */
+export async function patchWeeklyGoals(
+  body: WeeklyGoalsPatchBody,
+): Promise<WeeklyGoalsPatchResponse> {
+  return fetchApi<WeeklyGoalsPatchResponse>(
+    "PATCH",
+    "/api/profile/weekly-goals",
+    body,
+  );
+}
+
 export type ProfileTrendInsight = Pick<ProfileSummary, "apexTrendInsight">;
 
 export async function getProfileTrendInsight(): Promise<ProfileTrendInsight> {

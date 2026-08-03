@@ -130,7 +130,6 @@ export default function LogSessionSheet({
               "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
               "duration-300",
             )}
-            aria-describedby="log-session-sheet-description"
           >
             <div
               className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-apex-outline-variant/40"
@@ -148,7 +147,6 @@ export default function LogSessionSheet({
                   Log a Session
                 </DialogPrimitive.Title>
                 <DialogPrimitive.Description
-                  id="log-session-sheet-description"
                   className={cn(
                     appModalDescriptionClassName,
                     "mt-0.5 text-[13px]",

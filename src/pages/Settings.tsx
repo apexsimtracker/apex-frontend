@@ -7,7 +7,6 @@ import { useAuth, AUTH_ME_QUERY_KEY } from "@/contexts/AuthContext";
 import { clearToken } from "@/auth/token";
 import {
   authLogout,
-  updateMe,
   changePassword,
   deleteAccount,
   requestUserDataExport,
@@ -29,20 +28,22 @@ import {
   DELETE_CONFIRM_PHRASE,
   SESSION_VISIBILITY_OPTIONS,
 } from "@/features/settings/constants";
-import { formatCreatedAt, formatRetryAfterMs } from "@/features/settings/utils";
+import { formatRetryAfterMs } from "@/features/settings/utils";
 import { useSettingsForms } from "@/features/settings/hooks/useSettingsForms";
 import {
   useApexFromServerUserEffect,
   useDeleteAccountFormOnDialogEffect,
-  useDisplayNameFormResetEffect,
+  useAccountFormResetEffect,
   usePersistApexToStorageEffect,
 } from "@/features/settings/hooks/useSettingsUserEffects";
+import { useAvatarFileSelection } from "@/features/profile/useAvatarFileSelection";
+import { saveProfileIdentity } from "@/features/profile/saveProfileIdentity";
 import { Button } from "@/components/ui/button";
 import {
-  type SettingsDisplayNameValues,
+  type SettingsAccountFormValues,
   type SettingsChangePasswordValues,
   type DeleteAccountFormValues,
-  settingsDisplayNameSchema,
+  settingsAccountFormSchema,
   PASSWORD_MIN,
   PASSWORD_MAX,
 } from "@/lib/validation/settingsForms";
@@ -55,6 +56,7 @@ import SettingsDeleteDialog from "./settings/SettingsDeleteDialog";
 import SettingsPasswordSection from "./settings/SettingsPasswordSection";
 import SettingsNotificationsSection from "./settings/SettingsNotificationsSection";
 import SettingsAccountActionsSection from "./settings/SettingsAccountActionsSection";
+import SettingsWeeklyGoalsSection from "./settings/SettingsWeeklyGoalsSection";
 import { SettingsSectionChrome } from "./settings/SettingsSectionChrome";
 import { SubscriptionCard } from "./settings/SubscriptionCard";
 
@@ -68,13 +70,14 @@ function isInFlightExport(job: DataExportJob | null | undefined): boolean {
 export default function Settings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, loading, setUser } = useAuth();
+  const { user, loading, setUser, refreshMe } = useAuth();
 
   const [settings, setSettings] = useState<ApexSettings>(() =>
     getApexSettings(),
   );
-  const [savingDisplayName, setSavingDisplayName] = useState(false);
-  const [displayNameSuccess, setDisplayNameSuccess] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
+  const [accountSuccess, setAccountSuccess] = useState(false);
+  const accountSaveInFlightRef = useRef(false);
   const [changePwSubmitting, setChangePwSubmitting] = useState(false);
   const [changePwSuccess, setChangePwSuccess] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -88,50 +91,77 @@ export default function Settings() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
-  const { displayNameForm, changePasswordForm, deleteAccountForm } =
+  const { accountForm, changePasswordForm, deleteAccountForm } =
     useSettingsForms(DELETE_CONFIRM_PHRASE);
+  const {
+    avatarFile,
+    avatarPreview,
+    avatarError,
+    avatarInputRef,
+    handleAvatarFileChange,
+    clearAvatarSelection,
+  } = useAvatarFileSelection();
 
-  useDisplayNameFormResetEffect(user, displayNameForm);
+  useAccountFormResetEffect(user, accountForm);
   useApexFromServerUserEffect(user, setSettings);
   useDeleteAccountFormOnDialogEffect(deleteDialogOpen, deleteAccountForm);
 
-  const currentDisplayName =
-    (user as { displayName?: string })?.displayName ?? user?.email ?? "";
-  const displayNameWatch = displayNameForm.watch("displayName");
+  const currentDisplayName = user?.displayName ?? user?.email ?? "";
+  const currentBio = user?.bio?.trim() ?? user?.tagline?.trim() ?? "";
+  const displayNameWatch = accountForm.watch("displayName");
+  const taglineWatch = accountForm.watch("tagline");
   const trimmedDisplayName = displayNameWatch.trim();
-  const displayNameChanged = trimmedDisplayName !== currentDisplayName;
-  const displayNameValid = settingsDisplayNameSchema.safeParse({
+  const trimmedBio = taglineWatch.trim();
+  const accountChanged =
+    trimmedDisplayName !== currentDisplayName ||
+    trimmedBio !== currentBio ||
+    Boolean(avatarFile);
+  const accountValid = settingsAccountFormSchema.safeParse({
     displayName: displayNameWatch,
+    tagline: taglineWatch,
   }).success;
-  const saveDisplayNameDisabled =
-    !displayNameValid || !displayNameChanged || savingDisplayName;
+  const saveAccountDisabled =
+    !accountValid || !accountChanged || savingAccount || Boolean(avatarError);
 
-  const onSaveDisplayName = useCallback(
-    async (values: SettingsDisplayNameValues) => {
-      const trimmed = values.displayName.trim();
-      if (trimmed === currentDisplayName || savingDisplayName) return;
-      displayNameForm.clearErrors("root");
-      setDisplayNameSuccess(false);
-      setSavingDisplayName(true);
-      if (user) {
-        setUser({ ...user, displayName: trimmed });
-      }
+  const onSaveAccount = useCallback(
+    async (values: SettingsAccountFormValues) => {
+      if (!user || accountSaveInFlightRef.current || savingAccount) return;
+      if (!accountChanged && !avatarFile) return;
+      accountSaveInFlightRef.current = true;
+      setAccountSuccess(false);
+      setSavingAccount(true);
       try {
-        const updated = await updateMe({ displayName: trimmed });
-        setUser(updated);
-        setDisplayNameSuccess(true);
-        setTimeout(() => setDisplayNameSuccess(false), 2000);
-      } catch (e) {
-        displayNameForm.setError("root", {
-          type: "server",
-          message:
-            e instanceof Error ? e.message : "Failed to save display name.",
+        const ok = await saveProfileIdentity({
+          user,
+          values,
+          avatarFile,
+          avatarError,
+          form: accountForm,
+          queryClient,
+          setUser,
+          refreshMe,
         });
+        if (!ok) return;
+        clearAvatarSelection();
+        setAccountSuccess(true);
+        setTimeout(() => setAccountSuccess(false), 2000);
       } finally {
-        setSavingDisplayName(false);
+        setSavingAccount(false);
+        accountSaveInFlightRef.current = false;
       }
     },
-    [currentDisplayName, savingDisplayName, setUser, user, displayNameForm],
+    [
+      user,
+      savingAccount,
+      accountChanged,
+      avatarFile,
+      avatarError,
+      accountForm,
+      queryClient,
+      setUser,
+      refreshMe,
+      clearAvatarSelection,
+    ],
   );
 
   usePersistApexToStorageEffect(settings);
@@ -615,12 +645,16 @@ export default function Settings() {
           <div className="space-y-10 lg:col-span-7">
             <SettingsAccountSection
               user={user}
-              displayNameForm={displayNameForm}
-              onSaveDisplayName={onSaveDisplayName}
-              saveDisabled={saveDisplayNameDisabled}
-              saving={savingDisplayName}
-              success={displayNameSuccess}
-              formatCreatedAt={formatCreatedAt}
+              accountForm={accountForm}
+              onSaveAccount={onSaveAccount}
+              saveDisabled={saveAccountDisabled}
+              saving={savingAccount}
+              success={accountSuccess}
+              avatarInputRef={avatarInputRef}
+              avatarPreview={avatarPreview}
+              avatarError={avatarError}
+              onAvatarFileChange={handleAvatarFileChange}
+              onClearAvatarSelection={clearAvatarSelection}
             />
 
             <SettingsPrivacySection
@@ -660,6 +694,8 @@ export default function Settings() {
               changePwSuccess={changePwSuccess}
               onFieldChange={handlePasswordFieldChange}
             />
+
+            <SettingsWeeklyGoalsSection />
 
             <SettingsAccountActionsSection
               exportDepth={exportDepth}

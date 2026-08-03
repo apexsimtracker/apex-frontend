@@ -4,6 +4,5 @@ export type MeResponse = {
     email: string;
     displayName?: string;
     name?: string;
-    createdAt?: string;
   };
 };

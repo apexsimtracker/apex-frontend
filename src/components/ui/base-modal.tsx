@@ -85,6 +85,8 @@ export function BaseModal({
         className={contentClassName}
         showCloseButton={!hideCloseButton}
         closeLabel={closeLabel}
+        // Radix warns unless a Description exists or this is explicitly undefined.
+        {...(description ? {} : { "aria-describedby": undefined })}
       >
         <div className={modalPanelClassName}>
           <DialogHeader
@@ -145,6 +147,7 @@ export function BaseAlertDialog({
         size={size}
         mobileVariant={mobileVariant}
         className={contentClassName}
+        {...(description ? {} : { "aria-describedby": undefined })}
       >
         <div className={modalPanelClassName}>
           <AlertDialogHeader

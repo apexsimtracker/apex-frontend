@@ -123,7 +123,7 @@ export const footerLegalLinks: FooterLinkItem[] = [
 
 /** Desktop footer tagline. */
 export const FOOTER_TAGLINE =
-  "Your sim racing performance hub. Track sessions, analyze telemetry, and compete on leaderboards and community challenges across iRacing, ACC, and your favorite sims.";
+  "Your sim racing performance hub. Track sessions, analyze telemetry, and compete on leaderboards and community challenges across iRacing and your favorite sims.";
 
 function withoutWebOnlyNavItems<T extends { webOnly?: boolean }>(
   items: T[],

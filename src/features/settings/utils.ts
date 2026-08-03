@@ -8,19 +8,3 @@ export function formatRetryAfterMs(ms: number): string {
   if (minutes > 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
   return `${sec} second${sec === 1 ? "" : "s"}`;
 }
-
-export function formatCreatedAt(createdAt: string | undefined): string {
-  if (!createdAt) return "—";
-  try {
-    const d = new Date(createdAt);
-    return isNaN(d.getTime())
-      ? "—"
-      : d.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-  } catch {
-    return "—";
-  }
-}
