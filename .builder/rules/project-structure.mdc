@@ -18,19 +18,25 @@ vite.config.ts Dev :8080, build → dist/, /api proxy
 ## Path alias
 
 - `@/*` → `src/*` (see `tsconfig.json` and `vite.config.ts`)
-- Example: `import { Header } from "@/components/Header"`
+- Example: `import AppLayout from "@/components/AppLayout"`
 
 ## `src/` breakdown
 
 - **`main.tsx`** — boots React, imports `global.css`
-- **`App.tsx`** — `QueryClientProvider`, `AuthProvider`, routes, `Header` / `AppFooter` shell
-- **`pages/`** — route components; `HomeRoute` switches `Index` vs `PublicHome`
-- **`components/`** — shared UI (`ActivityCard`, `Header`, `profile/*`, `admin/*`, `ui/*`)
+- **`App.tsx`** — providers, product `AppShell` + `AppLayout` routes, Admin sibling routes
+- **`pages/`** — route components; `HomeRoute` switches `Dashboard` vs `PublicHome`; `pages/admin/` for Admin
+- **`components/`** — shared UI (`AppLayout`, `HubTopBar`, `BottomNav`, `dashboard/*`, `profile/*`, `app-ui/*`, `ui/*`)
+- **`components/app-ui/`** — product theme primitives (AppDialog, AppSwitch, button/modal class helpers)
+- **`components/ui/`** — shadcn primitives (Admin + shared)
+- **`styles/theme.css`** — product `.apex-theme` / `--apex-*` tokens (imported by `AppLayout`)
+- **`global.css`** — shadcn/Admin semantic tokens
 - **`features/`** — optional modules for complex flows (settings, session detail, manual activity)
-- **`lib/`** — `api/` (HTTP client), `validation/`, `groupSessions.ts`, helpers
-- **`auth/`** — route guards only (not login forms—those are under `pages/`)
+- **`lib/`** — `api/` (HTTP client), `validation/`, helpers
+- **`auth/`** — route guards only (login forms live under `pages/`)
 - **`contexts/`** — `AuthContext`
 - **`config/`** — `navigation.ts` (nav source of truth)
+
+There is **no** `pages/v2/`, `components/v2/`, or `Header.tsx` product shell. Product URLs are unprefixed only — do not scaffold `/v2` routes or legacy path aliases.
 
 ## API layer
 
@@ -42,7 +48,7 @@ vite.config.ts Dev :8080, build → dist/, /api proxy
 
 | File | Role |
 |------|------|
-| `tailwind.config.ts` | Scans `./index.html`, `./src/**/*` |
+| `tailwind.config.ts` | Scans `./index.html`, `./src/**/*`; includes product `apex.*` colors/fonts/radius |
 | `eslint.config.js` | `src/**` = browser; `vite.config.ts` = node |
 | `components.json` | shadcn paths → `src/global.css`, `@/components` |
 | `vercel.json` | SPA hosting |

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "bash .cursor/hooks/session-branch-guard.sh",
+        "timeout": 15
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "bash .cursor/hooks/block-main-destructive-shell.sh",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ]
+  }
+}

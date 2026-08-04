@@ -14,25 +14,30 @@ As the app grows, **split large UI** instead of growing single files.
 |------|----------|
 | Route screens | `src/pages/` (and `src/pages/admin/` for admin) |
 | Reusable widgets | `src/components/` |
+| Product chrome | `AppLayout`, `HubTopBar`, `BottomNav`, `AppFooter`, `MobileNavDrawer` |
 | Feature-specific logic + UI | `src/features/<feature>/` (e.g. `settings/`, `session-detail/`) |
-| Design-system primitives | `src/components/ui/` |
-| Header / nav / footer links | `src/config/navigation.ts` + `src/components/header/` |
+| Product design-system primitives | `src/components/app-ui/` |
+| Admin / shadcn primitives | `src/components/ui/` |
+| Nav / footer / account links | `src/config/navigation.ts` |
 
 ## Practices
 
-- Avoid deep JSX trees in `pages/*`; extract sections into `components/` or `features/`.
+- Avoid deep JSX trees in `pages/*`; extract sections into co-located `pages/<slug>/` folders, `components/`, or `features/`.
 - Co-locate hooks and small presentational pieces with the feature (`features/settings/hooks/`, etc.).
 - Prefer **one route component per file** in `pages/`.
 - Use `cn()` from `@/lib/utils` for conditional Tailwind classes.
-- Global theme tokens live in `src/global.css`; do not duplicate color magic strings across pages when a token exists.
+- **Product theme:** `.apex-theme` + `--apex-*` / Tailwind `apex-*` utilities via `src/styles/theme.css` (keep scoped; do not merge into Admin/shadcn unprefixed tokens).
+- **Admin theme:** `src/global.css` semantic tokens only — do not apply `apex-*` product classes in Admin.
 
 ## Routing
 
-- Register new paths in `src/App.tsx` **above** the `*` NotFound route.
+- Register new **product** paths in the `AppShell` tree in `src/App.tsx` **above** the `*` NotFound route, wrapped in `AppLayout` with top/bottom bars as needed.
+- Use unprefixed URLs (`/sessions`, `/upload`). Do not add `/v2` routes or legacy path aliases (`/activity/:id`, etc.).
 - Use `ProtectedRoute`, `GuestOnlyRoute`, or `AdminRoute` from `src/auth/` when access control applies.
-- Lazy-load heavy pages the same way as `Profile`, `Settings`, `SessionDetailPage`.
+- Admin routes stay under `/admin/*` with `AdminLayout`.
 
 ## Do not
 
 - Reintroduce a `client/` subdirectory—`@/` maps to `src/`.
+- Reintroduce `pages/v2/`, `components/v2/`, or `*V2` filename suffixes.
 - Add Express or local `/api` handlers in this repo; call the Fastify backend via `@/lib/api`.

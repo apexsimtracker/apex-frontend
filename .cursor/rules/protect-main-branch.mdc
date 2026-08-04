@@ -1,0 +1,30 @@
+---
+description: Refuse agent work on git main/master unless the user explicitly opts in
+alwaysApply: true
+---
+
+# Protect main branch
+
+Before making code changes or running destructive commands in this repository, check the current git branch (`git rev-parse --abbrev-ref HEAD`).
+
+## If the branch is `main` or `master`
+
+1. **Stop.** Do not edit files, run migrations, seed/purge e2e data, or push.
+2. Tell the user they are on **`main`** and must switch to **`dev`**:
+   ```bash
+   git checkout dev
+   ```
+3. Only continue if the **current user message** clearly opts in to working on main, for example:
+   - "work on main"
+   - "stay on main"
+   - "I know I'm on main"
+   - "keep working on main"
+
+Vague requests like "fix this bug" or "implement X" are **not** opt-in.
+
+## Always
+
+- Prefer developing on `dev`. Ship path: `dev` → `staging` → `main`.
+- Never run e2e against the production API (`apex-1-y319`).
+- Never push directly to `main` unless the user explicitly requests a push to main.
+- Local frontend should point at local API (`http://127.0.0.1:10000`) or staging API — not production — by default.

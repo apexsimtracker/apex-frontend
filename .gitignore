@@ -12,11 +12,14 @@ node_modules
 dist
 dist-ssr
 
-# Environment (secrets — commit only *.example templates)
+# Environment (secrets — commit only templates / non-secret mode files)
 .env
 .env.*
 !.env.example
 !.env.e2e.example
+!.env.development
+!.env.staging
+!.env.production
 
 # Local overrides (never commit secrets)
 *.local
