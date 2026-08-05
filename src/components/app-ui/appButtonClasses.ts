@@ -102,7 +102,6 @@ export const appDropdownSeparatorClassName = "bg-[#484847]/20";
 export const appDropdownEmailClassName =
   "truncate text-xs text-apex-on-surface-variant";
 
-/** Loveable tertiary accent — download icons, highlights */
 export const appTertiaryIconClassName = "text-[#8ff5ff]";
 
 /** Loveable destructive account-action surface */
