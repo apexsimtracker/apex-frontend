@@ -21,6 +21,12 @@ export function preloadChallenges(): Promise<unknown> {
   return import(/* webpackChunkName: "challenges" */ "@/pages/Challenges");
 }
 
+export function preloadChallengeDetail(): Promise<unknown> {
+  return import(
+    /* webpackChunkName: "challenge-detail" */ "@/pages/ChallengeDetail"
+  );
+}
+
 export function preloadCommunity(): Promise<unknown> {
   return import(/* webpackChunkName: "community" */ "@/pages/Community");
 }
@@ -31,6 +37,12 @@ export function preloadPricing(): Promise<unknown> {
 
 export function preloadSessions(): Promise<unknown> {
   return import(/* webpackChunkName: "sessions" */ "@/pages/Sessions");
+}
+
+export function preloadSessionDetail(): Promise<unknown> {
+  return import(
+    /* webpackChunkName: "session-detail" */ "@/pages/SessionDetail"
+  );
 }
 
 export function preloadProfile(): Promise<unknown> {

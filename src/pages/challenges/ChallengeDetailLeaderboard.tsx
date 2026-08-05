@@ -1,6 +1,7 @@
 import AppListPaginationFooter from "@/components/app-ui/AppListPaginationFooter";
+import { SkeletonBlock } from "@/components/ui/skeleton";
 import { formatChallengeDateTime } from "@/lib/datetime";
-import type { ChallengeLeaderboardRow } from "@/lib/api";
+import type { ChallengeLeaderboardRow } from "@/lib/api/challenges";
 import { formatLapMs } from "@/lib/utils";
 
 interface LeaderboardData {
@@ -44,6 +45,27 @@ function DriverLabel({ row }: { row: ChallengeLeaderboardRow }) {
   );
 }
 
+function LeaderboardRowsSkeleton() {
+  return (
+    <div
+      className="space-y-3"
+      aria-busy="true"
+      aria-label="Loading leaderboard"
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 border-b border-apex-outline-variant/10 py-2"
+        >
+          <SkeletonBlock className="h-4 w-6 rounded-apex-sm bg-apex-surface-container-highest" />
+          <SkeletonBlock className="h-4 w-32 flex-1 rounded-apex-sm bg-apex-surface-container-highest" />
+          <SkeletonBlock className="h-4 w-16 rounded-apex-sm bg-apex-surface-container-highest" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ChallengeDetailLeaderboard({
   loading,
   data,
@@ -64,17 +86,14 @@ export default function ChallengeDetailLeaderboard({
           )}
         </h2>
       </div>
-      {loading ? (
-        <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
-          Loading…
-        </p>
+      {loading && !data ? (
+        <LeaderboardRowsSkeleton />
       ) : !data?.items?.length ? (
         <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
           No laps recorded yet.
         </p>
       ) : (
         <>
-          {/* Desktop / tablet table — min-width keeps columns readable with horizontal scroll */}
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[36rem] text-left font-apex-body text-sm">
               <thead>
@@ -129,7 +148,6 @@ export default function ChallengeDetailLeaderboard({
             </table>
           </div>
 
-          {/* Mobile cards — avoids squished table columns */}
           <ul className="space-y-3 sm:hidden">
             {data.items.map((row) => (
               <li

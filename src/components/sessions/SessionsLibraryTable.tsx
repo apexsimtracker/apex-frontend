@@ -3,7 +3,11 @@ import SimBadge from "@/components/SimBadge";
 import { ProfilePositionBadge } from "@/components/profile/ProfilePositionBadge";
 import { formatLapMs, formatCarName, formatTrackName } from "@/lib/utils";
 import { getSimShortName } from "@/lib/sim";
-import type { SessionsLibraryRow } from "@/lib/api";
+import type { SessionsLibraryRow } from "@/lib/api/sessionsLibrary";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { preloadSessionDetail } from "@/routes/routePreload";
+import { seedSessionDetailFromLibraryRow } from "@/lib/sessions/sessionDetailPrefetch";
 
 function formatSessionDate(date: string): string {
   const d = new Date(date);
@@ -37,8 +41,17 @@ export default function SessionsLibraryTable({
   emptyMessage,
   onOpenSession,
 }: SessionsLibraryTableProps) {
+  const queryClient = useQueryClient();
   const thClass =
     "py-2 text-[10px] font-bold uppercase tracking-wider text-apex-on-surface-variant";
+
+  const warmRow = useCallback(
+    (row: SessionsLibraryRow) => {
+      void preloadSessionDetail();
+      seedSessionDetailFromLibraryRow(queryClient, row);
+    },
+    [queryClient],
+  );
 
   return (
     <section className="space-y-3">
@@ -79,7 +92,13 @@ export default function SessionsLibraryTable({
               items.map((row) => (
                 <tr
                   key={row.id}
-                  onClick={() => onOpenSession(row.id)}
+                  onClick={() => {
+                    warmRow(row);
+                    onOpenSession(row.id);
+                  }}
+                  onMouseEnter={() => warmRow(row)}
+                  onFocus={() => warmRow(row)}
+                  onPointerDown={() => warmRow(row)}
                   className="cursor-pointer transition-colors hover:bg-apex-surface-container-low/50"
                 >
                   <td className="whitespace-nowrap py-4 align-middle">
@@ -144,7 +163,13 @@ export default function SessionsLibraryTable({
           items.map((row) => (
             <div
               key={row.id}
-              onClick={() => onOpenSession(row.id)}
+              onClick={() => {
+                warmRow(row);
+                onOpenSession(row.id);
+              }}
+              onMouseEnter={() => warmRow(row)}
+              onFocus={() => warmRow(row)}
+              onPointerDown={() => warmRow(row)}
               className="cursor-pointer rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container"
             >
               <div className="mb-3 flex items-start justify-between gap-3">

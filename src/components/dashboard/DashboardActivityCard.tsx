@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { memo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
 import DashboardSessionApexPanel from "@/components/dashboard/DashboardSessionApexPanel";
 import {
@@ -13,7 +14,7 @@ import {
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
 import { useIsProUser } from "@/contexts/AuthContext";
 import { formatLapMs, formatCarName, cn } from "@/lib/utils";
-import { resolveApiUrl } from "@/lib/api";
+import { resolveApiUrl } from "@/lib/api/config";
 import {
   displayPositionRank,
   getDisplayPosition,
@@ -22,6 +23,8 @@ import {
   shouldShowSessionPosition,
 } from "@/lib/sessionKind";
 import SessionCaption from "@/components/sessions/SessionCaption";
+import { preloadSessionDetail } from "@/routes/routePreload";
+import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
 
 function isManualSessionItem(props: {
   sessionType?: string | null;
@@ -285,6 +288,7 @@ export default memo(function DashboardActivityCard(
   } = props;
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isPro = useIsProUser();
   const isManual = isManualSessionItem(props);
   const isPractice =
@@ -297,9 +301,52 @@ export default memo(function DashboardActivityCard(
   const embeddedInsight =
     isPro && apexAnalysis?.insights?.length ? apexAnalysis.insights[0] : null;
 
+  const warmDetail = useCallback(() => {
+    void preloadSessionDetail();
+    seedSessionDetailFromListItem(queryClient, {
+      id,
+      createdAt: timestamp,
+      track,
+      trackName,
+      car,
+      vehicleDisplay,
+      sim,
+      sessionType,
+      manualSessionKind,
+      position,
+      qualifyingPosition,
+      totalDrivers: totalRacers,
+      bestLapMs,
+      lapCount,
+      caption,
+      source: props.source,
+      userId: profileUserId,
+    });
+  }, [
+    queryClient,
+    id,
+    timestamp,
+    track,
+    trackName,
+    car,
+    vehicleDisplay,
+    sim,
+    sessionType,
+    manualSessionKind,
+    position,
+    qualifyingPosition,
+    totalRacers,
+    bestLapMs,
+    lapCount,
+    caption,
+    props.source,
+    profileUserId,
+  ]);
+
   const goToSession = useCallback(() => {
+    warmDetail();
     navigate(`/sessions/${id}`, { state: { from: "home" } });
-  }, [navigate, id]);
+  }, [navigate, id, warmDetail]);
 
   const handleShellClick = useCallback(
     (e: React.MouseEvent) => {
@@ -347,6 +394,9 @@ export default memo(function DashboardActivityCard(
     <article
       className="cursor-pointer overflow-hidden rounded-2xl border border-apex-outline-variant/10 bg-apex-surface-container-low transition-colors hover:bg-apex-surface-container-low/90"
       onClick={handleShellClick}
+      onMouseEnter={warmDetail}
+      onFocus={warmDetail}
+      onPointerDown={warmDetail}
     >
       <div className="space-y-3 p-4 lg:p-5">
         <div className="flex items-center justify-between">

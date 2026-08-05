@@ -25,10 +25,17 @@ function NavLinkDesktop({
       onPointerDown={() => onIntent(item.to)}
       onFocus={() => onIntent(item.to)}
       className={cn(
-        "relative select-none font-apex-headline text-xs font-medium uppercase tracking-widest transition-colors",
+        "relative select-none font-apex-headline text-xs font-medium uppercase tracking-widest",
+        // The transition is carried by the idle state only. A transition on the
+        // active state animates the colour over the same frames React is using
+        // to render the destination route, so the fade gets starved and the
+        // label crawls to red long after the underline has landed. Browsers
+        // read transition properties off the after-change style, so keeping
+        // them off `active` makes activation paint instantly while hover on
+        // idle links stays smooth.
         active
           ? "text-apex-primary"
-          : "text-apex-on-surface-variant hover:text-apex-on-surface",
+          : "text-apex-on-surface-variant transition-colors hover:text-apex-on-surface",
       )}
     >
       {item.label}

@@ -37,6 +37,12 @@ export default function HubTopBar() {
             <img
               src="/logo.png?v=5"
               alt="Apex Logo"
+              // Intrinsic size of the asset, so the box is reserved before the
+              // image decodes and the nav links never shift.
+              width={40}
+              height={40}
+              fetchPriority="high"
+              decoding="sync"
               className="h-10 w-auto max-w-[112px] object-contain object-center transition-transform group-hover:scale-[1.03]"
               onError={() => setLogoImgFailed(true)}
             />

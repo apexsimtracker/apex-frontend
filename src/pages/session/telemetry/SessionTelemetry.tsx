@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Maximize2 } from "lucide-react";
 import { formatLapMs, cn } from "@/lib/utils";
-import { useIsProUser } from "@/contexts/AuthContext";
+import { useIsProUser, useAuth } from "@/contexts/AuthContext";
 import {
   useTelemetrySummary,
   useTelemetryTraces,
@@ -45,6 +45,7 @@ export default function SessionTelemetry({
   onSelectLap,
   bestLapLapNumber,
 }: SessionTelemetryProps) {
+  const { loading: authLoading } = useAuth();
   const isPro = useIsProUser();
   const agentOnlyGate = isAgentOnlyTelemetryGate(ingestPath);
   const [tab, setTab] = useState<TabId>("driving");
@@ -55,7 +56,10 @@ export default function SessionTelemetry({
     data: summary,
     isLoading,
     isError,
-  } = useTelemetrySummary(sessionId, isPro && !agentOnlyGate);
+  } = useTelemetrySummary(
+    sessionId,
+    !authLoading && isPro && !agentOnlyGate,
+  );
 
   useEffect(() => {
     if (selectedLap != null) return;
@@ -80,7 +84,8 @@ export default function SessionTelemetry({
   }, [compareLap, selectedLap]);
 
   const canLoadTraces = Boolean(
-    isPro &&
+    !authLoading &&
+      isPro &&
       summary?.eligible &&
       summary.hasProAccess &&
       selectedLap != null &&

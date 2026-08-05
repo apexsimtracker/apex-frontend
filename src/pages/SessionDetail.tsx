@@ -2,7 +2,12 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNo
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
-import { deleteManualActivity, ApiError, apiPost, patchSessionCaption } from "@/lib/api";
+import { ApiError } from "@/lib/api/errors";
+import { apiPost } from "@/lib/api/httpVerbs";
+import {
+  deleteManualActivity,
+  patchSessionCaption,
+} from "@/lib/api/manualAndUpload";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildPageTitle } from "@/lib/seo";
@@ -25,6 +30,7 @@ import {
   sessionDetailDeniedMessage,
   type RawLap,
 } from "@/features/session-detail/sessionDetailData";
+import { sessionDetailQueryKey } from "@/lib/sessions/sessionDetailPrefetch";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { toast } from "sonner";
@@ -42,7 +48,9 @@ import SessionDetailAnalysisGrid from "./session/SessionDetailAnalysisGrid";
 import SessionDetailLapConsistency, {
   buildConsistencyVisual,
 } from "./session/SessionDetailLapConsistency";
-import SessionDetailSkeleton from "./session/SessionDetailSkeleton";
+import SessionDetailSkeleton, {
+  SessionDetailBodySkeleton,
+} from "./session/SessionDetailSkeleton";
 import SessionLapTable from "./session/SessionLapTable";
 import { SessionCommentsModal } from "./session/SessionCommentsModal";
 import {
@@ -121,7 +129,7 @@ export default function SessionDetail() {
   const fromHome =
     (location.state as SessionNavState)?.from === "home";
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const isPro = useIsProUser();
   const [showAllLaps, setShowAllLaps] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -143,7 +151,7 @@ export default function SessionDetail() {
     error: queryError,
     isError,
   } = useQuery({
-    queryKey: ["sessions", "detail", sid],
+    queryKey: sessionDetailQueryKey(sid),
     queryFn: () => fetchSessionDetail(sid),
     enabled: Boolean(sid),
   });
@@ -151,6 +159,8 @@ export default function SessionDetail() {
   const session = sessionPayload?.session ?? null;
   const apexAnalysis = sessionPayload?.apexAnalysis ?? null;
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked ?? false;
+  /** Seeded list rows omit laps; full GET always includes a laps array. */
+  const sessionHydrated = Array.isArray(session?.laps);
 
   useEffect(() => {
     if (!session) return;
@@ -181,7 +191,7 @@ export default function SessionDetail() {
       setLikedByMe(Boolean(data.liked));
       setLikeCount(Number(data.likeCount ?? 0));
       void queryClient.invalidateQueries({
-        queryKey: ["sessions", "detail", sid],
+        queryKey: sessionDetailQueryKey(sid),
       });
     } catch {
       setLikedByMe(prevLiked);
@@ -228,17 +238,18 @@ export default function SessionDetail() {
   }, [session, sessionMinima]);
 
   const agentOnlyGate = isAgentOnlyTelemetryGate(session?.ingestPath);
-  const { data: telemetrySummary } = useTelemetrySummary(
-    sid,
-    Boolean(sid && isPro && !agentOnlyGate && session),
+  // Start Pro telemetry as soon as we have a session id (seed or hydrate) — do not wait for laps.
+  const telemetryEnabled = Boolean(
+    sid && !authLoading && isPro && !agentOnlyGate && session,
   );
+  const { data: telemetrySummary } = useTelemetrySummary(sid, telemetryEnabled);
   const overviewLap =
     selectedLap ??
     telemetrySummary?.defaultLapNumber ??
     session?.bestLapLapNumber ??
     null;
   const canLoadOverviewTraces = Boolean(
-    isPro &&
+    telemetryEnabled &&
       telemetrySummary?.eligible &&
       telemetrySummary.hasProAccess &&
       overviewLap != null &&
@@ -263,7 +274,7 @@ export default function SessionDetail() {
     );
   }
 
-  if (loading) {
+  if (loading && !session) {
     return (
       <>
         <PageMeta
@@ -312,10 +323,11 @@ export default function SessionDetail() {
       : laps.length;
   const isManual = isManualActivity(session);
   const isOwner = user?.id != null && session.userId === user.id;
-  const isAdmin = user?.role === "ADMIN";
   const canEditSession = isOwner;
-  const canEditCaption = isOwner || isAdmin;
+  const canEditCaption = isOwner;
   const canManualExtras = isManual && isOwner;
+  /** Auth is settled via ProtectedRoute; lock sectors for free viewers. */
+  const sectorsLocked = !isPro || proFeaturesLocked;
 
   const apexDisplay = parseApexAnalysisDisplay(apexAnalysis);
   const apexLocked = apexDisplay.locked;
@@ -476,7 +488,7 @@ export default function SessionDetail() {
     try {
       const result = await patchSessionCaption(sid, next);
       queryClient.setQueryData(
-        ["sessions", "detail", sid],
+        sessionDetailQueryKey(sid),
         (prev: typeof sessionPayload) => {
           if (!prev?.session) return prev;
           return {
@@ -569,9 +581,13 @@ export default function SessionDetail() {
         <SessionDetailSectorBreakdown
           sessionMinima={sessionMinima}
           idealLapMs={idealLapMs}
-          proFeaturesLocked={proFeaturesLocked}
+          proFeaturesLocked={sectorsLocked}
         />
 
+        {!sessionHydrated ? (
+          <SessionDetailBodySkeleton />
+        ) : (
+          <>
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
@@ -600,6 +616,7 @@ export default function SessionDetail() {
             onShowMore={() => setShowAllLaps(true)}
             selectedLap={selectedLap}
             onSelectLap={onSelectLap}
+            hideSectorColumns={sectorsLocked}
           />
         </section>
 
@@ -678,6 +695,8 @@ export default function SessionDetail() {
             </div>
           </section>
         )}
+          </>
+        )}
 
         {session.notes?.trim() ? (
           <section className="rounded-xl bg-apex-surface-container-low p-4 shadow-lg">
@@ -714,7 +733,7 @@ export default function SessionDetail() {
         onCommentAdded={() => setCommentCount((c) => c + 1)}
         onRefreshSession={() => {
           void queryClient.invalidateQueries({
-            queryKey: ["sessions", "detail", sid],
+            queryKey: sessionDetailQueryKey(sid),
           });
         }}
       />

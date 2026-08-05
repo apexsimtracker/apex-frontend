@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -10,7 +10,7 @@ import {
   joinChallenge,
   leaveChallenge,
   type ChallengeApiStatus,
-} from "@/lib/api";
+} from "@/lib/api/challenges";
 import { ApiError } from "@/lib/api/errors";
 import { formatChallengeDateTime } from "@/lib/datetime";
 import { cn, formatTrackName } from "@/lib/utils";
@@ -21,13 +21,19 @@ import ChallengeDetailHero, {
   challengeStatusLabel,
 } from "@/pages/challenges/ChallengeDetailHero";
 import ChallengeDetailOverview from "@/pages/challenges/ChallengeDetailOverview";
-import ChallengeDetailLeaderboard from "@/pages/challenges/ChallengeDetailLeaderboard";
-import ChallengeDetailSessions from "@/pages/challenges/ChallengeDetailSessions";
 import ChallengeDetailSkeleton from "@/pages/challenges/ChallengeDetailSkeleton";
+import { ChallengeLiveTimeProvider } from "@/pages/challenges/ChallengeLiveTime";
+import { challengeLiveRefetchIntervalMs } from "@/hooks/useChallengeLiveState";
 import {
-  challengeLiveRefetchIntervalMs,
-  useChallengeLiveState,
-} from "@/hooks/useChallengeLiveState";
+  challengeDetailQueryKey,
+} from "@/lib/challenges/challengeDetailPrefetch";
+
+const ChallengeDetailLeaderboard = lazy(
+  () => import("@/pages/challenges/ChallengeDetailLeaderboard"),
+);
+const ChallengeDetailSessions = lazy(
+  () => import("@/pages/challenges/ChallengeDetailSessions"),
+);
 
 const CHALLENGES_PATH = "/challenges";
 const LEADERBOARD_PAGE_SIZE = 20;
@@ -65,9 +71,17 @@ function PageShell({ children }: { children: ReactNode }) {
   );
 }
 
+function TabPanelFallback() {
+  return (
+    <p className="py-6 font-apex-body text-sm text-apex-on-surface-variant">
+      Loading…
+    </p>
+  );
+}
+
 export default function ChallengeDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("overview");
   const [leaderboardPage, setLeaderboardPage] = useState(1);
@@ -75,6 +89,8 @@ export default function ChallengeDetail() {
   const [joinBanMessage, setJoinBanMessage] = useState<string | null>(null);
   const [leaveError, setLeaveError] = useState<string | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+
+  const userKey = user?.id?.trim() || "anon";
 
   useEffect(() => {
     setLeaderboardPage(1);
@@ -91,14 +107,14 @@ export default function ChallengeDetail() {
     isError,
     refetch: refetchChallenge,
   } = useQuery({
-    queryKey: ["challenges", "detail", id ?? "", user?.id ?? "anon"],
+    queryKey: challengeDetailQueryKey(id ?? "", userKey),
     queryFn: async () => {
       if (!id) throw new Error("Missing challenge ID");
       const data = await getChallenge(id);
       if (!data) throw new Error("Challenge not found");
       return data;
     },
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !authLoading,
     refetchInterval: (query) =>
       challengeLiveRefetchIntervalMs(query.state.data?.status),
   });
@@ -110,32 +126,45 @@ export default function ChallengeDetail() {
     }
   }, [tab, user, challenge]);
 
-  const { timeRemainingSec: liveTimeRemainingSec } = useChallengeLiveState({
-    status: challenge?.status,
-    startsAt: challenge?.startsAt,
-    endsAt: challenge?.endsAt,
-    onBoundaryCrossed: () => {
-      void refetchChallenge();
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
-      void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
-      if (id) {
-        void queryClient.invalidateQueries({
-          queryKey: ["challenges", "leaderboard", id],
-        });
-      }
-    },
-  });
+  const onBoundaryCrossed = useCallback(() => {
+    void refetchChallenge();
+    void queryClient.invalidateQueries({ queryKey: ["challenges", "list"] });
+    void queryClient.invalidateQueries({ queryKey: ["challenges", "meta"] });
+    if (id) {
+      void queryClient.invalidateQueries({
+        queryKey: ["challenges", "leaderboard", id],
+      });
+    }
+  }, [refetchChallenge, queryClient, id]);
 
-  const { data: leaderboardData, isPending: leaderboardLoading, isFetching: leaderboardFetching } = useQuery({
+  const {
+    data: leaderboardData,
+    isPending: leaderboardLoading,
+    isFetching: leaderboardFetching,
+  } = useQuery({
     queryKey: ["challenges", "leaderboard", id, leaderboardPage],
     queryFn: () =>
       getChallengeLeaderboard(id!, leaderboardPage, LEADERBOARD_PAGE_SIZE),
     enabled: Boolean(id) && tab === "leaderboard",
-    refetchInterval:
-      challenge?.status === "ACTIVE" && tab === "leaderboard" ? 15_000 : false,
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      if (prev[2] === id) return previousData;
+      return undefined;
+    },
+    refetchInterval: () => {
+      if (challenge?.status !== "ACTIVE" || tab !== "leaderboard") return false;
+      if (typeof document !== "undefined" && document.hidden) return false;
+      return 15_000;
+    },
   });
 
-  const { data: sessionsData, isPending: sessionsLoading, isFetching: sessionsFetching, error: sessionsError } = useQuery({
+  const {
+    data: sessionsData,
+    isPending: sessionsLoading,
+    isFetching: sessionsFetching,
+    error: sessionsError,
+  } = useQuery({
     queryKey: ["challenges", "entrant-sessions", id, sessionsPage],
     queryFn: () =>
       getChallengeEntrantSessions(id!, sessionsPage, SESSIONS_PAGE_SIZE),
@@ -144,6 +173,12 @@ export default function ChallengeDetail() {
       tab === "sessions" &&
       Boolean(user) &&
       Boolean(challenge?.joined),
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      if (prev[2] === id) return previousData;
+      return undefined;
+    },
     retry: (failureCount, err) => {
       if (err instanceof ApiError && (err.status === 403 || err.status === 401)) {
         return false;
@@ -219,9 +254,6 @@ export default function ChallengeDetail() {
       : "Failed to load challenge"
     : null;
 
-  const countdownMs =
-    liveTimeRemainingSec != null ? liveTimeRemainingSec * 1000 : null;
-
   const detailPath = id ? `/challenge/${id}` : CHALLENGES_PATH;
 
   if (!id) {
@@ -242,7 +274,7 @@ export default function ChallengeDetail() {
     );
   }
 
-  if (loading) {
+  if ((loading || authLoading) && !challenge) {
     return (
       <>
         <PageMeta
@@ -257,7 +289,7 @@ export default function ChallengeDetail() {
     );
   }
 
-  if (error || !challenge) {
+  if ((error || !challenge) && !loading) {
     return (
       <>
         <PageMeta
@@ -270,6 +302,21 @@ export default function ChallengeDetail() {
           <p className="font-apex-body text-sm text-apex-on-surface-variant">
             {error ?? "Challenge not found."}
           </p>
+        </PageShell>
+      </>
+    );
+  }
+
+  if (!challenge) {
+    return (
+      <>
+        <PageMeta
+          title={`Challenge | ${COMPANY_NAME}`}
+          description={`Loading challenge on ${COMPANY_NAME}.`}
+          path={detailPath}
+        />
+        <PageShell>
+          <ChallengeDetailSkeleton />
         </PageShell>
       </>
     );
@@ -300,8 +347,6 @@ export default function ChallengeDetail() {
   }
 
   const status = challengeStatusLabel(challenge.status as ChallengeApiStatus);
-  const activeTimeRemainingSec =
-    challenge.status === "ACTIVE" ? liveTimeRemainingSec : null;
   const upcomingScheduleText =
     challenge.status === "UPCOMING" && challenge.startsAt
       ? `Starts ${formatChallengeDateTime(challenge.startsAt)}`
@@ -327,6 +372,7 @@ export default function ChallengeDetail() {
   );
 
   const followPreview = challenge.followedWhoJoined ?? [];
+  const followMore = challenge.followedWhoJoinedMoreCount ?? 0;
 
   return (
     <>
@@ -337,91 +383,103 @@ export default function ChallengeDetail() {
         ogType="article"
       />
       <PageShell>
-        <ChallengeDetailHero
-          challenge={challenge}
-          status={status}
-          countdownMs={countdownMs}
-          canJoin={canJoin}
-          canLeave={canLeave}
-          showLeaveLockedHint={showLeaveLockedHint}
-          joinPending={joinMutation.isPending}
-          leavePending={leaveMutation.isPending}
-          joinBanMessage={joinBanMessage}
-          leaveError={leaveError}
-          confirmingLeave={confirmingLeave}
-          onJoin={() => joinMutation.mutate()}
-          onConfirmLeave={() => leaveMutation.mutate()}
-          onCancelLeave={() => setConfirmingLeave(false)}
-          onStartLeave={() => {
-            setLeaveError(null);
-            setConfirmingLeave(true);
-          }}
-        />
-
-        {followPreview.length > 0 && (
-          <div className="rounded-2xl border border-apex-outline-variant/15 bg-apex-surface-container px-4 py-3 font-apex-body text-sm text-apex-on-surface-variant">
-            <span className="text-apex-on-surface">
-              {followPreview.map((f) => f.displayName).join(", ")}
-            </span>{" "}
-            {followPreview.length === 1 ? "has" : "have"} joined — compete with
-            people you follow.
-          </div>
-        )}
-
-        <section className="flex gap-2 overflow-x-auto pb-1">
-          {visibleTabs.map(({ key, label }) => {
-            const isActive = tab === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setTab(key)}
-                className={cn(
-                  "shrink-0 rounded-apex-sm px-4 py-2 font-apex-body text-xs font-bold transition-colors",
-                  isActive
-                    ? "bg-apex-primary text-white"
-                    : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </section>
-
-        {tab === "overview" && (
-          <ChallengeDetailOverview
+        <ChallengeLiveTimeProvider
+          status={challenge.status}
+          startsAt={challenge.startsAt}
+          endsAt={challenge.endsAt}
+          onBoundaryCrossed={onBoundaryCrossed}
+        >
+          <ChallengeDetailHero
             challenge={challenge}
-            challengeId={id}
             status={status}
-            activeTimeRemainingSec={activeTimeRemainingSec}
-            upcomingScheduleText={upcomingScheduleText}
+            canJoin={canJoin}
+            canLeave={canLeave}
+            showLeaveLockedHint={showLeaveLockedHint}
+            joinPending={joinMutation.isPending}
+            leavePending={leaveMutation.isPending}
+            joinBanMessage={joinBanMessage}
+            leaveError={leaveError}
+            confirmingLeave={confirmingLeave}
+            onJoin={() => joinMutation.mutate()}
+            onConfirmLeave={() => leaveMutation.mutate()}
+            onCancelLeave={() => setConfirmingLeave(false)}
+            onStartLeave={() => {
+              setLeaveError(null);
+              setConfirmingLeave(true);
+            }}
           />
-        )}
 
-        {tab === "leaderboard" && (
-          <ChallengeDetailLeaderboard
-            loading={leaderboardLoading}
-            data={leaderboardData}
-            page={leaderboardPage}
-            pageSize={LEADERBOARD_PAGE_SIZE}
-            fetching={leaderboardFetching}
-            onPageChange={setLeaderboardPage}
-          />
-        )}
+          {(followPreview.length > 0 || followMore > 0) && (
+            <div className="rounded-2xl border border-apex-outline-variant/15 bg-apex-surface-container px-4 py-3 font-apex-body text-sm text-apex-on-surface-variant">
+              <span className="text-apex-on-surface">
+                {followPreview.map((f) => f.displayName).join(", ")}
+                {followMore > 0
+                  ? `${followPreview.length > 0 ? " " : ""}+${followMore} more`
+                  : ""}
+              </span>{" "}
+              {followPreview.length + followMore === 1 ? "has" : "have"} joined —
+              compete with people you follow.
+            </div>
+          )}
 
-        {tab === "sessions" && showSessionsTab && (
-          <ChallengeDetailSessions
-            signedIn={Boolean(user)}
-            loading={sessionsLoading}
-            data={sessionsData}
-            error={sessionsError}
-            page={sessionsPage}
-            pageSize={SESSIONS_PAGE_SIZE}
-            fetching={sessionsFetching}
-            onPageChange={setSessionsPage}
-          />
-        )}
+          <section className="flex gap-2 overflow-x-auto pb-1">
+            {visibleTabs.map(({ key, label }) => {
+              const isActive = tab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className={cn(
+                    "shrink-0 rounded-apex-sm px-4 py-2 font-apex-body text-xs font-bold transition-colors",
+                    isActive
+                      ? "bg-apex-primary text-white"
+                      : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </section>
+
+          {tab === "overview" && (
+            <ChallengeDetailOverview
+              challenge={challenge}
+              challengeId={id}
+              status={status}
+              upcomingScheduleText={upcomingScheduleText}
+            />
+          )}
+
+          {tab === "leaderboard" && (
+            <Suspense fallback={<TabPanelFallback />}>
+              <ChallengeDetailLeaderboard
+                loading={leaderboardLoading}
+                data={leaderboardData}
+                page={leaderboardPage}
+                pageSize={LEADERBOARD_PAGE_SIZE}
+                fetching={leaderboardFetching}
+                onPageChange={setLeaderboardPage}
+              />
+            </Suspense>
+          )}
+
+          {tab === "sessions" && showSessionsTab && (
+            <Suspense fallback={<TabPanelFallback />}>
+              <ChallengeDetailSessions
+                signedIn={Boolean(user)}
+                loading={sessionsLoading}
+                data={sessionsData}
+                error={sessionsError}
+                page={sessionsPage}
+                pageSize={SESSIONS_PAGE_SIZE}
+                fetching={sessionsFetching}
+                onPageChange={setSessionsPage}
+              />
+            </Suspense>
+          )}
+        </ChallengeLiveTimeProvider>
       </PageShell>
     </>
   );

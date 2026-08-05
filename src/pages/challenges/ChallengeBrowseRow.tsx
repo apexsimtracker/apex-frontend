@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { UserRound } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { formatSimEnum } from "@/lib/enumFormat";
 import { formatChallengeDateTime, formatChallengeTimeRemaining } from "@/lib/datetime";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
 import type { ChallengeApiStatus, ChallengeListItem } from "@/lib/api/challenges";
 import { secondsRemainingUntil } from "@/hooks/useSharedNowMs";
+import { useAuth } from "@/contexts/AuthContext";
+import { preloadChallengeDetail } from "@/routes/routePreload";
+import { seedChallengeDetailFromListItem } from "@/lib/challenges/challengeDetailPrefetch";
 
 type BrowseTab = "upcoming" | "live" | "past" | "joined";
 
@@ -106,6 +110,8 @@ function ChallengeBrowseRow({
   showStatusChip = false,
   nowMs = Date.now(),
 }: ChallengeBrowseRowProps) {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const linkTo = detailTo ?? `/challenge/${item.id}`;
   const label = statusLabel(item.status);
   const isJoining = joiningId === item.id;
@@ -118,10 +124,25 @@ function ChallengeBrowseRow({
   const yourLap =
     item.yourBestLapMs != null ? formatLapMs(item.yourBestLapMs) : null;
 
+  const warmDetail = useCallback(() => {
+    void preloadChallengeDetail();
+    seedChallengeDetailFromListItem(
+      queryClient,
+      item,
+      user?.id?.trim() || "anon",
+    );
+  }, [queryClient, item, user?.id]);
+
   return (
     <article className="overflow-hidden rounded-2xl border border-apex-outline-variant/15 bg-apex-surface-container transition-colors hover:bg-apex-surface-container-high">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <Link to={linkTo} className="min-w-0 flex-1">
+        <Link
+          to={linkTo}
+          className="min-w-0 flex-1"
+          onMouseEnter={warmDetail}
+          onFocus={warmDetail}
+          onPointerDown={warmDetail}
+        >
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-apex-headline text-sm font-bold text-apex-on-surface transition-colors hover:text-apex-primary">
               {item.title}

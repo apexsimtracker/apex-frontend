@@ -6,8 +6,9 @@ import {
 import { resolveChallengeCoverUrl } from "@/lib/challenges/coverImage";
 import { formatChallengeTimeRemaining } from "@/lib/datetime";
 import { formatSimEnum } from "@/lib/enumFormat";
-import type { ChallengeApiStatus, ChallengeDetail } from "@/lib/api";
+import type { ChallengeApiStatus, ChallengeDetail } from "@/lib/api/challenges";
 import { cn, formatCarName, formatLapMs, formatTrackName } from "@/lib/utils";
+import { useChallengeLiveTimeSec } from "@/pages/challenges/ChallengeLiveTime";
 
 export function challengeStatusLabel(
   status: ChallengeApiStatus,
@@ -38,7 +39,6 @@ function statusBadgeClass(status: "Live" | "Upcoming" | "Finished"): string {
 interface ChallengeDetailHeroProps {
   challenge: ChallengeDetail;
   status: "Live" | "Upcoming" | "Finished";
-  countdownMs: number | null;
   canJoin: boolean;
   canLeave: boolean;
   showLeaveLockedHint: boolean;
@@ -56,7 +56,6 @@ interface ChallengeDetailHeroProps {
 export default function ChallengeDetailHero({
   challenge,
   status,
-  countdownMs,
   canJoin,
   canLeave,
   showLeaveLockedHint,
@@ -70,6 +69,10 @@ export default function ChallengeDetailHero({
   onCancelLeave,
   onStartLeave,
 }: ChallengeDetailHeroProps) {
+  const liveTimeRemainingSec = useChallengeLiveTimeSec();
+  const countdownMs =
+    liveTimeRemainingSec != null ? liveTimeRemainingSec * 1000 : null;
+
   const thirdStatLabel =
     challenge.targetTimeMs != null ? "Target time" : "Drivers";
   const thirdStatValue =
@@ -83,6 +86,7 @@ export default function ChallengeDetailHero({
         <img
           src={resolveChallengeCoverUrl(challenge.coverImageUrl)}
           alt=""
+          fetchPriority="high"
           className="absolute inset-0 size-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-apex-background via-transparent to-black/20" />

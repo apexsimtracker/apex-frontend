@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { formatLapMs } from "@/lib/utils";
 import type { SessionTimingMinima } from "@/lib/sessionLapDisplay";
@@ -15,11 +16,13 @@ function formatSectorOrDash(ms: number | null | undefined): string {
   return formatLapMs(ms);
 }
 
-export default function SessionDetailSectorBreakdown({
+function SectorBreakdownBody({
   sessionMinima,
   idealLapMs,
-  proFeaturesLocked = false,
-}: SessionDetailSectorBreakdownProps) {
+}: {
+  sessionMinima: SessionTimingMinima;
+  idealLapMs: number | null | undefined;
+}) {
   const sectorS1 = sessionMinima.s1Ms ?? null;
   const sectorS2 = sessionMinima.s2Ms ?? null;
   const sectorS3 = sessionMinima.s3Ms ?? null;
@@ -30,21 +33,8 @@ export default function SessionDetailSectorBreakdown({
         ? sectorS1 + sectorS2 + sectorS3
         : null;
 
-  if (proFeaturesLocked) {
-    return (
-      <section className={CARD}>
-        <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
-          Sector breakdown
-        </h2>
-        <p className="mt-2 font-apex-body text-sm text-apex-on-surface-variant">
-          Ideal lap sectors are available with Apex Pro.
-        </p>
-      </section>
-    );
-  }
-
   return (
-    <section className={CARD}>
+    <>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
           Sector breakdown
@@ -100,6 +90,59 @@ export default function SessionDetailSectorBreakdown({
           </span>
         </div>
       </div>
+    </>
+  );
+}
+
+/** Placeholder minima so the locked card keeps layout while blurred. */
+const LOCKED_PREVIEW_MINIMA: SessionTimingMinima = {
+  lapMs: 92_500,
+  s1Ms: 28_400,
+  s2Ms: 31_200,
+  s3Ms: 32_900,
+};
+
+export default function SessionDetailSectorBreakdown({
+  sessionMinima,
+  idealLapMs,
+  proFeaturesLocked = false,
+}: SessionDetailSectorBreakdownProps) {
+  if (proFeaturesLocked) {
+    return (
+      <section className={`${CARD} relative overflow-hidden`}>
+        <div
+          className="select-none blur-sm pointer-events-none"
+          aria-hidden
+        >
+          <SectorBreakdownBody
+            sessionMinima={LOCKED_PREVIEW_MINIMA}
+            idealLapMs={92_500}
+          />
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-apex-surface-container-low/55 px-4 text-center backdrop-blur-[2px]">
+          <p className="font-apex-headline text-sm font-bold text-apex-on-surface">
+            Sector breakdown is a Pro feature
+          </p>
+          <p className="max-w-sm font-apex-body text-xs text-apex-on-surface-variant">
+            Unlock ideal lap sectors and session bests with Apex Pro.
+          </p>
+          <Link
+            to="/pricing"
+            className="mt-1 inline-flex rounded-apex-sm bg-apex-primary px-3 py-1.5 font-apex-body text-[11px] font-bold uppercase tracking-wider text-apex-on-primary transition-opacity hover:opacity-90"
+          >
+            Upgrade to Pro
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={CARD}>
+      <SectorBreakdownBody
+        sessionMinima={sessionMinima}
+        idealLapMs={idealLapMs}
+      />
     </section>
   );
 }

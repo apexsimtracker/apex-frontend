@@ -10,10 +10,8 @@ import ChallengeDetailSkeleton from "@/pages/challenges/ChallengeDetailSkeleton"
 import ChallengesSeasonStatsSkeleton from "@/pages/challenges/ChallengesSeasonStatsSkeleton";
 import { DiscussionCardSkeleton } from "@/pages/community/DiscussionCardSkeleton";
 import DashboardSkeleton from "@/pages/dashboard/DashboardSkeleton";
-import DashboardTopBar from "@/pages/dashboard/DashboardTopBar";
 import DiscussionDetailSkeleton from "@/pages/discussion/DiscussionDetailSkeleton";
 import LeaderboardsListSkeleton from "@/pages/leaderboards/LeaderboardsListSkeleton";
-import PublicHomeTopBar from "@/pages/public-home/PublicHomeTopBar";
 import SessionsPageSkeleton from "@/pages/sessions/SessionsPageSkeleton";
 import SettingsPageSkeleton from "@/pages/settings/SettingsPageSkeleton";
 import { GenericRouteSkeleton } from "@/routes/GenericRouteSkeleton";
@@ -83,24 +81,17 @@ function skeletonForPath(pathname: string, signedIn: boolean): ReactNode {
 /**
  * Stable product chrome + one PageSuspense around Outlet so React Router's
  * startTransition can keep the previous page while the next lazy chunk loads.
+ *
+ * The top bar is a single element type for every route: swapping the component
+ * type per route made React remount the header (and reload its logo) on each
+ * home <-> subpage navigation.
  */
 export default function ProductAppLayout() {
   const { user } = useAuth();
   const { pathname } = useLocation();
-  const isHome = pathname === "/" || pathname === "";
-
-  const topBar = isHome ? (
-    user ? (
-      <DashboardTopBar />
-    ) : (
-      <PublicHomeTopBar />
-    )
-  ) : (
-    <HubTopBar />
-  );
 
   return (
-    <AppLayout topBar={topBar} bottomBar={<BottomNav />}>
+    <AppLayout topBar={<HubTopBar />} bottomBar={<BottomNav />}>
       <PageSuspense fallback={skeletonForPath(pathname, Boolean(user))}>
         <Outlet />
       </PageSuspense>

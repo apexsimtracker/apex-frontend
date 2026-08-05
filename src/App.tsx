@@ -98,6 +98,7 @@ function AppShell({ children }: { children: ReactNode }) {
     typeof localStorage !== "undefined" &&
     Boolean(localStorage.getItem("apex_token"));
   const [homeReady, setHomeReady] = useState(!isHomePath);
+  const [booted, setBooted] = useState(false);
 
   // Overlap /me with Dashboard|PublicHome chunk + home queries (no serial splash→chunk→data).
   useEffect(() => {
@@ -123,12 +124,19 @@ function AppShell({ children }: { children: ReactNode }) {
     };
   }, [loading, user, isHomePath, queryClient, tokenPresent]);
 
-  // Auth must settle before paint when a token exists (avoids guest/authed shell flash).
-  // Chunk + home data already warm by then.
-  if (
-    ((loading && !onGuestAuthPage) ||
-      (isHomePath && !homeReady && !onGuestAuthPage))
-  ) {
+  // Cold start only: auth must settle before paint when a token exists, so the
+  // guest shell never flashes. Once the shell has painted, the splash is off the
+  // table — tearing the whole tree down for an in-app navigation or a background
+  // /me refetch unmounts the chrome and reads as a flicker. Route-level Suspense
+  // covers everything after boot.
+  const showSplash =
+    !booted && !onGuestAuthPage && (loading || (isHomePath && !homeReady));
+
+  useEffect(() => {
+    if (!showSplash) setBooted(true);
+  }, [showSplash]);
+
+  if (showSplash) {
     return <AppLoadingScreen />;
   }
 
@@ -361,7 +369,11 @@ export default function App() {
                         />
                         <Route
                           path="sessions/:id"
-                          element={<SessionDetail />}
+                          element={
+                            <ProtectedRoute message="Sign in to view this session.">
+                              <SessionDetail />
+                            </ProtectedRoute>
+                          }
                         />
                         <Route
                           path="settings"

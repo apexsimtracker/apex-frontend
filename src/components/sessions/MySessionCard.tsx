@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
 import {
   parseTrackHeadline,
@@ -23,8 +24,10 @@ import {
   isPracticeKind,
   shouldShowSessionPosition,
 } from "@/lib/sessionKind";
-import type { SessionsLibraryRow } from "@/lib/api";
+import type { SessionsLibraryRow } from "@/lib/api/sessionsLibrary";
 import SessionCaption from "@/components/sessions/SessionCaption";
+import { preloadSessionDetail } from "@/routes/routePreload";
+import { seedSessionDetailFromLibraryRow } from "@/lib/sessions/sessionDetailPrefetch";
 
 function SessionTypePill({
   sessionType,
@@ -115,6 +118,7 @@ type MySessionCardProps = {
 
 export default function MySessionCard({ session }: MySessionCardProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const {
     id,
     track,
@@ -146,9 +150,15 @@ export default function MySessionCard({ session }: MySessionCardProps) {
     }) &&
     isPracticeKind({ sessionType, manualSessionKind });
 
+  const warmDetail = useCallback(() => {
+    void preloadSessionDetail();
+    seedSessionDetailFromLibraryRow(queryClient, session);
+  }, [queryClient, session]);
+
   const goToSession = useCallback(() => {
+    warmDetail();
     navigate(`/sessions/${id}`);
-  }, [navigate, id]);
+  }, [navigate, id, warmDetail]);
 
   const { city, title } = parseTrackHeadline(track, trackName);
   const logoSrc = getDisciplineLogoSrc(simKey);
@@ -230,6 +240,9 @@ export default function MySessionCard({ session }: MySessionCardProps) {
       role="button"
       tabIndex={0}
       onClick={goToSession}
+      onMouseEnter={warmDetail}
+      onFocus={warmDetail}
+      onPointerDown={warmDetail}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();

@@ -11,13 +11,13 @@ import {
   formatTrackName,
 } from "@/lib/utils";
 import { formatSimEnum } from "@/lib/enumFormat";
-import type { ChallengeDetail } from "@/lib/api";
+import type { ChallengeDetail } from "@/lib/api/challenges";
+import { useChallengeLiveTimeSec } from "@/pages/challenges/ChallengeLiveTime";
 
 interface ChallengeDetailOverviewProps {
   challenge: ChallengeDetail;
   challengeId: string;
   status: "Live" | "Upcoming" | "Finished";
-  activeTimeRemainingSec: number | null;
   upcomingScheduleText: string | null;
 }
 
@@ -25,9 +25,11 @@ export default function ChallengeDetailOverview({
   challenge,
   challengeId,
   status,
-  activeTimeRemainingSec,
   upcomingScheduleText,
 }: ChallengeDetailOverviewProps) {
+  const liveTimeRemainingSec = useChallengeLiveTimeSec();
+  const activeTimeRemainingSec =
+    challenge.status === "ACTIVE" ? liveTimeRemainingSec : null;
   return (
     <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
       <div className="md:col-span-2">

@@ -36,6 +36,8 @@ export type ChallengeDetail = ChallengeSummary & {
   endedEarlyAt?: string | null;
   fastestLapMs: number | null;
   followedWhoJoined?: { id: string; displayName: string }[];
+  /** Additional followed joiners beyond the preview cap (aligned with browse). */
+  followedWhoJoinedMoreCount?: number;
   countdownTargetIso?: string;
   /** Set when the viewer is banned from this challenge — payload is a skeleton. */
   banned?: boolean;

@@ -15,6 +15,8 @@ type SessionLapTableProps = {
   onShowMore: () => void;
   selectedLap?: number | null;
   onSelectLap?: (lapNumber: number) => void;
+  /** When true, hide S1/S2/S3 and show Lap + Time + Δ only. */
+  hideSectorColumns?: boolean;
 };
 
 function loveableHighlightClass(h: TimingHighlight): string {
@@ -36,7 +38,10 @@ export default function SessionLapTable({
   onShowMore,
   selectedLap = null,
   onSelectLap,
+  hideSectorColumns = false,
 }: SessionLapTableProps) {
+  const colCount = hideSectorColumns ? 3 : 6;
+
   return (
     <div className="overflow-hidden rounded-xl bg-apex-surface-container-low shadow-lg">
       <div className="overflow-x-auto">
@@ -44,9 +49,13 @@ export default function SessionLapTable({
           <thead>
             <tr className="border-b border-apex-outline-variant/15">
               <th className={HEADER_CELL}>Lap</th>
-              <th className={HEADER_CELL}>S1</th>
-              <th className={HEADER_CELL}>S2</th>
-              <th className={HEADER_CELL}>S3</th>
+              {!hideSectorColumns ? (
+                <>
+                  <th className={HEADER_CELL}>S1</th>
+                  <th className={HEADER_CELL}>S2</th>
+                  <th className={HEADER_CELL}>S3</th>
+                </>
+              ) : null}
               <th className={`${HEADER_CELL} text-right`}>Time</th>
               <th className={`${HEADER_CELL} text-right`}>Δ</th>
             </tr>
@@ -55,7 +64,7 @@ export default function SessionLapTable({
             {laps.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={colCount}
                   className="px-4 py-10 text-center font-apex-body text-sm text-apex-on-surface-variant"
                 >
                   No laps recorded yet.
@@ -101,30 +110,34 @@ export default function SessionLapTable({
                         </span>
                       ) : null}
                     </td>
-                    <td
-                      className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                        isFastest,
-                        rowHighlights.s1,
-                      )} ${loveableHighlightClass(rowHighlights.s1)}`}
-                    >
-                      {formatLapMs(row.sector1Ms)}
-                    </td>
-                    <td
-                      className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                        isFastest,
-                        rowHighlights.s2,
-                      )} ${loveableHighlightClass(rowHighlights.s2)}`}
-                    >
-                      {formatLapMs(row.sector2Ms)}
-                    </td>
-                    <td
-                      className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                        isFastest,
-                        rowHighlights.s3,
-                      )} ${loveableHighlightClass(rowHighlights.s3)}`}
-                    >
-                      {formatLapMs(row.sector3Ms)}
-                    </td>
+                    {!hideSectorColumns ? (
+                      <>
+                        <td
+                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
+                            isFastest,
+                            rowHighlights.s1,
+                          )} ${loveableHighlightClass(rowHighlights.s1)}`}
+                        >
+                          {formatLapMs(row.sector1Ms)}
+                        </td>
+                        <td
+                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
+                            isFastest,
+                            rowHighlights.s2,
+                          )} ${loveableHighlightClass(rowHighlights.s2)}`}
+                        >
+                          {formatLapMs(row.sector2Ms)}
+                        </td>
+                        <td
+                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
+                            isFastest,
+                            rowHighlights.s3,
+                          )} ${loveableHighlightClass(rowHighlights.s3)}`}
+                        >
+                          {formatLapMs(row.sector3Ms)}
+                        </td>
+                      </>
+                    ) : null}
                     <td
                       className={`whitespace-nowrap px-2 py-3 text-right font-apex-headline font-bold ${
                         isFastest || rowHighlights.lap === "purple"

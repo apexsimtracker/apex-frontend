@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import AppListPaginationFooter from "@/components/app-ui/AppListPaginationFooter";
-import type { EntrantSessionRow } from "@/lib/api";
+import { SkeletonBlock } from "@/components/ui/skeleton";
+import type { EntrantSessionRow } from "@/lib/api/challenges";
 import { ApiError } from "@/lib/api/errors";
 import { formatLapMs } from "@/lib/utils";
 
@@ -34,6 +35,23 @@ function sessionsErrorMessage(error: unknown): string {
   return "Failed to load sessions.";
 }
 
+function SessionsRowsSkeleton() {
+  return (
+    <div className="space-y-3" aria-busy="true" aria-label="Loading sessions">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between gap-2 border-b border-apex-outline-variant/10 py-2"
+        >
+          <SkeletonBlock className="h-4 w-28 rounded-apex-sm bg-apex-surface-container-highest" />
+          <SkeletonBlock className="h-4 w-16 rounded-apex-sm bg-apex-surface-container-highest" />
+          <SkeletonBlock className="h-4 w-20 rounded-apex-sm bg-apex-surface-container-highest" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ChallengeDetailSessions({
   signedIn,
   loading,
@@ -60,10 +78,8 @@ export default function ChallengeDetailSessions({
         <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
           Sign in to browse entrants&apos; sessions.
         </p>
-      ) : loading ? (
-        <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
-          Loading…
-        </p>
+      ) : loading && !data ? (
+        <SessionsRowsSkeleton />
       ) : error ? (
         <p className="py-4 font-apex-body text-sm text-apex-error">
           {sessionsErrorMessage(error)}

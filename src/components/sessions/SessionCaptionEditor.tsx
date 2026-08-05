@@ -14,7 +14,7 @@ type SessionCaptionEditorProps = {
 };
 
 /**
- * Display + owner/admin inline add/edit for session captions.
+ * Display + owner inline add/edit for session captions.
  */
 export default function SessionCaptionEditor({
   caption,
