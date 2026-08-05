@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import type { RefObject } from "react";
-import type { DiscussionComment } from "@/lib/api";
+import type { DiscussionComment } from "@/lib/api/community";
 import DiscussionCommentItem from "./DiscussionCommentItem";
 import DiscussionCommentsPagination from "./DiscussionCommentsPagination";
 

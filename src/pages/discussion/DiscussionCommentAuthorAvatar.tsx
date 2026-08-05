@@ -4,7 +4,7 @@ import {
   getDiscussionAuthorDisplay,
   getDiscussionAuthorInitials,
 } from "@/lib/utils";
-import { resolveDiscussionAvatarSrc } from "@/lib/api";
+import { resolveDiscussionAvatarSrc } from "@/lib/api/config";
 
 type DiscussionCommentAuthorAvatarProps = {
   author: unknown;

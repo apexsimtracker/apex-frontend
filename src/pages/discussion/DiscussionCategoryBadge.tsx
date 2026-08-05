@@ -1,4 +1,4 @@
-import { getDiscussionCategoryLabel } from "@/lib/api";
+import { getDiscussionCategoryLabel } from "@/lib/api/community";
 import { cn } from "@/lib/utils";
 
 type DiscussionCategoryBadgeProps = {

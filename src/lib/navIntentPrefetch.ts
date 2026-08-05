@@ -9,12 +9,30 @@ import {
   type ChallengesMeta,
 } from "@/lib/api/challenges";
 import { getLeaderboards } from "@/lib/api/followAndLeaderboards";
+import {
+  getSessionsLibraryList,
+  getSessionsLibraryMeta,
+  SESSIONS_LIBRARY_DEFAULT_LIMIT,
+} from "@/lib/api/sessionsLibrary";
+import {
+  DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+  getDiscussionCategoryCounts,
+  getDiscussionsPage,
+} from "@/lib/api/community";
 import { preloadRouteChunk } from "@/routes/routePreload";
 
 const LB_LIMIT = 10;
 const META_STALE_MS = 5 * 60_000;
 const LB_STALE_MS = 90_000;
 const PAGE_SIZE = 12;
+
+const DEFAULT_SESSIONS_FILTERS = {
+  type: "all" as const,
+  sessionKind: "all" as const,
+  sim: undefined,
+  ingest: "all" as const,
+  q: undefined,
+};
 
 function listParamsForDefaultTab(
   tab: NonNullable<ChallengesMeta["defaultTab"]>,
@@ -79,6 +97,65 @@ export function prefetchChallengesMeta(
   });
 }
 
+/** Warm default sessions library meta + first page (signed-in only). */
+export function prefetchSessionsLibrary(
+  queryClient: QueryClient,
+  userId?: string | null,
+): void {
+  if (!userId) return;
+
+  const filters = DEFAULT_SESSIONS_FILTERS;
+  void queryClient.prefetchQuery({
+    queryKey: ["sessions-library", "meta", userId, filters],
+    queryFn: () => getSessionsLibraryMeta(filters),
+    staleTime: META_STALE_MS,
+  });
+  void queryClient.prefetchQuery({
+    queryKey: [
+      "sessions-library",
+      "list",
+      userId,
+      filters,
+      1,
+      SESSIONS_LIBRARY_DEFAULT_LIMIT,
+    ],
+    queryFn: () =>
+      getSessionsLibraryList({
+        ...filters,
+        page: 1,
+        limit: SESSIONS_LIBRARY_DEFAULT_LIMIT,
+      }),
+  });
+}
+
+/** Warm default community counts + first list page. */
+export function prefetchCommunity(queryClient: QueryClient): void {
+  void queryClient.prefetchQuery({
+    queryKey: ["discussions", "category-counts"],
+    queryFn: getDiscussionCategoryCounts,
+    staleTime: META_STALE_MS,
+  });
+  void queryClient.prefetchInfiniteQuery({
+    queryKey: [
+      "discussions",
+      "community",
+      "all",
+      "",
+      "newest",
+      DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+    ],
+    queryFn: ({ pageParam }) =>
+      getDiscussionsPage({
+        category: "all",
+        sort: "newest",
+        page: pageParam as number,
+        limit: DISCUSSIONS_PAGE_DEFAULT_LIMIT,
+        includeTotal: false,
+      }),
+    initialPageParam: 1,
+  });
+}
+
 /** Call on pointerenter / focus of primary nav links. */
 export function prefetchNavIntent(
   to: string,
@@ -92,5 +169,9 @@ export function prefetchNavIntent(
     prefetchLeaderboardsMeta(queryClient);
   } else if (path === "/challenges") {
     prefetchChallengesMeta(queryClient, opts?.userId);
+  } else if (path === "/sessions") {
+    prefetchSessionsLibrary(queryClient, opts?.userId);
+  } else if (path === "/community") {
+    prefetchCommunity(queryClient);
   }
 }

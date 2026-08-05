@@ -10,7 +10,7 @@ import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 import {
   DISCUSSION_IMAGE_ACCEPTED_TYPES,
   validateDiscussionImageFile,
-} from "@/lib/api";
+} from "@/lib/api/community";
 
 type DiscussionEditModalProps = {
   open: boolean;

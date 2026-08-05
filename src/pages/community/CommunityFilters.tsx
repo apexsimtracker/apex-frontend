@@ -7,7 +7,7 @@ import {
   type DiscussionCategory,
   type DiscussionCategoryCounts,
   type DiscussionListSort,
-} from "@/lib/api";
+} from "@/lib/api/community";
 import { cn } from "@/lib/utils";
 
 function getCategoryChipLabel(value: DiscussionCategory): string {

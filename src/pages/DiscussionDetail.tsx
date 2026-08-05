@@ -12,9 +12,6 @@ import {
   getDiscussionComments,
   createDiscussionComment,
   DISCUSSION_COMMENTS_PAGE_SIZE,
-  ApiError,
-  resolveDiscussionAvatarSrc,
-  getDiscussionAuthorId,
   likeDiscussion,
   unlikeDiscussion,
   updateDiscussion,
@@ -23,7 +20,13 @@ import {
   deleteDiscussionImage,
   type Discussion,
   type DiscussionComment,
-} from "@/lib/api";
+} from "@/lib/api/community";
+import {
+  resolveDiscussionAvatarSrc,
+  getDiscussionAuthorId,
+} from "@/lib/api/config";
+import { ApiError } from "@/lib/api/errors";
+import { discussionDetailQueryKey } from "@/lib/community/discussionDetailPrefetch";
 import type { AuthRedirectState } from "@/auth/authRedirect";
 import { AUTH_PATHS } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -112,12 +115,15 @@ export default function DiscussionDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const userKey = user?.id?.trim() || "anon";
+  const detailKey = discussionDetailQueryKey(id ?? "", userKey);
 
   const discussionQuery = useQuery({
-    queryKey: ["discussion", "detail", id ?? ""],
+    queryKey: detailKey,
     queryFn: () => getDiscussion(id!),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !authLoading,
+    refetchOnWindowFocus: false,
     retry: (failureCount, err) =>
       !(err instanceof ApiError && err.status === 404),
   });
@@ -163,7 +169,10 @@ export default function DiscussionDetail() {
       : "Failed to load comments."
     : null;
 
-  const loading = Boolean(id) && discussionQuery.isPending;
+  const loading =
+    Boolean(id) &&
+    !discussion &&
+    (authLoading || discussionQuery.isPending);
 
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -184,9 +193,7 @@ export default function DiscussionDetail() {
       setReplyModalOpen(false);
       if (!id) return;
       setCommentsPage(1);
-      queryClient.setQueryData<Discussion>(
-        ["discussion", "detail", id],
-        (prev) => {
+      queryClient.setQueryData<Discussion>(detailKey, (prev) => {
           if (!prev) return prev;
           const prevCount =
             prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
@@ -197,8 +204,7 @@ export default function DiscussionDetail() {
             commentCount: nextCount,
             replies: nextCount,
           };
-        },
-      );
+        });
       void queryClient.invalidateQueries({
         queryKey: ["discussion", "comments", id],
       });
@@ -223,18 +229,12 @@ export default function DiscussionDetail() {
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (!id) throw new Error("Missing discussion id");
-      const current = queryClient.getQueryData<Discussion>([
-        "discussion",
-        "detail",
-        id,
-      ]);
+      const current = queryClient.getQueryData<Discussion>(detailKey);
       return current?.likedByMe ? unlikeDiscussion(id) : likeDiscussion(id);
     },
     onSuccess: (data) => {
       if (!id) return;
-      queryClient.setQueryData<Discussion>(
-        ["discussion", "detail", id],
-        (prev) =>
+      queryClient.setQueryData<Discussion>(detailKey, (prev) =>
           prev
             ? {
                 ...prev,
@@ -248,7 +248,7 @@ export default function DiscussionDetail() {
     onError: () => {
       if (id)
         void queryClient.invalidateQueries({
-          queryKey: ["discussion", "detail", id],
+          queryKey: detailKey,
         });
     },
   });
@@ -286,7 +286,7 @@ export default function DiscussionDetail() {
     },
     onSuccess: (data) => {
       if (!id) return;
-      queryClient.setQueryData<Discussion>(["discussion", "detail", id], data);
+      queryClient.setQueryData<Discussion>(detailKey, data);
       setEditOpen(false);
       setEditError(null);
       setEditImageFile(null);
