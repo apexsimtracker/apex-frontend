@@ -31,6 +31,12 @@ export function preloadCommunity(): Promise<unknown> {
   return import(/* webpackChunkName: "community" */ "@/pages/Community");
 }
 
+export function preloadDiscussionDetail(): Promise<unknown> {
+  return import(
+    /* webpackChunkName: "discussion-detail" */ "@/pages/DiscussionDetail"
+  );
+}
+
 export function preloadPricing(): Promise<unknown> {
   return import(/* webpackChunkName: "pricing" */ "@/pages/Pricing");
 }

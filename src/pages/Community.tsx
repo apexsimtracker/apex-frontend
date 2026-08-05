@@ -21,7 +21,7 @@ import {
   type Discussion,
   type DiscussionCategory,
   type DiscussionListSort,
-} from "@/lib/api";
+} from "@/lib/api/community";
 import { toast } from "sonner";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
@@ -133,7 +133,19 @@ export default function Community() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.page + 1 : undefined,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      if (
+        prev[2] === selectedCategory &&
+        prev[3] === searchQuery &&
+        prev[4] === sortBy &&
+        prev[5] === DISCUSSIONS_PAGE_DEFAULT_LIMIT
+      ) {
+        return previousData;
+      }
+      return undefined;
+    },
     refetchOnWindowFocus: false,
   });
 
@@ -319,6 +331,8 @@ export default function Community() {
                   replies={d.commentCount ?? d.commentsCount ?? d.replies ?? 0}
                   views={d.views ?? 0}
                   isPinned={d.isPinned}
+                  imageUrl={d.imageUrl}
+                  createdAt={d.createdAt}
                   wasEdited={Boolean(d.wasEdited || d.editedAt)}
                 />
               ))}

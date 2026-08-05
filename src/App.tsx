@@ -11,6 +11,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useParams,
 } from "react-router-dom";
 import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -87,6 +88,18 @@ import {
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 
 /** Primary user-facing shell (formerly AppRouteShell). */
+function RedirectSingularSessionPath() {
+  const { id } = useParams<{ id: string }>();
+  if (!id) return <Navigate to="/sessions" replace />;
+  return <Navigate to={`/sessions/${encodeURIComponent(id)}`} replace />;
+}
+
+function RedirectLegacyCommunityDiscussionPath() {
+  const { id } = useParams<{ id: string }>();
+  if (!id) return <Navigate to="/community" replace />;
+  return <Navigate to={`/discussion/${encodeURIComponent(id)}`} replace />;
+}
+
 function AppShell({ children }: { children: ReactNode }) {
   const { loading, user } = useAuth();
   const queryClient = useQueryClient();
@@ -115,7 +128,9 @@ function AppShell({ children }: { children: ReactNode }) {
       if (!cancelled) setHomeReady(true);
     });
 
-    if (tokenPresent) {
+    // Only prefetch dashboard APIs after /me succeeds — stale tokens must not
+    // fire home-weekly / activity/home before falling through to PublicHome.
+    if (user) {
       prefetchAuthenticatedHomeData(queryClient, user);
     }
 
@@ -278,6 +293,11 @@ export default function App() {
                           path="discussion/:id"
                           element={<DiscussionDetail />}
                         />
+                        {/* Legacy REPLY notification deep links */}
+                        <Route
+                          path="community/discussions/:id"
+                          element={<RedirectLegacyCommunityDiscussionPath />}
+                        />
                         <Route path="pricing" element={<Pricing />} />
                         <Route path="faq" element={<FAQ />} />
                         <Route path="about" element={<About />} />
@@ -374,6 +394,11 @@ export default function App() {
                               <SessionDetail />
                             </ProtectedRoute>
                           }
+                        />
+                        {/* Legacy singular path from older notification deep links */}
+                        <Route
+                          path="session/:id"
+                          element={<RedirectSingularSessionPath />}
                         />
                         <Route
                           path="settings"

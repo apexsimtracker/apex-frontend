@@ -15,7 +15,7 @@ import {
   DISCUSSION_CATEGORIES,
   DISCUSSION_IMAGE_ACCEPTED_TYPES,
   validateDiscussionImageFile,
-} from "@/lib/api";
+} from "@/lib/api/community";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { NewDiscussionFormValues } from "@/lib/validation/community";
 import { cn } from "@/lib/utils";

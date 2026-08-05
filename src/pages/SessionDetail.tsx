@@ -1,4 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -150,6 +159,8 @@ export default function SessionDetail() {
     isPending: loading,
     error: queryError,
     isError,
+    isFetching,
+    refetch,
   } = useQuery({
     queryKey: sessionDetailQueryKey(sid),
     queryFn: () => fetchSessionDetail(sid),
@@ -161,6 +172,19 @@ export default function SessionDetail() {
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked ?? false;
   /** Seeded list rows omit laps; full GET always includes a laps array. */
   const sessionHydrated = Array.isArray(session?.laps);
+
+  const hydrationAttemptedForSid = useRef<string | null>(null);
+  useEffect(() => {
+    hydrationAttemptedForSid.current = null;
+  }, [sid]);
+
+  // Safety net: partial list seed must not block the real GET forever.
+  useEffect(() => {
+    if (!sid || !session || sessionHydrated || isFetching) return;
+    if (hydrationAttemptedForSid.current === sid) return;
+    hydrationAttemptedForSid.current = sid;
+    void refetch();
+  }, [sid, session, sessionHydrated, isFetching, refetch]);
 
   useEffect(() => {
     if (!session) return;

@@ -59,8 +59,8 @@ export type Discussion = {
   imageUrl?: string | null;
 };
 
-/** Default page size for GET /api/community/discussions (must match server default). */
-export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 5;
+/** Default page size for GET /api/community/discussions (must match server max-friendly FE default). */
+export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 12;
 
 export type DiscussionListSort =
   | "newest"
