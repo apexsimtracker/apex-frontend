@@ -91,19 +91,26 @@ export default function PersonalBests() {
     updateParams({ q: debouncedQ || null, page: "1" });
   }, [debouncedQ, qFromUrl, updateParams]);
 
-  const listParams = useMemo(
+  const filterParams = useMemo(
     () => ({
-      page,
-      limit: PAGE_SIZE,
       q: qFromUrl || undefined,
       track: track || undefined,
       car: car || undefined,
     }),
-    [page, qFromUrl, track, car],
+    [qFromUrl, track, car],
+  );
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      limit: PAGE_SIZE,
+      ...filterParams,
+    }),
+    [page, filterParams],
   );
 
   const { data, isPending, error, isFetching } = useQuery({
-    queryKey: ["personal-bests", listParams],
+    queryKey: ["personal-bests", "list", listParams],
     queryFn: () => getPersonalBests(listParams),
     enabled: isPro,
     placeholderData: keepPreviousData,
@@ -111,6 +118,7 @@ export default function PersonalBests() {
       !(err instanceof ApiError && err.status === 403) && count < 1,
   });
 
+  // Filter options are user-wide and independent of page / list filters.
   const { data: filterOptions } = useQuery({
     queryKey: ["personal-bests", "filter-options"],
     queryFn: getPersonalBestsFilterOptions,

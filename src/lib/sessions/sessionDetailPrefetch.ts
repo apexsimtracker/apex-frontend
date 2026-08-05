@@ -1,8 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { SessionsLibraryRow } from "@/lib/api/sessionsLibrary";
-import type {
-  ParsedSessionDetail,
-  SessionDetail,
+import {
+  fetchSessionDetail,
+  type ParsedSessionDetail,
+  type SessionDetail,
 } from "@/features/session-detail/sessionDetailData";
 
 export function sessionDetailQueryKey(id: string) {
@@ -85,6 +86,12 @@ export function seedSessionDetailFromListItem(
   const key = sessionDetailQueryKey(input.id);
   if (queryClient.getQueryData(key)) return;
   queryClient.setQueryData(key, seedPayloadFromInput(input));
+  // Seed is partial (no laps) — mark stale and start full GET so body can hydrate.
+  void queryClient.invalidateQueries({ queryKey: key });
+  void queryClient.prefetchQuery({
+    queryKey: key,
+    queryFn: () => fetchSessionDetail(input.id),
+  });
 }
 
 export function seedSessionDetailFromLibraryRow(

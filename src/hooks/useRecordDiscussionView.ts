@@ -1,14 +1,22 @@
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { recordDiscussionView, type Discussion } from "@/lib/api";
+import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import {
+  recordDiscussionView,
+  type Discussion,
+  type DiscussionsPageResult,
+} from "@/lib/api/community";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getOrCreateAnonymousViewerId,
   isDiscussionViewedInBrowser,
   markDiscussionViewedInBrowser,
 } from "@/lib/discussionViewerId";
+import { discussionDetailQueryKey } from "@/lib/community/discussionDetailPrefetch";
 
-const inFlightByDiscussionId = new Map<string, Promise<{ views: number; recorded: boolean }>>();
+const inFlightByDiscussionId = new Map<
+  string,
+  Promise<{ views: number; recorded: boolean }>
+>();
 
 function recordDiscussionViewSingleFlight(
   discussionId: string,
@@ -34,6 +42,7 @@ type UseRecordDiscussionViewOptions = {
 /**
  * Fire-and-forget discussion view registration. Tier-0 short-circuit skips network on repeat
  * visits; always sends anonymousId when available for server anon→user merge.
+ * On record, patches detail + list caches — does not invalidate the community list.
  */
 export function useRecordDiscussionView(
   discussionId: string | undefined,
@@ -41,6 +50,7 @@ export function useRecordDiscussionView(
 ): void {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const userKey = user?.id?.trim() || "anon";
 
   useEffect(() => {
     if (!discussionId || !enabled) return;
@@ -58,11 +68,28 @@ export function useRecordDiscussionView(
 
         markDiscussionViewedInBrowser(discussionId);
         queryClient.setQueryData<Discussion>(
-          ["discussion", "detail", discussionId],
+          discussionDetailQueryKey(discussionId, userKey),
           (prev) => (prev ? { ...prev, views: res.views } : prev),
         );
+
         if (res.recorded) {
-          void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+          queryClient.setQueriesData<InfiniteData<DiscussionsPageResult>>(
+            { queryKey: ["discussions", "community"] },
+            (prev) => {
+              if (!prev?.pages) return prev;
+              return {
+                ...prev,
+                pages: prev.pages.map((page) => ({
+                  ...page,
+                  items: page.items.map((item) =>
+                    item.id === discussionId
+                      ? { ...item, views: res.views }
+                      : item,
+                  ),
+                })),
+              };
+            },
+          );
         }
       } catch {
         /* view registration is best-effort */
@@ -74,5 +101,5 @@ export function useRecordDiscussionView(
     return () => {
       cancelled = true;
     };
-  }, [discussionId, enabled, user?.id, queryClient]);
+  }, [discussionId, enabled, user?.id, userKey, queryClient]);
 }

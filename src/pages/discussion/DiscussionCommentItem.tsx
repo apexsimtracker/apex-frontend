@@ -1,5 +1,5 @@
 import { getDiscussionAuthorDisplay, timeAgo } from "@/lib/utils";
-import type { DiscussionComment } from "@/lib/api";
+import type { DiscussionComment } from "@/lib/api/community";
 import DiscussionCommentAuthorAvatar from "./DiscussionCommentAuthorAvatar";
 import DiscussionCommentBody from "./DiscussionCommentBody";
 

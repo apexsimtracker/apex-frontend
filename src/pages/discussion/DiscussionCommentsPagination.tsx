@@ -38,6 +38,7 @@ function useCompactPagination(): boolean {
   return isCompact;
 }
 
+/** Numbered page grid (used by AppListPaginationFooter and similar). */
 export default function DiscussionCommentsPagination({
   page,
   totalPages,

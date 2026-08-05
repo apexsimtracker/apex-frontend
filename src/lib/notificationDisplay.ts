@@ -45,10 +45,10 @@ export function socialNotificationLink(
 ): string | null {
   if (!entityId) return null;
   if (type === "SESSION_LIKE" || type === "SESSION_COMMENT" || type === "COMMENT") {
-    return `/session/${entityId}`;
+    return `/sessions/${entityId}`;
   }
   if (type === "REPLY") {
-    return `/community/discussions/${entityId}`;
+    return `/discussion/${entityId}`;
   }
   return null;
 }

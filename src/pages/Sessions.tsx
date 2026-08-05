@@ -23,7 +23,6 @@ import {
   getSessionsLibraryMeta,
   getSessionsLibraryList,
   getSessionsLibraryStats,
-  isNetworkError,
   SESSIONS_LIBRARY_DEFAULT_LIMIT,
   type SessionsLibraryTypeFilter,
   type SessionsLibrarySessionKind,
@@ -34,7 +33,8 @@ import {
   type SessionsLibraryWeeklyStats,
   type SessionsLibraryRacingStats,
   type SessionsLibraryBySimStats,
-} from "@/lib/api";
+} from "@/lib/api/sessionsLibrary";
+import { isNetworkError } from "@/lib/api/profile";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -301,6 +301,19 @@ export default function Sessions() {
     queryFn: () => getSessionsLibraryMeta(filters),
     enabled: Boolean(user?.id),
     staleTime: META_STALE_MS,
+    // Soft-keep meta when only page changes (filters unchanged).
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      const prevFilters = prev[3];
+      if (
+        JSON.stringify(prevFilters) === JSON.stringify(filters) &&
+        prev[2] === user?.id
+      ) {
+        return previousData;
+      }
+      return undefined;
+    },
   });
 
   const {
@@ -325,6 +338,19 @@ export default function Sessions() {
         limit: SESSIONS_LIBRARY_DEFAULT_LIMIT,
       }),
     enabled: Boolean(user?.id),
+    // Soft-keep only for page flips within the same filters.
+    placeholderData: (previousData, previousQuery) => {
+      if (!previousData || !previousQuery) return undefined;
+      const prev = previousQuery.queryKey;
+      if (
+        prev[2] === user?.id &&
+        JSON.stringify(prev[3]) === JSON.stringify(filters) &&
+        prev[5] === SESSIONS_LIBRARY_DEFAULT_LIMIT
+      ) {
+        return previousData;
+      }
+      return undefined;
+    },
   });
 
   const needsLazyStats = statsTab !== "overview";

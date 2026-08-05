@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Eye, Heart, MessageCircle } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +10,12 @@ import {
   formatCompactCount,
   cn,
 } from "@/lib/utils";
-import { resolveDiscussionAvatarSrc, getDiscussionAuthorId } from "@/lib/api";
+import {
+  resolveDiscussionAvatarSrc,
+  getDiscussionAuthorId,
+} from "@/lib/api/config";
+import type { Discussion } from "@/lib/api/community";
+import { warmDiscussionDetailNavigation } from "@/lib/community/discussionDetailPrefetch";
 import DiscussionCategoryBadge from "@/pages/discussion/DiscussionCategoryBadge";
 
 interface DiscussionCardProps {
@@ -26,6 +32,8 @@ interface DiscussionCardProps {
   views: number;
   isPinned?: boolean;
   wasEdited?: boolean;
+  imageUrl?: string | null;
+  createdAt?: string;
   className?: string;
 }
 
@@ -40,10 +48,14 @@ export default function DiscussionCard({
   views,
   isPinned,
   wasEdited,
+  imageUrl,
+  createdAt,
   className,
 }: DiscussionCardProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const userKey = user?.id?.trim() || "anon";
   const authorDisplay = getDiscussionAuthorDisplay(author);
   const authorId = getDiscussionAuthorId(author);
   const avatarSrc = resolveDiscussionAvatarSrc(author, user);
@@ -56,8 +68,39 @@ export default function DiscussionCard({
   const showAvatar = Boolean(avatarSrc?.trim()) && !avatarLoadFailed;
   const initials = getDiscussionAuthorInitials(authorDisplay);
 
+  const warmDetail = () => {
+    warmDiscussionDetailNavigation(
+      queryClient,
+      {
+        id,
+        title,
+        excerpt,
+        author: (author ?? {
+          id: "",
+          displayName: null,
+          avatarUrl: null,
+        }) as Discussion["author"],
+        category: categoryKey,
+        likeCount: likes,
+        commentsCount: replies,
+        views,
+        isPinned,
+        wasEdited,
+        imageUrl,
+        createdAt,
+      },
+      userKey,
+    );
+  };
+
   return (
-    <Link to={`/discussion/${id}`} className="block">
+    <Link
+      to={`/discussion/${id}`}
+      className="block"
+      onPointerEnter={warmDetail}
+      onFocus={warmDetail}
+      onPointerDown={warmDetail}
+    >
       <article
         className={cn(
           "cursor-pointer rounded-xl border-l-2 border-l-apex-primary/50 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container",
@@ -78,61 +121,50 @@ export default function DiscussionCard({
             {showAvatar ? (
               <img
                 src={avatarSrc!}
-                alt={authorDisplay}
-                className="size-6 shrink-0 rounded-full object-cover"
+                alt=""
+                className="size-8 shrink-0 rounded-full object-cover"
                 onError={() => setAvatarLoadFailed(true)}
               />
             ) : (
-              <div
-                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-apex-surface-container-high font-apex-body text-[10px] font-medium text-apex-on-surface-variant"
-                aria-label={`Avatar for ${authorDisplay}`}
-              >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-apex-surface-container-high font-apex-body text-xs font-bold text-apex-on-surface">
                 {initials}
-              </div>
+              </span>
             )}
-            <p className="truncate font-apex-body text-xs font-bold text-apex-on-surface">
+            <span className="truncate font-apex-body text-sm font-semibold text-apex-on-surface group-hover:underline">
               {authorDisplay}
-            </p>
+            </span>
           </button>
           <DiscussionCategoryBadge
-            isPinned={isPinned}
             categoryKey={categoryKey}
-            className="ml-auto"
+            isPinned={isPinned}
           />
         </div>
 
-        <h3 className="mb-1 line-clamp-2 font-apex-headline text-base font-bold text-apex-on-surface">
+        <h3 className="mb-1 font-apex-display text-base font-bold text-apex-on-surface">
           {title}
+          {wasEdited ? (
+            <span className="ml-2 font-apex-body text-xs font-normal text-apex-on-surface-variant">
+              (edited)
+            </span>
+          ) : null}
         </h3>
-
-        <p className="mb-3 line-clamp-2 font-apex-body text-xs leading-relaxed text-apex-on-surface-variant">
+        <p className="mb-3 line-clamp-2 font-apex-body text-sm text-apex-on-surface-variant">
           {excerpt}
         </p>
 
-        <div className="flex items-center gap-3 font-apex-body text-[11px] text-apex-on-surface-variant">
-          <span className="flex items-center gap-1">
-            <Heart className="size-3.5 shrink-0" aria-hidden />
-            <span className="tabular-nums" title={String(likes ?? 0)}>
-              {formatCompactCount(likes ?? 0)}
-            </span>
+        <div className="flex items-center gap-4 font-apex-body text-xs text-apex-on-surface-variant">
+          <span className="inline-flex items-center gap-1">
+            <Heart className="size-3.5" aria-hidden />
+            {formatCompactCount(likes)}
           </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle className="size-3.5 shrink-0" aria-hidden />
-            <span className="tabular-nums" title={String(replies ?? 0)}>
-              {formatCompactCount(replies ?? 0)}
-            </span>
+          <span className="inline-flex items-center gap-1">
+            <MessageCircle className="size-3.5" aria-hidden />
+            {formatCompactCount(replies)}
           </span>
-          <span className="flex items-center gap-1">
-            <Eye className="size-3.5 shrink-0" aria-hidden />
-            <span className="tabular-nums" title={String(views ?? 0)}>
-              {formatCompactCount(views ?? 0)}
-            </span>
+          <span className="inline-flex items-center gap-1">
+            <Eye className="size-3.5" aria-hidden />
+            {formatCompactCount(views)}
           </span>
-          {wasEdited ? (
-            <span className="ml-auto font-apex-body text-[10px] uppercase tracking-wide text-apex-on-surface-variant/70">
-              Edited
-            </span>
-          ) : null}
         </div>
       </article>
     </Link>

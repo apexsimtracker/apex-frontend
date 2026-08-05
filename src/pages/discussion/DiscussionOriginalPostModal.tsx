@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { appOutlineButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
-import type { Discussion } from "@/lib/api";
+import type { Discussion } from "@/lib/api/community";
 
 type DiscussionOriginalPostModalProps = {
   open: boolean;

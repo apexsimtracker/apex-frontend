@@ -23,7 +23,7 @@ import {
   appDropdownItemClassName,
 } from "@/components/app-ui/appButtonClasses";
 import DiscussionCategoryBadge from "@/pages/discussion/DiscussionCategoryBadge";
-import type { Discussion } from "@/lib/api";
+import type { Discussion } from "@/lib/api/community";
 
 type DiscussionPostCardProps = {
   discussion: Discussion;
