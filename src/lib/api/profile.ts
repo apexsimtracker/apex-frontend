@@ -28,7 +28,9 @@ export type ProfileSummary = {
     wins: number | null;
     podiums: number | null;
     poles: number | null;
-    fastestLaps: number;
+    totalLaps: number;
+    /** @deprecated Alias of totalLaps during API rollout. */
+    fastestLaps?: number;
     avgFinish: number | null;
   };
   weekly: {
@@ -73,7 +75,9 @@ export type ProfileSummary = {
     wins: number | null;
     podiums: number | null;
     poles: number | null;
-    fastestLaps: number;
+    totalLaps: number;
+    /** @deprecated Alias of totalLaps during API rollout. */
+    fastestLaps?: number;
     winPct: number | null;
     podiumPct: number | null;
   }>;

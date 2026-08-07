@@ -230,7 +230,9 @@ export function ProfileView({
               wins={profile.totals?.wins}
               podiums={profile.totals?.podiums}
               poles={profile.totals?.poles}
-              fastestLaps={profile.totals?.fastestLaps ?? 0}
+              totalLaps={
+                profile.totals?.totalLaps ?? profile.totals?.fastestLaps ?? 0
+              }
               avgFinish={profile.totals?.avgFinish}
             />
 

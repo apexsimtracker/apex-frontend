@@ -46,7 +46,7 @@ function emptyProfileSummary(id: string, displayName: string): ProfileSummary {
       wins: null,
       podiums: null,
       poles: null,
-      fastestLaps: 0,
+      totalLaps: 0,
       avgFinish: null,
     },
     weekly: {

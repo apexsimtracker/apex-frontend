@@ -8,7 +8,6 @@ import {
   type LeaderboardRow,
 } from "@/lib/api";
 import { ApiError } from "@/lib/api/errors";
-import { formatLapMs } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ const TAB_METRICS = {
   wins: "wins",
   races: "races",
   podiums: "podiums",
-  fastestlaps: "fastestLap",
+  mostlaps: "totalLaps",
   avgfinish: "avgFinish",
 } as const;
 
@@ -42,7 +41,7 @@ const TAB_LABEL: Record<TabKey, string> = {
   wins: "Most wins",
   races: "Most races",
   podiums: "Podiums",
-  fastestlaps: "Fastest lap",
+  mostlaps: "Most laps",
   avgfinish: "Avg finish",
 };
 
@@ -57,10 +56,6 @@ const USER_FILTER_OPTIONS: ReadonlyArray<{
 ];
 
 function formatValue(row: LeaderboardRow, metric: string): string {
-  if (metric === "fastestLap") {
-    const ms = row.bestLapMs ?? row.value ?? null;
-    return formatLapMs(ms != null ? Number(ms) : null);
-  }
   if (metric === "avgFinish") {
     const v = row.value;
     if (v == null) return "—";
@@ -315,9 +310,9 @@ export default function AdminLeaderboards() {
               leaderboard table to edit.
             </li>
             <li>
-              Only{" "}
-              <strong className="text-foreground/90">race-type sessions</strong>{" "}
-              count: telemetry <code className="text-xs">RACE</code> /{" "}
+              Wins, races, podiums, and average finish only count{" "}
+              <strong className="text-foreground/90">race-type sessions</strong>
+              : telemetry <code className="text-xs">RACE</code> /{" "}
               <code className="text-xs">SPRINT</code>, or manual activities with
               session kind Race (
               <code className="text-xs">MANUAL_ACTIVITY</code> +{" "}
@@ -331,9 +326,15 @@ export default function AdminLeaderboards() {
               (position within grid when grid size is known).
             </li>
             <li>
-              Fastest lap uses each user&apos;s minimum{" "}
-              <code className="text-xs">lapTimeMs</code> across laps from
-              sessions that pass the race filter above.
+              Most laps uses each user&apos;s{" "}
+              <strong className="text-foreground/90">
+                sum of session lap counts
+              </strong>{" "}
+              (<code className="text-xs">SUM(lapCount)</code>) across eligible
+              sessions of{" "}
+              <strong className="text-foreground/90">all session types</strong>{" "}
+              (practice, qualifying, race, etc.), still under ingest and Pro
+              filters.
             </li>
             <li>
               The public site shows the top{" "}

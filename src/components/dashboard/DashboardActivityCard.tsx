@@ -8,7 +8,7 @@ import {
   splitPositionLabel,
 } from "@/components/dashboard/dashboardSessionDisplay";
 import {
-  getPodiumFastestLapClassName,
+  getPodiumBestLapClassName,
   getPodiumTrophyClassName,
 } from "@/components/dashboard/dashboardPodiumColors";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
@@ -190,7 +190,7 @@ function DashboardStatsRow({
   lapCount,
   car,
   vehicleDisplay,
-  showFastest,
+  showBest,
   showLaps,
   showCar,
   positionRank,
@@ -199,16 +199,16 @@ function DashboardStatsRow({
   lapCount?: number;
   car: string;
   vehicleDisplay?: string;
-  showFastest: boolean;
+  showBest: boolean;
   showLaps: boolean;
   showCar: boolean;
   positionRank: number;
 }) {
-  const columns = [showFastest, showLaps, showCar].filter(Boolean).length;
+  const columns = [showBest, showLaps, showCar].filter(Boolean).length;
   if (columns === 0) return null;
 
   const carLabel = vehicleDisplay ?? formatCarName(car);
-  const fastestLapClassName = getPodiumFastestLapClassName(positionRank);
+  const bestLapClassName = getPodiumBestLapClassName(positionRank);
 
   return (
     <div
@@ -219,11 +219,11 @@ function DashboardStatsRow({
         columns === 1 && "grid-cols-1",
       )}
     >
-      {showFastest && bestLapMs != null && (
+      {showBest && bestLapMs != null && (
         <StatCell
-          label="Fastest"
+          label="Best"
           value={formatLapMs(bestLapMs)}
-          valueClassName={fastestLapClassName}
+          valueClassName={bestLapClassName}
         />
       )}
       {showLaps && <StatCell label="Laps" value={String(lapCount ?? 0)} />}
@@ -380,13 +380,13 @@ export default memo(function DashboardActivityCard(
       })
     : 0;
 
-  const showFastest = bestLapMs != null;
+  const showBest = bestLapMs != null;
   const showLaps = (lapCount ?? 0) > 0 || isPractice || isManual;
   const showCar = Boolean(
     (vehicleDisplay ?? formatCarName(car)) && formatCarName(car) !== "—",
   );
 
-  const statsShowFastest = showFastest;
+  const statsShowBest = showBest;
   const statsShowLaps = showLaps;
   const statsShowCar = showCar || isManual || isPractice;
 
@@ -511,7 +511,7 @@ export default memo(function DashboardActivityCard(
           lapCount={lapCount}
           car={car}
           vehicleDisplay={vehicleDisplay}
-          showFastest={statsShowFastest}
+          showBest={statsShowBest}
           showLaps={statsShowLaps}
           showCar={statsShowCar}
           positionRank={positionRank}

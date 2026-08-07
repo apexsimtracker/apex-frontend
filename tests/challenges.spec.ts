@@ -262,7 +262,7 @@ test.describe("@challenges", () => {
       "Most Wins",
       "Most Races",
       "Podiums",
-      "Fastest Laps",
+      "Most Laps",
       "Avg Finish",
     ] as const;
 

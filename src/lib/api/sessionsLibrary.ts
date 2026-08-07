@@ -96,7 +96,9 @@ export type SessionsLibraryRacingStats = {
   wins: number | null;
   podiums: number | null;
   poles: number | null;
-  fastestLaps: number;
+  totalLaps: number;
+  /** @deprecated Alias of totalLaps during API rollout. */
+  fastestLaps?: number;
   avgFinish: number | null;
   historyLimited: boolean;
 };
@@ -130,7 +132,9 @@ export type SessionsLibraryBySimStats = {
     wins: number | null;
     podiums: number | null;
     poles: number | null;
-    fastestLaps: number;
+    totalLaps: number;
+    /** @deprecated Alias of totalLaps during API rollout. */
+    fastestLaps?: number;
     winPct: number | null;
     podiumPct: number | null;
   }>;
