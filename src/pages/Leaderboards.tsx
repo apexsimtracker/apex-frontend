@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { getLeaderboards, type LeaderboardRow } from "@/lib/api";
-import { formatLapMs, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import PageMeta from "@/components/PageMeta";
 import UserAvatar from "@/components/UserAvatar";
 import { COMPANY_NAME } from "@/lib/siteMeta";
@@ -11,13 +11,13 @@ import LeaderboardsListSkeleton from "@/pages/leaderboards/LeaderboardsListSkele
 
 const LEADERBOARDS_PATH = "/leaderboards";
 const leaderboardsTitle = `Leaderboards | ${COMPANY_NAME}`;
-const leaderboardsDescription = `Global sim racing leaderboards on ${COMPANY_NAME}: wins, races, podiums, fastest laps, and more.`;
+const leaderboardsDescription = `Global sim racing leaderboards on ${COMPANY_NAME}: wins, races, podiums, most laps, and more.`;
 
 const TAB_METRICS = {
   wins: "wins",
   races: "races",
   podiums: "podiums",
-  fastestlaps: "fastestLap",
+  mostlaps: "totalLaps",
   avgfinish: "avgFinish",
 } as const;
 
@@ -27,17 +27,13 @@ const TAB_CONFIG: Record<TabKey, { label: string; suffix: string }> = {
   wins: { label: "Most Wins", suffix: "WINS" },
   races: { label: "Most Races", suffix: "RACES" },
   podiums: { label: "Podiums", suffix: "PODIUMS" },
-  fastestlaps: { label: "Fastest Laps", suffix: "LAP" },
+  mostlaps: { label: "Most Laps", suffix: "LAPS" },
   avgfinish: { label: "Avg Finish", suffix: "AVG" },
 };
 
 const LB_LIMIT = 10;
 
 function formatValue(row: LeaderboardRow, metric: string): string {
-  if (metric === "fastestLap") {
-    const ms = row.bestLapMs ?? row.value ?? null;
-    return formatLapMs(ms != null ? Number(ms) : null);
-  }
   if (metric === "avgFinish") {
     const v = row.value;
     if (v == null) return "—";

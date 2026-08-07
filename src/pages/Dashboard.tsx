@@ -458,23 +458,18 @@ export default function Dashboard() {
     user?.id && profileTrendInsight?.apexTrendInsight,
   );
 
+  // Show first-run empty state whenever the home feed is empty — independent of
+  // the Apex Analysis trend card (Pro users get a truthy trend payload even with
+  // no sessions, which previously hid this UI and left "Latest session" blank).
   const showEmptyFeedOnboarding = useMemo(() => {
     return (
       Boolean(user?.id) &&
-      !showApexTrendCard &&
       !activityLoading &&
       !feedError &&
       !error &&
       activity.length === 0
     );
-  }, [
-    user?.id,
-    showApexTrendCard,
-    activityLoading,
-    feedError,
-    error,
-    activity.length,
-  ]);
+  }, [user?.id, activityLoading, feedError, error, activity.length]);
 
   const displayName = user ? getAccountDisplayName(user) : "Driver";
   const weekLabel = profileHomeWeekly?.weeklySnapshot?.weekStart
@@ -514,9 +509,11 @@ export default function Dashboard() {
         )}
 
         <section className="space-y-3">
-          <h2 className="font-apex-headline text-lg font-semibold text-apex-on-surface">
-            Latest session
-          </h2>
+          {!showEmptyFeedOnboarding && (
+            <h2 className="font-apex-headline text-lg font-semibold text-apex-on-surface">
+              Latest session
+            </h2>
+          )}
 
           {showUploadBanner && (
             <div className="mb-4 flex items-center gap-3 rounded-lg border border-apex-success/30 bg-apex-success/10 px-4 py-3">
@@ -565,11 +562,7 @@ export default function Dashboard() {
                   Failed to load activity
                 </p>
               )}
-              {showEmptyFeedOnboarding && (
-                <div className="py-4">
-                  <OnboardingEmptyState />
-                </div>
-              )}
+              {showEmptyFeedOnboarding && <OnboardingEmptyState />}
               {!error && !feedError && activity.length > 0 && (
                 <ActivityFeedList
                   items={activity}

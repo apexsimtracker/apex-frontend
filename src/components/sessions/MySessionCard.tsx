@@ -7,7 +7,7 @@ import {
   splitPositionLabel,
 } from "@/components/dashboard/dashboardSessionDisplay";
 import {
-  getPodiumFastestLapClassName,
+  getPodiumBestLapClassName,
   getPodiumTrophyClassName,
 } from "@/components/dashboard/dashboardPodiumColors";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
@@ -178,28 +178,28 @@ export default function MySessionCard({ session }: MySessionCardProps) {
   const trophyClassName = getPodiumTrophyClassName(pos);
   const carLabel = carName ?? formatCarName(car ?? "");
   const trackTime = formatTrackTime(totalTimeMs);
-  const showFastest = bestLapMs != null;
+  const showBest = bestLapMs != null;
   const showLaps = true;
   const showCar = Boolean(carLabel);
   const showTime = Boolean(trackTime);
-  const columns = [showFastest, showLaps, showCar, showTime].filter(
+  const columns = [showBest, showLaps, showCar, showTime].filter(
     Boolean,
   ).length;
 
   type SessionStatItem = {
-    key: "fastest" | "laps" | "car" | "time";
+    key: "best" | "laps" | "car" | "time";
     label: string;
     value: string;
     valueClassName?: string;
   };
 
   const statItems: SessionStatItem[] = [];
-  if (showFastest && bestLapMs != null) {
+  if (showBest && bestLapMs != null) {
     statItems.push({
-      key: "fastest",
-      label: "Fastest",
+      key: "best",
+      label: "Best",
       value: formatLapMs(bestLapMs),
-      valueClassName: getPodiumFastestLapClassName(pos),
+      valueClassName: getPodiumBestLapClassName(pos),
     });
   }
   if (showLaps) {

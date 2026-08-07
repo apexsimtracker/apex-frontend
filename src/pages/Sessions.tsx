@@ -535,9 +535,12 @@ export default function Sessions() {
                 poles={
                   (statsData as SessionsLibraryRacingStats | undefined)?.poles
                 }
-                fastestLaps={
+                totalLaps={
                   (statsData as SessionsLibraryRacingStats | undefined)
-                    ?.fastestLaps ?? 0
+                    ?.totalLaps ??
+                  (statsData as SessionsLibraryRacingStats | undefined)
+                    ?.fastestLaps ??
+                  0
                 }
                 avgFinish={
                   (statsData as SessionsLibraryRacingStats | undefined)
