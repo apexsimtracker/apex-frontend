@@ -11,7 +11,9 @@ type StatsByGameRow = {
   wins: number | null;
   podiums: number | null;
   poles: number | null;
-  fastestLaps: number;
+  totalLaps?: number;
+  /** @deprecated Alias of totalLaps during API rollout. */
+  fastestLaps?: number;
   winPct: number | null;
   podiumPct: number | null;
 };
@@ -78,9 +80,8 @@ export function ProfileStatsByGame({ rows }: { rows: StatsByGameRow[] }) {
                 <StatRow label="Podiums" value={safeValue(game.podiums)} />
                 <StatRow label="Pole Positions" value={safeValue(game.poles)} />
                 <StatRow
-                  label="Fastest Laps"
-                  value={game.fastestLaps}
-                  valueClassName="text-purple-500"
+                  label="Laps"
+                  value={game.totalLaps ?? game.fastestLaps ?? 0}
                 />
                 <div className="mt-2 border-t border-apex-outline-variant/15 pt-2">
                   <StatRow

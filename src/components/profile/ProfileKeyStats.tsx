@@ -7,7 +7,7 @@ type ProfileKeyStatsProps = {
   wins: number | null | undefined;
   podiums: number | null | undefined;
   poles: number | null | undefined;
-  fastestLaps: number;
+  totalLaps: number;
   avgFinish: number | null | undefined;
 };
 
@@ -42,7 +42,7 @@ export function ProfileKeyStats({
   wins,
   podiums,
   poles,
-  fastestLaps,
+  totalLaps,
   avgFinish,
 }: ProfileKeyStatsProps) {
   const safeValue = (v: number | null | undefined) =>
@@ -63,7 +63,7 @@ export function ProfileKeyStats({
       <StatCell label="Wins" value={safeValue(wins)} align="center" />
       <StatCell label="Podiums" value={safeValue(podiums)} align="right" />
       <StatCell label="Poles" value={safeValue(poles)} align="left" />
-      <StatCell label="Fastest Laps" value={fastestLaps} align="center" />
+      <StatCell label="Laps" value={totalLaps} align="center" />
       <StatCell
         label="Avg Finish"
         value={formatAvgFinishOneDecimal(avgFinish)}
