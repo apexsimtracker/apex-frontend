@@ -14,8 +14,10 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import PlanPill from "@/components/PlanPill";
 import { getAccountMenuItemsForUser, getPrimaryNavItems, isNavPathActive, logSessionMenuItems, AUTH_PATHS, type AccountMenuItem, type LogSessionMenuIcon } from "@/config/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { planTierForUser } from "@/features/billing/planPill";
 import { usePlatform } from "@/hooks/usePlatform";
 import { useSessionsNavActive } from "@/hooks/useSessionsNavActive";
 import { prefetchNavIntent } from "@/lib/navIntentPrefetch";
@@ -197,9 +199,12 @@ export default function MobileNavDrawer({
               </div>
 
               <div className="mt-3 border-t border-apex-outline-variant/15 pt-3">
-                <p className="px-4 py-1 font-apex-headline text-[10px] font-semibold uppercase tracking-[0.2em] text-apex-on-surface-variant/60">
-                  Account
-                </p>
+                <div className="flex items-center justify-between gap-2 px-4 py-1">
+                  <p className="font-apex-headline text-[10px] font-semibold uppercase tracking-[0.2em] text-apex-on-surface-variant/60">
+                    Account
+                  </p>
+                  <PlanPill tier={planTierForUser(user)} />
+                </div>
                 {accountItems.map((item) => {
                   const Icon = accountIcon(item);
                   const to = item.to;
