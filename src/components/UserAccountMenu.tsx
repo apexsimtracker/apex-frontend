@@ -10,6 +10,7 @@ import {
   Trophy,
   User,
 } from "lucide-react";
+import PlanPill from "@/components/PlanPill";
 import UserAvatar from "@/components/UserAvatar";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { planTierForUser } from "@/features/billing/planPill";
 import { usePlatform } from "@/hooks/usePlatform";
 import { getAccountMenuItemsForUser, type AccountMenuItem } from "@/config/navigation";
 import { prefetchOwnProfileQueries } from "@/lib/profileQueryKeys";
@@ -104,9 +106,12 @@ export default function UserAccountMenu() {
         className={appProfileDropdownContentClassName}
       >
         <DropdownMenuLabel className="p-2 font-normal">
-          <p className="truncate text-sm font-medium text-apex-on-surface">
-            {name}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-medium text-apex-on-surface">
+              {name}
+            </p>
+            <PlanPill tier={planTierForUser(user)} />
+          </div>
           <p className={appDropdownEmailClassName}>{user.email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className={appDropdownSeparatorClassName} />
