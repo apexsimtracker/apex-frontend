@@ -26,6 +26,32 @@ import SessionCaption from "@/components/sessions/SessionCaption";
 import { preloadSessionDetail } from "@/routes/routePreload";
 import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
 
+const UNKNOWN_CAR_LABEL = "Unknown";
+
+const UNKNOWN_CAR_TOKENS = new Set([
+  "—",
+  "-",
+  "n/a",
+  "na",
+  "null",
+  "undefined",
+  "unknown",
+  "unknown car",
+]);
+
+/** Falls back to "Unknown" so the Car stat never renders blank. */
+function resolveCarLabel(car: string, vehicleDisplay?: string): string {
+  const explicit = (vehicleDisplay ?? "").trim();
+  if (explicit && !UNKNOWN_CAR_TOKENS.has(explicit.toLowerCase())) {
+    return explicit;
+  }
+  const formatted = formatCarName(car).trim();
+  if (!formatted || UNKNOWN_CAR_TOKENS.has(formatted.toLowerCase())) {
+    return UNKNOWN_CAR_LABEL;
+  }
+  return formatted;
+}
+
 function isManualSessionItem(props: {
   sessionType?: string | null;
   source?: string | null;
@@ -188,8 +214,7 @@ function DashboardPositionRow({
 function DashboardStatsRow({
   bestLapMs,
   lapCount,
-  car,
-  vehicleDisplay,
+  carLabel,
   showBest,
   showLaps,
   showCar,
@@ -197,8 +222,7 @@ function DashboardStatsRow({
 }: {
   bestLapMs?: number | null;
   lapCount?: number;
-  car: string;
-  vehicleDisplay?: string;
+  carLabel: string;
   showBest: boolean;
   showLaps: boolean;
   showCar: boolean;
@@ -207,7 +231,6 @@ function DashboardStatsRow({
   const columns = [showBest, showLaps, showCar].filter(Boolean).length;
   if (columns === 0) return null;
 
-  const carLabel = vehicleDisplay ?? formatCarName(car);
   const bestLapClassName = getPodiumBestLapClassName(positionRank);
 
   return (
@@ -382,9 +405,8 @@ export default memo(function DashboardActivityCard(
 
   const showBest = bestLapMs != null;
   const showLaps = (lapCount ?? 0) > 0 || isPractice || isManual;
-  const showCar = Boolean(
-    (vehicleDisplay ?? formatCarName(car)) && formatCarName(car) !== "—",
-  );
+  const carLabel = resolveCarLabel(car, vehicleDisplay);
+  const showCar = carLabel.length > 0;
 
   const statsShowBest = showBest;
   const statsShowLaps = showLaps;
@@ -509,8 +531,7 @@ export default memo(function DashboardActivityCard(
         <DashboardStatsRow
           bestLapMs={bestLapMs}
           lapCount={lapCount}
-          car={car}
-          vehicleDisplay={vehicleDisplay}
+          carLabel={carLabel}
           showBest={statsShowBest}
           showLaps={statsShowLaps}
           showCar={statsShowCar}

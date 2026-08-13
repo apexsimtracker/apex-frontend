@@ -176,7 +176,12 @@ export default memo(function BundledActivityCard({
           userName={currentHeader.name}
           userAvatar={currentHeader.avatar}
           car={currentSession.car ?? "—"}
-          vehicleDisplay={currentSession.vehicleDisplay}
+          vehicleDisplay={
+            currentSession.vehicleDisplay ??
+            (typeof currentSession.carName === "string"
+              ? currentSession.carName
+              : undefined)
+          }
           track={currentSession.track ?? "—"}
           trackName={sessionAny.trackName}
           position={currentSession.position ?? null}
