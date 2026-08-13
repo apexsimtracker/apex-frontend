@@ -51,8 +51,9 @@ export const PROFILE_SUMMARY_ALL_QUERY_FILTER = {
 };
 
 /**
- * Refresh profile stats, race history, activity feeds, and other session-derived UI after
- * create/update/delete/upload — without requiring a full page reload.
+ * Refresh profile stats, race history, activity feeds, leaderboards, and other
+ * session-derived UI after create/update/delete/upload — without requiring a full
+ * page reload.
  */
 export function invalidateSessionDerivedCaches(
   queryClient: QueryClient,
@@ -74,6 +75,7 @@ export function invalidateSessionDerivedCaches(
   void queryClient.invalidateQueries({ queryKey: ["userProfile"] });
   void queryClient.invalidateQueries({ queryKey: ["activity"] });
   void queryClient.invalidateQueries({ queryKey: ["sessions-library"] });
+  void queryClient.invalidateQueries({ queryKey: ["leaderboards"] });
 
   const uid = ownerUserId?.trim();
   if (uid) {
