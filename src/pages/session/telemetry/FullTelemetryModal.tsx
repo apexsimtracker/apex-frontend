@@ -133,7 +133,7 @@ export default function FullTelemetryModal({
       description="High-density driving traces on a synced distance axis — compare laps, isolate inputs, and read sector bands."
       size="full"
       mobileVariant="centered"
-      contentClassName="w-[95vw] max-w-[1600px] sm:max-w-[1600px] h-[90dvh] max-h-[90dvh]"
+      contentClassName="w-[95vw] max-w-[1600px] sm:max-w-[1600px] h-[min(90dvh,calc(100dvh-4rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] max-h-[min(90dvh,calc(100dvh-4rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))]"
       headerClassName="sr-only"
       bodyClassName="px-0 pt-0 sm:px-0"
     >

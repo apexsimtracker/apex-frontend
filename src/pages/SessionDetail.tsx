@@ -479,6 +479,16 @@ export default function SessionDetail() {
     });
   }
 
+  // Manual activities never carry telemetry, and an uploaded/agent session that
+  // resolved to nothing would render a card of em dashes. Hide it in both cases.
+  const hasTelemetryOverviewData =
+    !isManual &&
+    (overview.topSpeedKmh != null ||
+      overview.avgBrakePct != null ||
+      overview.highestGear != null ||
+      telemetrySummary?.sessionMeta?.airTempC != null ||
+      telemetrySummary?.sessionMeta?.trackTempC != null);
+
   const sessionShareText = buildSessionShareText(session);
   const sessionShareTitle =
     sessionShareText.split("\n")[0]?.trim() || "Apex session";
@@ -570,17 +580,6 @@ export default function SessionDetail() {
           onShare={() => setShareModalOpen(true)}
           onEdit={() => navigate(`/sessions/${sid}/edit`)}
           onDelete={() => setShowDeleteModal(true)}
-          onLogAgain={() =>
-            navigate("/manual", {
-              state: {
-                logAgain: {
-                  sim: resolved.sim ?? session.sim ?? undefined,
-                  trackId: session.trackId ?? undefined,
-                  carId: session.carId ?? undefined,
-                },
-              },
-            })
-          }
         />
 
         <SessionDetailHeroStats
@@ -654,6 +653,7 @@ export default function SessionDetail() {
           }
           overviewRows={overviewRows}
           overviewLapNumber={overviewLap}
+          showTelemetryOverview={hasTelemetryOverviewData}
         />
 
         <PageSuspense fallback={<SessionTelemetrySkeleton />}>
@@ -721,17 +721,6 @@ export default function SessionDetail() {
         )}
           </>
         )}
-
-        {session.notes?.trim() ? (
-          <section className="rounded-xl bg-apex-surface-container-low p-4 shadow-lg">
-            <h2 className="mb-2 font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
-              Notes
-            </h2>
-            <p className="whitespace-pre-wrap font-apex-body text-sm text-apex-on-surface-variant">
-              {session.notes.trim()}
-            </p>
-          </section>
-        ) : null}
 
         {import.meta.env.DEV &&
           session.processingDurationMs != null &&

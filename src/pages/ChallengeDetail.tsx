@@ -392,6 +392,7 @@ export default function ChallengeDetail() {
           <ChallengeDetailHero
             challenge={challenge}
             status={status}
+            isLoggedIn={Boolean(user)}
             canJoin={canJoin}
             canLeave={canLeave}
             showLeaveLockedHint={showLeaveLockedHint}

@@ -66,6 +66,11 @@ export default defineConfig({
   server: {
     port: 8080,
     host: true,
+    watch: {
+      // `cap copy` writes the bundle into the native projects; watching them triggers reload loops
+      // during `pnpm dev:ios`.
+      ignored: ["**/ios/**", "**/android/**"],
+    },
     proxy: {
       "/api": {
         target:

@@ -355,10 +355,10 @@ export default function Community() {
         <button
           type="button"
           onClick={openNewDiscussion}
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+1rem)] right-6 z-40 flex size-14 items-center justify-center rounded-xl bg-apex-primary text-white shadow-2xl transition-colors hover:bg-apex-primary/90 lg:hidden"
+          className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom)+1rem)] right-6 z-40 flex size-11 items-center justify-center rounded-xl bg-apex-primary text-white shadow-2xl transition-colors hover:bg-apex-primary/90 lg:hidden"
           aria-label="New discussion"
         >
-          <Plus className="size-6" aria-hidden />
+          <Plus className="size-5" aria-hidden />
         </button>
 
         <NewDiscussionModal

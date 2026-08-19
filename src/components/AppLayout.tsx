@@ -62,13 +62,16 @@ export default function AppLayout({
         <main
           className={cn(
             "flex min-h-0 flex-1 flex-col overflow-x-clip",
-            bottomBar ? "pb-24 lg:pb-0" : "pb-[env(safe-area-inset-bottom)]",
+            bottomBar
+              ? // Bottom bar is 4rem tall plus its safe-area padding; matches the mobile FAB offsets.
+                "pb-[calc(4rem+env(safe-area-inset-bottom,0px)+1rem)] lg:pb-0"
+              : "pb-[env(safe-area-inset-bottom)]",
           )}
         >
           {children}
         </main>
         {bottomBar ? (
-          <footer className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)] lg:hidden">
+          <footer className="fixed inset-x-0 bottom-0 z-50 lg:hidden">
             {bottomBar}
           </footer>
         ) : null}

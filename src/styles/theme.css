@@ -114,9 +114,15 @@
   -webkit-text-fill-color: hsl(var(--apex-on-surface-variant)) !important;
 }
 
-.apex-theme input.manual-lap-cell-total {
-  color: hsl(var(--apex-primary)) !important;
-  -webkit-text-fill-color: hsl(var(--apex-primary)) !important;
+/* Total time reads as neutral until it parses, then green (red via -invalid). */
+.apex-theme input.manual-lap-cell-total-empty {
+  color: hsl(var(--apex-on-surface-variant) / 0.6) !important;
+  -webkit-text-fill-color: hsl(var(--apex-on-surface-variant) / 0.6) !important;
+}
+
+.apex-theme input.manual-lap-cell-total-valid {
+  color: hsl(var(--apex-success)) !important;
+  -webkit-text-fill-color: hsl(var(--apex-success)) !important;
 }
 
 .apex-theme input.manual-lap-cell-invalid,

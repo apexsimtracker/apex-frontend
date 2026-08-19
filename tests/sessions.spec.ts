@@ -66,7 +66,7 @@ test.describe("@sessions", () => {
       ).toBeVisible();
 
       await fillManualActivityBasics(page);
-      await page.locator("#notes").fill("E2E manual session");
+      await page.locator("#caption").fill("E2E manual session");
 
       const createPost = page.waitForResponse(
         (res) =>
@@ -90,7 +90,7 @@ test.describe("@sessions", () => {
 
       await page.getByRole("button", { name: "Edit" }).click();
       await expect(page).toHaveURL(new RegExp(`/sessions/${sessionId}/edit$`));
-      await page.locator("#notes").fill("E2E manual updated");
+      await page.locator("#caption").fill("E2E manual updated");
 
       const updatePost = page.waitForResponse(
         (res) =>
@@ -230,7 +230,7 @@ test.describe("@sessions", () => {
     const manualId = await createManualActivityViaApi(request, auth, {
       trackId: "monza",
       manualSessionKind: "PRACTICE",
-      notes: "E2E sessions tab manual",
+      caption: "E2E sessions tab manual",
       laps: [{ lapTimeMs: 98_500 }],
     });
 

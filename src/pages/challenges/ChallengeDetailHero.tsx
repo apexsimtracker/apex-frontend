@@ -39,6 +39,7 @@ function statusBadgeClass(status: "Live" | "Upcoming" | "Finished"): string {
 interface ChallengeDetailHeroProps {
   challenge: ChallengeDetail;
   status: "Live" | "Upcoming" | "Finished";
+  isLoggedIn: boolean;
   canJoin: boolean;
   canLeave: boolean;
   showLeaveLockedHint: boolean;
@@ -56,6 +57,7 @@ interface ChallengeDetailHeroProps {
 export default function ChallengeDetailHero({
   challenge,
   status,
+  isLoggedIn,
   canJoin,
   canLeave,
   showLeaveLockedHint,
@@ -79,6 +81,12 @@ export default function ChallengeDetailHero({
     challenge.targetTimeMs != null
       ? formatLapMs(challenge.targetTimeMs)
       : String(challenge.participants);
+
+  const showJoinedPanel = isLoggedIn && !canJoin && challenge.joined;
+  // Signed-out (and finished) views render no action below the stats, so the
+  // grid's bottom margin would stack on the container padding and leave a large
+  // dead gap. Desktop spacing is unchanged.
+  const hasHeroActions = canJoin || showJoinedPanel;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-apex-outline-variant/15 bg-apex-surface-container">
@@ -123,9 +131,17 @@ export default function ChallengeDetailHero({
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="mb-6 grid grid-cols-3 gap-4">
-          <div>
+      <div className={cn("p-6", !hasHeroActions && "pb-4 lg:pb-6")}>
+        {/* On mobile, Sim + the third stat share the first row while the
+            (potentially long) Track/Vehicle name gets its own full-width row.
+            At sm+ this reverts to the standard 3-up grid. */}
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-4 sm:grid-cols-3",
+            hasHeroActions ? "mb-6" : "mb-0 lg:mb-6",
+          )}
+        >
+          <div className="order-1 min-w-0">
             <p className="mb-1 font-apex-body text-[10px] font-semibold uppercase tracking-wide text-apex-on-surface-variant">
               Sim
             </p>
@@ -133,7 +149,7 @@ export default function ChallengeDetailHero({
               {formatSimEnum(challenge.sim)}
             </p>
           </div>
-          <div>
+          <div className="order-3 col-span-2 min-w-0 sm:order-2 sm:col-span-1">
             <p className="mb-1 font-apex-body text-[10px] font-semibold uppercase tracking-wide text-apex-on-surface-variant">
               {challenge.targetTimeMs != null ? "Track" : "Vehicle"}
             </p>
@@ -143,7 +159,7 @@ export default function ChallengeDetailHero({
                 : formatCarName(challenge.carClass ?? challenge.vehicle)}
             </p>
           </div>
-          <div>
+          <div className="order-2 min-w-0 sm:order-3">
             <p className="mb-1 font-apex-body text-[10px] font-semibold uppercase tracking-wide text-apex-on-surface-variant">
               {thirdStatLabel}
             </p>
@@ -178,7 +194,7 @@ export default function ChallengeDetailHero({
           </div>
         )}
 
-        {!canJoin && challenge.joined && (
+        {showJoinedPanel && (
           <div className="flex flex-col gap-2">
             <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-apex-outline-variant/20 bg-apex-surface-container-high py-3.5 font-apex-body text-sm font-bold uppercase tracking-wider text-apex-on-surface">
               <CheckCircle className="size-5 text-apex-primary" aria-hidden />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Share2, Pencil, Trash2, Repeat, Heart, MessageCircle } from "lucide-react";
+import { Share2, Pencil, Trash2, Heart, MessageCircle } from "lucide-react";
 import { formatTrackName } from "@/lib/tracks";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
 import { cn, formatCompactCount } from "@/lib/utils";
@@ -19,7 +19,6 @@ type SessionDetailHeroProps = {
   onShare: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onLogAgain: () => void;
 };
 
 export default function SessionDetailHero({
@@ -37,7 +36,6 @@ export default function SessionDetailHero({
   onShare,
   onEdit,
   onDelete,
-  onLogAgain,
 }: SessionDetailHeroProps) {
   const title = formatTrackName(trackName) || "Unknown track";
   const [imageFailed, setImageFailed] = useState(false);
@@ -115,24 +113,14 @@ export default function SessionDetailHero({
 
         <div className="flex items-center gap-2">
           {canManualExtras && (
-            <>
-              <button
-                type="button"
-                onClick={onLogAgain}
-                className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-                aria-label="Log again"
-              >
-                <Repeat className="size-5" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="flex items-center justify-center rounded-full p-2 text-apex-error transition-colors hover:bg-apex-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-                aria-label="Delete session"
-              >
-                <Trash2 className="size-5" aria-hidden />
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="flex items-center justify-center rounded-full p-2 text-apex-error transition-colors hover:bg-apex-error/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
+              aria-label="Delete session"
+            >
+              <Trash2 className="size-5" aria-hidden />
+            </button>
           )}
           {canEditSession && (
             <button

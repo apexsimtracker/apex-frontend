@@ -33,9 +33,20 @@ function SectorBreakdownBody({
         ? sectorS1 + sectorS2 + sectorS3
         : null;
 
+  const sectors = [
+    ["Sector 1", sectorS1],
+    ["Sector 2", sectorS2],
+    ["Sector 3", sectorS3],
+  ] as const;
+
+  const sectorValueClass = (ms: number | null) =>
+    `font-apex-headline font-bold tabular-nums ${
+      ms != null ? "text-purple-400" : "text-apex-on-surface-variant"
+    }`;
+
   return (
     <>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
           Sector breakdown
         </h2>
@@ -43,15 +54,32 @@ function SectorBreakdownBody({
           Session bests
         </span>
       </div>
-      <div className="mb-4 grid grid-cols-3 gap-4">
-        {(
-          [
-            ["Sector 1", sectorS1],
-            ["Sector 2", sectorS2],
-            ["Sector 3", sectorS3],
-          ] as const
-        ).map(([label, ms]) => (
+
+      {/* Mobile: full-width rows. Three columns only leave ~70px each on a
+          320px screen, which long sector times overflow into each other. */}
+      <div className="mb-4 space-y-2.5 sm:hidden">
+        {sectors.map(([label, ms]) => (
           <div key={label} className="space-y-1.5">
+            <div className="h-1 overflow-hidden rounded-full bg-apex-surface-container-highest">
+              <div
+                className={`size-full ${ms != null ? "bg-purple-400" : "bg-transparent"}`}
+              />
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-apex-body text-[10px] font-bold uppercase text-apex-on-surface-variant">
+                {label}
+              </span>
+              <span className={`${sectorValueClass(ms)} text-lg`}>
+                {formatSectorOrDash(ms)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mb-4 hidden grid-cols-3 gap-4 sm:grid">
+        {sectors.map(([label, ms]) => (
+          <div key={label} className="min-w-0 space-y-1.5">
             <div className="h-1 overflow-hidden rounded-full bg-apex-surface-container-highest">
               <div
                 className={`size-full ${ms != null ? "bg-purple-400" : "bg-transparent"}`}
@@ -61,29 +89,26 @@ function SectorBreakdownBody({
               <span className="font-apex-body text-[10px] font-bold uppercase text-apex-on-surface-variant">
                 {label}
               </span>
-              <span
-                className={`font-apex-headline text-xl font-bold ${
-                  ms != null ? "text-purple-400" : "text-apex-on-surface-variant"
-                }`}
-              >
+              <span className={`${sectorValueClass(ms)} text-xl`}>
                 {formatSectorOrDash(ms)}
               </span>
             </div>
           </div>
         ))}
       </div>
+
       <div className="border-t border-apex-outline-variant/10 pt-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Sparkles
-            className="size-4"
+            className="size-4 shrink-0"
             style={{ color: "#A855F7" }}
             aria-hidden
           />
-          <span className="mr-2 font-apex-body text-xs font-bold uppercase tracking-tight text-apex-on-surface-variant">
+          <span className="font-apex-body text-xs font-bold uppercase tracking-tight text-apex-on-surface-variant">
             Ideal lap time:
           </span>
           <span
-            className="font-apex-headline text-lg font-bold"
+            className="font-apex-headline text-lg font-bold tabular-nums"
             style={{ color: idealMs != null ? "#A855F7" : undefined }}
           >
             {formatSectorOrDash(idealMs)}

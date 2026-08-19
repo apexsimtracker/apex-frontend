@@ -1,6 +1,10 @@
+import { Link } from "react-router-dom";
 import AppListPaginationFooter from "@/components/app-ui/AppListPaginationFooter";
 import { SkeletonBlock } from "@/components/ui/skeleton";
-import { formatChallengeDateTime } from "@/lib/datetime";
+import {
+  formatChallengeDateParts,
+  formatChallengeDateTime,
+} from "@/lib/datetime";
 import type { ChallengeLeaderboardRow } from "@/lib/api/challenges";
 import { formatLapMs } from "@/lib/utils";
 
@@ -32,10 +36,30 @@ function SourceLabel({ verification }: { verification: string }) {
   );
 }
 
+/** Compact date + time stacked on two lines, matching the overview details card. */
+function LeaderboardDate({ iso }: { iso: string }) {
+  const parts = formatChallengeDateParts(iso);
+  if (!parts) return <>—</>;
+  return (
+    <>
+      {parts.date}
+      <span className="mt-0.5 block text-apex-on-surface-variant">
+        {parts.time}
+      </span>
+    </>
+  );
+}
+
 function DriverLabel({ row }: { row: ChallengeLeaderboardRow }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
-      <span className="truncate">{row.username}</span>
+      <Link
+        to={`/user/${encodeURIComponent(row.userId)}`}
+        onClick={(e) => e.stopPropagation()}
+        className="truncate transition-colors hover:text-apex-primary hover:underline"
+      >
+        {row.username}
+      </Link>
       {row.isPro ? (
         <span className="shrink-0 rounded-apex-sm bg-apex-surface-container-highest px-1.5 py-0.5 font-apex-headline text-[10px] font-semibold uppercase tracking-wide text-apex-on-surface-variant">
           Pro
@@ -152,11 +176,11 @@ export default function ChallengeDetailLeaderboard({
             {data.items.map((row) => (
               <li
                 key={`${row.userId}-${row.rank}`}
-                className="rounded-xl border border-apex-outline-variant/15 bg-apex-surface-container-low p-3"
+                className="rounded-xl border border-apex-outline-variant/15 bg-apex-surface-container-low p-4"
               >
-                <div className="mb-2 flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-apex-surface-container-highest font-apex-headline text-xs font-semibold tabular-nums text-apex-on-surface">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-apex-surface-container-highest font-apex-headline text-xs font-semibold tabular-nums text-apex-on-surface">
                       {row.rank}
                     </span>
                     <span className="min-w-0 font-apex-body text-sm font-medium text-apex-on-surface">
@@ -167,13 +191,13 @@ export default function ChallengeDetailLeaderboard({
                     {formatLapMs(row.bestLapMs)}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <div className="mt-4 grid grid-cols-3 gap-3 border-t border-apex-outline-variant/10 pt-3 text-[11px]">
                   <div>
                     <p className="font-apex-body uppercase tracking-wider text-apex-on-surface-variant">
                       Date
                     </p>
                     <p className="mt-0.5 font-apex-body text-apex-on-surface">
-                      {formatChallengeDateTime(row.bestLapAt)}
+                      <LeaderboardDate iso={row.bestLapAt} />
                     </p>
                   </div>
                   <div>

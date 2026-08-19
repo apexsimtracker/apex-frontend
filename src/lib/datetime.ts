@@ -26,6 +26,31 @@ export function formatChallengeDateTime(
   });
 }
 
+/**
+ * Split a UTC ISO instant into a concise local date + time for display, e.g.
+ * `{ date: "18 Aug 2026", time: "3:00 PM" }`. Returns null for missing/invalid
+ * input so callers can render their own placeholder. Drops the seconds and
+ * timezone that `formatChallengeDateTime` includes, for cleaner detail panels.
+ */
+export function formatChallengeDateParts(
+  iso: string | null | undefined,
+): { date: string; time: string } | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return {
+    date: d.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    time: d.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+  };
+}
+
 const COUNTDOWN_SECONDS_THRESHOLD = 3600;
 
 /**

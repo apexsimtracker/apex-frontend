@@ -142,7 +142,7 @@ export default function AppLoadingScreen({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center overflow-hidden bg-background",
+        "apex-theme relative flex flex-col items-center justify-center overflow-hidden bg-apex-background",
         isSplash
           ? "fixed inset-0 z-[200] min-h-screen"
           : "flex min-h-[40vh] flex-1 py-16",

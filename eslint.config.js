@@ -18,6 +18,9 @@ export default tseslint.config(
       "**/dist/**",
       "**/coverage/**",
       "**/.pnpm-store/**",
+      // Capacitor native projects, including the copy of dist/ that `cap sync` places inside them.
+      "ios/**",
+      "android/**",
     ],
   },
   {

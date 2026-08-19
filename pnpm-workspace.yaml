@@ -1,2 +1,6 @@
+onlyBuiltDependencies:
+  # Native binary needed by @capacitor/assets to generate app icons / splash screens.
+  - sharp
+
 ignoredBuiltDependencies:
   - esbuild

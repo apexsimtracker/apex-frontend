@@ -170,9 +170,52 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 - `<html>` also has `class="dark"` from `App.tsx` (affects shadcn tokens).
 - Brand accent constant: `BRAND_RED` in `src/lib/appConfig.ts`.
 
-### Android dev (Capacitor)
+### iOS / Android (Capacitor)
 
-`pnpm dev:android` and `pnpm cap:run:android` use [`scripts/run-android.mjs`](scripts/run-android.mjs).
+Native projects live under `ios/` and `android/` (generated via `pnpm cap:add`). CocoaPods needs UTF-8 — scripts set `LANG=en_US.UTF-8`.
+
+**iOS Simulator (production API):**
+
+```bash
+pnpm build:mobile          # vite production build + cap sync
+pnpm cap:run:ios           # deploy to iPhone 15 Pro simulator
+# or: pnpm exec cap run ios --target-name "<Available iPhone>"
+xcrun simctl list devices available   # list simulator names if target missing
+```
+
+**iOS Simulator (staging API — default for manual testing):**
+
+```bash
+pnpm build:mobile:staging  # vite build --mode staging + cap sync → https://staging-y01y.onrender.com
+pnpm cap:run:ios
+```
+
+Prefer staging over `build:mobile` so manual testing never writes to production data.
+
+**iOS live reload (instant frontend edits):**
+
+```bash
+pnpm dev:ios               # vite --mode staging on :8080 + cap run ios -l --host localhost
+pnpm dev:ios:local         # same, but --mode mobile → local Fastify on :10000
+```
+
+[`scripts/run-ios.mjs`](scripts/run-ios.mjs) owns the Vite process because Capacitor's `-l` flag only rewrites `server.url` in the native config — it never starts a dev server. `--host localhost` is required: the simulator shares the Mac's network and the API's CORS allowlist covers `http://localhost:8080` but not a LAN IP.
+
+JS/CSS edits hot-reload. Changes to `capacitor.config.ts`, plugins, or native assets still need `pnpm build:mobile:staging`. The script forwards Ctrl+C (and SIGTERM) to Capacitor so it restores `server.url` in `ios/App/App/capacitor.config.json`; after a SIGKILL, that file can be left pointing at the dev server, and `pnpm build:mobile:staging` regenerates it.
+
+Only `:8080` and `:5173` are in the staging CORS allowlist, so `--port` is limited to those when running against staging. If a dev server is already listening on the port, the script reuses it — that server's own Vite mode then decides which API tier the app talks to.
+
+**Baked local-API build:**
+
+```bash
+pnpm build:mobile:dev      # uses .env.mobile → http://127.0.0.1:10000 (needs local Fastify)
+```
+
+`ios/App/App/Info.plist` sets `NSAllowsLocalNetworking` so local/live-reload builds can reach the host Mac from the simulator.
+
+**App icon / splash:** sources live in `assets/` (`logo.png`, `logo-dark.png`, 1024x1024 opaque). Regenerate native assets for both platforms with `pnpm assets:generate` (`@capacitor/assets`; needs `sharp` built — see `onlyBuiltDependencies` in `pnpm-workspace.yaml`). iOS caches home-screen icons, so run `xcrun simctl uninstall booted com.apexsimtracker.app` before reinstalling to see a new icon.
+
+**Android:** `pnpm dev:android` and `pnpm cap:run:android` use [`scripts/run-android.mjs`](scripts/run-android.mjs).
 
 Optional env overrides:
 

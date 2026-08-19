@@ -89,12 +89,12 @@ export default function EditActivity() {
         noindex
       />
       <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-8 px-6 py-8">
-        <div>
+        <div className="mx-auto w-full max-w-4xl">
           <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
             Edit session
           </h1>
           <p className="mt-2 font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
-            Update sim, track, results, lap times, and notes for this session.
+            Update sim, track, results, and lap times for this session.
           </p>
         </div>
 

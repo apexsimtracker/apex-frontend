@@ -5,8 +5,13 @@ import {
   useFieldArray,
   useWatch,
 } from "react-hook-form";
-import type { ControllerRenderProps, FieldPath } from "react-hook-form";
+import type {
+  ControllerRenderProps,
+  FieldErrors,
+  FieldPath,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Loader2, AlertCircle, Lock, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,6 +20,7 @@ import {
   type ManualActivitySim,
 } from "@/lib/manualActivityData";
 import { parseStrictManualLapTimeToMs, formatMsToLapTime } from "@/lib/utils";
+import { stripLapTimeChars, wholeNumberInputProps } from "@/lib/inputGuards";
 import { useCatalogs } from "@/hooks/useCatalogs";
 import {
   useRecentManualSessions,
@@ -30,7 +36,11 @@ import {
   FormMessage,
   FormRootMessage,
 } from "@/components/ui/form";
-import type { WithRootError } from "@/lib/formWithRootError";
+import {
+  fieldArrayErrorMessage,
+  fieldErrorMessage,
+  type WithRootError,
+} from "@/lib/formWithRootError";
 import {
   effectiveManualLapMaxForForm,
   MANUAL_ACTIVITY_POSITION_MAX,
@@ -85,10 +95,19 @@ const CELL_INPUT_CLASS =
   "manual-lap-cell !m-0 !h-auto !min-h-0 !w-full !min-w-0 !appearance-none !border-0 !bg-transparent !p-0 text-center font-mono text-xs !shadow-none !outline-none !ring-0 [color-scheme:dark] placeholder:text-apex-outline-variant/60 focus:!border-0 focus:!bg-transparent focus:!shadow-none focus:!outline-none focus:!ring-0 focus-visible:!border-0 focus-visible:!bg-transparent focus-visible:!shadow-none focus-visible:!outline-none focus-visible:!ring-0 disabled:opacity-50";
 
 const CELL_SECTOR_CLASS = "manual-lap-cell-sector text-apex-on-surface-variant";
-const CELL_TOTAL_CLASS = "manual-lap-cell-total text-apex-primary";
+
+/** Total colour tracks the entered value: neutral until typed, green once it parses. */
+const CELL_TOTAL_EMPTY_CLASS =
+  "manual-lap-cell-total-empty text-apex-on-surface-variant/60";
+const CELL_TOTAL_VALID_CLASS = "manual-lap-cell-total-valid text-apex-success";
 
 type LapFieldPath = FieldPath<WithRootError<ManualActivityFormValues>>;
 
+/**
+ * Always an `<input>` — an earlier version swapped in a `<button>` once the cell
+ * had a value, which unmounted the input mid-edit and dropped focus whenever the
+ * value changed from outside (sector auto-fill, re-validation).
+ */
 function LapTableCellField({
   field,
   displayClassName,
@@ -97,6 +116,7 @@ function LapTableCellField({
   disabled,
   align = "center",
   invalid = false,
+  onUserChange,
 }: {
   field: ControllerRenderProps<
     WithRootError<ManualActivityFormValues>,
@@ -108,44 +128,13 @@ function LapTableCellField({
   disabled?: boolean;
   align?: "center" | "right";
   invalid?: boolean;
+  onUserChange?: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const value = String(field.value ?? "");
-  const hasValue = value.trim().length > 0;
-  const showInput = editing || !hasValue;
-
-  if (!showInput) {
-    return (
-      <button
-        type="button"
-        disabled={disabled}
-        aria-label={ariaLabel}
-        className={cn(
-          "w-full border-0 bg-transparent p-0 font-mono text-xs disabled:cursor-not-allowed disabled:text-apex-on-surface-variant/40",
-          align === "right" ? "text-right font-bold" : "text-center",
-          invalid ? "manual-lap-cell-invalid text-apex-error" : displayClassName,
-        )}
-        onClick={() => {
-          setEditing(true);
-          requestAnimationFrame(() => {
-            inputRef.current?.focus();
-            inputRef.current?.select();
-          });
-        }}
-      >
-        {value}
-      </button>
-    );
-  }
 
   return (
     <input
       {...field}
-      ref={(el) => {
-        field.ref(el);
-        inputRef.current = el;
-      }}
       value={value}
       type="text"
       inputMode="decimal"
@@ -160,21 +149,24 @@ function LapTableCellField({
         align === "right" && "text-right font-bold",
         invalid ? "manual-lap-cell-invalid text-apex-error" : displayClassName,
       )}
-      onFocus={() => setEditing(true)}
-      onBlur={() => {
-        field.onBlur();
-        setEditing(false);
+      onChange={(e) => {
+        const cleaned = stripLapTimeChars(e.target.value);
+        if (cleaned !== e.target.value) e.target.value = cleaned;
+        field.onChange(e);
+        onUserChange?.();
       }}
     />
   );
 }
 
 function FormBlock({
+  id,
   title,
   description,
   children,
   className,
 }: {
+  id?: string;
   title: string;
   description?: string;
   children: React.ReactNode;
@@ -182,6 +174,7 @@ function FormBlock({
 }) {
   return (
     <section
+      id={id}
       className={cn(
         "rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5",
         className,
@@ -198,6 +191,94 @@ function FormBlock({
       <div className="space-y-4">{children}</div>
     </section>
   );
+}
+
+/** Below Tailwind's `sm`, the six-column lap table squashes sector and total times. */
+function useStackedLapLayout(): boolean {
+  const [stacked, setStacked] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 639px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setStacked(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return stacked;
+}
+
+type FormIssue = { name: string; message: string };
+
+/** Reading order, so the toast quotes and scrolls to the topmost problem. */
+const FIELD_ORDER = [
+  "sim",
+  "trackId",
+  "carId",
+  "manualSessionKind",
+  "position",
+  "totalDrivers",
+  "qualifyingPosition",
+  "laps",
+  "caption",
+] as const;
+
+/** Scroll targets for controls whose element id differs from the field name. */
+const FIELD_SCROLL_TARGET_ID: Record<string, string> = {
+  sim: "sim",
+  trackId: "track",
+  carId: "car",
+  manualSessionKind: "manual-session-details",
+  laps: "manual-lap-history",
+};
+
+/**
+ * Flatten react-hook-form errors into ordered, human-readable issues. `laps` can
+ * hold both a root message and per-row cell errors, so both shapes are read.
+ */
+function collectFormIssues(
+  errors: FieldErrors<WithRootError<ManualActivityFormValues>>,
+): FormIssue[] {
+  const issues: FormIssue[] = [];
+
+  for (const name of FIELD_ORDER) {
+    if (name !== "laps") {
+      const message = fieldErrorMessage(errors[name]);
+      if (message) issues.push({ name, message });
+      continue;
+    }
+
+    const lapErrors = errors.laps as unknown;
+    if (!lapErrors || typeof lapErrors !== "object") continue;
+
+    const rootMessage = fieldArrayErrorMessage(lapErrors);
+    if (rootMessage) issues.push({ name: "laps", message: rootMessage });
+
+    for (const [key, rowError] of Object.entries(
+      lapErrors as Record<string, unknown>,
+    )) {
+      const index = Number(key);
+      if (!Number.isInteger(index) || !rowError || typeof rowError !== "object")
+        continue;
+      for (const cell of ["lapTime", "s1", "s2", "s3"] as const) {
+        const message = fieldErrorMessage(
+          (rowError as Record<string, unknown>)[cell],
+        );
+        if (message) {
+          issues.push({
+            name: `laps.${index}.${cell}`,
+            message: `Lap ${index + 1}: ${message}`,
+          });
+        }
+      }
+    }
+  }
+
+  return issues;
 }
 
 // Duplicated verbatim from V1 ManualActivityForm (pure catalog-token resolvers).
@@ -299,7 +380,6 @@ function buildDefaults(
         ? String(initial.qualifyingPosition)
         : "",
     laps,
-    notes: initial?.notes ?? "",
     caption: initial?.caption ?? "",
     conditions:
       initial?.conditions === "DRY" ||
@@ -312,7 +392,6 @@ function buildDefaults(
 
 interface ManualActivityFormProps {
   initialData?: ManualActivityEditInitialData;
-  prefilledFromPrevious?: boolean;
   hideRecentSessions?: boolean;
   onSubmit: (data: ManualActivityRequest) => Promise<void>;
   submitLabel: string;
@@ -323,7 +402,6 @@ interface ManualActivityFormProps {
 
 export default function ManualActivityForm({
   initialData,
-  prefilledFromPrevious = false,
   hideRecentSessions = false,
   onSubmit,
   submitLabel,
@@ -332,6 +410,8 @@ export default function ManualActivityForm({
   errorMessage,
 }: ManualActivityFormProps) {
   const telemetryMinLapRows = initialData?.telemetryMinLapRows ?? null;
+  /** Uploaded/agent sessions own their lap rows; only manual entries add or drop laps. */
+  const lapRowsLocked = initialData?.lapRowsLocked === true;
   const lapsIsOutLap = initialData?.lapsIsOutLap ?? null;
   const lapsCanEditOutLap = initialData?.lapsCanEditOutLap ?? null;
   const activitySchema = useMemo(
@@ -359,76 +439,120 @@ export default function ManualActivityForm({
   });
 
   const formState = useFormState({ control: form.control });
+  const stackedLapLayout = useStackedLapLayout();
 
   const sim = form.watch("sim") as ManualActivitySim | "";
   const sessionKind = form.watch("manualSessionKind");
   const conditions = form.watch("conditions");
   const lapsWatch = useWatch({ control: form.control, name: "laps" });
 
-  /** Indices whose Total was last written by sector auto-calc (cleared when sectors go invalid). */
-  const autoFilledLapTotalsRef = useRef<Set<number>>(new Set());
+  const formRef = useRef<HTMLFormElement | null>(null);
 
-  // Form reset from challenge/prefill must not leave stale auto-fill marks that would wipe lapTime.
+  /** Rows whose Total the user typed by hand — sector auto-fill leaves these alone. */
+  const userEditedTotalsRef = useRef<Set<number>>(new Set());
+  /** Rows whose Total this form filled in, and may therefore clear again. */
+  const autoFilledTotalsRef = useRef<Set<number>>(new Set());
+
+  // A reset from challenge/prefill must not leave stale marks against new rows.
   useEffect(() => {
-    autoFilledLapTotalsRef.current = new Set();
+    userEditedTotalsRef.current = new Set();
+    autoFilledTotalsRef.current = new Set();
   }, [initialData]);
 
-  useEffect(() => {
-    const rows = lapsWatch ?? [];
-    const autoFilled = autoFilledLapTotalsRef.current;
+  /**
+   * Keep Total in step with the three sectors as they are typed. Only ever
+   * touches a Total this form filled in, so a hand-typed or prefilled value
+   * survives until the sectors themselves produce a complete lap.
+   */
+  function syncTotalFromSectors(index: number) {
+    if (userEditedTotalsRef.current.has(index)) return;
+    const row = form.getValues(`laps.${index}`);
+    if (!row) return;
 
-    // Drop stale indices after lap remove / length shrink.
-    for (const idx of [...autoFilled]) {
-      if (idx >= rows.length) autoFilled.delete(idx);
-    }
+    const s1Ms = parseSectorTimeToMs(row.s1 ?? "");
+    const s2Ms = parseSectorTimeToMs(row.s2 ?? "");
+    const s3Ms = parseSectorTimeToMs(row.s3 ?? "");
+    const current = row.lapTime ?? "";
+    const complete = s1Ms != null && s2Ms != null && s3Ms != null;
 
-    rows.forEach((row, index) => {
-      const s1Ms = parseSectorTimeToMs(row?.s1 ?? "");
-      const s2Ms = parseSectorTimeToMs(row?.s2 ?? "");
-      const s3Ms = parseSectorTimeToMs(row?.s3 ?? "");
-      const currentTotal = row?.lapTime ?? "";
+    if (!complete && !autoFilledTotalsRef.current.has(index)) return;
 
-      if (s1Ms != null && s2Ms != null && s3Ms != null) {
-        const formatted = formatMsToLapTime(s1Ms + s2Ms + s3Ms);
-        autoFilled.add(index);
-        if (currentTotal !== formatted) {
-          form.setValue(`laps.${index}.lapTime`, formatted, {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
-        }
-        return;
-      }
+    const next = complete ? formatMsToLapTime(s1Ms + s2Ms + s3Ms) : "";
+    if (complete) autoFilledTotalsRef.current.add(index);
+    else autoFilledTotalsRef.current.delete(index);
 
-      if (autoFilled.has(index)) {
-        autoFilled.delete(index);
-        if (currentTotal !== "") {
-          form.setValue(`laps.${index}.lapTime`, "", {
-            shouldDirty: true,
-            shouldValidate: false,
-          });
-        }
-      }
+    if (current === next) return;
+    form.setValue(`laps.${index}.lapTime`, next, {
+      shouldDirty: true,
+      shouldValidate: form.formState.isSubmitted,
     });
-  }, [lapsWatch, form]);
+  }
+
+  function revalidateResultFields() {
+    if (!form.formState.isSubmitted) return;
+    void form.trigger(["position", "totalDrivers", "qualifyingPosition"]);
+  }
+
+  function scrollToField(name: string) {
+    const root = formRef.current;
+    if (!root) return;
+    const targetId = FIELD_SCROLL_TARGET_ID[name];
+    const el =
+      root.querySelector<HTMLElement>(`[name="${name}"]`) ??
+      (targetId ? root.querySelector<HTMLElement>(`#${targetId}`) : null) ??
+      (targetId ? null : root.querySelector<HTMLElement>(`#${name}`));
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLSelectElement ||
+      el instanceof HTMLTextAreaElement
+    ) {
+      el.focus({ preventScroll: true });
+    }
+  }
+
+  /** Failed submits are otherwise silent when the offending field is off-screen. */
+  function handleInvalid(
+    errors: FieldErrors<WithRootError<ManualActivityFormValues>>,
+  ) {
+    const issues = collectFormIssues(errors);
+    const first = issues[0];
+    const extra = issues.length - 1;
+    toast.error(
+      issues.length > 1
+        ? `${issues.length} things need fixing before saving`
+        : "One thing needs fixing before saving",
+      {
+        description: first
+          ? extra > 0
+            ? `${first.message} (and ${extra} more)`
+            : first.message
+          : undefined,
+      },
+    );
+    if (first) scrollToField(first.name);
+  }
 
   const maxLapsForSim = effectiveManualLapMaxForForm(
     sim || "",
     telemetryMinLapRows ?? null,
   );
-  const canAddLap =
-    fields.length < maxLapsForSim && !telemetryMinLapRows;
-  const canRemoveLap =
-    fields.length > 1 && !telemetryMinLapRows;
+  const canAddLap = fields.length < maxLapsForSim && !lapRowsLocked;
+  const canRemoveLap = fields.length > 1 && !lapRowsLocked;
 
   function removeLap(index: number) {
-    const prev = autoFilledLapTotalsRef.current;
-    const next = new Set<number>();
-    for (const i of prev) {
-      if (i < index) next.add(i);
-      else if (i > index) next.add(i - 1);
-    }
-    autoFilledLapTotalsRef.current = next;
+    const shiftPastRemoved = (marks: Set<number>) => {
+      const next = new Set<number>();
+      for (const i of marks) {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1);
+      }
+      return next;
+    };
+    userEditedTotalsRef.current = shiftPastRemoved(userEditedTotalsRef.current);
+    autoFilledTotalsRef.current = shiftPastRemoved(autoFilledTotalsRef.current);
     remove(index);
   }
 
@@ -503,14 +627,6 @@ export default function ManualActivityForm({
         } => row != null,
       );
 
-    if (lapsOut.length === 0) {
-      form.setError("laps", {
-        type: "manual",
-        message: "At least one valid lap time is required",
-      });
-      return;
-    }
-
     const kind = values.manualSessionKind.trim().toUpperCase() as
       | "PRACTICE"
       | "QUALIFY"
@@ -531,7 +647,6 @@ export default function ManualActivityForm({
           ? qualiNum
           : undefined,
       laps: lapsOut,
-      notes: values.notes.trim() || undefined,
       caption: values.caption.trim(),
       conditions: values.conditions,
     });
@@ -539,26 +654,164 @@ export default function ManualActivityForm({
 
   const showRecent = !recentLoading && recentItems.length > 0;
   const showRecentSection =
-    !hideRecentSessions &&
-    (recentLoading || showRecent || prefilledFromPrevious);
+    !hideRecentSessions && (recentLoading || showRecent);
 
-  const lapsRootError = form.getFieldState("laps", formState).error;
-  const lapsRootMessage =
-    lapsRootError && typeof lapsRootError.message === "string"
-      ? lapsRootError.message
-      : null;
+  const lapRows = fields.map((fieldItem, index) => {
+    const row = lapsWatch?.[index];
+    const isOutLap = lapsIsOutLap?.[index] === true;
+    const lockedOutLap = isOutLap && lapsCanEditOutLap?.[index] !== true;
+    const rawTotal = (row?.lapTime ?? "").trim();
+    const totalMs = rawTotal ? parseStrictManualLapTimeToMs(rawTotal) : null;
+
+    return {
+      key: fieldItem.id,
+      index,
+      isOutLap,
+      lockedOutLap,
+      totalInvalid: !lockedOutLap && rawTotal !== "" && totalMs === null,
+      totalValid: !lockedOutLap && totalMs !== null,
+      sectors: (["s1", "s2", "s3"] as const).map((name) => {
+        const raw = (row?.[name] ?? "").trim();
+        return {
+          name,
+          invalid: !lockedOutLap && raw !== "" && !isValidSectorTimeFormat(raw),
+        };
+      }),
+    };
+  });
+
+  function renderOutLapBadge(isOutLap: boolean, lockedOutLap: boolean) {
+    if (!isOutLap) return null;
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 font-apex-body text-[9px] font-semibold uppercase tracking-wider",
+          lockedOutLap
+            ? "text-apex-on-surface-variant/60"
+            : "text-apex-on-surface-variant",
+        )}
+        title={
+          lockedOutLap
+            ? "Locked: sectors and driving telemetry are incomplete"
+            : "Editable: sectors and driving telemetry are available"
+        }
+      >
+        {lockedOutLap ? <Lock className="size-2.5" aria-hidden /> : null}
+        {lockedOutLap ? "Out · Locked" : "Out"}
+      </span>
+    );
+  }
+
+  function renderSectorField(
+    index: number,
+    sector: "s1" | "s2" | "s3",
+    options: { disabled: boolean; invalid: boolean },
+  ) {
+    return (
+      <FormField
+        control={form.control}
+        name={`laps.${index}.${sector}`}
+        render={({ field }) => (
+          <LapTableCellField
+            field={field}
+            displayClassName={CELL_SECTOR_CLASS}
+            placeholder="--.---"
+            ariaLabel={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
+            disabled={options.disabled}
+            invalid={options.invalid}
+            onUserChange={() => syncTotalFromSectors(index)}
+          />
+        )}
+      />
+    );
+  }
+
+  function renderTotalField(
+    index: number,
+    options: {
+      disabled: boolean;
+      invalid: boolean;
+      valid: boolean;
+      align?: "center" | "right";
+    },
+  ) {
+    return (
+      <FormField
+        control={form.control}
+        name={`laps.${index}.lapTime`}
+        render={({ field }) => (
+          <LapTableCellField
+            field={field}
+            displayClassName={
+              options.valid ? CELL_TOTAL_VALID_CLASS : CELL_TOTAL_EMPTY_CLASS
+            }
+            placeholder="0:00.000"
+            ariaLabel={`Lap ${index + 1} total time`}
+            disabled={options.disabled}
+            align={options.align ?? "right"}
+            invalid={options.invalid}
+            onUserChange={() => {
+              // Emptying Total by hand hands control back to the sectors.
+              const raw = String(
+                form.getValues(`laps.${index}.lapTime`) ?? "",
+              ).trim();
+              if (raw) userEditedTotalsRef.current.add(index);
+              else userEditedTotalsRef.current.delete(index);
+            }}
+          />
+        )}
+      />
+    );
+  }
+
+  function renderAddLapButton(className: string) {
+    if (lapRowsLocked) return null;
+    return (
+      <button
+        type="button"
+        disabled={isSubmitting || !canAddLap}
+        onClick={() => append({ lapTime: "", s1: "", s2: "", s3: "" })}
+        className={cn(
+          className,
+          "font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant transition-colors hover:text-apex-on-surface disabled:opacity-40",
+        )}
+      >
+        <Plus className="size-4" aria-hidden />
+        Add lap
+      </button>
+    );
+  }
+
+  const lapHistoryDescription = lapRowsLocked
+    ? lapsIsOutLap?.some(Boolean)
+      ? "These laps come from the recorded session, so rows cannot be added or removed. Out laps are editable only when all sectors and driving telemetry are available."
+      : "These laps come from the recorded session, so rows cannot be added or removed. You can still correct the recorded times."
+    : "Add at least one valid lap time. Sector splits are optional.";
+
+  const lapsRootMessage = fieldArrayErrorMessage(formState.errors.laps);
+
+  // The position/grid-size rule is cross-field but attaches to `position` only,
+  // so both inputs are re-checked together — otherwise clearing one input leaves
+  // the other's message stranded.
+  const resultMessages = Array.from(
+    new Set(
+      [
+        fieldErrorMessage(form.getFieldState("position", formState).error),
+        fieldErrorMessage(form.getFieldState("totalDrivers", formState).error),
+      ].filter((message): message is string => message != null),
+    ),
+  );
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleValid)} className="space-y-5">
+      <form
+        ref={formRef}
+        onSubmit={form.handleSubmit(handleValid, handleInvalid)}
+        className="space-y-5"
+      >
         {showRecentSection && (
           <section className="mb-2">
             <h2 className={SECTION_LABEL_CLASS}>Recent Combos</h2>
-            {prefilledFromPrevious && (
-              <p className="mt-3 rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container-high/50 px-3 py-2 text-xs text-apex-on-surface-variant">
-                Pre-filled from your last log on this page.
-              </p>
-            )}
             {recentLoading && (
               <p className="mt-3 flex items-center gap-2 text-xs text-apex-on-surface-variant">
                 <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -585,6 +838,7 @@ export default function ManualActivityForm({
         )}
 
         <FormBlock
+          id="manual-session-details"
           title="Session details"
           description="Choose your sim, track, and session type."
         >
@@ -819,6 +1073,8 @@ export default function ManualActivityForm({
                 ({sessionKind === "PRACTICE" ? "not used" : "optional"})
               </span>
             </span>
+            {/* Errors render below the grid, not inside a cell, so a message
+                appearing never changes a row's height and shifts the inputs. */}
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.25fr)] sm:items-center sm:gap-2">
               <FormField
                 control={form.control}
@@ -835,10 +1091,14 @@ export default function ManualActivityForm({
                         disabled={isSubmitting || sessionKind === "PRACTICE"}
                         placeholder="7"
                         className={INPUT_CLASS}
+                        {...wholeNumberInputProps}
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          revalidateResultFields();
+                        }}
                       />
                     </FormControl>
-                    <FormMessage className="text-xs text-apex-error" />
                   </FormItem>
                 )}
               />
@@ -861,10 +1121,14 @@ export default function ManualActivityForm({
                           disabled={isSubmitting || sessionKind === "PRACTICE"}
                           placeholder="20"
                           className={INPUT_CLASS}
+                          {...wholeNumberInputProps}
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            revalidateResultFields();
+                          }}
                         />
                       </FormControl>
-                      <FormMessage className="text-xs text-apex-error" />
                     </FormItem>
                   )}
                 />
@@ -873,6 +1137,15 @@ export default function ManualActivityForm({
                 </span>
               </div>
             </div>
+            {resultMessages.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {resultMessages.map((message) => (
+                  <p key={message} className="text-xs text-apex-error">
+                    {message}
+                  </p>
+                ))}
+              </div>
+            )}
             <p className="mt-2 text-[11px] text-apex-on-surface-variant/60">
               {sessionKind === "PRACTICE"
                 ? "Practice sessions do not use finishing position."
@@ -897,6 +1170,7 @@ export default function ManualActivityForm({
                   <FormItem>
                     <FormControl>
                       <input
+                        id="qualifyingPosition"
                         type="number"
                         min={1}
                         max={MANUAL_ACTIVITY_POSITION_MAX}
@@ -904,7 +1178,12 @@ export default function ManualActivityForm({
                         disabled={isSubmitting}
                         placeholder="e.g. 3"
                         className={cn(INPUT_CLASS, "max-w-xs")}
+                        {...wholeNumberInputProps}
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          revalidateResultFields();
+                        }}
                       />
                     </FormControl>
                     <FormMessage className="text-xs text-apex-error" />
@@ -919,127 +1198,136 @@ export default function ManualActivityForm({
         </FormBlock>
 
         <FormBlock
+          id="manual-lap-history"
           title="Lap history"
-          description={
-            lapsIsOutLap?.some(Boolean)
-              ? "Out laps are editable only when all sectors and driving telemetry are available. Locked rows preserve their recorded data."
-              : "Add at least one valid lap time. Sector splits are optional."
-          }
+          description={lapHistoryDescription}
         >
-          {/* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */}
-          <div className="overflow-hidden rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
-            <table className="w-full table-fixed border-collapse text-left">
-              <thead className="border-b border-apex-outline-variant/30 bg-white/5">
-                <tr className="font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
-                  <th className="w-[13%] px-2 py-2.5">Lap</th>
-                  <th className="px-1 py-2.5 text-center">
-                    S1 <span className="font-normal opacity-50">(opt)</span>
-                  </th>
-                  <th className="px-1 py-2.5 text-center">
-                    S2 <span className="font-normal opacity-50">(opt)</span>
-                  </th>
-                  <th className="px-1 py-2.5 text-center">
-                    S3 <span className="font-normal opacity-50">(opt)</span>
-                  </th>
-                  <th className="px-2 py-2.5 text-right">Total</th>
-                  {canRemoveLap && <th className="w-[9%] px-1 py-2.5" />}
-                </tr>
-              </thead>
-              <tbody>
-                {fields.map((fieldItem, index) => {
-                  const row = lapsWatch?.[index];
-                  const isOutLap = lapsIsOutLap?.[index] === true;
-                  const canEditOutLap =
-                    isOutLap && lapsCanEditOutLap?.[index] === true;
-                  const lockedOutLap = isOutLap && !canEditOutLap;
-                  const rawTotal = row?.lapTime ?? "";
-                  const totalInvalid =
-                    !lockedOutLap &&
-                    rawTotal.trim() !== "" &&
-                    parseStrictManualLapTimeToMs(rawTotal) === null;
-                  return (
+          {stackedLapLayout ? (
+            // Phone: one card per lap. The six-column table cannot fit sector and
+            // total times side by side at this width without squashing them.
+            <div className="space-y-3">
+              {lapRows.map((lap) => (
+                <div
+                  key={lap.key}
+                  className={cn(
+                    "rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container p-3",
+                    lap.lockedOutLap &&
+                      "border-l-2 border-l-apex-outline-variant/60 bg-apex-surface-container-high/70",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 font-apex-headline text-sm font-bold text-apex-on-surface">
+                      Lap {String(lap.index + 1).padStart(2, "0")}
+                      {renderOutLapBadge(lap.isOutLap, lap.lockedOutLap)}
+                    </span>
+                    {canRemoveLap && (
+                      <button
+                        type="button"
+                        disabled={isSubmitting || lap.lockedOutLap}
+                        onClick={() => removeLap(lap.index)}
+                        aria-label={`Remove lap ${lap.index + 1}`}
+                        className="p-1 text-apex-on-surface-variant transition-colors hover:text-apex-error disabled:opacity-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {lap.sectors.map((sector) => (
+                      <div
+                        key={sector.name}
+                        className="rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container-low px-2 py-1.5"
+                      >
+                        <span className="mb-1 block text-center font-apex-headline text-[9px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
+                          {sector.name.toUpperCase()}
+                        </span>
+                        {renderSectorField(lap.index, sector.name, {
+                          disabled: isSubmitting || lap.lockedOutLap,
+                          invalid: sector.invalid,
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-3 rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container-low px-2.5 py-2">
+                    <span className="shrink-0 font-apex-headline text-[9px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
+                      Total
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      {renderTotalField(lap.index, {
+                        disabled: isSubmitting || lap.lockedOutLap,
+                        invalid: lap.totalInvalid,
+                        valid: lap.totalValid,
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {renderAddLapButton(
+                "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-apex-outline-variant/40 py-3",
+              )}
+            </div>
+          ) : (
+            /* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */
+            <div className="overflow-hidden rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
+              <table className="w-full table-fixed border-collapse text-left">
+                <thead className="border-b border-apex-outline-variant/30 bg-white/5">
+                  <tr className="font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
+                    <th className="w-[13%] px-2 py-2.5">Lap</th>
+                    <th className="px-1 py-2.5 text-center">
+                      S1 <span className="font-normal opacity-50">(opt)</span>
+                    </th>
+                    <th className="px-1 py-2.5 text-center">
+                      S2 <span className="font-normal opacity-50">(opt)</span>
+                    </th>
+                    <th className="px-1 py-2.5 text-center">
+                      S3 <span className="font-normal opacity-50">(opt)</span>
+                    </th>
+                    <th className="px-2 py-2.5 text-right">Total</th>
+                    {canRemoveLap && <th className="w-[9%] px-1 py-2.5" />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lapRows.map((lap) => (
                     <tr
-                      key={fieldItem.id}
+                      key={lap.key}
                       className={
-                        lockedOutLap
+                        lap.lockedOutLap
                           ? "border-b border-l-2 border-b-apex-outline-variant/15 border-l-apex-outline-variant/60 bg-apex-surface-container-high/70 text-apex-on-surface-variant/50 last:border-b-0"
                           : "border-b border-apex-outline-variant/15 last:border-b-0"
                       }
                     >
                       <td className="p-3 align-middle font-apex-headline text-sm font-bold text-apex-on-surface">
                         <span className="inline-flex flex-col gap-0.5">
-                          {String(index + 1).padStart(2, "0")}
-                          {isOutLap ? (
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 font-apex-body text-[9px] font-semibold uppercase tracking-wider",
-                                lockedOutLap
-                                  ? "text-apex-on-surface-variant/60"
-                                  : "text-apex-on-surface-variant",
-                              )}
-                              title={
-                                lockedOutLap
-                                  ? "Locked: sectors and driving telemetry are incomplete"
-                                  : "Editable: sectors and driving telemetry are available"
-                              }
-                            >
-                              {lockedOutLap ? (
-                                <Lock className="size-2.5" aria-hidden />
-                              ) : null}
-                              {lockedOutLap ? "Out · Locked" : "Out"}
-                            </span>
-                          ) : null}
+                          {String(lap.index + 1).padStart(2, "0")}
+                          {renderOutLapBadge(lap.isOutLap, lap.lockedOutLap)}
                         </span>
                       </td>
-                      {(["s1", "s2", "s3"] as const).map((sector) => {
-                        const sRaw = row?.[sector] ?? "";
-                        const sInvalid =
-                          !lockedOutLap &&
-                          sRaw.trim() !== "" &&
-                          !isValidSectorTimeFormat(sRaw);
-                        return (
-                          <td key={sector} className="p-3 align-middle">
-                            <FormField
-                              control={form.control}
-                              name={`laps.${index}.${sector}`}
-                              render={({ field }) => (
-                                <LapTableCellField
-                                  field={field}
-                                  displayClassName={CELL_SECTOR_CLASS}
-                                  placeholder="--.---"
-                                  ariaLabel={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
-                                  disabled={isSubmitting || lockedOutLap}
-                                  invalid={sInvalid}
-                                />
-                              )}
-                            />
-                          </td>
-                        );
-                      })}
+                      {lap.sectors.map((sector) => (
+                        <td key={sector.name} className="p-3 align-middle">
+                          {renderSectorField(lap.index, sector.name, {
+                            disabled: isSubmitting || lap.lockedOutLap,
+                            invalid: sector.invalid,
+                          })}
+                        </td>
+                      ))}
                       <td className="p-3 align-middle">
-                        <FormField
-                          control={form.control}
-                          name={`laps.${index}.lapTime`}
-                          render={({ field }) => (
-                            <LapTableCellField
-                              field={field}
-                              displayClassName={CELL_TOTAL_CLASS}
-                              placeholder="0:00.000"
-                              ariaLabel={`Lap ${index + 1} total time`}
-                              disabled={isSubmitting || lockedOutLap}
-                              align="right"
-                              invalid={totalInvalid}
-                            />
-                          )}
-                        />
+                        {renderTotalField(lap.index, {
+                          disabled: isSubmitting || lap.lockedOutLap,
+                          invalid: lap.totalInvalid,
+                          valid: lap.totalValid,
+                          align: "right",
+                        })}
                       </td>
                       {canRemoveLap && (
                         <td className="p-1 text-center align-middle">
                           <button
                             type="button"
-                            disabled={isSubmitting || lockedOutLap}
-                            onClick={() => removeLap(index)}
-                            aria-label={`Remove lap ${index + 1}`}
+                            disabled={isSubmitting || lap.lockedOutLap}
+                            onClick={() => removeLap(lap.index)}
+                            aria-label={`Remove lap ${lap.index + 1}`}
                             className="text-apex-on-surface-variant transition-colors hover:text-apex-error disabled:opacity-50"
                           >
                             <Trash2 className="mx-auto size-3.5" />
@@ -1047,20 +1335,14 @@ export default function ManualActivityForm({
                         </td>
                       )}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <button
-              type="button"
-              disabled={isSubmitting || !canAddLap || Boolean(telemetryMinLapRows)}
-              onClick={() => append({ lapTime: "", s1: "", s2: "", s3: "" })}
-              className="flex w-full items-center justify-center gap-2 border-t border-apex-outline-variant/30 py-3 font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant transition-colors hover:text-apex-on-surface disabled:opacity-40"
-            >
-              <Plus className="size-4" aria-hidden />
-              Add lap
-            </button>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+              {renderAddLapButton(
+                "flex w-full items-center justify-center gap-2 border-t border-apex-outline-variant/30 py-3",
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-[11px] text-apex-on-surface-variant/60">
             <span>Format: m:ss.mmm or ss.mmm (e.g. 1:32.456)</span>
@@ -1117,34 +1399,6 @@ export default function ManualActivityForm({
                     placeholder="Share what made this session special…"
                     rows={2}
                     maxLength={280}
-                    className={appManualTextareaClassName}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage className="text-xs text-apex-error" />
-              </FormItem>
-            )}
-          />
-        </FormBlock>
-
-        <FormBlock
-          title="Notes"
-          description="Anything else to remember about this session."
-        >
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel htmlFor="notes" className="sr-only">
-                  Notes (optional)
-                </FormLabel>
-                <FormControl>
-                  <textarea
-                    id="notes"
-                    disabled={isSubmitting}
-                    placeholder="Setup changes, weather, incidents, strategy…"
-                    rows={4}
                     className={appManualTextareaClassName}
                     {...field}
                   />
