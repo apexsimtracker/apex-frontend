@@ -180,7 +180,6 @@ export default function AdminSessionDetail() {
     qualifyingPosition?: number;
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
-    notes?: string;
     caption?: string;
   }): Promise<void> {
     setEditFormError(null);
@@ -682,16 +681,6 @@ export default function AdminSessionDetail() {
                   </p>
                 )}
               </div>
-              {data.notes?.trim() && (
-                <div className="sm:col-span-2 lg:col-span-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Notes
-                  </h2>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
-                    {data.notes.trim()}
-                  </p>
-                </div>
-              )}
               {data.caption?.trim() && (
                 <div className="sm:col-span-2 lg:col-span-3">
                   <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

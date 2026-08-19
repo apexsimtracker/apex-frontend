@@ -26,7 +26,6 @@ import {
   type AgentOs,
   useDetectedAgentOs,
 } from "@/hooks/useDetectedAgentOs";
-import { usePlatform } from "@/hooks/usePlatform";
 import { cn } from "@/lib/utils";
 
 const AGENT_PATH = "/agent";
@@ -110,7 +109,6 @@ export default function Agent() {
   const { user, loading: authLoading } = useAuth();
   const isPro = useIsProUser();
   const { selectedOs, setSelectedOs } = useDetectedAgentOs();
-  const { isWeb } = usePlatform();
   const [isDownloading, setIsDownloading] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const showWelcomeBanner = searchParams.get("welcome") === "pro";
@@ -184,7 +182,7 @@ export default function Agent() {
         noindex
       />
       <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
-        <section className="mb-8">
+        <section className="mx-auto mb-8 w-full max-w-4xl">
           <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
             Apex Agent
           </h1>
@@ -334,42 +332,56 @@ export default function Agent() {
             </div>
           </section>
 
-          {isWeb ? (
-            <div className="mb-8">
-              {authLoading ? (
-                <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#121212] px-4 py-3 text-sm text-apex-on-surface-variant">
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Checking subscription…
-                </div>
-              ) : isPro ? (
+          <div className="mb-8">
+            {authLoading ? (
+              <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#121212] px-4 py-3 text-sm text-apex-on-surface-variant">
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Checking subscription…
+              </div>
+            ) : isPro ? (
+              <>
                 <button
                   type="button"
                   onClick={handleDownloadClick}
                   disabled={isDownloading}
+                  aria-label={`Download ${downloadFilename}`}
                   className={cn(
                     appPrimaryButtonClassName,
-                    "flex w-full items-center justify-center gap-2 rounded-lg",
+                    "flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 sm:px-8",
                   )}
                 >
                   {isDownloading ? (
                     <>
-                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      <Loader2
+                        className="size-4 shrink-0 animate-spin"
+                        aria-hidden
+                      />
                       Preparing download…
                     </>
                   ) : (
                     <>
-                      <Download className="size-4" aria-hidden />
-                      Download {downloadFilename}
+                      <Download className="size-4 shrink-0" aria-hidden />
+                      {/* The filename is too wide to sit inline on a phone; it
+                          moves to the caption below instead of wrapping. */}
+                      <span>Download</span>
+                      <span className="hidden sm:inline">
+                        {downloadFilename}
+                      </span>
                     </>
                   )}
                 </button>
-              ) : (
-                <AgentProUpgradeCard
-                  onUpgradeClick={() => setUpgradeModalOpen(true)}
-                />
-              )}
-            </div>
-          ) : null}
+                {!isDownloading && (
+                  <p className="mt-2 text-center font-apex-body text-xs text-apex-on-surface-variant sm:hidden">
+                    {downloadFilename}
+                  </p>
+                )}
+              </>
+            ) : (
+              <AgentProUpgradeCard
+                onUpgradeClick={() => setUpgradeModalOpen(true)}
+              />
+            )}
+          </div>
 
           <div className="flex justify-center">
             <Link

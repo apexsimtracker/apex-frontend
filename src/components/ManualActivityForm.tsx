@@ -24,7 +24,10 @@ import {
   FormMessage,
   FormRootMessage,
 } from "@/components/ui/form";
-import type { WithRootError } from "@/lib/formWithRootError";
+import {
+  fieldArrayErrorMessage,
+  type WithRootError,
+} from "@/lib/formWithRootError";
 import {
   createManualActivityFormSchema,
   effectiveManualLapMaxForForm,
@@ -33,6 +36,7 @@ import {
   type ManualActivityFormValues,
 } from "@/lib/validation/manualActivity";
 import { useManualActivityFormSync } from "@/features/manual-activity/hooks/useManualActivityFormSync";
+import { stripLapTimeChars, wholeNumberInputProps } from "@/lib/inputGuards";
 
 const INPUT_CLASS =
   "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 transition-colors focus:border-white/25 focus:bg-white/[0.07] focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50";
@@ -88,7 +92,6 @@ export type ManualActivityFormData = {
   totalDrivers: string;
   qualifyingPosition: string;
   laps: { lapTime: string }[];
-  notes: string;
   caption: string;
 };
 
@@ -112,20 +115,23 @@ export type ManualActivityInitialData = {
   bestLapMs?: number | null;
   /** Ordered lap times in ms (e.g. from session detail). */
   lapsMs?: number[] | null;
-  notes?: string | null;
   /** Public caption shown on activity/session cards. */
   caption?: string | null;
   /** Track weather conditions (edit prefill). */
   conditions?: "DRY" | "WET" | "MIXED" | null;
   /** Edit: floor for max lap rows when session has more laps than the manual-create cap. */
   telemetryMinLapRows?: number | null;
+  /**
+   * Edit: the lap list mirrors an uploaded or agent-recorded file, so rows cannot
+   * be added or removed. Hand-entered sessions stay editable.
+   */
+  lapRowsLocked?: boolean | null;
 };
 
 interface ManualActivityFormProps {
   /** Rich sectioned layout for the standalone /manual page. */
   layout?: "default" | "page";
   initialData?: ManualActivityInitialData;
-  prefilledFromPrevious?: boolean;
   onSubmit: (data: {
     sim: string;
     trackId: string;
@@ -136,7 +142,6 @@ interface ManualActivityFormProps {
     qualifyingPosition?: number;
     laps?: { lapTimeMs: number }[];
     bestLapMs?: number;
-    notes?: string;
     caption?: string;
   }) => Promise<void>;
   submitLabel: string;
@@ -232,7 +237,6 @@ function buildDefaults(
         ? String(initial.qualifyingPosition)
         : "",
     laps,
-    notes: initial?.notes ?? "",
     caption: initial?.caption ?? "",
   };
 }
@@ -240,7 +244,6 @@ function buildDefaults(
 export default function ManualActivityForm({
   layout = "default",
   initialData,
-  prefilledFromPrevious = false,
   onSubmit,
   submitLabel,
   submittingLabel,
@@ -340,14 +343,6 @@ export default function ManualActivityForm({
       .map((t) => parseStrictManualLapTimeToMs(t))
       .filter((ms): ms is number => ms != null);
 
-    if (lapTimesMs.length === 0) {
-      form.setError("laps", {
-        type: "manual",
-        message: "At least one valid lap time is required",
-      });
-      return;
-    }
-
     const lapsOut = lapTimesMs.map((lapTimeMs) => ({ lapTimeMs }));
     const bestLapMs = Math.min(...lapTimesMs);
 
@@ -371,13 +366,11 @@ export default function ManualActivityForm({
           ? qualiNum
           : undefined,
       ...(lapsOut.length > 0 ? { laps: lapsOut, bestLapMs } : {}),
-      notes: values.notes.trim() || undefined,
       caption: values.caption.trim(),
     });
   }
 
   const showRecent = !recentLoading && recentItems.length > 0;
-  const showQuickFill = showRecent || prefilledFromPrevious;
 
   return (
     <Form {...form}>
@@ -385,42 +378,35 @@ export default function ManualActivityForm({
         onSubmit={form.handleSubmit(handleValid)}
         className={layout === "page" ? "space-y-5" : "space-y-4"}
       >
-        {showQuickFill && (
+        {showRecent && (
           <FormBlock
             layout={layout}
             title="Quick fill"
             description="Reuse sim, track, and car from a recent session."
           >
-            {prefilledFromPrevious && (
-              <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-white/55">
-                Pre-filled from your last log on this page.
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-white/50">
+                <History className="size-3.5 shrink-0" aria-hidden />
+                Recent sessions
               </p>
-            )}
-            {showRecent && (
-              <div>
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-white/50">
-                  <History className="size-3.5 shrink-0" aria-hidden />
-                  Recent sessions
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {recentItems.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => handleRecentChipClick(item)}
-                      disabled={isSubmitting}
-                      title={getRecentChipLabel(item)}
-                      className={cn(
-                        "max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:opacity-50",
-                        layout === "page" && "sm:max-w-[14rem]",
-                      )}
-                    >
-                      {getRecentChipLabel(item)}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {recentItems.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleRecentChipClick(item)}
+                    disabled={isSubmitting}
+                    title={getRecentChipLabel(item)}
+                    className={cn(
+                      "max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white disabled:opacity-50",
+                      layout === "page" && "sm:max-w-[14rem]",
+                    )}
+                  >
+                    {getRecentChipLabel(item)}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
           </FormBlock>
         )}
 
@@ -667,6 +653,7 @@ export default function ManualActivityForm({
                         disabled={isSubmitting || sessionKind === "PRACTICE"}
                         placeholder="7"
                         className={INPUT_CLASS}
+                        {...wholeNumberInputProps}
                         {...field}
                       />
                     </FormControl>
@@ -693,6 +680,7 @@ export default function ManualActivityForm({
                           disabled={isSubmitting || sessionKind === "PRACTICE"}
                           placeholder="20"
                           className={INPUT_CLASS}
+                          {...wholeNumberInputProps}
                           {...field}
                         />
                       </FormControl>
@@ -734,6 +722,7 @@ export default function ManualActivityForm({
                         disabled={isSubmitting}
                         placeholder="e.g. 3"
                         className={cn(INPUT_CLASS, "max-w-xs")}
+                        {...wholeNumberInputProps}
                         {...field}
                       />
                     </FormControl>
@@ -809,6 +798,14 @@ export default function ManualActivityForm({
                                     : "border-white/10 focus:border-white/25 focus:bg-white/[0.07]",
                                 )}
                                 {...field}
+                                onChange={(e) => {
+                                  const cleaned = stripLapTimeChars(
+                                    e.target.value,
+                                  );
+                                  if (cleaned !== e.target.value)
+                                    e.target.value = cleaned;
+                                  field.onChange(e);
+                                }}
                               />
                             </FormControl>
                             <FormMessage className="text-xs text-red-500" />
@@ -843,8 +840,10 @@ export default function ManualActivityForm({
                 );
               })}
             </div>
-            {formErrors.laps && typeof formErrors.laps.message === "string" && (
-              <p className="text-xs text-red-500">{formErrors.laps.message}</p>
+            {fieldArrayErrorMessage(formErrors.laps) && (
+              <p className="text-xs text-red-500">
+                {fieldArrayErrorMessage(formErrors.laps)}
+              </p>
             )}
             <Button
               type="button"
@@ -883,38 +882,6 @@ export default function ManualActivityForm({
                     placeholder="Share what made this session special…"
                     rows={2}
                     maxLength={280}
-                    className={cn(INPUT_CLASS, "resize-none")}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage className="text-xs text-red-500" />
-              </FormItem>
-            )}
-          />
-        </FormBlock>
-
-        <FormBlock
-          layout={layout}
-          title="Notes"
-          description="Anything else to remember about this session."
-        >
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel
-                  htmlFor="notes"
-                  className={layout === "page" ? "sr-only" : "text-white/80"}
-                >
-                  Notes <span className="text-white/40">(optional)</span>
-                </FormLabel>
-                <FormControl>
-                  <textarea
-                    id="notes"
-                    disabled={isSubmitting}
-                    placeholder="Setup changes, weather, incidents, strategy…"
-                    rows={layout === "page" ? 4 : 3}
                     className={cn(INPUT_CLASS, "resize-none")}
                     {...field}
                   />

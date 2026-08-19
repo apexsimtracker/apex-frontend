@@ -33,7 +33,7 @@ export function AgentPlatformSelector({
           aria-pressed={selectedOs === os}
           onClick={() => onSelect(os)}
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded p-2 font-apex-body text-xs font-bold transition-colors sm:px-3 sm:text-sm",
+            "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded p-2 font-apex-body text-xs font-bold transition-colors max-[349px]:gap-1 max-[349px]:px-1 max-[349px]:text-[10px] sm:px-3 sm:text-sm",
             selectedOs === os
               ? "bg-apex-primary text-white"
               : "bg-apex-surface-container-low text-apex-on-surface-variant hover:text-apex-on-surface",

@@ -9,6 +9,7 @@ type RaceRow = {
   id: string;
   date: string;
   sim: string;
+  simKey?: string;
   car: string;
   track: string;
   position: number | null;
@@ -119,7 +120,7 @@ export function ProfileRaceHistory({
                     </div>
                   </td>
                   <td className="whitespace-nowrap py-4 align-middle">
-                    <SimBadge sim={race.sim} size="sm" />
+                    <SimBadge sim={race.simKey ?? race.sim} size="sm" />
                   </td>
                   <td className="whitespace-nowrap py-4 align-middle">
                     <span className="font-apex-body text-xs font-medium text-apex-on-surface">
@@ -176,7 +177,7 @@ export function ProfileRaceHistory({
                       Sim
                     </p>
                     <p className="font-apex-body font-medium text-apex-on-surface">
-                      {getSimShortName(race.sim)}
+                      {getSimShortName(race.simKey ?? race.sim)}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">

@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ArrowRight, Loader2, MoreHorizontal } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { wholeNumberInputProps } from "@/lib/inputGuards";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -670,6 +671,7 @@ function RequestsTab({ onRemove }: { onRemove: (t: RemoveTarget) => void }) {
               className="w-20 rounded-md border border-white/10 bg-card px-2 py-1.5 text-sm text-foreground"
               value={ageMinDays}
               onChange={(e) => setAgeMinDays(e.target.value)}
+              {...wholeNumberInputProps}
             />
           </label>
         </div>

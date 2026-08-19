@@ -47,9 +47,22 @@ function DeltaText({
         : "text-apex-error";
 
   return (
-    <span className={cn("text-xs font-bold", textColor)}>{displayText}</span>
+    <span
+      className={cn(
+        "whitespace-nowrap text-[11px] font-bold sm:text-xs",
+        textColor,
+      )}
+    >
+      {displayText}
+    </span>
   );
 }
+
+const STAT_LABEL =
+  "whitespace-nowrap text-center text-[10px] font-medium uppercase tracking-wider text-apex-on-surface-variant sm:text-[11px]";
+
+const STAT_VALUE =
+  "max-w-full truncate font-apex-headline text-xl font-extrabold tabular-nums leading-none text-apex-on-surface sm:text-3xl";
 
 function formatSessionDelta(delta: number): string {
   if (delta === 0) return "—";
@@ -96,12 +109,12 @@ export default function DashboardStatGrid({
             rounded="md"
           />
         </div>
-        <div className="grid grid-cols-3 gap-6 border-y border-apex-outline-variant/15 py-5">
+        <div className="grid grid-cols-3 gap-3 border-y border-apex-outline-variant/15 py-5 sm:gap-6">
           {([0, 1, 2] as const).map((i) => (
             <div
               key={i}
               className={cn(
-                "flex flex-col items-center gap-2",
+                "flex min-w-0 flex-col items-center gap-2",
                 i === 1 && "border-x border-apex-outline-variant/15",
               )}
             >
@@ -143,43 +156,36 @@ export default function DashboardStatGrid({
         </h1>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 border-y border-apex-outline-variant/15 py-5">
-        <div className="flex flex-col items-center gap-2">
+      {/* Tight gaps and smaller type on mobile: three fixed columns at gap-6
+          leave ~75px each on a 320px screen, which long values like
+          "168h 0m" overflow. */}
+      <div className="grid grid-cols-3 gap-3 border-y border-apex-outline-variant/15 py-5 sm:gap-6">
+        <div className="flex min-w-0 flex-col items-center gap-2">
           <p
-            className="text-center text-[11px] font-medium uppercase tracking-wider text-apex-on-surface-variant"
+            className={STAT_LABEL}
             title="All session types — practice, qualifying, and race"
           >
             Sessions
           </p>
-          <span className="font-apex-headline text-3xl font-extrabold tabular-nums leading-none text-apex-on-surface">
-            {sessionsCount}
-          </span>
+          <span className={STAT_VALUE}>{sessionsCount}</span>
           <DeltaText
             delta={sessionDelta}
             displayText={formatSessionDelta(sessionDelta)}
           />
         </div>
 
-        <div className="flex flex-col items-center gap-2 border-x border-apex-outline-variant/15">
-          <p className="whitespace-nowrap text-center text-[11px] font-medium uppercase tracking-wider text-apex-on-surface-variant">
-            Track Time
-          </p>
-          <span className="font-apex-headline text-3xl font-extrabold tabular-nums leading-none text-apex-on-surface">
-            {formatDuration(trackTimeMs)}
-          </span>
+        <div className="flex min-w-0 flex-col items-center gap-2 border-x border-apex-outline-variant/15">
+          <p className={STAT_LABEL}>Track Time</p>
+          <span className={STAT_VALUE}>{formatDuration(trackTimeMs)}</span>
           <DeltaText
             delta={trackTimeDelta}
             displayText={formatTrackTimeDelta(trackTimeDelta)}
           />
         </div>
 
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-center text-[11px] font-medium uppercase tracking-wider text-apex-on-surface-variant">
-            Laps
-          </p>
-          <span className="font-apex-headline text-3xl font-extrabold tabular-nums leading-none text-apex-on-surface">
-            {totalLaps}
-          </span>
+        <div className="flex min-w-0 flex-col items-center gap-2">
+          <p className={STAT_LABEL}>Laps</p>
+          <span className={STAT_VALUE}>{totalLaps}</span>
           <DeltaText
             delta={lapsDelta}
             displayText={formatLapsDelta(lapsDelta)}

@@ -89,7 +89,10 @@ function useBillingConfigQuery(enabled: boolean) {
 export function useRevenueCat() {
   const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
-  const billingConfigQuery = useBillingConfigQuery(Boolean(user?.id));
+  // GET /api/billing/config is public, so fetch it even for logged-out users.
+  // This lets the pricing page show the correct sign-in CTA and billing-mode
+  // note instead of a stale "not configured"/"loading" message.
+  const billingConfigQuery = useBillingConfigQuery(true);
 
   const offeringsQuery = useQuery({
     queryKey: [

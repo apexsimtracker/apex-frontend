@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAfterFirstPaint } from "@/hooks/useAfterFirstPaint";
 import {
   isRichNotification,
+  notificationAge,
   socialNotificationLabel,
   socialNotificationLink,
 } from "@/lib/notificationDisplay";
@@ -225,21 +226,26 @@ export function NotificationsBell() {
         onClose={() => onOpenChange(false)}
         title="Notifications"
         size="md"
-        bodyClassName="flex min-h-0 flex-1 flex-col gap-0 px-0 py-0"
+        // Phones: fill the (safe-area inset) screen and keep the surrounding
+        // chrome to one row each, so the list itself gets the space.
+        mobileVariant="fullscreen"
+        bodyClassName="flex min-h-0 flex-1 flex-col gap-0 px-4 py-0 sm:px-6"
+        footerClassName="flex-row justify-end gap-2 pt-3 sm:pt-4"
         footer={
           <>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className={appOutlineButtonClassName}
+              className={cn(appOutlineButtonClassName, "flex-1 sm:flex-none")}
               disabled={footerBusy || notifications.length === 0}
               onClick={() => void handleMarkAllViewed()}
             >
               {markingViewed ? (
                 <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               ) : null}
-              Mark all as viewed
+              <span className="sm:hidden">Mark all</span>
+              <span className="hidden sm:inline">Mark all as viewed</span>
             </Button>
             <Button
               type="button"
@@ -247,7 +253,7 @@ export function NotificationsBell() {
               size="sm"
               className={cn(
                 appOutlineButtonClassName,
-                "text-apex-error hover:bg-apex-error/10",
+                "flex-1 text-apex-error hover:bg-apex-error/10 sm:flex-none",
               )}
               disabled={footerBusy || notifications.length === 0}
               onClick={() => void handleClearAll()}
@@ -255,12 +261,13 @@ export function NotificationsBell() {
               {clearing ? (
                 <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               ) : null}
-              Clear notifications
+              <span className="sm:hidden">Clear</span>
+              <span className="hidden sm:inline">Clear notifications</span>
             </Button>
           </>
         }
       >
-        <div className="shrink-0 border-b border-apex-outline-variant/15 px-0.5 py-3">
+        <div className="shrink-0 border-b border-apex-outline-variant/15 py-2 sm:py-3">
           <div className="flex gap-2">
             <button
               type="button"
@@ -284,7 +291,8 @@ export function NotificationsBell() {
                   : "text-apex-on-surface-variant hover:text-apex-on-surface",
               )}
             >
-              Follow requests
+              <span className="sm:hidden">Requests</span>
+              <span className="hidden sm:inline">Follow requests</span>
               {requests.length > 0 && (
                 <span className="ml-1.5 rounded-full bg-apex-primary/20 px-1.5 py-0.5 text-[10px] text-apex-primary">
                   {requests.length}
@@ -294,10 +302,10 @@ export function NotificationsBell() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col px-0.5 py-4">
+        <div className="flex min-h-0 flex-1 flex-col py-3 sm:py-4">
           {tab === "activity" ? (
             <>
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
                 <NotificationList
                   notifications={visibleNotifications}
                   loading={notifQuery.isPending}
@@ -307,8 +315,9 @@ export function NotificationsBell() {
                 />
               </div>
               {!notifQuery.isPending && activityTotalPages > 1 ? (
-                <div className="mt-4 border-t border-apex-outline-variant/15 pt-3">
-                  <p className="mb-3 text-center text-xs text-apex-on-surface-variant">
+                <div className="mt-2 border-t border-apex-outline-variant/15 pt-2 sm:mt-4 sm:pt-3">
+                  {/* Desktop only: on a phone the pager itself is the context. */}
+                  <p className="mb-3 hidden text-center text-xs text-apex-on-surface-variant sm:block">
                     {getPageSummary(
                       activityPage,
                       ACTIVITY_PAGE_SIZE,
@@ -326,7 +335,7 @@ export function NotificationsBell() {
             </>
           ) : (
             <>
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pr-1">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain">
                 <FollowRequestsPanel
                   loading={requestsQuery.isPending}
                   requests={visibleRequests}
@@ -336,8 +345,8 @@ export function NotificationsBell() {
                 />
               </div>
               {!requestsQuery.isPending && requestsTotalPages > 1 ? (
-                <div className="mt-4 border-t border-apex-outline-variant/15 pt-3">
-                  <p className="mb-3 text-center text-xs text-apex-on-surface-variant">
+                <div className="mt-2 border-t border-apex-outline-variant/15 pt-2 sm:mt-4 sm:pt-3">
+                  <p className="mb-3 hidden text-center text-xs text-apex-on-surface-variant sm:block">
                     {getPageSummary(
                       requestsPage,
                       REQUESTS_PAGE_SIZE,
@@ -375,20 +384,20 @@ function NotificationList({
 }) {
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex h-full items-center justify-center py-12">
         <Loader2 className="size-8 animate-spin text-apex-on-surface-variant" />
       </div>
     );
   }
   if (notifications.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-apex-on-surface-variant">
+      <p className="flex h-full items-center justify-center py-8 text-center text-sm text-apex-on-surface-variant">
         No notifications yet.
       </p>
     );
   }
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2 sm:space-y-3">
       {notifications.map((n) => {
         if (isRichNotification(n)) {
           return <SystemAnnouncementRow key={n.id} notification={n} />;
@@ -397,36 +406,39 @@ function NotificationList({
           return null;
         }
         const activityLink = socialNotificationLink(n.type, n.entityId);
-        const resolvedLink = activityLink
-          ? activityLink
-          : null;
+        const resolvedLink = activityLink ? activityLink : null;
         return (
           <li
             key={n.id}
             className={cn(
-              "flex gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-3",
+              "flex gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-2.5 sm:p-3",
               !n.read && "border-apex-primary/30",
             )}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-apex-on-surface">
-                <span className="font-medium">{n.actor.displayName}</span>{" "}
-                {socialNotificationLabel(n.type)}
-              </p>
-              <p className="mt-1 text-xs text-apex-on-surface-variant">
-                {new Date(n.createdAt).toLocaleString()}
-              </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 text-sm text-apex-on-surface">
+                  <span className="font-medium">{n.actor.displayName}</span>{" "}
+                  {socialNotificationLabel(n.type)}
+                </p>
+                <span
+                  className="shrink-0 text-xs text-apex-on-surface-variant"
+                  title={new Date(n.createdAt).toLocaleString()}
+                >
+                  {notificationAge(n.createdAt)}
+                </span>
+              </div>
               {resolvedLink ? (
                 <a
                   href={resolvedLink}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-apex-primary hover:underline"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-apex-primary hover:underline"
                 >
                   View
                   <ExternalLink className="size-3" />
                 </a>
               ) : null}
               {n.type === "FOLLOW_REQUEST" && n.entityId ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -467,9 +479,7 @@ function SystemAnnouncementRow({
 }: {
   notification: NotificationItem;
 }) {
-  const linkUrl = notification.linkUrl
-    ? notification.linkUrl
-    : null;
+  const linkUrl = notification.linkUrl ? notification.linkUrl : null;
   const severity = notification.severity ?? "INFO";
   const theme = {
     INFO: {
@@ -513,7 +523,7 @@ function SystemAnnouncementRow({
   return (
     <li
       className={cn(
-        "flex gap-3 rounded-apex-lg border bg-apex-surface-container-low p-3",
+        "flex gap-3 rounded-apex-lg border bg-apex-surface-container-low p-2.5 sm:p-3",
         theme.border,
         !notification.read && "ring-1 ring-apex-primary/20",
       )}
@@ -548,8 +558,10 @@ function SystemAnnouncementRow({
             {notification.body}
           </p>
         ) : null}
-        <div className="mt-2 flex items-center gap-3 text-xs text-apex-on-surface-variant">
-          <span>{new Date(notification.createdAt).toLocaleString()}</span>
+        <div className="mt-1.5 flex items-center gap-3 text-xs text-apex-on-surface-variant">
+          <span title={new Date(notification.createdAt).toLocaleString()}>
+            {notificationAge(notification.createdAt)}
+          </span>
           {linkUrl ? (
             <a
               href={linkUrl}
@@ -585,27 +597,27 @@ function FollowRequestsPanel({
 }) {
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex h-full items-center justify-center py-12">
         <Loader2 className="size-8 animate-spin text-apex-on-surface-variant" />
       </div>
     );
   }
   if (requests.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-apex-on-surface-variant">
+      <p className="flex h-full items-center justify-center py-8 text-center text-sm text-apex-on-surface-variant">
         No pending follow requests.
       </p>
     );
   }
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2 sm:space-y-3">
       {requests.map((r) => {
         const avatar = resolveApiUrl(r.follower.avatarUrl);
         const busy = actionId === r.id;
         return (
           <li
             key={r.id}
-            className="flex flex-wrap items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-3"
+            className="flex flex-wrap items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low p-2.5 sm:p-3"
           >
             {avatar ? (
               <img
@@ -622,8 +634,11 @@ function FollowRequestsPanel({
               <p className="truncate font-medium text-apex-on-surface">
                 {r.follower.displayName}
               </p>
-              <p className="text-xs text-apex-on-surface-variant">
-                {new Date(r.createdAt).toLocaleString()}
+              <p
+                className="text-xs text-apex-on-surface-variant"
+                title={new Date(r.createdAt).toLocaleString()}
+              >
+                {notificationAge(r.createdAt)}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">

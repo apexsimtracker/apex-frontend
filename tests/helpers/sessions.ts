@@ -80,7 +80,6 @@ export type SessionDetailApi = {
   trackName?: string | null;
   car?: string | null;
   carName?: string | null;
-  notes?: string | null;
   proFeaturesLocked?: boolean;
   sim?: string | null;
 };
@@ -274,7 +273,7 @@ export type ManualActivityCreateInput = {
   totalDrivers?: number;
   qualifyingPosition?: number;
   laps?: { lapTimeMs: number }[];
-  notes?: string;
+  caption?: string;
 };
 
 export async function createManualActivityViaApi(
@@ -298,7 +297,7 @@ export async function createManualActivityViaApi(
         ? { qualifyingPosition: input.qualifyingPosition }
         : {}),
       ...(input.laps?.length ? { laps: input.laps } : {}),
-      ...(input.notes ? { notes: input.notes } : {}),
+      ...(input.caption ? { caption: input.caption } : {}),
     },
   });
 

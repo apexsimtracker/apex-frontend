@@ -2,10 +2,10 @@
  * Form schema for the Manual Entry (`/manual`) page.
  *
  * Backend-bound fields (sim, track, car, session kind, position, grid size,
- * qualifying position, lap times, notes, conditions, per-lap sectors) are
+ * qualifying position, lap times, caption, conditions, per-lap sectors) are
  * validated here and submitted via ManualActivityForm → POST manual-activity.
  *
- * The core object subset (sim/track/car/kind/positions/lapTime/notes) still
+ * The core object subset (sim/track/car/kind/positions/lapTime/caption) still
  * delegates to the shared core schema so create rules stay aligned.
  */
 import { z } from "zod";
@@ -88,7 +88,6 @@ export function createManualActivityFormSchema(
       totalDrivers: z.string(),
       qualifyingPosition: z.string(),
       laps: z.array(appLapRowSchema),
-      notes: z.string(),
       caption: z.string().max(280, "Caption must be at most 280 characters."),
       /** Persisted as Session.conditions. */
       conditions: z.enum(["DRY", "WET", "MIXED"]),
@@ -105,7 +104,6 @@ export function createManualActivityFormSchema(
         totalDrivers: data.totalDrivers,
         qualifyingPosition: data.qualifyingPosition,
         laps: data.laps.map((row) => ({ lapTime: row.lapTime })),
-        notes: data.notes,
         caption: data.caption,
       });
       if (!coreResult.success) {

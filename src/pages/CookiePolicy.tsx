@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME, SITE_ORIGIN } from "@/lib/siteMeta";
@@ -22,6 +23,167 @@ const listClassName =
 const h2ClassName = "font-apex-headline text-lg font-semibold text-apex-on-surface";
 
 const h3ClassName = "font-apex-headline text-sm font-semibold text-apex-on-surface";
+
+type StorageKeyRow = {
+  keyNode: ReactNode;
+  storage: string;
+  purpose: ReactNode;
+};
+
+const strictlyNecessaryKeys: StorageKeyRow[] = [
+  {
+    keyNode: <code className={codeClassName}>apex_discussion_anon</code>,
+    storage: "HttpOnly cookie",
+    purpose:
+      "Server-issued anonymous viewer ID for community discussion view deduplication (sent automatically on view API requests; not readable by page JavaScript)",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_token</code>,
+    storage: "localStorage",
+    purpose: (
+      <>
+        JWT access token sent as{" "}
+        <code className={codeClassName}>Authorization: Bearer</code>
+      </>
+    ),
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_session_token</code>,
+    storage: "localStorage",
+    purpose: (
+      <>
+        Server auth session ID sent as{" "}
+        <code className={codeClassName}>X-Apex-Session</code>
+      </>
+    ),
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_refresh_token</code>,
+    storage: "localStorage",
+    purpose: "Optional refresh token for silent session renewal",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_device_id</code>,
+    storage: "localStorage",
+    purpose: (
+      <>
+        Random UUID identifying this browser/installation; sent as{" "}
+        <code className={codeClassName}>X-Apex-Device-Id</code>
+      </>
+    ),
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_verify_email</code>,
+    storage: "sessionStorage",
+    purpose: "Temporary email address during email verification flow",
+  },
+  {
+    keyNode: (
+      <>
+        <code className={codeClassName}>apex_token_admin</code>,{" "}
+        <code className={codeClassName}>apex_session_token_admin</code>
+      </>
+    ),
+    storage: "localStorage",
+    purpose:
+      "Admin session backup during support impersonation (admin users only)",
+  },
+];
+
+const functionalKeys: StorageKeyRow[] = [
+  {
+    keyNode: <code className={codeClassName}>apex_settings</code>,
+    storage: "localStorage",
+    purpose:
+      "Cached notification and privacy preferences (synced with server when signed in)",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_onboarded</code>,
+    storage: "localStorage",
+    purpose: "Whether first-visit Sessions page onboarding was dismissed",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_admin_sidebar_collapsed</code>,
+    storage: "localStorage",
+    purpose: "Admin dashboard sidebar collapsed state",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_discussion_anon_viewer</code>,
+    storage: "localStorage",
+    purpose:
+      "Anonymous viewer ID for community discussion views (client-side; used for identity merge when signing in)",
+  },
+  {
+    keyNode: <code className={codeClassName}>apex_discussion_viewed</code>,
+    storage: "localStorage",
+    purpose:
+      "Capped list of discussion IDs already counted in this browser (avoids duplicate view requests on refresh)",
+  },
+];
+
+function StorageKeyTable({ rows }: { rows: StorageKeyRow[] }) {
+  return (
+    <>
+      {/* Mobile: stacked cards so long purposes stay readable instead of
+          squishing into a 3-column table. */}
+      <ul className="space-y-3 md:hidden">
+        {rows.map((row, index) => (
+          <li
+            key={index}
+            className="rounded-xl border border-apex-outline-variant/15 bg-apex-surface-container-low p-3"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 break-words">{row.keyNode}</span>
+              <span className="shrink-0 rounded-apex-sm bg-apex-surface-container px-1.5 py-0.5 font-apex-body text-[10px] font-medium uppercase tracking-wide text-apex-on-surface-variant">
+                {row.storage}
+              </span>
+            </div>
+            <p className="mt-2 font-apex-body text-xs leading-relaxed text-apex-on-surface-variant">
+              {row.purpose}
+            </p>
+          </li>
+        ))}
+      </ul>
+
+      {/* Desktop: keep the compact table. */}
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full border-collapse text-left font-apex-body text-xs">
+          <thead>
+            <tr className="border-b border-apex-outline-variant/15">
+              <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
+                Key
+              </th>
+              <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
+                Storage
+              </th>
+              <th className="py-2 font-apex-headline font-semibold text-apex-on-surface">
+                Purpose
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={index}
+                className="border-b border-apex-outline-variant/10"
+              >
+                <td className="py-2 pr-4 align-top text-apex-on-surface-variant">
+                  {row.keyNode}
+                </td>
+                <td className="whitespace-nowrap py-2 pr-4 align-top text-apex-on-surface-variant">
+                  {row.storage}
+                </td>
+                <td className="py-2 align-top text-apex-on-surface-variant">
+                  {row.purpose}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
 
 export default function CookiePolicy() {
   return (
@@ -89,206 +251,12 @@ export default function CookiePolicy() {
               <h3 className={h3ClassName}>
                 3.1 Strictly necessary (authentication and security)
               </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left font-apex-body text-xs">
-                  <thead>
-                    <tr className="border-b border-apex-outline-variant/15">
-                      <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
-                        Key
-                      </th>
-                      <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
-                        Storage
-                      </th>
-                      <th className="py-2 font-apex-headline font-semibold text-apex-on-surface">
-                        Purpose
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_discussion_anon</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        HttpOnly cookie
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Server-issued anonymous viewer ID for community
-                        discussion view deduplication (sent automatically on view
-                        API requests; not readable by page JavaScript)
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_token</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        JWT access token sent as{" "}
-                        <code className={codeClassName}>
-                          Authorization: Bearer
-                        </code>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>
-                          apex_session_token
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Server auth session ID sent as{" "}
-                        <code className={codeClassName}>X-Apex-Session</code>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>
-                          apex_refresh_token
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Optional refresh token for silent session renewal
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_device_id</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Random UUID identifying this browser/installation; sent
-                        as{" "}
-                        <code className={codeClassName}>X-Apex-Device-Id</code>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_verify_email</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        sessionStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Temporary email address during email verification flow
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_token_admin</code>,{" "}
-                        <code className={codeClassName}>
-                          apex_session_token_admin
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Admin session backup during support impersonation (admin
-                        users only)
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <StorageKeyTable rows={strictlyNecessaryKeys} />
 
               <h3 className={h3ClassName}>
                 3.2 Functional (preferences and UI state)
               </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left font-apex-body text-xs">
-                  <thead>
-                    <tr className="border-b border-apex-outline-variant/15">
-                      <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
-                        Key
-                      </th>
-                      <th className="py-2 pr-4 font-apex-headline font-semibold text-apex-on-surface">
-                        Storage
-                      </th>
-                      <th className="py-2 font-apex-headline font-semibold text-apex-on-surface">
-                        Purpose
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_settings</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Cached notification and privacy preferences (synced with
-                        server when signed in)
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>apex_onboarded</code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Whether first-visit Sessions page onboarding was
-                        dismissed
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>
-                          apex_admin_sidebar_collapsed
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Admin dashboard sidebar collapsed state
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>
-                          apex_discussion_anon_viewer
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Anonymous viewer ID for community discussion views
-                        (client-side; used for identity merge when signing in)
-                      </td>
-                    </tr>
-                    <tr className="border-b border-apex-outline-variant/10">
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        <code className={codeClassName}>
-                          apex_discussion_viewed
-                        </code>
-                      </td>
-                      <td className="py-2 pr-4 text-apex-on-surface-variant">
-                        localStorage
-                      </td>
-                      <td className="py-2 text-apex-on-surface-variant">
-                        Capped list of discussion IDs already counted in this
-                        browser (avoids duplicate view requests on refresh)
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <StorageKeyTable rows={functionalKeys} />
 
               <h3 className={h3ClassName}>3.3 Theme preference</h3>
               <p className={bodyClassName}>

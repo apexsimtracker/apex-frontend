@@ -113,10 +113,34 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Literal transforms instead of tailwindcss-animate's var-driven `enter`/`exit` keyframes:
+        // WebKit does not resolve those custom properties reliably, so the panel jumped on iOS
+        // instead of sliding.
+        "drawer-in": {
+          from: { transform: "translate3d(-100%, 0, 0)" },
+          to: { transform: "translate3d(0, 0, 0)" },
+        },
+        "drawer-out": {
+          from: { transform: "translate3d(0, 0, 0)" },
+          to: { transform: "translate3d(-100%, 0, 0)" },
+        },
+        "scrim-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scrim-out": {
+          from: { opacity: "1" },
+          to: { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // iOS sheet curve; opening is slower than closing so dismissal feels responsive.
+        "drawer-in": "drawer-in 280ms cubic-bezier(0.32, 0.72, 0, 1) both",
+        "drawer-out": "drawer-out 200ms cubic-bezier(0.32, 0.72, 0, 1) both",
+        "scrim-in": "scrim-in 280ms cubic-bezier(0.32, 0.72, 0, 1) both",
+        "scrim-out": "scrim-out 200ms cubic-bezier(0.32, 0.72, 0, 1) both",
       },
     },
   },

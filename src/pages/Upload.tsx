@@ -279,7 +279,7 @@ export default function Upload() {
           <ChallengeDetailBackLink challengeId={challengeId} />
         )}
 
-        <div>
+        <div className="mx-auto w-full max-w-2xl">
           <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
             Upload session
           </h1>
@@ -298,7 +298,7 @@ export default function Upload() {
         </div>
 
         {!isPro && uploadState !== "success" && (
-          <div className="flex flex-col gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-apex-body text-sm text-apex-on-surface-variant">
               Manual telemetry upload is an Apex Pro feature. Upgrade to process
               .ibt and .duckdb files from the web.
@@ -314,7 +314,7 @@ export default function Upload() {
         )}
 
         {challengeId && uploadState !== "success" && (
-          <div className="flex items-start gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high px-4 py-3">
+          <div className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-apex-lg border border-apex-outline-variant/20 bg-apex-surface-container-high px-4 py-3">
             <Trophy
               className="mt-0.5 size-4 shrink-0 text-apex-primary"
               aria-hidden

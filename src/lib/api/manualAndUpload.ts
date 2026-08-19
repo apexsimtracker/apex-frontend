@@ -44,7 +44,6 @@ export type ManualActivityRequest = {
   qualifyingPosition?: number;
   /** Ordered laps (ms); optional sectors when provided. */
   laps?: ManualActivityLapPayload[];
-  notes?: string;
   /** Public caption shown on activity/session cards. */
   caption?: string;
   /** Track weather conditions. */
@@ -85,9 +84,6 @@ export function buildManualActivityRequestBody(
     Number.isFinite(data.qualifyingPosition)
   ) {
     body.qualifyingPosition = Math.round(data.qualifyingPosition as number);
-  }
-  if (data.notes != null && String(data.notes).trim() !== "") {
-    body.notes = String(data.notes).trim();
   }
   if (data.caption !== undefined) {
     // Empty string clears caption on update; omit only when undefined.

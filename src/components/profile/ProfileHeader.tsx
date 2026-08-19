@@ -94,8 +94,10 @@ export function ProfileHeader({
 
   return (
     <section className="flex flex-col py-2">
+      {/* Always top-align on mobile: a long name/bio would otherwise push the
+          avatar to the vertical middle of a tall text block. */}
       <div
-        className={`flex gap-4 ${isCurrentUser ? "items-center" : "items-start"}`}
+        className={`flex items-start gap-4 ${isCurrentUser ? "sm:items-center" : ""}`}
       >
         <div className="relative shrink-0">
           {isPro ? (

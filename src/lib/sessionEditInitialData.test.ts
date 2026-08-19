@@ -119,4 +119,23 @@ describe("manualActivityInitialFromPublicDetail", () => {
     expect(initial.lapsCanEditOutLap).toEqual([false, true, false]);
     expect(initial.lapsMs).toEqual([120_000, 91_000, 90_000]);
   });
+
+  it("locks lap rows for recorded sessions and frees them for manual entries", () => {
+    const recorded = manualActivityInitialFromPublicDetail({
+      sessionType: "PRACTICE",
+      simKey: "iracing",
+      catalogTrackId: "spa",
+      laps: [{ lap: 1, timeMs: 90_000 }],
+    });
+    expect(recorded.lapRowsLocked).toBe(true);
+
+    const manual = manualActivityInitialFromPublicDetail({
+      sessionType: "MANUAL_ACTIVITY",
+      manualSessionKind: "PRACTICE",
+      simKey: "iracing",
+      catalogTrackId: "spa",
+      laps: [{ lap: 1, timeMs: 90_000 }],
+    });
+    expect(manual.lapRowsLocked).toBe(false);
+  });
 });

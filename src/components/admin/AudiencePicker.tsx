@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { wholeNumberInputProps } from "@/lib/inputGuards";
 import {
   fetchAdminUserList,
   previewAudience,
@@ -424,6 +425,7 @@ function FilterFields({
         <Input
           type="number"
           min={0}
+          {...wholeNumberInputProps}
           value={filter.minSessionCount ?? ""}
           onChange={(e) => {
             const raw = e.target.value;

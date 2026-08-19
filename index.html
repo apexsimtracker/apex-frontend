@@ -1,7 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <style>
+      /* Paint a dark background before CSS/React load so there is no white
+         flash between the native splash (#070915) hiding and the first
+         WebView paint. */
+      html {
+        background-color: #070915;
+        color-scheme: dark;
+      }
+      #root {
+        min-height: 100dvh;
+      }
+    </style>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
