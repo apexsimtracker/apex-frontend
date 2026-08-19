@@ -111,7 +111,6 @@ export type SessionDetail = {
   processingDurationMs?: number | null;
   source?: SessionSource | null;
   ingestPath?: string | null;
-  notes?: string | null;
   caption?: string | null;
   driverName?: string | null;
   likeCount?: number | null;

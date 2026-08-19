@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { PenLine, Upload } from "lucide-react";
 import {
-  formatChallengeDateTime,
+  formatChallengeDateParts,
   formatChallengeTimeRemaining,
 } from "@/lib/datetime";
 import {
@@ -19,6 +19,23 @@ interface ChallengeDetailOverviewProps {
   challengeId: string;
   status: "Live" | "Upcoming" | "Finished";
   upcomingScheduleText: string | null;
+}
+
+function ChallengeDateValue({ iso }: { iso: string | null }) {
+  const parts = formatChallengeDateParts(iso);
+  if (!parts) {
+    return (
+      <p className="font-apex-body text-sm text-apex-on-surface">—</p>
+    );
+  }
+  return (
+    <p className="font-apex-body text-sm font-medium text-apex-on-surface">
+      {parts.date}
+      <span className="mt-0.5 block font-normal text-apex-on-surface-variant">
+        {parts.time}
+      </span>
+    </p>
+  );
 }
 
 export default function ChallengeDetailOverview({
@@ -74,17 +91,13 @@ export default function ChallengeDetailOverview({
               <p className="mb-2 font-apex-headline text-[10px] font-semibold uppercase tracking-[0.2em] text-apex-on-surface-variant">
                 Starts
               </p>
-              <p className="font-apex-body text-sm text-apex-on-surface">
-                {formatChallengeDateTime(challenge.startsAt)}
-              </p>
+              <ChallengeDateValue iso={challenge.startsAt} />
             </div>
             <div>
               <p className="mb-2 font-apex-headline text-[10px] font-semibold uppercase tracking-[0.2em] text-apex-on-surface-variant">
                 Ends
               </p>
-              <p className="font-apex-body text-sm text-apex-on-surface">
-                {formatChallengeDateTime(challenge.endsAt)}
-              </p>
+              <ChallengeDateValue iso={challenge.endsAt} />
             </div>
           </div>
 

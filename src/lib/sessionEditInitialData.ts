@@ -39,7 +39,6 @@ export type PublicSessionDetailForEdit = {
   manualSessionKind?: string | null;
   bestLapMs?: number | null;
   sessionType?: string | null;
-  notes?: string | null;
   caption?: string | null;
   conditions?: "DRY" | "WET" | "MIXED" | null;
   laps?: Array<{
@@ -109,9 +108,10 @@ export function manualActivityInitialFromPublicDetail(
       : undefined;
 
   const st = String(data.sessionType ?? "").toUpperCase();
+  const isManualSession = st === "MANUAL_ACTIVITY";
 
   let manualSessionKind: "PRACTICE" | "QUALIFY" | "RACE";
-  if (st === "MANUAL_ACTIVITY") {
+  if (isManualSession) {
     const k = String(data.manualSessionKind ?? "RACE").toUpperCase();
     manualSessionKind =
       k === "PRACTICE" || k === "QUALIFY" || k === "RACE" ? k : "RACE";
@@ -142,7 +142,6 @@ export function manualActivityInitialFromPublicDetail(
     lapsIsOutLap: lapsMs.length > 0 ? lapsIsOutLap : undefined,
     lapsCanEditOutLap: lapsMs.length > 0 ? lapsCanEditOutLap : undefined,
     bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
-    notes: data.notes,
     caption: data.caption,
     conditions:
       data.conditions === "DRY" ||
@@ -151,6 +150,9 @@ export function manualActivityInitialFromPublicDetail(
         ? data.conditions
         : null,
     telemetryMinLapRows,
+    // Uploaded and agent-recorded lap lists must keep the row set the file
+    // produced; hand-entered sessions can gain and lose laps.
+    lapRowsLocked: !isManualSession,
   };
 }
 
@@ -194,7 +196,6 @@ export function manualActivityInitialFromAdminDetail(
     totalDrivers: d.totalDrivers,
     qualifyingPosition: d.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
-    notes: d.notes,
     caption: d.caption,
     telemetryMinLapRows,
   };

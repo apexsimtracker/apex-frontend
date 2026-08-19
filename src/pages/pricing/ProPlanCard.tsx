@@ -230,11 +230,7 @@ export function ProPlanCard({
               )}
             </Button>
           </>
-        ) : !billingConfig?.enabled ? (
-          <p className="rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container p-3 font-apex-body text-sm text-apex-on-surface-variant">
-            Billing is not configured for this environment yet.
-          </p>
-        ) : !isLoggedIn && showCatalogPricing ? (
+        ) : !isLoggedIn ? (
           <Button
             type="button"
             className={cn("w-full", appPrimaryButtonClassName)}
@@ -243,6 +239,10 @@ export function ProPlanCard({
           >
             Sign in to subscribe
           </Button>
+        ) : !billingConfig?.enabled ? (
+          <p className="rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container p-3 font-apex-body text-sm text-apex-on-surface-variant">
+            Billing is not configured for this environment yet.
+          </p>
         ) : isLoggedIn && offeringsPending ? (
           <div className="flex items-center justify-center rounded-apex-sm border border-apex-outline-variant/15 py-6">
             <Loader2 className="size-5 animate-spin text-apex-on-surface-variant" />

@@ -19,6 +19,9 @@ export const SESSION_CAPTION_MAX_LENGTH = 280;
 const LAP_FORMAT_MSG =
   "Use exactly: m:ss.mmm (e.g. 1:32.456 or 0:59.900) or ss.mmm (e.g. 92.456). Seconds must be two digits with a colon; milliseconds must be three digits.";
 
+/** Mirrors the backend gate in apex/src/lib/sessionLapGate.ts. */
+const NO_VALID_LAP_MSG = "At least one valid lap time is required";
+
 export function getManualLapMaxForSim(sim: string): number {
   const s = sim.trim().toUpperCase();
   if (s === "F1_25") return MANUAL_LAPS_MAX_F1_25;
@@ -68,7 +71,6 @@ export function createManualActivityFormSchema(
       /** Qualifying position (race sessions only) */
       qualifyingPosition: z.string(),
       laps: z.array(lapRowSchema),
-      notes: z.string(),
       caption: z.string().max(
         SESSION_CAPTION_MAX_LENGTH,
         `Caption must be at most ${SESSION_CAPTION_MAX_LENGTH} characters.`,
@@ -89,10 +91,8 @@ export function createManualActivityFormSchema(
           path: ["trackId"],
         });
       }
-      if (!data.sim?.trim() || !data.trackId?.trim()) {
-        return;
-      }
-
+      // No early return on missing sim/track: every field is validated on each
+      // submit so the user sees the full list of problems at once.
       const kind = data.manualSessionKind?.trim().toUpperCase();
       if (kind !== "PRACTICE" && kind !== "QUALIFY" && kind !== "RACE") {
         ctx.addIssue({
@@ -100,7 +100,6 @@ export function createManualActivityFormSchema(
           message: "Select Practice, Qualifying, or Race.",
           path: ["manualSessionKind"],
         });
-        return;
       }
 
       const positionNum = data.position?.trim()
@@ -240,18 +239,33 @@ export function createManualActivityFormSchema(
         });
       }
 
+      let validLapCount = 0;
+      let malformedLapCount = 0;
       data.laps.forEach((row, i) => {
         const t = row.lapTime?.trim() ?? "";
         if (!t) return;
         const ms = parseStrictManualLapTimeToMs(row.lapTime);
         if (ms === null) {
+          malformedLapCount += 1;
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: LAP_FORMAT_MSG,
             path: ["laps", i, "lapTime"],
           });
+        } else {
+          validLapCount += 1;
         }
       });
+
+      // Only when every row is blank: a malformed row already has its own
+      // message, and an issue on `laps` would replace the per-row ones.
+      if (validLapCount === 0 && malformedLapCount === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: NO_VALID_LAP_MSG,
+          path: ["laps"],
+        });
+      }
     });
 }
 
@@ -259,4 +273,4 @@ export const manualActivityFormSchema = createManualActivityFormSchema();
 
 export type ManualActivityFormValues = z.infer<typeof manualActivityFormSchema>;
 
-export { LAP_FORMAT_MSG };
+export { LAP_FORMAT_MSG, NO_VALID_LAP_MSG };

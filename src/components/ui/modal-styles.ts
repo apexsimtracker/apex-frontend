@@ -16,12 +16,16 @@ export const modalSurfaceVariants = cva(
         full: "sm:max-w-[min(72rem,calc(100vw-2rem))]",
       },
       mobileVariant: {
+        // Leave ≥2rem + safe-area on each side so near-full panels clear the
+        // notch and home indicator on phones.
         centered:
-          "left-[50%] top-[50%] max-h-[calc(100dvh-2rem)] translate-x-[-50%] translate-y-[-50%] rounded-lg data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+          "left-[50%] top-[50%] max-h-[calc(100dvh-4rem-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))] translate-x-[-50%] translate-y-[-50%] rounded-lg data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         sheet:
-          "inset-x-0 bottom-0 max-h-[calc(100dvh-0.75rem)] rounded-t-[var(--radius)] data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:left-[50%] sm:top-[50%] sm:bottom-auto sm:w-full sm:max-h-[calc(100dvh-2rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
+          "inset-x-0 bottom-0 max-h-[calc(100dvh-1rem-env(safe-area-inset-top,0px))] rounded-t-[var(--radius)] data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:left-[50%] sm:top-[50%] sm:bottom-auto sm:w-full sm:max-h-[calc(100dvh-2rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
+        // Inset instead of true edge-to-edge so content never sits under the
+        // status bar / home indicator. Desktop still centres as a dialog.
         fullscreen:
-          "inset-0 h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0 data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:left-[50%] sm:top-[50%] sm:right-auto sm:bottom-auto sm:h-auto sm:w-full sm:max-h-[calc(100dvh-2rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
+          "inset-x-0 top-[max(1rem,env(safe-area-inset-top,0px))] bottom-[max(1rem,env(safe-area-inset-bottom,0px))] h-auto max-h-none max-w-none rounded-lg data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full sm:left-[50%] sm:top-[50%] sm:right-auto sm:bottom-auto sm:h-auto sm:w-full sm:max-h-[calc(100dvh-2rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
       },
     },
     defaultVariants: {

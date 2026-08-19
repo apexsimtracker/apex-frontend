@@ -82,9 +82,9 @@ export function resolveApiUrl(url: string | null | undefined): string | null {
   // Only prefix backend base for API-served asset paths.
   if (!raw.startsWith("/api/")) return raw;
 
-  const base =
-    String(import.meta.env.VITE_APEX_API_BASE_URL ?? "").trim() || getApiBase();
-  let normalizedBase = String(base).trim().replace(/\/+$/, "");
+  // Must go through getApiBase() so assets follow the same tier as API calls:
+  // VITE_APEX_API_BASE_URL alone would pin a local `.env` value into staging/prod mobile builds.
+  let normalizedBase = getApiBase().trim().replace(/\/+$/, "");
   // Avoid mixed-content avatar loads on HTTPS pages.
   if (/^http:\/\//i.test(normalizedBase)) {
     normalizedBase = normalizedBase.replace(/^http:\/\//i, "https://");

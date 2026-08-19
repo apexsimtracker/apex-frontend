@@ -14,7 +14,7 @@ export default function AgentPageSkeleton() {
       aria-busy="true"
       aria-label="Loading agent"
     >
-      <section className="mb-8 space-y-2">
+      <section className="mx-auto mb-8 w-full max-w-4xl space-y-2">
         <SkeletonBlock height={36} width={180} className={sk} rounded="sm" />
         <SkeletonBlock height={14} width={280} className={sk} rounded="sm" />
       </section>

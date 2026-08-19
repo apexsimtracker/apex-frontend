@@ -30,9 +30,7 @@ import type { SessionItem } from "@/lib/sessionTypes";
 import DashboardStatGrid, {
   formatWeekLabel,
 } from "@/pages/dashboard/DashboardStatGrid";
-import {
-  FeedSkeletonCard,
-} from "@/pages/dashboard/DashboardSkeleton";
+import { FeedSkeletonCard } from "@/pages/dashboard/DashboardSkeleton";
 
 const DASHBOARD_PATH = "/";
 const DASHBOARD_TITLE = `Home | ${COMPANY_NAME}`;
@@ -68,6 +66,12 @@ function getAccountDisplayName(
   return user.email?.trim() || "Driver";
 }
 
+/** Share of the goal reached, clamped to 0–1 so overshooting never breaks a bar or ring. */
+function goalProgress(current: number, target: number): number {
+  const safeTarget = target > 0 ? target : 1;
+  return Math.min(Math.max(current / safeTarget, 0), 1);
+}
+
 function GoalCircularProgress({
   current,
   target,
@@ -81,8 +85,7 @@ function GoalCircularProgress({
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const safeTarget = target > 0 ? target : 1;
-  const progress = Math.min(current / safeTarget, 1);
+  const progress = goalProgress(current, target);
   const offset = circumference - progress * circumference;
   const percent = Math.round(progress * 100);
 
@@ -140,7 +143,27 @@ function DashboardGoalsSection({
           className="bg-apex-surface-container-high"
           rounded="sm"
         />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-2 sm:hidden">
+          {([0, 1, 2] as const).map((i) => (
+            <div
+              key={i}
+              className="rounded-xl bg-apex-surface-container-low p-3"
+            >
+              <SkeletonBlock
+                height={12}
+                width={72}
+                className="bg-apex-surface-container-high"
+                rounded="sm"
+              />
+              <SkeletonBlock
+                height={6}
+                className="mt-2 w-full bg-apex-surface-container-high"
+                rounded="full"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="hidden grid-cols-3 gap-2 sm:grid">
           {([0, 1, 2] as const).map((i) => (
             <div
               key={i}
@@ -170,14 +193,54 @@ function DashboardGoalsSection({
       <h2 className="font-apex-headline text-lg font-semibold text-apex-on-surface">
         Weekly goals
       </h2>
-      <div className="grid grid-cols-3 gap-2">
+
+      {/* Phone: full-width rows. Targets go up to 10,000, and "10000/10000 Laps"
+          cannot fit under a 56px ring in a third of a 320px screen. */}
+      <div className="space-y-2 sm:hidden">
+        {goals.map((goal) => {
+          const percent = Math.round(
+            goalProgress(goal.current, goal.target) * 100,
+          );
+          return (
+            <div
+              key={goal.id}
+              className="rounded-xl bg-apex-surface-container-low p-3"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="truncate font-apex-headline text-[11px] font-bold uppercase tracking-wider text-apex-on-surface-variant">
+                  {goal.label}
+                </span>
+                <span className="shrink-0 font-apex-headline text-sm font-bold tabular-nums text-apex-on-surface">
+                  {goal.current}
+                  <span className="text-apex-on-surface-variant">
+                    /{goal.target}
+                  </span>
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-apex-surface-container-high">
+                <div
+                  className="h-full rounded-full bg-apex-primary transition-[width]"
+                  style={{ width: `${percent}%` }}
+                  role="progressbar"
+                  aria-valuenow={percent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${goal.label}: ${goal.current} of ${goal.target}`}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden grid-cols-3 gap-2 sm:grid">
         {goals.map((goal) => (
           <div
             key={goal.id}
             className="flex flex-col items-center gap-2 rounded-xl bg-apex-surface-container-low p-3"
           >
             <GoalCircularProgress current={goal.current} target={goal.target} />
-            <span className="text-center text-[9px] font-medium text-apex-on-surface-variant">
+            <span className="text-center text-[10px] font-medium text-apex-on-surface-variant">
               {goal.current}/{goal.target} {goal.label}
             </span>
           </div>
@@ -503,9 +566,7 @@ export default function Dashboard() {
         />
 
         {showApexTrendCard && profileTrendInsight?.apexTrendInsight && (
-          <ApexAnalysisTrendCard
-            trend={profileTrendInsight.apexTrendInsight}
-          />
+          <ApexAnalysisTrendCard trend={profileTrendInsight.apexTrendInsight} />
         )}
 
         <section className="space-y-3">
@@ -564,10 +625,7 @@ export default function Dashboard() {
               )}
               {showEmptyFeedOnboarding && <OnboardingEmptyState />}
               {!error && !feedError && activity.length > 0 && (
-                <ActivityFeedList
-                  items={activity}
-                  currentUser={user ?? null}
-                />
+                <ActivityFeedList items={activity} currentUser={user ?? null} />
               )}
               {!error && !feedError && hasNextPage && (
                 <div className="flex justify-center py-6">

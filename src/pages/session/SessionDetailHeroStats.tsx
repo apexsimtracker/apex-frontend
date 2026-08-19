@@ -61,18 +61,35 @@ export default function SessionDetailHeroStats({
     value: formatCarName(carName) || "—",
   });
 
+  // Mobile only: Laps before Best lap so the highlighted time sits on the
+  // right of the pair (desktop keeps Best lap → Laps).
+  const mobileStats = (() => {
+    const bestIdx = stats.findIndex((s) => s.key === "bestLap");
+    const lapsIdx = stats.findIndex((s) => s.key === "laps");
+    if (bestIdx < 0 || lapsIdx < 0 || bestIdx === lapsIdx) return stats;
+    const next = stats.slice();
+    const tmp = next[bestIdx]!;
+    next[bestIdx] = next[lapsIdx]!;
+    next[lapsIdx] = tmp;
+    return next;
+  })();
+
   return (
     <section className="space-y-3">
       <div className={CARD}>
-        {/* Mobile: 2×2 (or wrapping) grid — no scroll */}
+        {/* Mobile: 2×2 (or wrapping) grid — no scroll. Car is always last and
+            takes the full row so long names wrap instead of being ellipsed. */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:hidden">
-          {stats.map((stat) => (
-            <div key={stat.key} className="min-w-0">
+          {mobileStats.map((stat) => (
+            <div
+              key={stat.key}
+              className={`min-w-0 ${stat.key === "car" ? "col-span-2" : ""}`}
+            >
               <p className={STAT_LABEL}>{stat.label}</p>
               <h2
                 className={
                   stat.key === "car"
-                    ? "truncate font-apex-headline text-sm font-bold leading-none text-apex-on-surface"
+                    ? "font-apex-headline text-base font-bold leading-snug text-apex-on-surface"
                     : "font-apex-headline text-xl font-bold leading-none text-apex-on-surface"
                 }
                 style={stat.highlight ? { color: "#FFD700" } : undefined}

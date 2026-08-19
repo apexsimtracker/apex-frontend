@@ -27,42 +27,22 @@ const manualDescription = `Log a sim racing session manually on ${COMPANY_NAME} 
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
-type LogAgainState = {
-  sim?: string;
-  trackId?: string;
-  carId?: string;
-};
-
 type ManualNavState = {
-  logAgain?: LogAgainState;
   challengePrefill?: ChallengeManualPrefill;
 } | null;
-
-function logAgainToInitialData(
-  logAgain: LogAgainState,
-): ManualActivityInitialData {
-  return {
-    sim: logAgain.sim ?? null,
-    trackId: logAgain.trackId ?? null,
-    carId: logAgain.carId ?? null,
-  };
-}
 
 export default function ManualActivity() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navState = location.state as ManualNavState;
-  const logAgain = navState?.logAgain;
   const challengePrefill = navState?.challengePrefill;
   const challengeId = searchParams.get("challenge")?.trim() || undefined;
   const isChallengeLinked = Boolean(challengeId);
   const [formState, setFormState] = useState<FormState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const needsChallengeFetch = Boolean(
-    challengeId && !logAgain && !challengePrefill,
-  );
+  const needsChallengeFetch = Boolean(challengeId && !challengePrefill);
 
   const { data: fetchedChallenge, isPending: challengePrefillLoading } =
     useQuery({
@@ -76,9 +56,6 @@ export default function ManualActivity() {
     });
 
   const initialData = useMemo((): ManualActivityInitialData | undefined => {
-    if (logAgain && (logAgain.sim || logAgain.trackId)) {
-      return logAgainToInitialData(logAgain);
-    }
     if (challengePrefill?.sim && challengePrefill.track) {
       return challengeManualPrefillToInitialData(challengePrefill);
     }
@@ -88,11 +65,8 @@ export default function ManualActivity() {
       );
     }
     return undefined;
-  }, [logAgain, challengePrefill, fetchedChallenge]);
+  }, [challengePrefill, fetchedChallenge]);
 
-  const prefilledFromPrevious = Boolean(
-    logAgain && (logAgain.sim || logAgain.trackId),
-  );
   const waitingForChallengePrefill =
     needsChallengeFetch && challengePrefillLoading;
 
@@ -139,7 +113,7 @@ export default function ManualActivity() {
           <ChallengeDetailBackLink challengeId={challengeId} />
         )}
 
-        <div>
+        <div className="mx-auto w-full max-w-4xl">
           <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
             Manual Entry
           </h1>
@@ -181,7 +155,6 @@ export default function ManualActivity() {
           ) : (
             <ManualActivityForm
               initialData={initialData}
-              prefilledFromPrevious={prefilledFromPrevious}
               hideRecentSessions={isChallengeLinked}
               onSubmit={handleSubmit}
               submitLabel="Save session"

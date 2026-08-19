@@ -119,7 +119,6 @@ export type AdminSessionDetail = {
   qualifyingPosition: number | null;
   totalDrivers: number | null;
   challengeId: string | null;
-  notes: string | null;
   caption: string | null;
   ingestSource: string | null;
   challengeTitle: string | null;
@@ -214,7 +213,6 @@ export type AdminSessionPatchBody = {
   qualifyingPosition?: number | null;
   totalDrivers?: number | null;
   challengeId?: string | null;
-  notes?: string | null;
   caption?: string | null;
 };
 

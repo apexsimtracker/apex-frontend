@@ -15,6 +15,7 @@ import {
   FormRootMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { wholeNumberInputProps } from "@/lib/inputGuards";
 import type { WithRootError } from "@/lib/formWithRootError";
 import {
   getProfileHomeWeekly,
@@ -189,6 +190,7 @@ export default function SettingsWeeklyGoalsSection() {
                           }
                           disabled={saving}
                           className={appAccountInputClassName}
+                          {...wholeNumberInputProps}
                           name={rhf.name}
                           ref={rhf.ref}
                           onBlur={rhf.onBlur}

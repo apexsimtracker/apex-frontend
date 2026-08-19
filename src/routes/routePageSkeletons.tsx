@@ -15,12 +15,15 @@ const sk = "bg-apex-surface-container-high/80";
 function PageTitleSkeleton({
   titleWidth = 200,
   subtitleWidth = 300,
+  className,
 }: {
   titleWidth?: number;
   subtitleWidth?: number;
+  /** Match the page's content column so the header does not shift on load. */
+  className?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", className)}>
       <SkeletonBlock
         height={32}
         width={titleWidth}
@@ -92,7 +95,11 @@ export function ManualActivityRouteSkeleton() {
       aria-busy="true"
       aria-label="Loading"
     >
-      <PageTitleSkeleton titleWidth={180} subtitleWidth={380} />
+      <PageTitleSkeleton
+        titleWidth={180}
+        subtitleWidth={380}
+        className="mx-auto w-full max-w-4xl"
+      />
       <div className="mx-auto w-full max-w-4xl space-y-8">
         <ManualActivityFormSkeleton />
       </div>
@@ -107,7 +114,11 @@ export function UploadRouteSkeleton() {
       aria-busy="true"
       aria-label="Loading"
     >
-      <PageTitleSkeleton titleWidth={200} subtitleWidth={400} />
+      <PageTitleSkeleton
+        titleWidth={200}
+        subtitleWidth={400}
+        className="mx-auto w-full max-w-2xl"
+      />
       <div className="mx-auto w-full max-w-2xl">
         <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-apex-outline-variant/25 bg-apex-surface-container-low p-8">
           <SkeletonBlock
