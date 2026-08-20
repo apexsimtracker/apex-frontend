@@ -41,6 +41,7 @@ import {
 import SimBadge from "@/components/SimBadge";
 import { formatCarName, formatTrackName } from "@/lib/utils";
 import { getBrowserTimeZone } from "@/lib/datetime";
+import CatalogPicker from "@/components/catalog/CatalogPicker";
 
 const TITLE = `Admin · Challenges | ${COMPANY_NAME}`;
 const SEARCH_DEBOUNCE_MS = 200;
@@ -627,25 +628,21 @@ function CreateChallengeModal({
             Loading…
           </span>
         )}
-        <select
+        <CatalogPicker
           className={`mt-1 ${SELECT_MANUAL_LIKE}`}
           value={trackId}
-          onChange={(e) => setTrackId(e.target.value)}
-          disabled={pending || !sim || catalogsLoading}
-        >
-          <option value="">
-            {!sim
+          onValueChange={setTrackId}
+          options={tracks}
+          label="Track"
+          placeholder={
+            !sim
               ? "Select a sim first"
               : catalogsLoading
                 ? "Loading…"
-                : "Select track…"}
-          </option>
-          {tracks.map((tr) => (
-            <option key={tr.id} value={tr.id}>
-              {tr.name}
-            </option>
-          ))}
-        </select>
+                : "Select track…"
+          }
+          disabled={pending || !sim || catalogsLoading}
+        />
       </label>
 
       <label className="block text-xs text-white/80">
@@ -656,25 +653,21 @@ function CreateChallengeModal({
             Loading…
           </span>
         )}
-        <select
+        <CatalogPicker
           className={`mt-1 ${SELECT_MANUAL_LIKE}`}
           value={carId}
-          onChange={(e) => setCarId(e.target.value)}
-          disabled={pending || !sim || catalogsLoading}
-        >
-          <option value="">
-            {!sim
+          onValueChange={setCarId}
+          options={cars}
+          label="Car"
+          placeholder={
+            !sim
               ? "Select a sim first"
               : catalogsLoading
                 ? "Loading…"
-                : "Select car…"}
-          </option>
-          {cars.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+                : "Select car…"
+          }
+          disabled={pending || !sim || catalogsLoading}
+        />
       </label>
 
       <p className="text-xs text-muted-foreground">

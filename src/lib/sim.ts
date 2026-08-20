@@ -14,6 +14,31 @@ export type SupportedSimEnum = (typeof SUPPORTED_SIM_ENUMS)[number];
 export const CANONICAL_SIM_API_KEYS = ["iracing", "f1_25", "lmu"] as const;
 export type CanonicalSimApiKey = (typeof CANONICAL_SIM_API_KEYS)[number];
 
+/** Normalize DB enums, form values, and legacy upload tags to one catalog API key. */
+export function toCanonicalSimApiKey(
+  sim: string | null | undefined,
+): CanonicalSimApiKey | null {
+  const key =
+    sim
+      ?.trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_") ?? "";
+  if (key === "iracing") return "iracing";
+  if (key === "f1_25" || key === "f125") return "f1_25";
+  if (key === "lmu") return "lmu";
+  return null;
+}
+
+export function toSupportedSimEnum(
+  sim: string | null | undefined,
+): SupportedSimEnum | null {
+  const key = toCanonicalSimApiKey(sim);
+  if (key === "iracing") return "IRACING";
+  if (key === "f1_25") return "F1_25";
+  if (key === "lmu") return "LMU";
+  return null;
+}
+
 /** Multipart upload tags including legacy F1 tag (server normalizes f125 → f1_25). */
 export const LAP_UPLOAD_SIM_FORM_TAGS = [
   "iracing",

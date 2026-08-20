@@ -37,6 +37,7 @@ import {
 } from "@/lib/validation/manualActivity";
 import { useManualActivityFormSync } from "@/features/manual-activity/hooks/useManualActivityFormSync";
 import { stripLapTimeChars, wholeNumberInputProps } from "@/lib/inputGuards";
+import CatalogPicker from "@/components/catalog/CatalogPicker";
 
 const INPUT_CLASS =
   "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-white/40 transition-colors focus:border-white/25 focus:bg-white/[0.07] focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50";
@@ -480,32 +481,22 @@ export default function ManualActivityForm({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <CatalogPicker
                     id="track"
                     value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSubmitting || !sim || catalogsLoading}
-                    className={INPUT_CLASS}
-                  >
-                    <option value="">
-                      {!sim
+                    onValueChange={field.onChange}
+                    options={tracks}
+                    label="Track"
+                    placeholder={
+                      !sim
                         ? "Select a sim first"
                         : catalogsLoading
                           ? "Loading…"
-                          : "Select track…"}
-                    </option>
-                    {field.value.trim() &&
-                      !tracks.some((t) => t.id === field.value) && (
-                        <option value={field.value}>
-                          {field.value} (stored token — not in catalog)
-                        </option>
-                      )}
-                    {tracks.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
+                          : "Select track…"
+                    }
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                    className={INPUT_CLASS}
+                  />
                 </FormControl>
                 <FormMessage className="text-xs text-red-500" />
               </FormItem>
@@ -527,32 +518,23 @@ export default function ManualActivityForm({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <select
+                  <CatalogPicker
                     id="car"
                     value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSubmitting || !sim || catalogsLoading}
-                    className={INPUT_CLASS}
-                  >
-                    <option value="">
-                      {!sim
+                    onValueChange={field.onChange}
+                    options={cars}
+                    label="Car"
+                    placeholder={
+                      !sim
                         ? "Select a sim first"
                         : catalogsLoading
                           ? "Loading…"
-                          : "Select car…"}
-                    </option>
-                    {field.value.trim() &&
-                      !cars.some((c) => c.id === field.value) && (
-                        <option value={field.value}>
-                          {field.value} (stored token — not in catalog)
-                        </option>
-                      )}
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                          : "Select car…"
+                    }
+                    allowClear
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                    className={INPUT_CLASS}
+                  />
                 </FormControl>
                 <FormMessage className="text-xs text-red-500" />
               </FormItem>

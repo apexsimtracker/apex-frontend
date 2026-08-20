@@ -1,4 +1,5 @@
 import type { ManualActivityInitialData } from "@/components/ManualActivityForm";
+import { toSupportedSimEnum } from "@/lib/sim";
 
 export type ChallengeManualPrefill = {
   sim: string;
@@ -12,7 +13,7 @@ export function challengeManualPrefillToInitialData(
   const carToken = prefill.car.trim();
   const trackToken = prefill.track.trim();
   return {
-    sim: prefill.sim,
+    sim: toSupportedSimEnum(prefill.sim) ?? prefill.sim,
     catalogTrackId: trackToken,
     trackNameHint: trackToken,
     catalogCarId: carToken || null,
