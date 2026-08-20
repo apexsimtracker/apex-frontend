@@ -10,7 +10,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       totalDrivers: 24,
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
     });
     expect(initial.manualSessionKind).toBe("QUALIFY");
     expect(initial.position).toBe(3);
@@ -24,7 +24,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       totalDrivers: 24,
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
     });
     expect(initial.manualSessionKind).toBe("RACE");
     expect(initial.position).toBe(2);
@@ -37,7 +37,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       manualSessionKind: "PRACTICE",
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
       laps: [
         {
           lap: 2,
@@ -68,7 +68,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       sessionType: "RACE",
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
       laps: [{ lap: 1, timeMs: 90_000 }],
     });
 
@@ -83,7 +83,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       sessionType: "RACE",
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
       bestLapMs: 91_000,
       laps: [{ lap: 1, sector1Ms: 30_000 }],
     });
@@ -98,7 +98,7 @@ describe("manualActivityInitialFromPublicDetail", () => {
       sessionType: "PRACTICE",
       simKey: "iracing",
       catalogTrackId: "spa",
-      catalogCarId: "ferrari",
+      catalogCarId: "ferrari 296 gt3",
       conditions: "WET",
       laps: [
         { lap: 1, timeMs: 120_000, isOutLap: true },

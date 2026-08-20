@@ -18,18 +18,12 @@ async function selectManualTrack(
   page: Page,
   trackPattern: RegExp,
 ): Promise<void> {
-  const trackSelect = page.locator("#track");
-  await expect(trackSelect).toBeEnabled({ timeout: 30_000 });
-  const options = trackSelect.locator("option");
-  const count = await options.count();
-  for (let i = 0; i < count; i++) {
-    const label = (await options.nth(i).textContent())?.trim() ?? "";
-    if (trackPattern.test(label)) {
-      await trackSelect.selectOption({ index: i });
-      return;
-    }
-  }
-  throw new Error(`No track option matched ${trackPattern}`);
+  const trackPicker = page.locator("#track");
+  await expect(trackPicker).toBeEnabled({ timeout: 30_000 });
+  await trackPicker.click();
+  const search = page.getByRole("combobox", { name: /search/i });
+  await search.fill(trackPattern.source.replace(/[^a-z0-9 ]/gi, ""));
+  await page.getByRole("option", { name: trackPattern }).first().click();
 }
 
 async function fillManualActivityBasics(page: Page): Promise<void> {

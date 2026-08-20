@@ -57,6 +57,7 @@ import {
   type ManualActivityFormValues,
 } from "./manualActivitySchema";
 import AppNativeSelect from "@/components/app-ui/AppNativeSelect";
+import CatalogPicker from "@/components/catalog/CatalogPicker";
 import {
   appManualInputClassName,
   appManualTextareaClassName,
@@ -906,31 +907,21 @@ export default function ManualActivityForm({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <AppNativeSelect
+                  <CatalogPicker
                     id="track"
                     value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSubmitting || !sim || catalogsLoading}
-                  >
-                    <option value="">
-                      {!sim
+                    onValueChange={field.onChange}
+                    options={tracks}
+                    label="Track"
+                    placeholder={
+                      !sim
                         ? "Select a sim first"
                         : catalogsLoading
                           ? "Loading…"
-                          : "Select track…"}
-                    </option>
-                    {field.value.trim() &&
-                      !tracks.some((t) => t.id === field.value) && (
-                        <option value={field.value}>
-                          {field.value} (stored token — not in catalog)
-                        </option>
-                      )}
-                    {tracks.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </AppNativeSelect>
+                          : "Select track…"
+                    }
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                  />
                 </FormControl>
                 <FormMessage className="text-xs text-apex-error" />
               </FormItem>
@@ -955,31 +946,22 @@ export default function ManualActivityForm({
                   )}
                 </FormLabel>
                 <FormControl>
-                  <AppNativeSelect
+                  <CatalogPicker
                     id="car"
                     value={field.value}
-                    onChange={field.onChange}
-                    disabled={isSubmitting || !sim || catalogsLoading}
-                  >
-                    <option value="">
-                      {!sim
+                    onValueChange={field.onChange}
+                    options={cars}
+                    label="Car"
+                    placeholder={
+                      !sim
                         ? "Select a sim first"
                         : catalogsLoading
                           ? "Loading…"
-                          : "Select car…"}
-                    </option>
-                    {field.value.trim() &&
-                      !cars.some((c) => c.id === field.value) && (
-                        <option value={field.value}>
-                          {field.value} (stored token — not in catalog)
-                        </option>
-                      )}
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </AppNativeSelect>
+                          : "Select car…"
+                    }
+                    allowClear
+                    disabled={isSubmitting || !sim || catalogsLoading}
+                  />
                 </FormControl>
                 <FormMessage className="text-xs text-apex-error" />
               </FormItem>
