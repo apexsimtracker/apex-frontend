@@ -38,6 +38,7 @@ import {
   type ManualActivitySim,
 } from "@/lib/manualActivityData";
 import { resolveChallengeCoverUrl } from "@/lib/challenges/coverImage";
+import CatalogPicker from "@/components/catalog/CatalogPicker";
 
 const BAN_REASON_MAX = 500;
 
@@ -716,27 +717,23 @@ export default function AdminChallengeDetail() {
                     Loading…
                   </span>
                 )}
-                <select
+                <CatalogPicker
                   className={`mt-1 ${SELECT_MANUAL_LIKE}`}
                   value={trackId}
-                  onChange={(e) => setTrackId(e.target.value)}
-                  disabled={
-                    saveMutation.isPending || !sim || catalogsLoading || isEnded
-                  }
-                >
-                  <option value="">
-                    {!sim
+                  onValueChange={setTrackId}
+                  options={tracks}
+                  label="Track"
+                  placeholder={
+                    !sim
                       ? "Select a sim first"
                       : catalogsLoading
                         ? "Loading…"
-                        : "Select track…"}
-                  </option>
-                  {tracks.map((tr) => (
-                    <option key={tr.id} value={tr.id}>
-                      {tr.name}
-                    </option>
-                  ))}
-                </select>
+                        : "Select track…"
+                  }
+                  disabled={
+                    saveMutation.isPending || !sim || catalogsLoading || isEnded
+                  }
+                />
               </label>
 
               <label className="block text-xs text-white/80">
@@ -747,27 +744,23 @@ export default function AdminChallengeDetail() {
                     Loading…
                   </span>
                 )}
-                <select
+                <CatalogPicker
                   className={`mt-1 ${SELECT_MANUAL_LIKE}`}
                   value={carId}
-                  onChange={(e) => setCarId(e.target.value)}
-                  disabled={
-                    saveMutation.isPending || !sim || catalogsLoading || isEnded
-                  }
-                >
-                  <option value="">
-                    {!sim
+                  onValueChange={setCarId}
+                  options={cars}
+                  label="Car"
+                  placeholder={
+                    !sim
                       ? "Select a sim first"
                       : catalogsLoading
                         ? "Loading…"
-                        : "Select car…"}
-                  </option>
-                  {cars.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                        : "Select car…"
+                  }
+                  disabled={
+                    saveMutation.isPending || !sim || catalogsLoading || isEnded
+                  }
+                />
               </label>
 
               <p className="text-xs text-muted-foreground">

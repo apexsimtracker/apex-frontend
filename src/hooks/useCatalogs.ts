@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getCatalogs, type CatalogTrack, type CatalogCar } from "@/lib/api";
+import { toCanonicalSimApiKey } from "@/lib/sim";
 
 export type UseCatalogsResult = {
   tracks: CatalogTrack[];
@@ -10,13 +11,14 @@ export type UseCatalogsResult = {
 };
 
 export function useCatalogs(sim: string | null): UseCatalogsResult {
-  const trimmed = sim?.trim() ?? "";
-  const enabled = trimmed.length > 0;
+  const canonicalSim = toCanonicalSimApiKey(sim);
+  const enabled = canonicalSim != null;
 
   const { data, isPending, error, refetch } = useQuery({
-    queryKey: ["catalogs", trimmed],
+    queryKey: ["catalogs", canonicalSim],
     queryFn: async () => {
-      const data = await getCatalogs(trimmed);
+      if (!canonicalSim) throw new Error("Invalid simulator");
+      const data = await getCatalogs(canonicalSim);
       const tracksList = Array.isArray(data.tracks) ? data.tracks : [];
       const carsList = Array.isArray(data.cars) ? data.cars : [];
       return { tracks: tracksList, cars: carsList };
