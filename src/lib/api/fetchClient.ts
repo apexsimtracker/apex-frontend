@@ -1,6 +1,12 @@
 import { getApiBase } from "./config";
 import { getOrCreateDeviceId } from "@/auth/deviceId";
-import { APEX_SESSION_TOKEN_KEY } from "@/auth/token";
+import {
+  APEX_REFRESH_TOKEN_KEY,
+  APEX_SESSION_TOKEN_KEY,
+  clearToken,
+  persistSessionTokenFromAuthPayload,
+  setToken,
+} from "@/auth/token";
 import { ApiError, ProRequiredError } from "./errors";
 import { recordApiTiming } from "@/lib/apexRum";
 
@@ -44,6 +50,7 @@ type ErrorParseResult = {
 };
 
 const TOKEN_KEY = "apex_token";
+const AUTH_REFRESH_PATH = "/api/auth/refresh";
 
 /**
  * Auth headers shared by fetchApi and XMLHttpRequest uploads (manual .ibt).
@@ -100,11 +107,130 @@ export type FetchApiOptions = {
   skipAuthExpiredCheck?: boolean;
   /** Only set for cross-origin cookie endpoints (e.g. discussion view anon cookie). */
   credentials?: RequestCredentials;
+  /** Internal: this call already retried after a token refresh. */
+  didRetryAfterRefresh?: boolean;
 };
 
+type RefreshOutcome =
+  | { status: "refreshed" }
+  | { status: "invalid"; refreshToken: string }
+  | { status: "transient"; error: ApiError };
+
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+function storedRefreshToken(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  const raw = localStorage.getItem(APEX_REFRESH_TOKEN_KEY)?.trim();
+  return raw || null;
+}
+
+function storedAccessToken(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  const raw = localStorage.getItem(TOKEN_KEY)?.trim();
+  return raw || null;
+}
+
+function isAuthRefreshPath(path: string): boolean {
+  return path.includes(AUTH_REFRESH_PATH);
+}
+
+async function performRefresh(
+  expectedRefreshToken: string,
+): Promise<RefreshOutcome> {
+  const refreshToken = storedRefreshToken();
+  if (!refreshToken) {
+    return { status: "invalid", refreshToken: expectedRefreshToken };
+  }
+
+  // Another tab refreshed while this tab waited for the Web Lock.
+  if (refreshToken !== expectedRefreshToken) {
+    return { status: "refreshed" };
+  }
+
+  try {
+    const data = await fetchApi<{ token?: string; refreshToken?: string }>(
+      "POST",
+      AUTH_REFRESH_PATH,
+      { refreshToken },
+      { skipAuthExpiredCheck: true },
+    );
+    if (typeof data?.token !== "string" || !data.token.trim()) {
+      return {
+        status: "transient",
+        error: new ApiError(502, "Invalid token refresh response."),
+      };
+    }
+
+    // Write access first: once other tabs observe the rotated refresh token,
+    // buildApiAuthHeaders() can already read the matching new access token.
+    setToken(data.token);
+    if (typeof data.refreshToken === "string" && data.refreshToken.trim()) {
+      persistSessionTokenFromAuthPayload({
+        refreshToken: data.refreshToken,
+      });
+    }
+    return { status: "refreshed" };
+  } catch (error) {
+    // A concurrent tab may have completed refresh while this request was in
+    // flight. Its rotated token wins even if this request received a 401.
+    const latestRefreshToken = storedRefreshToken();
+    if (latestRefreshToken && latestRefreshToken !== refreshToken) {
+      return { status: "refreshed" };
+    }
+
+    if (
+      error instanceof ApiError &&
+      (error.status === 400 || error.status === 401)
+    ) {
+      return { status: "invalid", refreshToken };
+    }
+
+    return {
+      status: "transient",
+      error:
+        error instanceof ApiError
+          ? error
+          : new ApiError(0, "Connection lost. Please try again."),
+    };
+  }
+}
+
+async function refreshAccessToken(): Promise<RefreshOutcome> {
+  const refreshToken = storedRefreshToken();
+  if (!refreshToken) {
+    return { status: "invalid", refreshToken: "" };
+  }
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    try {
+      // Web Locks serialize refresh-token rotation across browser tabs.
+      if (typeof navigator !== "undefined" && navigator.locks) {
+        return await navigator.locks.request("apex-auth-refresh", () =>
+          performRefresh(refreshToken),
+        );
+      }
+      return await performRefresh(refreshToken);
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
+function parseSuccessBody<T>(text: string): T {
+  if (!text) return undefined as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as T;
+  }
+}
+
 // Central fetch handler (exported for auth/api and other modules that need it).
-// Token is read from localStorage "apex_token". On 401, notifyAuthExpired runs the registered handler
-// (unless skipAuthExpiredCheck) so AuthContext can sync user state; token clearing is left to the handler/backend.
+// Token is read from localStorage "apex_token". On 401, try refresh once, then notifyAuthExpired
+// (unless skipAuthExpiredCheck) so AuthContext can sync user state.
 export async function fetchApi<T>(
   method: string,
   path: string,
@@ -114,6 +240,7 @@ export async function fetchApi<T>(
   const opts: FetchApiOptions =
     typeof options === "boolean" ? { skipAuthExpiredCheck: options } : options;
   const skipAuthExpiredCheck = opts.skipAuthExpiredCheck ?? false;
+  const didRetryAfterRefresh = opts.didRetryAfterRefresh ?? false;
   const hasJsonBody = body !== undefined;
   const headers: Record<string, string> = {
     // Only when we send a body: Fastify rejects Content-Type: application/json with an empty body.
@@ -141,12 +268,7 @@ export async function fetchApi<T>(
 
   if (res.ok) {
     const text = await res.text();
-    if (!text) return undefined as T;
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text as T;
-    }
+    return parseSuccessBody<T>(text);
   }
 
   const { message, code, retryAfterMs, suspensionReason } =
@@ -156,6 +278,40 @@ export async function fetchApi<T>(
   if (code === "PRO_REQUIRED") {
     emitProRequiredEvent();
     throw new ProRequiredError(message);
+  }
+
+  const canRefresh =
+    res.status === 401 &&
+    !didRetryAfterRefresh &&
+    !skipAuthExpiredCheck &&
+    !isAuthRefreshPath(path) &&
+    Boolean(storedAccessToken()) &&
+    Boolean(storedRefreshToken());
+
+  if (canRefresh) {
+    const refresh = await refreshAccessToken();
+    if (refresh.status === "refreshed") {
+      return fetchApi<T>(method, path, body, {
+        ...opts,
+        skipAuthExpiredCheck,
+        didRetryAfterRefresh: true,
+      });
+    }
+    if (refresh.status === "transient") {
+      // Keep the refresh token: offline/network/5xx failures do not prove the
+      // session is invalid, and must not trigger the auth-expired handler.
+      throw refresh.error;
+    }
+
+    // Do not delete credentials rotated by another tab after refresh settled.
+    if (refresh.refreshToken && storedRefreshToken() !== refresh.refreshToken) {
+      return fetchApi<T>(method, path, body, {
+        ...opts,
+        skipAuthExpiredCheck,
+        didRetryAfterRefresh: true,
+      });
+    }
+    clearToken();
   }
 
   await notifyAuthExpired(skipAuthExpiredCheck, res.status);

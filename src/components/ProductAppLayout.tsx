@@ -16,6 +16,7 @@ import SessionsPageSkeleton from "@/pages/sessions/SessionsPageSkeleton";
 import SettingsPageSkeleton from "@/pages/settings/SettingsPageSkeleton";
 import { GenericRouteSkeleton } from "@/routes/GenericRouteSkeleton";
 import { PageSuspense } from "@/routes/PageSuspense";
+import OfflineBanner from "@/components/OfflineBanner";
 import {
   ManualActivityRouteSkeleton,
   PersonalBestsRouteSkeleton,
@@ -92,6 +93,7 @@ export default function ProductAppLayout() {
 
   return (
     <AppLayout topBar={<HubTopBar />} bottomBar={<BottomNav />}>
+      <OfflineBanner />
       <PageSuspense fallback={skeletonForPath(pathname, Boolean(user))}>
         <Outlet />
       </PageSuspense>

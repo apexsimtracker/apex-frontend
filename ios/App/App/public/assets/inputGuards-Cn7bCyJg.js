@@ -1,0 +1,1 @@
+const a=new Set(["e","E","+","-",".",","]),r={onKeyDown:t=>{t.ctrlKey||t.metaKey||t.altKey||a.has(t.key)&&t.preventDefault()},onPaste:t=>{const e=t.clipboardData.getData("text").trim();/^\d*$/.test(e)||t.preventDefault()}};function s(t){return t.replace(/[^\d:.,]/g,"")}export{s,r as w};

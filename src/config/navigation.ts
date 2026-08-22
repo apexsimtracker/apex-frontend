@@ -42,6 +42,8 @@ export type LogSessionMenuItem = {
   icon: LogSessionMenuIcon;
   featured?: boolean;
   proBadge?: boolean;
+  /** Hidden in Capacitor native shell (desktop-agent download). */
+  webOnly?: boolean;
 };
 
 /** Log a Session chooser — sheet (mobile/tablet) and create dropdown (desktop). */
@@ -54,6 +56,7 @@ export const logSessionMenuItems: LogSessionMenuItem[] = [
     icon: "agent",
     featured: true,
     proBadge: true,
+    webOnly: true,
   },
   {
     id: "manual",
@@ -86,7 +89,7 @@ export const accountMenuItems: AccountMenuItem[] = [
   { label: "Personal bests", to: "/personal-bests" },
   { label: "Settings", to: "/settings" },
   { label: "Agent", to: "/agent", webOnly: true },
-  { label: "Admin dashboard", to: "/admin", adminOnly: true },
+  { label: "Admin dashboard", to: "/admin", adminOnly: true, webOnly: true },
 ];
 
 export const footerProductLinks: FooterLinkItem[] = [
@@ -118,7 +121,7 @@ export const footerLegalLinks: FooterLinkItem[] = [
   { label: "Terms", to: "/terms-and-conditions" },
   { label: "Privacy", to: "/privacy-policy" },
   { label: "Cookies", to: "/cookie-policy" },
-  { label: "EULA", to: "/eula", webOnly: true },
+  { label: "EULA", to: "/eula" },
 ];
 
 /** Desktop footer tagline. */
@@ -164,6 +167,10 @@ export function getFooterProductLinks(isNative = false): FooterLinkItem[] {
 
 export function getFooterLegalLinks(isNative = false): FooterLinkItem[] {
   return withoutWebOnlyNavItems(footerLegalLinks, isNative);
+}
+
+export function getLogSessionMenuItems(isNative = false): LogSessionMenuItem[] {
+  return withoutWebOnlyNavItems(logSessionMenuItems, isNative);
 }
 
 export function isNavPathActive(

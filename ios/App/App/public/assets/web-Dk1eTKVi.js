@@ -1,0 +1,1 @@
+import{aq as n}from"./index-CoVk3QoX.js";import"./react-vendor-8FlIWKjL.js";import"./radix-CyJMUrKH.js";import"./query-IqvatVjM.js";import"./lucide-CqzDZMav.js";class a extends n{async show(e){}async hide(e){}}export{a as SplashScreenWeb};

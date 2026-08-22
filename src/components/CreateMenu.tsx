@@ -11,8 +11,12 @@ import {
   appDropdownContentClassName,
   appDropdownItemClassName,
 } from "@/components/app-ui/appButtonClasses";
-import { logSessionMenuItems, type LogSessionMenuIcon } from "@/config/navigation";
+import {
+  getLogSessionMenuItems,
+  type LogSessionMenuIcon,
+} from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { usePlatform } from "@/hooks/usePlatform";
 
 const LogSessionSheet = lazy(() => import("@/components/LogSessionSheet"));
 
@@ -50,7 +54,9 @@ function DropdownMenuIcon({ icon }: { icon: LogSessionMenuIcon }) {
 
 export default function CreateMenu() {
   const navigate = useNavigate();
+  const { isNative } = usePlatform();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const items = getLogSessionMenuItems(isNative);
 
   return (
     <>
@@ -71,7 +77,7 @@ export default function CreateMenu() {
           align="end"
           className={cn(appDropdownContentClassName, "w-48")}
         >
-          {logSessionMenuItems.map((item) => (
+          {items.map((item) => (
             <DropdownMenuItem
               key={item.id}
               className={appDropdownItemClassName}

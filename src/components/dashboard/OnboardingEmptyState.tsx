@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Upload, Cpu, Zap, PenLine } from "lucide-react";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 
 import {
   appOutlineButtonClassName,
@@ -11,6 +12,7 @@ export default function OnboardingEmptyState() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isPro = useIsProUser();
+  const { isNative } = usePlatform();
 
   if (!user) return null;
 
@@ -63,13 +65,19 @@ export default function OnboardingEmptyState() {
                   Use the Apex Agent for automatic uploads.
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate("/agent")}
-                className={`${appOutlineButtonClassName} mt-4 w-full`}
-              >
-                Open Agent Page
-              </button>
+              {!isNative ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/agent")}
+                  className={`${appOutlineButtonClassName} mt-4 w-full`}
+                >
+                  Open Agent Page
+                </button>
+              ) : (
+                <p className="mt-4 font-apex-body text-xs text-apex-on-surface-variant">
+                  Download Apex Agent on a computer at apexsimtracker.com/agent
+                </p>
+              )}
             </div>
           ) : (
             <div className="rounded-apex-lg border border-apex-primary/20 bg-apex-primary/5 p-5">

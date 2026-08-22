@@ -50,14 +50,14 @@ export type UpdateMeBody = {
   bio?: string | null;
 };
 
-// authMe skips auth expired check to avoid infinite loops during session verification.
-// Normalize response: backend may return { user: {...} } or {...} at top level.
+// Refresh on 401 is handled in fetchApi; skipAuthExpiredCheck is false so a stale
+// JWT can rotate via refresh on boot instead of appearing logged out.
 export async function authMe(): Promise<AuthUser> {
   const data = await fetchApi<AuthUser | { user?: AuthUser }>(
     "GET",
     "/api/auth/me",
     undefined,
-    true,
+    false,
   );
   const user = (data as { user?: AuthUser }).user ?? (data as AuthUser);
   return user;

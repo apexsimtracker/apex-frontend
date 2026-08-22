@@ -1,0 +1,37 @@
+# https://apexsimtracker.com/
+# Public discovery pages: Allow. Auth, account, admin, and tooling: Disallow.
+
+User-agent: *
+Allow: /
+
+# Admin (all nested routes)
+Disallow: /admin
+
+# Account & verification (PageMeta: noindex; disallow saves crawl budget)
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /verify-email
+
+# Auth-guarded app areas
+Disallow: /profile
+Disallow: /settings
+Disallow: /personal-bests
+Disallow: /upload
+Disallow: /manual
+Disallow: /upgrade
+
+# Sessions list only (detail pages remain public)
+Disallow: /sessions$
+Allow: /sessions/
+
+# Session edit & legacy paths
+Disallow: /sessions/*/edit
+Disallow: /activity/
+
+# Internal / low SEO value
+Disallow: /agent
+Disallow: /qa
+Disallow: /status/
+
+Sitemap: https://apexsimtracker.com/sitemap.xml
