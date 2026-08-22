@@ -26,6 +26,7 @@ import {
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { cn } from "@/lib/utils";
 import { FreePlanCard } from "./pricing/FreePlanCard";
@@ -38,6 +39,7 @@ const description = `Compare Free and Apex Pro plans for sim racing telemetry, l
 
 export default function Pricing() {
   const { user, loading: authLoading } = useAuth();
+  const { isNative } = usePlatform();
   const navigate = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -184,7 +186,7 @@ export default function Pricing() {
           </p>
         </div>
 
-        {showAgentCta && message && !error && (
+        {showAgentCta && message && !error && !isNative && (
           <div className="mb-8 rounded-apex-lg border border-apex-success/30 bg-apex-success/10 p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>

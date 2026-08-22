@@ -19,7 +19,11 @@ import {
   type DataExportJob,
   type SessionVisibility,
 } from "@/lib/api";
-import { getApexSettings, type ApexSettings, DEFAULT_IN_APP_NOTIFICATION_PREFS } from "@/lib/settingsStorage";
+import {
+  getApexSettings,
+  type ApexSettings,
+  DEFAULT_IN_APP_NOTIFICATION_PREFS,
+} from "@/lib/settingsStorage";
 import type { InAppNotificationPrefs } from "@/lib/api";
 import {
   settingsTitle,
@@ -56,6 +60,7 @@ import SettingsDeleteDialog from "./settings/SettingsDeleteDialog";
 import SettingsPasswordSection from "./settings/SettingsPasswordSection";
 import SettingsNotificationsSection from "./settings/SettingsNotificationsSection";
 import SettingsAccountActionsSection from "./settings/SettingsAccountActionsSection";
+import SettingsLegalLinks from "./settings/SettingsLegalLinks";
 import SettingsWeeklyGoalsSection from "./settings/SettingsWeeklyGoalsSection";
 import { SettingsSectionChrome } from "./settings/SettingsSectionChrome";
 import { SubscriptionCard } from "./settings/SubscriptionCard";
@@ -481,9 +486,7 @@ export default function Settings() {
     try {
       openDataExportDownload(exportJob);
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Could not start download.",
-      );
+      toast.error(e instanceof Error ? e.message : "Could not start download.");
     }
   }, [exportJob]);
 
@@ -709,6 +712,8 @@ export default function Settings() {
               onLogout={handleLogout}
               onDeleteAccount={() => setDeleteDialogOpen(true)}
             />
+
+            <SettingsLegalLinks />
           </div>
         </div>
       </div>

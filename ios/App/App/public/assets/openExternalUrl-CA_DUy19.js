@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-CqL-Pr3-.js","assets/index-CoVk3QoX.js","assets/react-vendor-8FlIWKjL.js","assets/radix-CyJMUrKH.js","assets/query-IqvatVjM.js","assets/lucide-CqzDZMav.js","assets/index-ByTKlnBa.css"])))=>i.map(i=>d[i]);
+import{cG as o,ar as e,n as a}from"./index-CoVk3QoX.js";const t=o("Browser",{web:()=>e(()=>import("./web-CqL-Pr3-.js"),__vite__mapDeps([0,1,2,3,4,5,6])).then(r=>new r.BrowserWeb)});async function n(r){if(a.isNativePlatform()){await t.open({url:r});return}window.location.assign(r)}export{n as o};

@@ -1,0 +1,25 @@
+{
+	"appId": "com.apexsimtracker.app",
+	"appName": "Apex",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"android": {
+		"allowMixedContent": false
+	},
+	"plugins": {
+		"SplashScreen": {
+			"backgroundColor": "#070915",
+			"showSpinner": false,
+			"androidScaleType": "CENTER_CROP"
+		}
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin",
+		"KeyboardPlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin"
+	]
+}

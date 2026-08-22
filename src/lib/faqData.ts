@@ -107,7 +107,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: "Account",
     question: "Can I delete my account?",
     answer:
-      "Yes. You can delete your account from the Settings page. You'll be asked to confirm with your current password. In line with GDPR, your personal data will be permanently removed upon deletion.",
+      "Yes. You can delete your account from the Settings page. You'll be asked to confirm with your current password. This is a soft delete: we sign you out everywhere and anonymise your email, name, bio, avatar, and password so you cannot sign in again. Uploaded session telemetry, community posts, billing cache, and similar records may remain in anonymised or disassociated form. Contact us if you need to request fuller erasure.",
   },
 ];
 

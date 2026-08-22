@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Maximize2 } from "lucide-react";
 import { formatLapMs, cn } from "@/lib/utils";
 import { useIsProUser, useAuth } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import {
   useTelemetrySummary,
   useTelemetryTraces,
@@ -47,6 +48,7 @@ export default function SessionTelemetry({
 }: SessionTelemetryProps) {
   const { loading: authLoading } = useAuth();
   const isPro = useIsProUser();
+  const { isNative } = usePlatform();
   const agentOnlyGate = isAgentOnlyTelemetryGate(ingestPath);
   const [tab, setTab] = useState<TabId>("driving");
   const [compareLap, setCompareLap] = useState<number | null>(null);
@@ -156,12 +158,14 @@ export default function SessionTelemetry({
           Agent or upload an .ibt file to capture driving traces, fuel, and tyre
           data.
         </p>
-        <Link
-          to="/agent"
-          className="mt-4 inline-flex rounded-full border border-apex-outline-variant/30 px-4 py-2 font-apex-body text-xs font-bold uppercase tracking-widest text-apex-on-surface"
-        >
-          Get Apex Agent
-        </Link>
+        {!isNative ? (
+          <Link
+            to="/agent"
+            className="mt-4 inline-flex rounded-full border border-apex-outline-variant/30 px-4 py-2 font-apex-body text-xs font-bold uppercase tracking-widest text-apex-on-surface"
+          >
+            Get Apex Agent
+          </Link>
+        ) : null}
       </section>
     );
   }
