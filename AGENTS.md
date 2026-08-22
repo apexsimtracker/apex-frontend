@@ -172,7 +172,19 @@ Netlify is not configured in this repo; prefer Vercel for this SPA.
 
 ### iOS / Android (Capacitor)
 
-Native projects live under `ios/` and `android/` (generated via `pnpm cap:add`). CocoaPods needs UTF-8 — scripts set `LANG=en_US.UTF-8`.
+Native projects under `ios/` and `android/` are **tracked in git**. Nested `.gitignore` files exclude Xcode userdata, Gradle caches, keystores, and `google-services.json`. `pnpm cap:add` is only for a machine that has no native folders yet.
+
+CocoaPods needs UTF-8 — scripts set `LANG=en_US.UTF-8`.
+
+`pnpm cap:sync` (and `build:mobile*`) runs `sync-native-version.mjs` then `cap sync` then `patch-ios-info-plist.mjs`. Bump `"version"` and `"nativeBuildNumber"` in `package.json` before a store upload; do not edit Gradle/pbxproj versions by hand.
+
+**Store / archive hygiene**
+
+- Never commit `ios/App/App/capacitor.config.json` (or the Android copy) with a `server.url` live-reload entry. After a SIGKILL during `pnpm dev:ios`, run `pnpm cap:sync` to restore config from `capacitor.config.ts`.
+- `android.allowMixedContent` is **false** in `capacitor.config.ts` (staging/prod APIs are HTTPS). Local Android + `http://10.0.2.2` may need mixed content temporarily in the live-reload path only — do not commit it `true`.
+- iOS **Signing & Capabilities**: set **Development Team** in Xcode once App Store Connect access exists. Do not invent a `DEVELOPMENT_TEAM` in `project.pbxproj`.
+- **Universal Links / App Links** (Phase D): `public/.well-known/apple-app-site-association` uses placeholder `TEAMID.com.apexsimtracker.app`; `assetlinks.json` uses placeholder SHA-256 `REPLACE_WITH_PLAY_UPLOAD_CERT_SHA256`. Replace `TEAMID` after Apple Developer enrollment (do not invent one). Replace the fingerprint from Play App Signing / the upload cert (`keytool` or Play Console). Until those are real, OS verification fails and taps stay in the browser. After deploy, `curl -I https://apexsimtracker.com/.well-known/apple-app-site-association` should be `200` with `Content-Type: application/json` (no redirect).
+- Android release signing is optional env vars (unsigned if unset): `APEX_ANDROID_KEYSTORE`, `APEX_ANDROID_KEYSTORE_PASSWORD`, `APEX_ANDROID_KEY_ALIAS`, `APEX_ANDROID_KEY_PASSWORD`. Never commit `.jks` / `.keystore`.
 
 **iOS Simulator (production API):**
 
@@ -201,7 +213,7 @@ pnpm dev:ios:local         # same, but --mode mobile → local Fastify on :10000
 
 [`scripts/run-ios.mjs`](scripts/run-ios.mjs) owns the Vite process because Capacitor's `-l` flag only rewrites `server.url` in the native config — it never starts a dev server. `--host localhost` is required: the simulator shares the Mac's network and the API's CORS allowlist covers `http://localhost:8080` but not a LAN IP.
 
-JS/CSS edits hot-reload. Changes to `capacitor.config.ts`, plugins, or native assets still need `pnpm build:mobile:staging`. The script forwards Ctrl+C (and SIGTERM) to Capacitor so it restores `server.url` in `ios/App/App/capacitor.config.json`; after a SIGKILL, that file can be left pointing at the dev server, and `pnpm build:mobile:staging` regenerates it.
+JS/CSS edits hot-reload. Changes to `capacitor.config.ts`, plugins, or native assets still need `pnpm build:mobile:staging`. The script forwards Ctrl+C (and SIGTERM) to Capacitor so it restores `server.url` in `ios/App/App/capacitor.config.json`; after a SIGKILL, that file can be left pointing at the dev server — run `pnpm cap:sync` (do not commit a config that contains `"url"`).
 
 Only `:8080` and `:5173` are in the staging CORS allowlist, so `--port` is limited to those when running against staging. If a dev server is already listening on the port, the script reuses it — that server's own Vite mode then decides which API tier the app talks to.
 

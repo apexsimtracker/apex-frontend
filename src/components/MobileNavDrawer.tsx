@@ -34,7 +34,7 @@ import {
   getFooterLegalLinks,
   getPrimaryNavItems,
   isNavPathActive,
-  logSessionMenuItems,
+  getLogSessionMenuItems,
   AUTH_PATHS,
   type AccountMenuItem,
   type FooterLinkItem,
@@ -182,6 +182,7 @@ export default function MobileNavDrawer({
   const accountItems = user
     ? getAccountMenuItemsForUser(user.role === "ADMIN", isNative)
     : [];
+  const createItems = getLogSessionMenuItems(isNative);
   const accountName =
     user?.displayName?.trim() ||
     user?.name?.trim() ||
@@ -378,7 +379,7 @@ export default function MobileNavDrawer({
                     </button>
                     {isCreateOpen ? (
                       <div className="ml-3 space-y-0.5 border-l border-apex-outline-variant/15 pl-2">
-                        {logSessionMenuItems.map((item) => {
+                        {createItems.map((item) => {
                           const Icon = createMenuIcon(item.icon);
                           return (
                             <Link

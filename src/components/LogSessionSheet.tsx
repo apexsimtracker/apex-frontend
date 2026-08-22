@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { ChevronRight, PenLine, Upload, X, Zap } from "lucide-react";
-import { logSessionMenuItems, type LogSessionMenuIcon, type LogSessionMenuItem } from "@/config/navigation";
+import {
+  getLogSessionMenuItems,
+  type LogSessionMenuIcon,
+  type LogSessionMenuItem,
+} from "@/config/navigation";
+import { usePlatform } from "@/hooks/usePlatform";
 import { Dialog, DialogPortal } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -102,6 +107,8 @@ export default function LogSessionSheet({
   onOpenChange,
 }: LogSessionSheetProps) {
   const navigate = useNavigate();
+  const { isNative } = usePlatform();
+  const items = getLogSessionMenuItems(isNative);
 
   const handleSelect = (to: string) => {
     onOpenChange(false);
@@ -122,6 +129,7 @@ export default function LogSessionSheet({
           <DialogPrimitive.Content
             className={cn(
               "fixed inset-x-0 bottom-0 z-[80] mx-auto flex h-[58vh] w-full max-w-xl flex-col overflow-hidden",
+              "pb-[max(2rem,env(safe-area-inset-bottom,0px))]",
               appModalSheetTopRadiusClassName,
               "border-t border-apex-outline-variant/15 bg-apex-background text-apex-on-surface",
               "outline-none",
@@ -168,7 +176,7 @@ export default function LogSessionSheet({
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {logSessionMenuItems.map((item) => (
+              {items.map((item) => (
                 <LogSessionSheetRow
                   key={item.id}
                   item={item}
@@ -176,8 +184,6 @@ export default function LogSessionSheet({
                 />
               ))}
             </div>
-
-            <div className="h-8 w-full shrink-0" aria-hidden />
           </DialogPrimitive.Content>
         </div>
       </DialogPortal>

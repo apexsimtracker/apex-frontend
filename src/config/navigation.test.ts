@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   footerCompanyLinks,
+  getAccountMenuItemsForUser,
   getFooterLegalLinks,
   getFooterProductLinks,
+  getLogSessionMenuItems,
   getPrimaryNavItems,
 } from "./navigation";
 
@@ -29,18 +31,38 @@ describe("company and legal links (mobile drawer sections)", () => {
     ]);
   });
 
-  it("keeps EULA on web but hides it in the native shell", () => {
+  it("includes EULA on web and in the native shell", () => {
     expect(getFooterLegalLinks(false).map((link) => link.to)).toContain(
       "/eula",
     );
-    expect(getFooterLegalLinks(true).map((link) => link.to)).not.toContain(
-      "/eula",
-    );
+    expect(getFooterLegalLinks(true).map((link) => link.to)).toContain("/eula");
   });
 
   it("hides the desktop agent download in the native shell", () => {
     expect(getFooterProductLinks(true).map((link) => link.to)).not.toContain(
       "/agent",
     );
+  });
+});
+
+describe("getAccountMenuItemsForUser", () => {
+  it("hides admin and agent in the native shell", () => {
+    const paths = getAccountMenuItemsForUser(true, true).map((item) => item.to);
+    expect(paths).not.toContain("/admin");
+    expect(paths).not.toContain("/agent");
+  });
+
+  it("shows admin on web for admins", () => {
+    expect(getAccountMenuItemsForUser(true, false).map((item) => item.to)).toContain(
+      "/admin",
+    );
+  });
+});
+
+describe("getLogSessionMenuItems", () => {
+  it("hides Auto-track (agent download) in the native shell", () => {
+    const paths = getLogSessionMenuItems(true).map((item) => item.to);
+    expect(paths).not.toContain("/agent");
+    expect(paths).toEqual(["/manual", "/upload"]);
   });
 });

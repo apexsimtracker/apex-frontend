@@ -1,0 +1,9 @@
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Live-reload leftovers
+App/App/capacitor.config.json.bak

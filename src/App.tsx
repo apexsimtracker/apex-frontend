@@ -19,11 +19,13 @@ import ScrollToTop from "./components/ScrollToTop";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import GuestOnlyRoute from "./auth/GuestOnlyRoute";
 import AdminRoute from "./auth/AdminRoute";
+import WebOnlyRoute from "./auth/WebOnlyRoute";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
 import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import ProductAppLayout from "./components/ProductAppLayout";
+import NativeDeepLinkListener from "./components/NativeDeepLinkListener";
 import HomeRoute from "./pages/HomeRoute";
 import {
   prefetchAuthenticatedHomeData,
@@ -207,6 +209,7 @@ export default function App() {
           <SessionDataCacheSync />
           <Toaster theme="dark" />
           <BrowserRouter>
+            <NativeDeepLinkListener />
             <Routes>
               <Route
                 path="/admin"
@@ -285,7 +288,14 @@ export default function App() {
                           path="home"
                           element={<Navigate to="/" replace />}
                         />
-                        <Route path="agent" element={<Agent />} />
+                        <Route
+                          path="agent"
+                          element={
+                            <WebOnlyRoute>
+                              <Agent />
+                            </WebOnlyRoute>
+                          }
+                        />
                         <Route path="leaderboards" element={<Leaderboards />} />
                         <Route path="challenges" element={<Challenges />} />
                         <Route path="community" element={<Community />} />

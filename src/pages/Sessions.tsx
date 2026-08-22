@@ -36,6 +36,7 @@ import {
 } from "@/lib/api/sessionsLibrary";
 import { isNetworkError } from "@/lib/api/profile";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
+import { usePlatform } from "@/hooks/usePlatform";
 import PageMeta from "@/components/PageMeta";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { cn } from "@/lib/utils";
@@ -175,6 +176,7 @@ function EmptyManual() {
 
 function EmptyTelemetry() {
   const isPro = useIsProUser();
+  const { isNative } = usePlatform();
   return (
     <div className="rounded-apex-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-8 text-center">
       <p className="font-apex-body text-sm text-apex-on-surface-variant">
@@ -188,7 +190,7 @@ function EmptyTelemetry() {
           <Upload className="mr-2 size-4" />
           Upload Session
         </Link>
-        {isPro ? (
+        {isPro && !isNative ? (
           <Link
             to="/agent"
             className={`${appOutlineButtonClassName} inline-flex h-11 items-center justify-center px-6`}
@@ -196,14 +198,14 @@ function EmptyTelemetry() {
             <Cpu className="mr-2 size-4" />
             Get the Agent
           </Link>
-        ) : (
+        ) : !isPro ? (
           <Link
             to={"/pricing"}
             className={`${appOutlineButtonClassName} inline-flex h-11 items-center justify-center px-6 text-apex-primary`}
           >
             Upgrade for Agent
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   );

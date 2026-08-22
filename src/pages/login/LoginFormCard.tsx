@@ -215,6 +215,24 @@ export default function LoginFormCard({
               "Sign in"
             )}
           </Button>
+
+          <p className="text-center font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
+            By signing in, you agree to our{" "}
+            <Link
+              to="/terms-and-conditions"
+              className="text-apex-primary transition-colors hover:text-apex-primary/80"
+            >
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/privacy-policy"
+              className="text-apex-primary transition-colors hover:text-apex-primary/80"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </form>
       </Form>
     </div>
