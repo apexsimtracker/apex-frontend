@@ -6,15 +6,19 @@ import {
   apiPost,
   ApiError,
   getSessionCommentsPage,
+  createSessionComment,
+  updateSessionComment,
+  deleteSessionComment,
+  getSessionCommentReplies,
   SESSION_COMMENTS_PAGE_DEFAULT_LIMIT,
   SESSION_COMMENT_MAX_LENGTH,
   type SessionCommentFilter,
   type SessionCommentItem,
+  type SessionCommentsPageResult,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { RaceHistoryPagination } from "@/components/RaceHistoryPagination";
-import { cn, timeAgo } from "@/lib/utils";
-import { resolveApiUrl } from "@/lib/api/config";
+import { cn } from "@/lib/utils";
 import {
   appManualTextareaClassName,
   appOutlineButtonClassName,
@@ -22,6 +26,15 @@ import {
 } from "@/components/app-ui/appButtonClasses";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import CommentThread from "@/components/comments/CommentThread";
+import { Skeleton } from "@/components/ui/skeleton";
+import { commentDeleteCountDelta } from "@/components/comments/commentUi";
+import {
+  COMMENT_REPLIES_PAGE_SIZE,
+  mergeCommentReplies,
+  nextCommentRepliesOffset,
+  preserveLoadedReplies,
+} from "@/components/comments/replyPagination";
 
 const COMMENTS_MODAL_LIMIT = SESSION_COMMENTS_PAGE_DEFAULT_LIMIT;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -37,26 +50,16 @@ type SessionCommentsModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCommentAdded: () => void;
+  onCommentDeleted?: (countDelta: number) => void;
   onRefreshSession?: () => void;
 };
-
-function authorInitials(name: string): string {
-  return (
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .join("") || "?"
-  );
-}
 
 export function SessionCommentsModal({
   sessionId,
   isOpen,
   onClose,
   onCommentAdded,
+  onCommentDeleted,
   onRefreshSession,
 }: SessionCommentsModalProps) {
   const navigate = useNavigate();
@@ -67,7 +70,25 @@ export function SessionCommentsModal({
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<SessionCommentFilter>("all");
   const [searchInput, setSearchInput] = useState("");
+  const [threadReplyOpenId, setThreadReplyOpenId] = useState<string | null>(
+    null,
+  );
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [commentEditError, setCommentEditError] = useState<string | null>(null);
+  const [threadReplyError, setThreadReplyError] = useState<string | null>(null);
+  const [loadingMoreRootId, setLoadingMoreRootId] = useState<string | null>(
+    null,
+  );
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+  const commentsQueryKey = [
+    "sessions",
+    sessionId,
+    "modal-comments",
+    page,
+    COMMENTS_MODAL_LIMIT,
+    filter,
+    debouncedSearch.trim(),
+  ] as const;
 
   useEffect(() => {
     if (!isOpen || !sessionId) return;
@@ -88,22 +109,21 @@ export function SessionCommentsModal({
     isError: commentsFailed,
     refetch,
   } = useQuery({
-    queryKey: [
-      "sessions",
-      sessionId,
-      "modal-comments",
-      page,
-      COMMENTS_MODAL_LIMIT,
-      filter,
-      debouncedSearch.trim(),
-    ],
-    queryFn: () =>
-      getSessionCommentsPage(sessionId, {
+    queryKey: commentsQueryKey,
+    queryFn: async () => {
+      const cached =
+        queryClient.getQueryData<SessionCommentsPageResult>(commentsQueryKey);
+      const fresh = await getSessionCommentsPage(sessionId, {
         page,
         limit: COMMENTS_MODAL_LIMIT,
         filter,
         q: debouncedSearch.trim() || undefined,
-      }),
+      });
+      return {
+        ...fresh,
+        comments: preserveLoadedReplies(fresh.comments, cached?.comments),
+      };
+    },
     enabled: isOpen && Boolean(sessionId),
   });
 
@@ -122,8 +142,7 @@ export function SessionCommentsModal({
     ? "Can't load comments. Backend may be offline."
     : null;
 
-  const hasActiveFilters =
-    filter !== "all" || searchInput.trim().length > 0;
+  const hasActiveFilters = filter !== "all" || searchInput.trim().length > 0;
 
   const charCount = commentText.length;
   const overLimit = charCount > SESSION_COMMENT_MAX_LENGTH;
@@ -152,6 +171,183 @@ export function SessionCommentsModal({
         return;
       }
       setCommentError("Can't post right now. Backend may be offline.");
+    },
+  });
+
+  const patchComments = (
+    updater: (page: SessionCommentsPageResult) => SessionCommentsPageResult,
+  ) => {
+    queryClient.setQueryData<SessionCommentsPageResult>(
+      commentsQueryKey,
+      (prev) => (prev ? updater(prev) : prev),
+    );
+  };
+
+  const nestedReplyMutation = useMutation({
+    mutationFn: ({ parentId, body }: { parentId: string; body: string }) =>
+      createSessionComment(sessionId, body, parentId),
+    onMutate: async ({ parentId, body }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
+      const previous =
+        queryClient.getQueryData<SessionCommentsPageResult>(commentsQueryKey);
+      const optimistic: SessionCommentItem = {
+        id: `temp-${Date.now()}`,
+        userId: user?.id ?? "",
+        body,
+        createdAt: new Date().toISOString(),
+        parentId,
+        author: {
+          id: user?.id ?? "",
+          displayName: user?.displayName ?? user?.name ?? "You",
+          avatarUrl: user?.avatarUrl ?? null,
+        },
+        replies: [],
+        replyCount: 0,
+      };
+      patchComments((pageData) => ({
+        ...pageData,
+        comments: pageData.comments.map((item) =>
+          item.id === parentId
+            ? {
+                ...item,
+                replies: [optimistic, ...(item.replies ?? [])],
+                replyCount: (item.replyCount ?? item.replies?.length ?? 0) + 1,
+              }
+            : item,
+        ),
+        total: pageData.total,
+      }));
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+      setThreadReplyError(
+        err instanceof Error ? err.message : "Failed to post reply.",
+      );
+    },
+    onSuccess: () => {
+      setThreadReplyError(null);
+      setThreadReplyOpenId(null);
+      onCommentAdded();
+      onRefreshSession?.();
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
+    },
+  });
+
+  const editCommentMutation = useMutation({
+    mutationFn: ({ commentId, body }: { commentId: string; body: string }) =>
+      updateSessionComment(sessionId, commentId, body),
+    onMutate: async ({ commentId, body }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
+      const previous =
+        queryClient.getQueryData<SessionCommentsPageResult>(commentsQueryKey);
+      patchComments((pageData) => ({
+        ...pageData,
+        comments: pageData.comments.map((item) => {
+          if (item.id === commentId) {
+            return {
+              ...item,
+              body,
+              originalBody: item.body,
+              editedAt: new Date().toISOString(),
+              wasEdited: true,
+            };
+          }
+          return {
+            ...item,
+            replies: (item.replies ?? []).map((r) =>
+              r.id === commentId
+                ? {
+                    ...r,
+                    body,
+                    originalBody: r.body,
+                    editedAt: new Date().toISOString(),
+                    wasEdited: true,
+                  }
+                : r,
+            ),
+          };
+        }),
+      }));
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+      setCommentEditError(
+        err instanceof Error ? err.message : "Failed to edit comment.",
+      );
+    },
+    onSuccess: () => {
+      setCommentEditError(null);
+      setEditingCommentId(null);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) =>
+      deleteSessionComment(sessionId, commentId),
+    onMutate: async (commentId) => {
+      await queryClient.cancelQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
+      const previous =
+        queryClient.getQueryData<SessionCommentsPageResult>(commentsQueryKey);
+      const targetRoot = previous?.comments.find(
+        (item) => item.id === commentId,
+      );
+      // Deleting a root takes its replies with it, so the thread leaves the list
+      // whether the server hard-deletes it or tombstones the whole thread.
+      const removesThread = targetRoot != null;
+      const countDelta = commentDeleteCountDelta(targetRoot);
+      patchComments((pageData) => ({
+        ...pageData,
+        comments: removesThread
+          ? pageData.comments.filter((item) => item.id !== commentId)
+          : pageData.comments.map((item) => ({
+              ...item,
+              replies: (item.replies ?? []).map((r) =>
+                r.id === commentId
+                  ? {
+                      ...r,
+                      deletedAt: new Date().toISOString(),
+                      body: "",
+                    }
+                  : r,
+              ),
+            })),
+        total: removesThread
+          ? Math.max(0, pageData.total - 1)
+          : pageData.total,
+      }));
+      return { previous, countDelta };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+    },
+    onSuccess: (_data, _vars, ctx) => {
+      onRefreshSession?.();
+      onCommentDeleted?.(ctx?.countDelta ?? 1);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["sessions", sessionId, "modal-comments"],
+      });
     },
   });
 
@@ -212,9 +408,7 @@ export function SessionCommentsModal({
             <p
               className={cn(
                 "font-apex-body text-xs tabular-nums",
-                overLimit
-                  ? "text-apex-error"
-                  : "text-apex-on-surface-variant",
+                overLimit ? "text-apex-error" : "text-apex-on-surface-variant",
               )}
             >
               {charCount}/{SESSION_COMMENT_MAX_LENGTH}
@@ -225,11 +419,7 @@ export function SessionCommentsModal({
                 appPrimaryButtonClassName,
                 "inline-flex shrink-0 items-center justify-center px-4 py-2",
               )}
-              disabled={
-                commentPending ||
-                !commentText.trim() ||
-                overLimit
-              }
+              disabled={commentPending || !commentText.trim() || overLimit}
               onClick={() => void submitComment()}
             >
               {commentPending ? "Posting…" : "Post"}
@@ -306,9 +496,25 @@ export function SessionCommentsModal({
       </div>
 
       {commentsLoading ? (
-        <p className="font-apex-body text-sm text-apex-on-surface-variant">
-          Loading comments…
-        </p>
+        <div
+          className="space-y-3"
+          aria-busy="true"
+          aria-label="Loading comments"
+        >
+          {[0, 1, 2].map((row) => (
+            <div
+              key={row}
+              className="flex gap-3 rounded-lg bg-apex-surface-container-low/60 p-3"
+            >
+              <Skeleton className="size-9 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/5" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : commentsError ? (
         <div className="space-y-2">
           <p className="font-apex-body text-sm text-apex-on-surface-variant">
@@ -331,78 +537,82 @@ export function SessionCommentsModal({
         </p>
       ) : (
         <ul className="space-y-3">
-          {comments.map((c) => {
-            const displayName =
-              c.author?.displayName?.trim() || "Community member";
-            const avatarSrc = resolveApiUrl(c.author?.avatarUrl);
-            const isMine = Boolean(user?.id && c.userId === user.id);
-            const isOwner = Boolean(c.isSessionOwner);
-
-            return (
-              <li
-                key={c.id}
-                className="rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low/60 p-3"
-              >
-                <div className="mb-2 flex items-start gap-3">
-                  <button
-                    type="button"
-                    className="shrink-0"
-                    onClick={() => {
-                      if (c.userId) {
-                        navigate(`/user/${encodeURIComponent(c.userId)}`);
-                      }
-                    }}
-                    aria-label={`View ${displayName}'s profile`}
-                  >
-                    {avatarSrc ? (
-                      <img
-                        src={avatarSrc}
-                        alt=""
-                        className="size-9 rounded-full border border-apex-outline-variant/20 object-cover"
-                      />
-                    ) : (
-                      <div className="flex size-9 items-center justify-center rounded-full border border-apex-outline-variant/20 bg-apex-surface-container-high text-[11px] font-semibold text-apex-on-surface-variant">
-                        {authorInitials(displayName)}
-                      </div>
-                    )}
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (c.userId) {
-                            navigate(`/user/${encodeURIComponent(c.userId)}`);
-                          }
-                        }}
-                        className="truncate font-apex-body text-sm font-semibold text-apex-on-surface transition-colors hover:text-apex-primary"
-                      >
-                        {displayName}
-                      </button>
-                      {isMine ? (
-                        <span className="rounded-apex-sm bg-apex-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-apex-primary">
-                          You
-                        </span>
-                      ) : null}
-                      {isOwner ? (
-                        <span className="rounded-apex-sm bg-apex-surface-container-highest px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-apex-on-surface-variant">
-                          Owner
-                        </span>
-                      ) : null}
-                      {c.createdAt ? (
-                        <span className="font-apex-body text-[11px] text-apex-on-surface-variant">
-                          {timeAgo(c.createdAt)}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-1.5 whitespace-pre-wrap font-apex-body text-sm leading-relaxed text-apex-on-surface">
-                      {c.body}
-                    </p>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+          {comments.map((c) => (
+            <CommentThread
+              key={c.id}
+              comment={{
+                ...c,
+                author: c.author,
+              }}
+              variant="session"
+              currentUserId={user?.id ?? null}
+              isAdmin={user?.role === "ADMIN"}
+              signedIn={Boolean(user)}
+              maxLength={SESSION_COMMENT_MAX_LENGTH}
+              replyOpen={threadReplyOpenId === c.id}
+              editingId={editingCommentId}
+              editError={commentEditError}
+              replyError={threadReplyOpenId === c.id ? threadReplyError : null}
+              posting={
+                nestedReplyMutation.isPending ||
+                editCommentMutation.isPending ||
+                deleteCommentMutation.isPending
+              }
+              onToggleReply={(rootId) => {
+                if (!user) {
+                  navigate("/login");
+                  return;
+                }
+                setThreadReplyError(null);
+                setThreadReplyOpenId((cur) => (cur === rootId ? null : rootId));
+              }}
+              onToggleEdit={(commentId) => {
+                setCommentEditError(null);
+                setEditingCommentId(commentId);
+              }}
+              onSubmitReply={(rootId, body) =>
+                nestedReplyMutation.mutate({ parentId: rootId, body })
+              }
+              onSubmitEdit={(commentId, body) =>
+                editCommentMutation.mutate({ commentId, body })
+              }
+              onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
+              loadingMore={loadingMoreRootId === c.id}
+              onLoadMoreReplies={(rootId) => {
+                if (loadingMoreRootId) return;
+                const current = queryClient
+                  .getQueryData<SessionCommentsPageResult>(commentsQueryKey)
+                  ?.comments.find((item) => item.id === rootId);
+                const offset = nextCommentRepliesOffset(
+                  current?.replies?.length ?? 0,
+                );
+                setLoadingMoreRootId(rootId);
+                void getSessionCommentReplies(sessionId, rootId, {
+                  offset,
+                  limit: COMMENT_REPLIES_PAGE_SIZE,
+                })
+                  .then((res) => {
+                    patchComments((pageData) => ({
+                      ...pageData,
+                      comments: pageData.comments.map((item) =>
+                        item.id === rootId
+                          ? {
+                              ...item,
+                              replies: mergeCommentReplies(
+                                item.replies,
+                                res.items,
+                              ),
+                              replyCount: res.total,
+                              hasMoreReplies: res.hasMore,
+                            }
+                          : item,
+                      ),
+                    }));
+                  })
+                  .finally(() => setLoadingMoreRootId(null));
+              }}
+            />
+          ))}
         </ul>
       )}
 

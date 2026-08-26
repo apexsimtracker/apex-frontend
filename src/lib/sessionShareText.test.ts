@@ -29,8 +29,9 @@ function backendConsistencyPct(lapTimes: number[]): number | null {
 
   const laps = lapTimes.filter((ms) => Number.isFinite(ms) && ms > 0);
   if (laps.length < 3) return null;
-  const bestLapMs = Math.min(...laps);
-  if (bestLapMs <= 0) return null;
+  laps.sort((a, b) => a - b);
+  laps.length = Math.ceil(laps.length * 0.75);
+  const bestLapMs = laps[0]!;
   const scores = laps.map((lap) =>
     lapConsistencyScore((lap - bestLapMs) / 1000),
   );
@@ -64,6 +65,15 @@ describe("calcConsistencyScore", () => {
     expect(calcConsistencyScore([90_000, 90_000, 90_000])).toBe(100);
   });
 
+  it("scores the fastest 75%, rounded up", () => {
+    expect(calcConsistencyScore([90_000, 90_200, 90_300, 94_000])).toBe(
+      Math.round((100 + 97.5 + 90) / 3),
+    );
+    expect(
+      calcConsistencyScore([90_000, 90_100, 90_200, 90_300, 94_000]),
+    ).toBe(Math.round((100 + 97.5 + 97.5 + 90) / 4));
+  });
+
   it("sanitizeLapTimesForConsistency drops invalid times", () => {
     expect(
       sanitizeLapTimesForConsistency([100_000, 0, -5, NaN, 100_100]),
@@ -95,5 +105,24 @@ describe("buildSessionShareText", () => {
       laps: [{ timeMs: 120_000 }, { timeMs: 120_500 }, { timeMs: 121_000 }],
     });
     expect(text.split("\n")[0]).toMatch(/^Apex — Qualifying @ /);
+  });
+
+  it("excludes lap 1, out-laps, and invalid laps from share consistency", () => {
+    const text = buildSessionShareText({
+      sessionType: "PRACTICE",
+      lapCount: 7,
+      bestLapMs: 90_000,
+      laps: [
+        { lap: 1, timeMs: 50_000 },
+        { lap: 2, timeMs: 150_000, isOutLap: true },
+        { lap: 3, timeMs: 160_000, isValid: false },
+        { lap: 4, timeMs: 90_000 },
+        { lap: 5, timeMs: 90_200 },
+        { lap: 6, timeMs: 90_300 },
+        { lap: 7, timeMs: 94_000 },
+      ],
+    });
+
+    expect(text).toContain("Consistency: 96/100");
   });
 });

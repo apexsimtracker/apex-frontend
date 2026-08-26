@@ -85,7 +85,11 @@ export default function ManualActivity() {
       });
       setFormState("success");
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("apex:activity-updated"));
+        window.dispatchEvent(
+          new CustomEvent("apex:activity-updated", {
+            detail: { sessionId: result.sessionId },
+          }),
+        );
       }
       setTimeout(() => {
         navigate(`/sessions/${result.sessionId}`);

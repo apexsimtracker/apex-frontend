@@ -1,5 +1,11 @@
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { ChevronLeft } from "lucide-react";
 import {
   keepPreviousData,
@@ -11,6 +17,9 @@ import {
   getDiscussion,
   getDiscussionComments,
   createDiscussionComment,
+  updateDiscussionComment,
+  deleteDiscussionComment,
+  getDiscussionCommentReplies,
   DISCUSSION_COMMENTS_PAGE_SIZE,
   likeDiscussion,
   unlikeDiscussion,
@@ -20,6 +29,7 @@ import {
   deleteDiscussionImage,
   type Discussion,
   type DiscussionComment,
+  type DiscussionCommentsPageResult,
 } from "@/lib/api/community";
 import {
   resolveDiscussionAvatarSrc,
@@ -53,6 +63,13 @@ import {
   DISCUSSION_REPLY_MAX_LENGTH,
 } from "@/pages/discussion/discussionReplyUtils";
 import { useRecordDiscussionView } from "@/hooks/useRecordDiscussionView";
+import { commentDeleteCountDelta } from "@/components/comments/commentUi";
+import {
+  COMMENT_REPLIES_PAGE_SIZE,
+  mergeCommentReplies,
+  nextCommentRepliesOffset,
+  preserveLoadedReplies,
+} from "@/components/comments/replyPagination";
 
 const COMMUNITY_PATH = "/community";
 const COMMENTS_SORT = "desc" as const;
@@ -129,6 +146,13 @@ export default function DiscussionDetail() {
   });
 
   const [commentsPage, setCommentsPage] = useState(1);
+  const commentsQueryKey = [
+    "discussion",
+    "comments",
+    id ?? "",
+    commentsPage,
+    COMMENTS_SORT,
+  ] as const;
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [replyBarPinned, setReplyBarPinned] = useState(true);
   const [replyBarHeight, setReplyBarHeight] = useState(
@@ -145,13 +169,22 @@ export default function DiscussionDetail() {
   );
 
   const commentsQuery = useQuery({
-    queryKey: ["discussion", "comments", id ?? "", commentsPage, COMMENTS_SORT],
-    queryFn: () =>
-      getDiscussionComments(id!, {
+    queryKey: commentsQueryKey,
+    queryFn: async () => {
+      const cached =
+        queryClient.getQueryData<DiscussionCommentsPageResult>(
+          commentsQueryKey,
+        );
+      const fresh = await getDiscussionComments(id!, {
         page: commentsPage,
         limit: DISCUSSION_COMMENTS_PAGE_SIZE,
         sort: COMMENTS_SORT,
-      }),
+      });
+      return {
+        ...fresh,
+        items: preserveLoadedReplies(fresh.items, cached?.items),
+      };
+    },
     enabled: Boolean(id),
     placeholderData: keepPreviousData,
   });
@@ -170,9 +203,7 @@ export default function DiscussionDetail() {
     : null;
 
   const loading =
-    Boolean(id) &&
-    !discussion &&
-    (authLoading || discussionQuery.isPending);
+    Boolean(id) && !discussion && (authLoading || discussionQuery.isPending);
 
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState<string | null>(null);
@@ -185,6 +216,41 @@ export default function DiscussionDetail() {
   const [editRemoveImage, setEditRemoveImage] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [originalOpen, setOriginalOpen] = useState(false);
+  const [threadReplyOpenId, setThreadReplyOpenId] = useState<string | null>(
+    null,
+  );
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [commentEditError, setCommentEditError] = useState<string | null>(null);
+  const [threadReplyError, setThreadReplyError] = useState<string | null>(null);
+  const [loadingMoreRootId, setLoadingMoreRootId] = useState<string | null>(
+    null,
+  );
+
+  const bumpDiscussionCommentCount = (delta: number) => {
+    queryClient.setQueryData<Discussion>(detailKey, (prev) => {
+      if (!prev) return prev;
+      const prevCount =
+        prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
+      const nextCount = Math.max(0, prevCount + delta);
+      return {
+        ...prev,
+        commentsCount: nextCount,
+        commentCount: nextCount,
+        replies: nextCount,
+      };
+    });
+  };
+
+  const patchCommentsPage = (
+    updater: (
+      page: DiscussionCommentsPageResult,
+    ) => DiscussionCommentsPageResult,
+  ) => {
+    queryClient.setQueryData<DiscussionCommentsPageResult>(
+      commentsQueryKey,
+      (prev) => (prev ? updater(prev) : prev),
+    );
+  };
 
   const postMutation = useMutation({
     mutationFn: (body: string) => createDiscussionComment(id!, body),
@@ -193,18 +259,7 @@ export default function DiscussionDetail() {
       setReplyModalOpen(false);
       if (!id) return;
       setCommentsPage(1);
-      queryClient.setQueryData<Discussion>(detailKey, (prev) => {
-          if (!prev) return prev;
-          const prevCount =
-            prev.commentsCount ?? prev.commentCount ?? prev.replies ?? 0;
-          const nextCount = prevCount + 1;
-          return {
-            ...prev,
-            commentsCount: nextCount,
-            commentCount: nextCount,
-            replies: nextCount,
-          };
-        });
+      bumpDiscussionCommentCount(1);
       void queryClient.invalidateQueries({
         queryKey: ["discussion", "comments", id],
       });
@@ -226,6 +281,175 @@ export default function DiscussionDetail() {
     },
   });
 
+  const nestedReplyMutation = useMutation({
+    mutationFn: ({ parentId, body }: { parentId: string; body: string }) =>
+      createDiscussionComment(id!, body, parentId),
+    onMutate: async ({ parentId, body }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+      const previous =
+        queryClient.getQueryData<DiscussionCommentsPageResult>(
+          commentsQueryKey,
+        );
+      const optimistic: DiscussionComment = {
+        id: `temp-${Date.now()}`,
+        body,
+        createdAt: new Date().toISOString(),
+        author: {
+          id: user?.id ?? "",
+          displayName: user?.displayName ?? user?.name ?? "You",
+          avatarUrl: user?.avatarUrl ?? null,
+        },
+        parentId,
+        replies: [],
+        replyCount: 0,
+      };
+      patchCommentsPage((page) => ({
+        ...page,
+        items: page.items.map((item) =>
+          item.id === parentId
+            ? {
+                ...item,
+                replies: [optimistic, ...(item.replies ?? [])],
+                replyCount: (item.replyCount ?? item.replies?.length ?? 0) + 1,
+              }
+            : item,
+        ),
+      }));
+      bumpDiscussionCommentCount(1);
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+        bumpDiscussionCommentCount(-1);
+      }
+      setThreadReplyError(
+        err instanceof Error ? err.message : "Failed to post reply.",
+      );
+    },
+    onSuccess: () => {
+      setThreadReplyError(null);
+      setThreadReplyOpenId(null);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+    },
+  });
+
+  const editCommentMutation = useMutation({
+    mutationFn: ({ commentId, body }: { commentId: string; body: string }) =>
+      updateDiscussionComment(id!, commentId, body),
+    onMutate: async ({ commentId, body }) => {
+      await queryClient.cancelQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+      const previous =
+        queryClient.getQueryData<DiscussionCommentsPageResult>(
+          commentsQueryKey,
+        );
+      patchCommentsPage((page) => ({
+        ...page,
+        items: page.items.map((item) => {
+          if (item.id === commentId) {
+            return {
+              ...item,
+              body,
+              originalBody: item.body,
+              editedAt: new Date().toISOString(),
+              wasEdited: true,
+            };
+          }
+          return {
+            ...item,
+            replies: (item.replies ?? []).map((r) =>
+              r.id === commentId
+                ? {
+                    ...r,
+                    body,
+                    originalBody: r.body,
+                    editedAt: new Date().toISOString(),
+                    wasEdited: true,
+                  }
+                : r,
+            ),
+          };
+        }),
+      }));
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+      setCommentEditError(
+        err instanceof Error ? err.message : "Failed to edit comment.",
+      );
+    },
+    onSuccess: () => {
+      setCommentEditError(null);
+      setEditingCommentId(null);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => deleteDiscussionComment(id!, commentId),
+    onMutate: async (commentId) => {
+      await queryClient.cancelQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+      const previous =
+        queryClient.getQueryData<DiscussionCommentsPageResult>(
+          commentsQueryKey,
+        );
+      const targetRoot = previous?.items.find((item) => item.id === commentId);
+      // Deleting a root takes its replies with it, so the thread leaves the list
+      // whether the server hard-deletes it or tombstones the whole thread.
+      const removesThread = targetRoot != null;
+      const countDelta = commentDeleteCountDelta(targetRoot);
+      patchCommentsPage((page) => ({
+        ...page,
+        total: removesThread ? Math.max(0, page.total - 1) : page.total,
+        items: removesThread
+          ? page.items.filter((item) => item.id !== commentId)
+          : page.items.map((item) => ({
+              ...item,
+              replies: (item.replies ?? []).map((r) =>
+                r.id === commentId
+                  ? {
+                      ...r,
+                      deletedAt: new Date().toISOString(),
+                      body: "",
+                    }
+                  : r,
+              ),
+            })),
+      }));
+      bumpDiscussionCommentCount(-countDelta);
+      return { previous, countDelta };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(commentsQueryKey, ctx.previous);
+        bumpDiscussionCommentCount(ctx.countDelta);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["discussion", "comments", id],
+      });
+      void queryClient.invalidateQueries({ queryKey: detailKey });
+      void queryClient.invalidateQueries({ queryKey: ["discussions"] });
+    },
+  });
+
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (!id) throw new Error("Missing discussion id");
@@ -235,13 +459,13 @@ export default function DiscussionDetail() {
     onSuccess: (data) => {
       if (!id) return;
       queryClient.setQueryData<Discussion>(detailKey, (prev) =>
-          prev
-            ? {
-                ...prev,
-                likeCount: data.likeCount,
-                likedByMe: data.likedByMe,
-              }
-            : prev,
+        prev
+          ? {
+              ...prev,
+              likeCount: data.likeCount,
+              likedByMe: data.likedByMe,
+            }
+          : prev,
       );
       void queryClient.invalidateQueries({ queryKey: ["discussions"] });
     },
@@ -464,20 +688,21 @@ export default function DiscussionDetail() {
   );
 
   const repliesTotal =
-    commentsQuery.data?.total ??
     discussion.commentCount ??
     discussion.commentsCount ??
     discussion.replies ??
+    commentsQuery.data?.total ??
     0;
+  const threadTotal = commentsQuery.data?.total ?? comments.length;
   const commentsPageSize =
     commentsQuery.data?.limit ?? DISCUSSION_COMMENTS_PAGE_SIZE;
   const commentsTotalPages = commentsQuery.data?.totalPages ?? 1;
   const commentsRange =
-    repliesTotal === 0
+    threadTotal === 0
       ? null
       : {
           start: (commentsPage - 1) * commentsPageSize + 1,
-          end: Math.min(commentsPage * commentsPageSize, repliesTotal),
+          end: Math.min(commentsPage * commentsPageSize, threadTotal),
         };
 
   return (
@@ -514,6 +739,7 @@ export default function DiscussionDetail() {
 
         <DiscussionCommentList
           repliesTotal={repliesTotal}
+          threadTotal={threadTotal}
           comments={comments}
           commentsError={commentsError}
           commentsPage={commentsPage}
@@ -523,6 +749,72 @@ export default function DiscussionDetail() {
           onRetryComments={loadComments}
           onPageChange={setCommentsPage}
           dockAnchorRef={dockAnchorRef}
+          currentUserId={user?.id ?? null}
+          isAdmin={user?.role === "ADMIN"}
+          signedIn={Boolean(user)}
+          replyOpenId={threadReplyOpenId}
+          editingId={editingCommentId}
+          editError={commentEditError}
+          replyError={threadReplyError}
+          posting={
+            nestedReplyMutation.isPending ||
+            editCommentMutation.isPending ||
+            deleteCommentMutation.isPending
+          }
+          onToggleReply={(rootId) => {
+            setThreadReplyError(null);
+            setThreadReplyOpenId((cur) => (cur === rootId ? null : rootId));
+          }}
+          onToggleEdit={(commentId) => {
+            setCommentEditError(null);
+            setEditingCommentId(commentId);
+          }}
+          onSubmitReply={(rootId, body) => {
+            if (!user) {
+              const state: AuthRedirectState = {
+                message: "Sign in to reply.",
+                from: `${location.pathname}${location.search}`,
+              };
+              navigate(AUTH_PATHS.login, { state });
+              return;
+            }
+            nestedReplyMutation.mutate({ parentId: rootId, body });
+          }}
+          onSubmitEdit={(commentId, body) =>
+            editCommentMutation.mutate({ commentId, body })
+          }
+          onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
+          loadingMoreRootId={loadingMoreRootId}
+          onLoadMoreReplies={(rootId) => {
+            if (!id || loadingMoreRootId) return;
+            const current = queryClient
+              .getQueryData<DiscussionCommentsPageResult>(commentsQueryKey)
+              ?.items.find((item) => item.id === rootId);
+            const offset = nextCommentRepliesOffset(
+              current?.replies?.length ?? 0,
+            );
+            setLoadingMoreRootId(rootId);
+            void getDiscussionCommentReplies(id, rootId, {
+              offset,
+              limit: COMMENT_REPLIES_PAGE_SIZE,
+            })
+              .then((res) => {
+                patchCommentsPage((pageData) => ({
+                  ...pageData,
+                  items: pageData.items.map((item) =>
+                    item.id === rootId
+                      ? {
+                          ...item,
+                          replies: mergeCommentReplies(item.replies, res.items),
+                          replyCount: res.total,
+                          hasMoreReplies: res.hasMore,
+                        }
+                      : item,
+                  ),
+                }));
+              })
+              .finally(() => setLoadingMoreRootId(null));
+          }}
         />
 
         <DiscussionReplyForm

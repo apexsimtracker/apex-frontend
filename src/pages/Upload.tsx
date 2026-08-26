@@ -217,7 +217,11 @@ export default function Upload() {
       setSuccessSessionId(result.sessionId);
       setUploadState("success");
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("apex:activity-updated"));
+        window.dispatchEvent(
+          new CustomEvent("apex:activity-updated", {
+            detail: { sessionId: result.sessionId },
+          }),
+        );
       }
       if (postSuccessNavRef.current) {
         clearTimeout(postSuccessNavRef.current);
