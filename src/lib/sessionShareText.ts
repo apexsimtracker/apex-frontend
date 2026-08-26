@@ -59,6 +59,7 @@ const CONSISTENCY_GAP_TIERS: { maxGapSec: number; score: number }[] = [
   { maxGapSec: 2.0, score: 20 },
   { maxGapSec: 3.0, score: 10 },
 ];
+const CONSISTENCY_FASTEST_FRACTION = 0.75;
 
 function lapConsistencyScore(gapToBestSec: number): number {
   if (gapToBestSec <= 0) return 100;
@@ -69,18 +70,21 @@ function lapConsistencyScore(gapToBestSec: number): number {
 }
 
 /**
- * Session consistency: mean of per-lap gap-to-best tier scores, clamped 0..100.
+ * Session consistency: mean gap-to-best tier score for the fastest 75% of laps.
  * Must stay aligned with backend `consistencyPct` in apex/src/lib/sessionLapStats.ts.
  */
 export function calcConsistencyScore(lapTimes: number[]): number | null {
   const laps = sanitizeLapTimesForConsistency(lapTimes);
   if (laps.length < 3) return null;
-  const bestLapMs = Math.min(...laps);
-  if (bestLapMs <= 0) return null;
-  const scores = laps.map((lap) =>
-    lapConsistencyScore((lap - bestLapMs) / 1000),
-  );
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  laps.sort((a, b) => a - b);
+  laps.length = Math.ceil(laps.length * CONSISTENCY_FASTEST_FRACTION);
+
+  const bestLapMs = laps[0]!;
+  let scoreTotal = 0;
+  for (const lap of laps) {
+    scoreTotal += lapConsistencyScore((lap - bestLapMs) / 1000);
+  }
+  const avg = scoreTotal / laps.length;
   const clamped = Math.max(0, Math.min(100, avg));
   return Math.round(clamped);
 }
@@ -101,7 +105,13 @@ export type SessionShareFields = {
   sim?: string | null;
   lapCount?: number | null;
   bestLapMs?: number | null;
-  laps?: { timeMs?: number }[] | null;
+  laps?: {
+    lap?: number;
+    lapNumber?: number;
+    timeMs?: number;
+    isValid?: boolean;
+    isOutLap?: boolean;
+  }[] | null;
   /** When lap times are unavailable (feed), use precomputed consistency if present. */
   consistencyScore?: number | null;
 };
@@ -209,7 +219,16 @@ export function buildSessionShareText(
   const laps = session?.lapCount ?? 0;
   const best = formatLapMs(session?.bestLapMs);
   const lapTimes = sanitizeLapTimesForConsistency(
-    (session?.laps ?? []).map((l) => l.timeMs ?? 0),
+    (session?.laps ?? [])
+      .filter((lap) => {
+        const lapNumber = lap.lap ?? lap.lapNumber;
+        return (
+          (lapNumber == null || lapNumber > 1) &&
+          lap.isOutLap !== true &&
+          lap.isValid !== false
+        );
+      })
+      .map((lap) => lap.timeMs ?? 0),
   );
   let consistency = calcConsistencyScore(lapTimes);
   if (

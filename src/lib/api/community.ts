@@ -276,6 +276,16 @@ export type DiscussionComment = {
   body: string;
   author: DiscussionAuthor;
   createdAt: string;
+  updatedAt?: string;
+  originalBody?: string | null;
+  editedAt?: string | null;
+  parentId?: string | null;
+  deletedAt?: string | null;
+  wasEdited?: boolean;
+  replyCount?: number;
+  hasMoreReplies?: boolean;
+  replies?: DiscussionComment[];
+  userId?: string;
 };
 
 /** Default page size for discussion replies (must match server DISCUSSION_COMMENTS_DEFAULT_LIMIT). */
@@ -348,11 +358,70 @@ export async function getDiscussionComments(
 export async function createDiscussionComment(
   id: string,
   body: string,
+  parentId?: string | null,
 ): Promise<DiscussionComment> {
   return apiPost<DiscussionComment>(
     `/api/community/discussions/${id}/comments`,
+    {
+      body: body.trim(),
+      ...(parentId ? { parentId } : {}),
+    },
+  );
+}
+
+export async function updateDiscussionComment(
+  discussionId: string,
+  commentId: string,
+  body: string,
+): Promise<DiscussionComment> {
+  return apiPatch<DiscussionComment>(
+    `/api/community/discussions/${encodeURIComponent(discussionId)}/comments/${encodeURIComponent(commentId)}`,
     { body: body.trim() },
   );
+}
+
+export async function deleteDiscussionComment(
+  discussionId: string,
+  commentId: string,
+): Promise<void> {
+  await apiDelete(
+    `/api/community/discussions/${encodeURIComponent(discussionId)}/comments/${encodeURIComponent(commentId)}`,
+  );
+}
+
+export async function getDiscussionCommentReplies(
+  discussionId: string,
+  commentId: string,
+  params?: { page?: number; limit?: number; offset?: number },
+): Promise<{
+  items: DiscussionComment[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}> {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.offset != null) sp.set("offset", String(params.offset));
+  const q = sp.toString();
+  const raw = await apiGet<{
+    items?: DiscussionComment[];
+    page?: number;
+    limit?: number;
+    total?: number;
+    hasMore?: boolean;
+  }>(
+    `/api/community/discussions/${encodeURIComponent(discussionId)}/comments/${encodeURIComponent(commentId)}/replies${q ? `?${q}` : ""}`,
+  );
+  const items = Array.isArray(raw.items) ? raw.items : [];
+  return {
+    items,
+    page: raw.page ?? 1,
+    limit: raw.limit ?? 20,
+    total: raw.total ?? items.length,
+    hasMore: Boolean(raw.hasMore),
+  };
 }
 
 export type DiscussionLikeResponse = {

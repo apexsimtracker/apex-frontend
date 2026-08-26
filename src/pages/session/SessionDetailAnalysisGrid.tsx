@@ -16,6 +16,8 @@ type SessionDetailAnalysisGridProps = {
   overviewLapNumber?: number | null;
   /** Hidden for manual activities and sessions with no telemetry values. */
   showTelemetryOverview?: boolean;
+  /** Owner-only coaching card; hidden when viewing someone else's session. */
+  showApexAnalysis?: boolean;
 };
 
 const CARD = "rounded-xl bg-apex-surface-container-low p-4 shadow-lg";
@@ -29,52 +31,61 @@ export default function SessionDetailAnalysisGrid({
   overviewRows,
   overviewLapNumber,
   showTelemetryOverview = true,
+  showApexAnalysis = true,
 }: SessionDetailAnalysisGridProps) {
   const lapRows = overviewRows.filter((row) => row.scope === "lap");
   const sessionRows = overviewRows.filter((row) => row.scope === "session");
 
+  if (!showApexAnalysis && !showTelemetryOverview) {
+    return null;
+  }
+
+  const useTwoColumns = showApexAnalysis && showTelemetryOverview;
+
   return (
     <section
-      className={`grid grid-cols-1 gap-4 ${showTelemetryOverview ? "md:grid-cols-2" : ""}`}
+      className={`grid grid-cols-1 gap-4 ${useTwoColumns ? "md:grid-cols-2" : ""}`}
     >
-      <div className="rounded-xl border-l-4 border-apex-primary bg-apex-surface-container-low p-4 shadow-lg">
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles className="size-5 text-apex-primary" aria-hidden />
-          <h2 className="font-apex-headline text-xs font-bold uppercase tracking-widest text-apex-primary">
-            Apex analysis
-          </h2>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <p className="mb-1 font-apex-body text-xs font-bold text-apex-on-surface">
-              {apexTitle}
-            </p>
-            <p className="font-apex-body text-[11px] leading-relaxed text-apex-on-surface-variant">
-              {apexBody}
-            </p>
+      {showApexAnalysis ? (
+        <div className="rounded-xl border-l-4 border-apex-primary bg-apex-surface-container-low p-4 shadow-lg">
+          <div className="mb-3 flex items-center gap-2">
+            <Sparkles className="size-5 text-apex-primary" aria-hidden />
+            <h2 className="font-apex-headline text-xs font-bold uppercase tracking-widest text-apex-primary">
+              Apex analysis
+            </h2>
           </div>
-          {!apexLocked && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded bg-apex-surface-container p-2.5">
-                <p className="mb-0.5 font-apex-body text-[9px] font-bold uppercase text-apex-on-surface-variant">
-                  Consistency
-                </p>
-                <p className="font-apex-headline text-lg font-bold text-apex-on-surface">
-                  {apexConsistencyText}
-                </p>
-              </div>
-              <div className="rounded bg-apex-surface-container p-2.5">
-                <p className="mb-0.5 font-apex-body text-[9px] font-bold uppercase text-apex-on-surface-variant">
-                  Tire wear
-                </p>
-                <p className="font-apex-headline text-lg font-bold text-apex-on-surface">
-                  {tireWearText}
-                </p>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1 font-apex-body text-xs font-bold text-apex-on-surface">
+                {apexTitle}
+              </p>
+              <p className="font-apex-body text-[11px] leading-relaxed text-apex-on-surface-variant">
+                {apexBody}
+              </p>
             </div>
-          )}
+            {!apexLocked && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded bg-apex-surface-container p-2.5">
+                  <p className="mb-0.5 font-apex-body text-[9px] font-bold uppercase text-apex-on-surface-variant">
+                    Consistency
+                  </p>
+                  <p className="font-apex-headline text-lg font-bold text-apex-on-surface">
+                    {apexConsistencyText}
+                  </p>
+                </div>
+                <div className="rounded bg-apex-surface-container p-2.5">
+                  <p className="mb-0.5 font-apex-body text-[9px] font-bold uppercase text-apex-on-surface-variant">
+                    Tire wear
+                  </p>
+                  <p className="font-apex-headline text-lg font-bold text-apex-on-surface">
+                    {tireWearText}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {showTelemetryOverview ? (
         <div className={CARD}>

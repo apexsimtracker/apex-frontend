@@ -23,6 +23,8 @@ import {
   shouldShowSessionPosition,
 } from "@/lib/sessionKind";
 import SessionCaption from "@/components/sessions/SessionCaption";
+import SessionSocialActionBar from "@/pages/session/SessionSocialActionBar";
+import { useSessionLike } from "@/hooks/useSessionLike";
 import { preloadSessionDetail } from "@/routes/routePreload";
 import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
 
@@ -283,6 +285,11 @@ export type DashboardActivityCardProps = {
   profileUserId?: string | null;
   apexAnalysis?: { locked: false; insights: string[] } | null;
   caption?: string | null;
+  likeCount?: number;
+  commentCount?: number;
+  likedByMe?: boolean;
+  onComment?: () => void;
+  onShare?: () => void;
 };
 
 export default memo(function DashboardActivityCard(
@@ -308,11 +315,21 @@ export default memo(function DashboardActivityCard(
     profileUserId,
     apexAnalysis,
     caption,
+    likeCount = 0,
+    commentCount = 0,
+    likedByMe = false,
+    onComment,
+    onShare,
   } = props;
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isPro = useIsProUser();
+  const { toggleLike, likePending } = useSessionLike(
+    id,
+    likedByMe,
+    likeCount,
+  );
   const isManual = isManualSessionItem(props);
   const isPractice =
     !hasFinishDataForLayout(props) &&
@@ -344,6 +361,9 @@ export default memo(function DashboardActivityCard(
       caption,
       source: props.source,
       userId: profileUserId,
+      likeCount,
+      commentCount,
+      likedByMe,
     });
   }, [
     queryClient,
@@ -364,6 +384,9 @@ export default memo(function DashboardActivityCard(
     caption,
     props.source,
     profileUserId,
+    likeCount,
+    commentCount,
+    likedByMe,
   ]);
 
   const goToSession = useCallback(() => {
@@ -544,6 +567,18 @@ export default memo(function DashboardActivityCard(
       {embeddedInsight ? (
         <DashboardSessionApexPanel insight={embeddedInsight} />
       ) : null}
+
+      <SessionSocialActionBar
+        size="sm"
+        className="border-t border-apex-outline-variant/15 px-4 py-1.5 lg:px-5"
+        likeCount={likeCount}
+        commentCount={commentCount}
+        likedByMe={likedByMe}
+        likePending={likePending}
+        onLike={() => void toggleLike()}
+        onComment={() => onComment?.()}
+        onShare={() => onShare?.()}
+      />
     </article>
   );
 });

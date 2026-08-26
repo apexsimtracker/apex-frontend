@@ -323,19 +323,37 @@ test.describe("@sessions", () => {
     await commentPost;
     await expect(page.getByText(commentText)).toBeVisible();
 
+    await page.getByRole("button", { name: "Reply" }).click();
+    const nestedText = `E2E nested ${Date.now()}`;
+    await page.getByPlaceholder("Write a reply…").fill(nestedText);
+    const nestedPost = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/api/sessions/${upload.sessionId}/comments`) &&
+        res.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "Post" }).last().click();
+    await nestedPost;
+    await expect(page.getByText(nestedText)).toBeVisible();
+
     const commentsRes = await request.get(
       `${env.apiUrl}/api/sessions/${upload.sessionId}/comments?page=1&limit=20`,
     );
     expect(commentsRes.ok()).toBeTruthy();
     const commentsBody = (await commentsRes.json()) as {
-      comments?: Array<{ body?: string }>;
+      comments?: Array<{
+        body?: string;
+        id?: string;
+        replies?: Array<{ body?: string; parentId?: string | null }>;
+      }>;
       total?: number;
     };
     expect((commentsBody.total ?? 0) >= 1).toBeTruthy();
+    const root = (commentsBody.comments ?? []).find((comment) =>
+      comment.body?.includes(commentText),
+    );
+    expect(root).toBeTruthy();
     expect(
-      (commentsBody.comments ?? []).some((comment) =>
-        comment.body?.includes(commentText),
-      ),
+      (root?.replies ?? []).some((reply) => reply.body?.includes(nestedText)),
     ).toBeTruthy();
   });
 

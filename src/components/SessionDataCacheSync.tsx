@@ -10,8 +10,14 @@ export default function SessionDataCacheSync() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    function onActivityUpdated() {
-      void invalidateSessionDerivedCaches(queryClient, {});
+    function onActivityUpdated(event: Event) {
+      const detail =
+        event instanceof CustomEvent && event.detail && typeof event.detail === "object"
+          ? (event.detail as { sessionId?: unknown })
+          : null;
+      const sessionId =
+        typeof detail?.sessionId === "string" ? detail.sessionId : undefined;
+      void invalidateSessionDerivedCaches(queryClient, { sessionId });
     }
     if (typeof window === "undefined") return undefined;
     window.addEventListener("apex:activity-updated", onActivityUpdated);

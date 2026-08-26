@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Share2, Pencil, Trash2, Heart, MessageCircle } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { formatTrackName } from "@/lib/tracks";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
-import { cn, formatCompactCount } from "@/lib/utils";
+import {
+  SessionCommentButton,
+  SessionLikeButton,
+  SessionShareButton,
+} from "@/pages/session/SessionSocialActionBar";
 
 type SessionDetailHeroProps = {
   trackName: string | null;
@@ -79,36 +83,16 @@ export default function SessionDetailHero({
 
       <div className="relative z-10 flex items-center justify-between gap-2 px-4 pt-4 sm:px-6 sm:pt-6">
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={likePending}
-            onClick={onLike}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-2.5 py-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95",
-              likedByMe && "text-apex-error",
-              likePending && "cursor-not-allowed opacity-50",
-            )}
-            aria-label={likedByMe ? "Unlike session" : "Like session"}
-          >
-            <Heart
-              className={cn("size-5", likedByMe && "fill-current")}
-              aria-hidden
-            />
-            <span className="font-apex-body text-xs font-medium tabular-nums">
-              {formatCompactCount(likeCount)}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={onComment}
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-            aria-label="Comments"
-          >
-            <MessageCircle className="size-5" aria-hidden />
-            <span className="font-apex-body text-xs font-medium tabular-nums">
-              {formatCompactCount(commentCount)}
-            </span>
-          </button>
+          <SessionLikeButton
+            likeCount={likeCount}
+            likedByMe={likedByMe}
+            likePending={likePending}
+            onLike={onLike}
+          />
+          <SessionCommentButton
+            commentCount={commentCount}
+            onComment={onComment}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -132,14 +116,7 @@ export default function SessionDetailHero({
               <Pencil className="size-5" aria-hidden />
             </button>
           )}
-          <button
-            type="button"
-            onClick={onShare}
-            className="flex items-center justify-center rounded-full p-2 text-apex-on-surface transition-colors hover:bg-apex-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary/50 active:scale-95"
-            aria-label="Share session"
-          >
-            <Share2 className="size-5" aria-hidden />
-          </button>
+          <SessionShareButton onShare={onShare} />
         </div>
       </div>
 

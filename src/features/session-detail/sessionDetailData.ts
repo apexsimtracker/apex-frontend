@@ -166,7 +166,8 @@ type SessionDetailResponse =
 export type ParsedSessionDetail = {
   session: SessionDetail;
   proFeaturesLocked: boolean;
-  apexAnalysis: ApexAnalysisPayload;
+  /** Null when the viewer is not the session owner. */
+  apexAnalysis: ApexAnalysisPayload | null;
 };
 
 function attachNormalizedLaps(
@@ -177,7 +178,10 @@ function attachNormalizedLaps(
   return { ...session, laps: coerceSessionDetailLaps(lapsPayload) };
 }
 
-function normalizeApexAnalysisPayload(raw: unknown): ApexAnalysisPayload {
+function normalizeApexAnalysisPayload(
+  raw: unknown,
+): ApexAnalysisPayload | null {
+  if (raw == null) return null;
   if (
     raw &&
     typeof raw === "object" &&

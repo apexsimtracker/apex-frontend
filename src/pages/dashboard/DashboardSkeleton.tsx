@@ -99,6 +99,29 @@ export function FeedSkeletonCard() {
             </div>
           ))}
         </div>
+
+        <div className="flex items-center justify-between border-t border-apex-outline-variant/10 pt-3">
+          <div className="flex items-center gap-2">
+            <SkeletonBlock
+              height={28}
+              width={56}
+              className={blockClassName}
+              rounded="full"
+            />
+            <SkeletonBlock
+              height={28}
+              width={56}
+              className={blockClassName}
+              rounded="full"
+            />
+          </div>
+          <SkeletonBlock
+            height={28}
+            width={28}
+            className={blockClassName}
+            rounded="full"
+          />
+        </div>
       </div>
     </div>
   );

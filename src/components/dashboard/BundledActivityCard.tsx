@@ -16,6 +16,7 @@ function getActivityHeaderFromOwner(
 ): {
   name: string;
   avatar: string | null;
+  isCurrentUsersSession: boolean;
 } {
   const owner = (session as unknown as { owner?: ActivityOwner }).owner;
   const sessionAny = session as SessionItem & {
@@ -54,7 +55,7 @@ function getActivityHeaderFromOwner(
         : owner?.avatarUrl && owner.avatarUrl.trim().length > 0
           ? owner.avatarUrl
           : null;
-  return { name, avatar };
+  return { name, avatar, isCurrentUsersSession };
 }
 
 function timeAgo(createdAt: string | Date): string {
@@ -71,12 +72,16 @@ interface BundledActivityCardProps {
   sessions: SessionItem[];
   overflowCount: number;
   currentUser?: { id: string; avatarUrl?: string | null } | null;
+  onComment?: (session: SessionItem) => void;
+  onShare?: (session: SessionItem) => void;
 }
 
 export default memo(function BundledActivityCard({
   sessions,
   overflowCount,
   currentUser,
+  onComment,
+  onShare,
 }: BundledActivityCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentSession = sessions[currentIndex];
@@ -194,8 +199,17 @@ export default memo(function BundledActivityCard({
           bestLapMs={currentSession.bestLapMs}
           lapCount={currentSession.lapCount}
           timestamp={timeAgo(currentSession.createdAt)}
-          apexAnalysis={sessionAny.apexAnalysis ?? null}
+          apexAnalysis={
+            currentHeader.isCurrentUsersSession
+              ? (sessionAny.apexAnalysis ?? null)
+              : null
+          }
           caption={sessionAny.caption ?? null}
+          likeCount={currentSession.likeCount ?? 0}
+          commentCount={currentSession.commentCount ?? 0}
+          likedByMe={Boolean(currentSession.likedByMe)}
+          onComment={() => onComment?.(currentSession)}
+          onShare={() => onShare?.(currentSession)}
         />
       </div>
 

@@ -31,6 +31,9 @@ type SessionDetailSeedInput = {
   source?: string | null;
   ingestSource?: string | null;
   userId?: string | null;
+  likeCount?: number | null;
+  commentCount?: number | null;
+  likedByMe?: boolean;
 };
 
 function seedPayloadFromInput(input: SessionDetailSeedInput): ParsedSessionDetail {
@@ -69,6 +72,9 @@ function seedPayloadFromInput(input: SessionDetailSeedInput): ParsedSessionDetai
     source: input.source ?? input.ingestSource ?? null,
     ingestPath,
     userId: input.userId ?? null,
+    likeCount: input.likeCount ?? 0,
+    commentCount: input.commentCount ?? 0,
+    likedByMe: Boolean(input.likedByMe),
     // Omit laps so the page can tell seed vs hydrated detail.
   };
   return {
