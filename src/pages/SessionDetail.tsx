@@ -12,7 +12,6 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { ApiError } from "@/lib/api/errors";
-import { apiPost } from "@/lib/api/httpVerbs";
 import {
   deleteManualActivity,
   patchSessionCaption,
@@ -40,6 +39,8 @@ import {
   type RawLap,
 } from "@/features/session-detail/sessionDetailData";
 import { sessionDetailQueryKey } from "@/lib/sessions/sessionDetailPrefetch";
+import { bumpSessionCommentCountInCaches } from "@/lib/sessionSocialCache";
+import { useSessionLike } from "@/hooks/useSessionLike";
 import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { toast } from "sonner";
@@ -145,9 +146,6 @@ export default function SessionDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLap, setSelectedLap] = useState<number | null>(null);
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const [likePending, setLikePending] = useState(false);
-  const [likedByMe, setLikedByMe] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [captionPending, setCaptionPending] = useState(false);
 
@@ -188,43 +186,18 @@ export default function SessionDetail() {
 
   useEffect(() => {
     if (!session) return;
-    setLikedByMe(Boolean(session.likedByMe));
-    setLikeCount(Number(session.likeCount ?? 0));
     setCommentCount(Number(session.commentCount ?? 0));
   }, [session]);
+
+  const likedByMe = Boolean(session?.likedByMe);
+  const likeCount = Number(session?.likeCount ?? 0);
+  const { toggleLike, likePending } = useSessionLike(sid, likedByMe, likeCount);
 
   const shareUrl = useMemo(() => (sid ? publicSessionUrl(sid) : ""), [sid]);
 
   const onSelectLap = useCallback((lapNumber: number) => {
     setSelectedLap(lapNumber);
   }, []);
-
-  const handleLike = useCallback(async () => {
-    if (!sid || likePending) return;
-    setLikePending(true);
-    const prevLiked = likedByMe;
-    const prevCount = likeCount;
-    const nextLiked = !prevLiked;
-    setLikedByMe(nextLiked);
-    setLikeCount(Math.max(0, prevCount + (nextLiked ? 1 : -1)));
-    try {
-      const data = await apiPost<{ liked: boolean; likeCount: number }>(
-        `/api/sessions/${sid}/like`,
-        {},
-      );
-      setLikedByMe(Boolean(data.liked));
-      setLikeCount(Number(data.likeCount ?? 0));
-      void queryClient.invalidateQueries({
-        queryKey: sessionDetailQueryKey(sid),
-      });
-    } catch {
-      setLikedByMe(prevLiked);
-      setLikeCount(prevCount);
-      toast.error("Could not update like. Please try again.");
-    } finally {
-      setLikePending(false);
-    }
-  }, [sid, likePending, likedByMe, likeCount, queryClient]);
 
   const laps = useMemo(() => {
     if (!session) return [];
@@ -575,7 +548,7 @@ export default function SessionDetail() {
           commentCount={commentCount}
           likedByMe={likedByMe}
           likePending={likePending}
-          onLike={() => void handleLike()}
+          onLike={() => void toggleLike()}
           onComment={() => setCommentsOpen(true)}
           onShare={() => setShareModalOpen(true)}
           onEdit={() => navigate(`/sessions/${sid}/edit`)}
@@ -654,6 +627,7 @@ export default function SessionDetail() {
           overviewRows={overviewRows}
           overviewLapNumber={overviewLap}
           showTelemetryOverview={hasTelemetryOverviewData}
+          showApexAnalysis={isOwner}
         />
 
         <PageSuspense fallback={<SessionTelemetrySkeleton />}>
@@ -743,7 +717,14 @@ export default function SessionDetail() {
         sessionId={sid}
         isOpen={commentsOpen}
         onClose={() => setCommentsOpen(false)}
-        onCommentAdded={() => setCommentCount((c) => c + 1)}
+        onCommentAdded={() => {
+          setCommentCount((c) => c + 1);
+          bumpSessionCommentCountInCaches(queryClient, sid, 1);
+        }}
+        onCommentDeleted={(countDelta) => {
+          setCommentCount((c) => Math.max(0, c - countDelta));
+          bumpSessionCommentCountInCaches(queryClient, sid, -countDelta);
+        }}
         onRefreshSession={() => {
           void queryClient.invalidateQueries({
             queryKey: sessionDetailQueryKey(sid),

@@ -41,6 +41,46 @@ function patchSessionInFeedItem(
   return item;
 }
 
+function mapSessionInFeedItem(
+  item: unknown,
+  id: string,
+  mapper: (session: Record<string, unknown>) => Record<string, unknown>,
+): unknown {
+  if (!item || typeof item !== "object") return item;
+  const rec = item as Record<string, unknown>;
+
+  if (
+    rec.type === "standalone" &&
+    rec.session &&
+    typeof rec.session === "object"
+  ) {
+    const session = rec.session as Record<string, unknown> & { id?: string };
+    if (session.id === id) {
+      return { ...rec, session: mapper(session) };
+    }
+    return rec;
+  }
+
+  if (rec.type === "weekend" && rec.group && typeof rec.group === "object") {
+    const group = rec.group as { sessions?: unknown[] };
+    if (Array.isArray(group.sessions)) {
+      return {
+        ...rec,
+        group: {
+          ...group,
+          sessions: group.sessions.map((s) => {
+            const sess = s as Record<string, unknown> & { id?: string };
+            return sess.id === id ? mapper(sess) : s;
+          }),
+        },
+      };
+    }
+    return rec;
+  }
+
+  return item;
+}
+
 /** Update one session in paginated activity feed cache (React Query infinite data). */
 export function patchActivityFeedInfiniteData(
   old: InfiniteData<ActivityFeedPageResult> | undefined,
@@ -53,6 +93,30 @@ export function patchActivityFeedInfiniteData(
     pages: old.pages.map((p) => ({
       ...p,
       items: p.items.map((x) => patchSessionInFeedItem(x, id, patch)),
+    })),
+  };
+}
+
+/** Increment comment counters on one session in paginated activity feed cache. */
+export function bumpActivityFeedCommentCount(
+  old: InfiniteData<ActivityFeedPageResult> | undefined,
+  id: string,
+  delta: number,
+): InfiniteData<ActivityFeedPageResult> | undefined {
+  if (!old) return old;
+  return {
+    pageParams: old.pageParams,
+    pages: old.pages.map((p) => ({
+      ...p,
+      items: p.items.map((x) =>
+        mapSessionInFeedItem(x, id, (session) => {
+          const current = Number(
+            session.commentCount ?? session.commentsCount ?? 0,
+          );
+          const next = Math.max(0, current + delta);
+          return { ...session, commentCount: next, commentsCount: next };
+        }),
+      ),
     })),
   };
 }

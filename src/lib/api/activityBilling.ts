@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "./httpVerbs";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./httpVerbs";
 import { resolveApiUrl } from "./config";
 
 export type SessionsFilterType = "all" | "telemetry" | "manual";
@@ -232,7 +232,16 @@ export type SessionCommentItem = {
   userId: string;
   body: string;
   createdAt: string;
+  updatedAt?: string;
+  originalBody?: string | null;
+  editedAt?: string | null;
+  parentId?: string | null;
+  deletedAt?: string | null;
+  wasEdited?: boolean;
   isSessionOwner?: boolean;
+  replyCount?: number;
+  hasMoreReplies?: boolean;
+  replies?: SessionCommentItem[];
   author?: SessionCommentAuthor;
 };
 
@@ -283,6 +292,80 @@ export async function getSessionCommentsPage(
     limit: typeof raw?.limit === "number" ? raw.limit : limit,
     total: typeof raw?.total === "number" ? raw.total : comments.length,
     hasMore: Boolean(raw?.hasMore),
+  };
+}
+
+export async function createSessionComment(
+  sessionId: string,
+  body: string,
+  parentId?: string | null,
+): Promise<SessionCommentItem> {
+  const raw = await apiPost<{ comment?: SessionCommentItem }>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/comments`,
+    { body: body.trim(), ...(parentId ? { parentId } : {}) },
+  );
+  if (!raw?.comment) {
+    throw new Error("Failed to post comment");
+  }
+  return raw.comment;
+}
+
+export async function updateSessionComment(
+  sessionId: string,
+  commentId: string,
+  body: string,
+): Promise<SessionCommentItem> {
+  const raw = await apiPatch<{ comment?: SessionCommentItem }>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/comments/${encodeURIComponent(commentId)}`,
+    { body: body.trim() },
+  );
+  if (!raw?.comment) {
+    throw new Error("Failed to update comment");
+  }
+  return raw.comment;
+}
+
+export async function deleteSessionComment(
+  sessionId: string,
+  commentId: string,
+): Promise<void> {
+  await apiDelete(
+    `/api/sessions/${encodeURIComponent(sessionId)}/comments/${encodeURIComponent(commentId)}`,
+  );
+}
+
+export async function getSessionCommentReplies(
+  sessionId: string,
+  commentId: string,
+  params?: { page?: number; limit?: number; offset?: number },
+): Promise<{
+  items: SessionCommentItem[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+}> {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.limit != null) sp.set("limit", String(params.limit));
+  if (params?.offset != null) sp.set("offset", String(params.offset));
+  const q = sp.toString();
+  const raw = await apiGet<{
+    items?: SessionCommentItem[];
+    page?: number;
+    limit?: number;
+    total?: number;
+    hasMore?: boolean;
+  }>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/comments/${encodeURIComponent(commentId)}/replies${q ? `?${q}` : ""}`,
+  );
+  const items = Array.isArray(raw.items) ? raw.items : [];
+  return {
+    items,
+    page: raw.page ?? 1,
+    limit: raw.limit ?? 20,
+    total: raw.total ?? items.length,
+    hasMore: Boolean(raw.hasMore),
   };
 }
 

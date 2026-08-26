@@ -222,6 +222,35 @@ test.describe("@community", () => {
         timeout: 30_000,
       });
 
+      await page.getByRole("button", { name: "Reply" }).first().click();
+      const nestedText = "E2E nested reply stays at depth 1.";
+      const nestedPost = page.waitForResponse(
+        (res) =>
+          res
+            .url()
+            .includes(`/api/community/discussions/${discussionId}/comments`) &&
+          res.request().method() === "POST" &&
+          res.ok(),
+      );
+      await page.getByPlaceholder("Write a reply…").last().fill(nestedText);
+      await page.getByRole("button", { name: "Post" }).last().click();
+      await nestedPost;
+      await expect(page.getByText(nestedText)).toBeVisible({ timeout: 30_000 });
+
+      await page.getByRole("button", { name: "Edit" }).first().click();
+      await page.getByPlaceholder("Edit comment…").fill(`${commentText} edited`);
+      const editComment = page.waitForResponse(
+        (res) =>
+          res
+            .url()
+            .includes(`/api/community/discussions/${discussionId}/comments/`) &&
+          res.request().method() === "PATCH" &&
+          res.ok(),
+      );
+      await page.getByRole("button", { name: "Save" }).click();
+      await editComment;
+      await expect(page.getByText(`${commentText} edited`)).toBeVisible();
+
       await page.getByRole("button", { name: "Post options" }).click();
       await page.getByRole("menuitem", { name: "Edit post" }).click();
       await expect(

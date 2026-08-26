@@ -1,11 +1,14 @@
 import { MessageCircle } from "lucide-react";
 import type { RefObject } from "react";
 import type { DiscussionComment } from "@/lib/api/community";
-import DiscussionCommentItem from "./DiscussionCommentItem";
+import CommentThread from "@/components/comments/CommentThread";
+import { Skeleton } from "@/components/ui/skeleton";
 import DiscussionCommentsPagination from "./DiscussionCommentsPagination";
+import { DISCUSSION_REPLY_MAX_LENGTH } from "./discussionReplyUtils";
 
 type DiscussionCommentListProps = {
   repliesTotal: number;
+  threadTotal: number;
   comments: DiscussionComment[];
   commentsError: string | null;
   commentsPage: number;
@@ -15,10 +18,26 @@ type DiscussionCommentListProps = {
   onRetryComments: () => void;
   onPageChange: (page: number) => void;
   dockAnchorRef?: RefObject<HTMLDivElement | null>;
+  currentUserId?: string | null;
+  isAdmin?: boolean;
+  signedIn: boolean;
+  replyOpenId: string | null;
+  editingId: string | null;
+  editError?: string | null;
+  replyError?: string | null;
+  posting?: boolean;
+  onToggleReply: (rootId: string) => void;
+  onToggleEdit: (commentId: string | null) => void;
+  onSubmitReply: (rootId: string, body: string) => void;
+  onSubmitEdit: (commentId: string, body: string) => void;
+  onDelete: (commentId: string) => void;
+  onLoadMoreReplies: (rootId: string) => void;
+  loadingMoreRootId?: string | null;
 };
 
 export default function DiscussionCommentList({
   repliesTotal,
+  threadTotal,
   comments,
   commentsError,
   commentsPage,
@@ -28,6 +47,21 @@ export default function DiscussionCommentList({
   onRetryComments,
   onPageChange,
   dockAnchorRef,
+  currentUserId,
+  isAdmin,
+  signedIn,
+  replyOpenId,
+  editingId,
+  editError,
+  replyError,
+  posting,
+  onToggleReply,
+  onToggleEdit,
+  onSubmitReply,
+  onSubmitEdit,
+  onDelete,
+  onLoadMoreReplies,
+  loadingMoreRootId,
 }: DiscussionCommentListProps) {
   const repliesSubtitle =
     repliesTotal === 0
@@ -75,20 +109,60 @@ export default function DiscussionCommentList({
         </div>
       )}
 
-      {!commentsError && repliesTotal > 0 && (
+      {!commentsError &&
+      commentsFetching &&
+      comments.length === 0 &&
+      repliesTotal > 0 ? (
+        <div className="mb-8 space-y-3" aria-busy="true" aria-label="Loading comments">
+          {[0, 1].map((row) => (
+            <div
+              key={row}
+              className="flex gap-3 rounded-xl bg-apex-surface-container-low p-4"
+            >
+              <Skeleton className="size-9 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {!commentsError && comments.length > 0 && (
         <ul className="mb-8 space-y-3 sm:space-y-4">
           {comments.map((c) => (
-            <DiscussionCommentItem key={c.id} comment={c} />
+            <CommentThread
+              key={c.id}
+              comment={c}
+              variant="discussion"
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+              signedIn={signedIn}
+              maxLength={DISCUSSION_REPLY_MAX_LENGTH}
+              replyOpen={replyOpenId === c.id}
+              editingId={editingId}
+              editError={editError}
+              replyError={replyOpenId === c.id ? replyError : null}
+              posting={posting}
+              onToggleReply={onToggleReply}
+              onToggleEdit={onToggleEdit}
+              onSubmitReply={onSubmitReply}
+              onSubmitEdit={onSubmitEdit}
+              onDelete={onDelete}
+              onLoadMoreReplies={onLoadMoreReplies}
+              loadingMore={loadingMoreRootId === c.id}
+            />
           ))}
         </ul>
       )}
 
-      {!commentsError && repliesTotal > 0 && (
+      {!commentsError && comments.length > 0 && (
         <div className="mb-4 space-y-3">
           {commentsRange && (
             <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
-              Showing {commentsRange.start}–{commentsRange.end} of{" "}
-              {repliesTotal}
+              Showing {commentsRange.start}–{commentsRange.end} of {threadTotal}
             </p>
           )}
           <DiscussionCommentsPagination

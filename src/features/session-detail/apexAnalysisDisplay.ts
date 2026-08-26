@@ -1,7 +1,8 @@
-/** Matches GET /api/sessions/:id `apexAnalysis` after subscription gating. */
 export type ApexAnalysisPayload =
   | { locked: true; message: string }
   | { locked: false; insights: string[] };
+
+/** Matches GET /api/sessions/:id `apexAnalysis` after subscription + owner gating. */
 
 export type ApexAnalysisDisplay = {
   locked: boolean;
