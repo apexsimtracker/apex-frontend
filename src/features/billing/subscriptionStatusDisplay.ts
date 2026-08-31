@@ -36,7 +36,7 @@ export function subscriptionStatusLabel(
 ): string {
   if (!user?.hasPro) return "Free";
   if (isActiveBetaTrial(user)) {
-    return "Pro (1-month free trial)";
+    return "Pro (complimentary access)";
   }
   if (user.subscriptionStatus === "CANCELED" || user.cancelAtPeriodEnd) {
     return "Pro (canceled — access until period end)";

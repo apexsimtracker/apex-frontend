@@ -13,6 +13,7 @@ function packageIdentifier(rcPackage: RevenueCatPackage): string {
   return rcPackage.identifier?.trim().toLowerCase() ?? "";
 }
 
+/** Store SKUs (Apple vs Play) live in `storeProductIds.ts`. */
 export function isAnnualPackage(rcPackage: RevenueCatPackage): boolean {
   const id = packageIdentifier(rcPackage);
   return id.includes("annual") || id.includes("year");

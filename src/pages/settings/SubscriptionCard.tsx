@@ -58,7 +58,7 @@ export function SubscriptionCard() {
     <div className="space-y-3 text-sm">
       <p className="text-xs text-apex-on-surface-variant">
         {onBetaTrial
-          ? "You have a 1-month free trial of full Pro access. Subscribe on the pricing page anytime — your trial ends when paid Pro starts."
+          ? "You have complimentary full Pro access. Subscribe on the pricing page anytime — complimentary access ends when paid Pro starts."
           : "Manage your Apex Pro plan on the pricing page."}
       </p>
       <div>
@@ -75,7 +75,7 @@ export function SubscriptionCard() {
       {onBetaTrial && betaTrialEndsLabel && (
         <div>
           <span className="text-xs text-apex-on-surface-variant">
-            Trial ends
+            Complimentary access ends
           </span>
           <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
             {betaTrialEndsLabel}

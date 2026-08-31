@@ -14,15 +14,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  appManualInputClassName,
   appOutlineButtonClassName,
   appPrimaryButtonClassName,
 } from "@/components/app-ui/appButtonClasses";
+import { wholeNumberInputProps } from "@/lib/inputGuards";
 import { uploadSessionFile, ApiError } from "@/lib/api";
 import { isProRequiredError } from "@/lib/api/errors";
 import PageMeta from "@/components/PageMeta";
 import ChallengeDetailBackLink from "@/pages/challenges/ChallengeDetailBackLink";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { MAX_MANUAL_UPLOAD_BYTES } from "@/lib/uploadLimits";
+import {
+  inferLmuUploadKind,
+  LMU_RESULT_POSITION_MAX,
+  LMU_RESULT_POSITION_MIN,
+  lmuKindSupportsResult,
+  lmuResultPositionLabel,
+  validateLmuResultInput,
+} from "@/lib/lmuUploadResult";
 import { cn } from "@/lib/utils";
 import { useIsProUser } from "@/contexts/AuthContext";
 
@@ -72,10 +82,17 @@ export default function Upload() {
   >(null);
   const [successSessionId, setSuccessSessionId] = useState<string | null>(null);
   const postSuccessNavRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uploadAbortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [resultPosition, setResultPosition] = useState("");
+  const [resultTotalDrivers, setResultTotalDrivers] = useState("");
 
   const isBusy = uploadState === "uploading";
   const expectedExt = expectedExtForSim(sim);
+
+  const lmuKind = sim === "lmu" && file ? inferLmuUploadKind(file.name) : null;
+  const showResultFields = lmuKind != null && lmuKindSupportsResult(lmuKind);
 
   useEffect(() => {
     if (!isBusy) return;
@@ -91,7 +108,11 @@ export default function Upload() {
   }, [isBusy]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
+      uploadAbortControllerRef.current?.abort();
+      uploadAbortControllerRef.current = null;
       if (postSuccessNavRef.current) {
         clearTimeout(postSuccessNavRef.current);
         postSuccessNavRef.current = null;
@@ -134,6 +155,8 @@ export default function Upload() {
     setFile(null);
     setUploadState("idle");
     setErrorMessage(null);
+    setResultPosition("");
+    setResultTotalDrivers("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -185,12 +208,27 @@ export default function Upload() {
       return;
     }
 
+    if (showResultFields) {
+      const resultError = validateLmuResultInput(
+        resultPosition,
+        resultTotalDrivers,
+      );
+      if (resultError) {
+        setErrorMessage(resultError);
+        setUploadState("error");
+        return;
+      }
+    }
+
     setUploadState("uploading");
     setUploadPhase("bytes");
     setUploadPercent(0);
     setErrorMessage(null);
     setChallengeAttachWarning(null);
     setSuccessSessionId(null);
+
+    const abortController = new AbortController();
+    uploadAbortControllerRef.current = abortController;
 
     try {
       const result = await uploadSessionFile(
@@ -205,9 +243,16 @@ export default function Upload() {
             setUploadPercent(100);
           },
         },
-        challengeId ? { challengeId } : undefined,
+        {
+          ...(challengeId ? { challengeId } : {}),
+          ...(showResultFields
+            ? { position: resultPosition, totalDrivers: resultTotalDrivers }
+            : {}),
+          signal: abortController.signal,
+        },
       );
 
+      if (!isMountedRef.current) return;
       const attachWarn =
         typeof result.challengeAttachWarning === "string" &&
         result.challengeAttachWarning.trim()
@@ -233,6 +278,7 @@ export default function Upload() {
         navigate(`/sessions/${result.sessionId}`);
       }, redirectMs);
     } catch (err) {
+      if (!isMountedRef.current) return;
       if (isProRequiredError(err)) {
         setErrorMessage(
           "Apex Pro is required to upload telemetry files (.ibt / .duckdb).",
@@ -246,8 +292,25 @@ export default function Upload() {
           : "Upload failed. Please try again.";
       setErrorMessage(message);
       setUploadState("error");
+    } finally {
+      if (uploadAbortControllerRef.current === abortController) {
+        uploadAbortControllerRef.current = null;
+      }
     }
-  }, [file, isBusy, isPro, navigate, challengeId]);
+  }, [
+    file,
+    isBusy,
+    isPro,
+    navigate,
+    challengeId,
+    showResultFields,
+    resultPosition,
+    resultTotalDrivers,
+  ]);
+
+  const handleCancelUpload = useCallback(() => {
+    uploadAbortControllerRef.current?.abort();
+  }, []);
 
   const handleReset = useCallback(() => {
     setFile(null);
@@ -257,6 +320,8 @@ export default function Upload() {
     setErrorMessage(null);
     setChallengeAttachWarning(null);
     setSuccessSessionId(null);
+    setResultPosition("");
+    setResultTotalDrivers("");
     if (postSuccessNavRef.current) {
       clearTimeout(postSuccessNavRef.current);
       postSuccessNavRef.current = null;
@@ -427,6 +492,19 @@ export default function Upload() {
                   ? `${uploadPercent}%`
                   : "Processing on server…"}
               </p>
+              {uploadPhase === "bytes" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelUpload}
+                  className={cn(
+                    "mt-6 w-full rounded-[0.5rem]",
+                    appOutlineButtonClassName,
+                  )}
+                >
+                  Cancel upload
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5">
@@ -562,6 +640,57 @@ export default function Upload() {
                 </div>
               </div>
 
+              {showResultFields && (
+                <div className="mt-4 rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container p-4">
+                  <h2 className={SECTION_LABEL_CLASS}>
+                    {lmuKind === "qualifying" ? "Qualifying result" : "Race result"}{" "}
+                    (optional)
+                  </h2>
+                  <p className="mt-1.5 text-xs leading-relaxed text-apex-on-surface-variant">
+                    Le Mans Ultimate does not store your finishing position in the
+                    telemetry file, so it cannot be read from your upload. Add it
+                    here to show it on the session, or leave blank and edit the
+                    session later.
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1.5 block font-apex-body text-xs text-apex-on-surface-variant">
+                        {lmuResultPositionLabel(lmuKind)}
+                      </span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={LMU_RESULT_POSITION_MIN}
+                        max={LMU_RESULT_POSITION_MAX}
+                        placeholder="e.g. 3"
+                        value={resultPosition}
+                        disabled={isBusy}
+                        onChange={(e) => setResultPosition(e.target.value)}
+                        className={appManualInputClassName}
+                        {...wholeNumberInputProps}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block font-apex-body text-xs text-apex-on-surface-variant">
+                        Total cars
+                      </span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={LMU_RESULT_POSITION_MIN}
+                        max={LMU_RESULT_POSITION_MAX}
+                        placeholder="e.g. 24"
+                        value={resultTotalDrivers}
+                        disabled={isBusy}
+                        onChange={(e) => setResultTotalDrivers(e.target.value)}
+                        className={appManualInputClassName}
+                        {...wholeNumberInputProps}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {uploadState === "error" && errorMessage && (
                 <div className="mt-4 flex items-start gap-2 rounded-lg border border-apex-error/20 bg-apex-error/10 p-3">
                   <AlertCircle className="mt-0.5 size-4 shrink-0 text-apex-error" />
@@ -593,7 +722,9 @@ export default function Upload() {
                     file ? "flex-1" : "w-full",
                   )}
                 >
-                  Upload session
+                  {uploadState === "error" && file
+                    ? "Retry upload"
+                    : "Upload session"}
                 </Button>
               </div>
             </div>

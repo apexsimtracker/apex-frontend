@@ -189,10 +189,10 @@ export function ProPlanCard({
               className="mt-3 font-apex-body text-sm text-apex-on-surface"
               data-testid="billing-beta-trial-note"
             >
-              Your 1-month free trial is active
+              Your complimentary Pro access is active
               {betaTrialEndsLabel ? ` until ${betaTrialEndsLabel}` : ""}.
-              Subscribe now to keep Pro after the trial — your trial ends when
-              paid Pro starts.
+              Subscribe now to keep Pro afterward — complimentary access ends
+              when paid Pro starts.
             </p>
           ) : null}
         </>
