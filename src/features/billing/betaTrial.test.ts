@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  betaAccessDurationDays,
+  formatBetaAccessDuration,
   formatBetaTrialEndsLabel,
   isActiveBetaTrial,
   isPaidProUser,
@@ -52,6 +54,20 @@ describe("betaTrial helpers", () => {
     ).toBe(false);
   });
 
+  it("does not activate a scheduled access window before its start", () => {
+    expect(
+      isActiveBetaTrial(
+        {
+          isBetaUser: true,
+          betaTrialStartedAt: "2026-08-04T12:00:00.000Z",
+          betaTrialExpiresAt: future,
+          hasPro: false,
+        },
+        now,
+      ),
+    ).toBe(false);
+  });
+
   it("isPaidProUser is hasPro without an active beta trial", () => {
     expect(
       isPaidProUser(
@@ -83,5 +99,14 @@ describe("betaTrial helpers", () => {
     expect(formatBetaTrialEndsLabel(future)).toMatch(/2026/);
     expect(formatBetaTrialEndsLabel(null)).toBeNull();
     expect(formatBetaTrialEndsLabel("not-a-date")).toBeNull();
+  });
+
+  it("derives the configured access duration from its actual window", () => {
+    const user = {
+      betaTrialStartedAt: "2026-08-30T00:00:00.000Z",
+      betaTrialExpiresAt: "2026-10-29T00:00:00.000Z",
+    };
+    expect(betaAccessDurationDays(user)).toBe(60);
+    expect(formatBetaAccessDuration(user)).toBe("60-day");
   });
 });

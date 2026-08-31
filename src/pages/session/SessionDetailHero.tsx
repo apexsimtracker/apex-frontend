@@ -13,7 +13,7 @@ type SessionDetailHeroProps = {
   trackImageUrl?: string | null;
   sim?: string | null;
   canEditSession: boolean;
-  canManualExtras: boolean;
+  canDeleteSession: boolean;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
@@ -30,7 +30,7 @@ export default function SessionDetailHero({
   trackImageUrl,
   sim,
   canEditSession,
-  canManualExtras,
+  canDeleteSession,
   likeCount,
   commentCount,
   likedByMe,
@@ -96,7 +96,7 @@ export default function SessionDetailHero({
         </div>
 
         <div className="flex items-center gap-2">
-          {canManualExtras && (
+          {canDeleteSession && (
             <button
               type="button"
               onClick={onDelete}

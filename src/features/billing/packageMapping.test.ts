@@ -8,6 +8,7 @@ import {
   resolvePackagesByInterval,
 } from "./packageMapping";
 import type { BillingPlansResponse } from "@/lib/api/activityBilling";
+import { APPLE_PRO_ANNUAL, APPLE_PRO_MONTHLY } from "./storeProductIds";
 
 function mockPackage(identifier: string): RevenueCatPackage {
   return { identifier } as RevenueCatPackage;
@@ -36,8 +37,8 @@ describe("packageMapping", () => {
   it("classifies RevenueCat package identifiers", () => {
     expect(isMonthlyPackage(mockPackage("$rc_monthly"))).toBe(true);
     expect(isAnnualPackage(mockPackage("$rc_annual"))).toBe(true);
-    expect(isMonthlyPackage(mockPackage("apex_pro_monthly"))).toBe(true);
-    expect(isAnnualPackage(mockPackage("apex_pro_yearly"))).toBe(true);
+    expect(isMonthlyPackage(mockPackage(APPLE_PRO_MONTHLY))).toBe(true);
+    expect(isAnnualPackage(mockPackage(APPLE_PRO_ANNUAL))).toBe(true);
   });
 
   it("resolvePackagesByInterval maps monthly and annual", () => {

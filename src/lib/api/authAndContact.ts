@@ -27,6 +27,14 @@ export type AuthUser = {
   betaTrialStartedAt?: string | null;
   betaTrialExpiresAt?: string | null;
   hasSeenBetaWelcomeModal?: boolean;
+  betaAccessNoticeType?:
+    | "WELCOME"
+    | "GRANTED"
+    | "EXTENDED"
+    | "RESTORED"
+    | "UPDATED"
+    | null;
+  betaAccessPreviousExpiresAt?: string | null;
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;

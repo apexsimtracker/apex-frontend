@@ -42,7 +42,7 @@ describe("subscriptionStatusDisplay", () => {
     expect(formatAccessUntilLabel("2026-07-01T00:00:00.000Z")).toMatch(/2026/);
   });
 
-  it("labels an active beta trial as a 1-month free trial", () => {
+  it("labels an active admin-granted period as complimentary access", () => {
     const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     expect(
       subscriptionStatusLabel({
@@ -52,7 +52,7 @@ describe("subscriptionStatusDisplay", () => {
         isBetaUser: true,
         betaTrialExpiresAt: future,
       }),
-    ).toBe("Pro (1-month free trial)");
+    ).toBe("Pro (complimentary access)");
   });
 
   it("uses paid Pro label after beta trial has ended", () => {

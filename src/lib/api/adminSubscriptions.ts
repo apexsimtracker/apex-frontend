@@ -122,6 +122,98 @@ export type AdminSubscriptionSyncBatchResult = {
   results: { userId: string; success: boolean; error: string | null }[];
 };
 
+export type AdminBetaAccessStatus =
+  "PENDING" | "SCHEDULED" | "ACTIVE" | "EXPIRED" | "REVOKED";
+
+export type AdminBetaAccessGrant = {
+  id: string;
+  email: string;
+  userId: string | null;
+  user: { id: string; email: string; name: string | null } | null;
+  durationDays: number;
+  startedAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  status: AdminBetaAccessStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminBetaAccessListParams = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: AdminBetaAccessStatus;
+};
+
+export type AdminBetaAccessWritePayload =
+  | { email: string; durationDays: number }
+  | { email: string; startsAt: string; expiresAt: string };
+
+export type AdminBetaAccessUpdatePayload =
+  { durationDays: number } | { startsAt: string; expiresAt: string };
+
+function buildBetaAccessQuery(params?: AdminBetaAccessListParams): string {
+  const sp = new URLSearchParams();
+  if (params?.page != null) sp.set("page", String(params.page));
+  if (params?.pageSize != null) sp.set("pageSize", String(params.pageSize));
+  if (params?.q?.trim()) sp.set("q", params.q.trim());
+  if (params?.status) sp.set("status", params.status);
+  return sp.toString();
+}
+
+export async function fetchAdminBetaAccessList(
+  params?: AdminBetaAccessListParams,
+): Promise<{
+  items: AdminBetaAccessGrant[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}> {
+  const qs = buildBetaAccessQuery(params);
+  return fetchApi(
+    "GET",
+    `/api/admin/subscriptions/beta-access${qs ? `?${qs}` : ""}`,
+    undefined,
+    false,
+  );
+}
+
+export async function createAdminBetaAccess(
+  payload: AdminBetaAccessWritePayload,
+): Promise<AdminBetaAccessGrant> {
+  return fetchApi(
+    "POST",
+    "/api/admin/subscriptions/beta-access",
+    payload,
+    false,
+  );
+}
+
+export async function updateAdminBetaAccess(
+  id: string,
+  payload: AdminBetaAccessUpdatePayload,
+): Promise<AdminBetaAccessGrant> {
+  return fetchApi(
+    "PATCH",
+    `/api/admin/subscriptions/beta-access/${encodeURIComponent(id)}`,
+    payload,
+    false,
+  );
+}
+
+export async function revokeAdminBetaAccess(
+  id: string,
+): Promise<AdminBetaAccessGrant> {
+  return fetchApi(
+    "DELETE",
+    `/api/admin/subscriptions/beta-access/${encodeURIComponent(id)}`,
+    undefined,
+    false,
+  );
+}
+
 export async function postAdminSubscriptionSyncBatch(
   userIds: string[],
 ): Promise<AdminSubscriptionSyncBatchResult> {

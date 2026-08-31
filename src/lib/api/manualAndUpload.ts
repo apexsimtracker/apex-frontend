@@ -24,6 +24,21 @@ export type UploadSessionFileCallbacks = {
   onUploadComplete?: () => void;
 };
 
+export const UPLOAD_INACTIVITY_TIMEOUT_MS = 90_000;
+
+export type UploadSessionFileOptions = {
+  challengeId?: string;
+  /**
+   * Optional finishing/qualifying position and grid size. LMU `.duckdb` files
+   * carry no classified result, so the uploader can supply it here.
+   */
+  position?: string;
+  totalDrivers?: string;
+  signal?: AbortSignal;
+  /** Primarily exposed so transport behavior can be tested without waiting. */
+  inactivityTimeoutMs?: number;
+};
+
 // Manual activity creation (no file upload)
 export type ManualActivityLapPayload = {
   lapTimeMs: number;
@@ -174,8 +189,12 @@ export async function patchSessionCaption(
   );
 }
 
-export async function deleteManualActivity(sessionId: string): Promise<void> {
-  return fetchApi<void>("DELETE", `/api/sessions/manual-activity/${sessionId}`);
+/** Delete any session owned by the signed-in user, regardless of ingest source. */
+export async function deleteSession(sessionId: string): Promise<void> {
+  return fetchApi<void>(
+    "DELETE",
+    `/api/sessions/${encodeURIComponent(sessionId)}`,
+  );
 }
 
 export type CatalogTrack = {
@@ -223,19 +242,86 @@ function parseXhrErrorPayload(text: string): {
 export async function uploadSessionFile(
   file: File,
   callbacks?: UploadSessionFileCallbacks,
-  options?: { challengeId?: string },
+  options?: UploadSessionFileOptions,
 ): Promise<ManualUploadResponse> {
+  // Scalar fields go first so the API can read them without buffering the file.
   const formData = new FormData();
-  formData.append("file", file);
   if (options?.challengeId?.trim()) {
     formData.append("challengeId", options.challengeId.trim());
   }
+  if (options?.position?.trim()) {
+    formData.append("position", options.position.trim());
+  }
+  if (options?.totalDrivers?.trim()) {
+    formData.append("totalDrivers", options.totalDrivers.trim());
+  }
+  formData.append("file", file);
 
   const authHeaders = buildApiAuthHeaders();
   const url = `${API_BASE}/api/sessions/manual-upload`;
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let settled = false;
+    let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastLoadedBytes = 0;
+
+    const clearInactivityTimer = () => {
+      if (inactivityTimer) {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = null;
+      }
+    };
+
+    const cleanup = () => {
+      clearInactivityTimer();
+      options?.signal?.removeEventListener("abort", handleSignalAbort);
+    };
+
+    const resolveOnce = (value: ManualUploadResponse) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+
+    const rejectOnce = (error: ApiError) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const abortWithError = (error: ApiError) => {
+      rejectOnce(error);
+      xhr.abort();
+    };
+
+    const resetInactivityTimer = () => {
+      clearInactivityTimer();
+      const timeoutMs =
+        options?.inactivityTimeoutMs ?? UPLOAD_INACTIVITY_TIMEOUT_MS;
+      inactivityTimer = setTimeout(() => {
+        abortWithError(
+          new ApiError(
+            0,
+            "Upload stopped because no data was transferred for 90 seconds. Check your connection and try again.",
+            "UPLOAD_STALLED",
+          ),
+        );
+      }, timeoutMs);
+    };
+
+    function handleSignalAbort() {
+      abortWithError(
+        new ApiError(
+          0,
+          "Upload canceled. Your selected file is ready to retry.",
+          "UPLOAD_CANCELED",
+        ),
+      );
+    }
+
     xhr.open("POST", url);
     // Auth uses Bearer + X-Apex-Session headers (not cookies). Keep XHR non-credentialed so
     // discussion anon cookies are not required for uploads; CORS credentials:true on the API
@@ -245,6 +331,10 @@ export async function uploadSessionFile(
     }
 
     xhr.upload.onprogress = (ev) => {
+      if (ev.loaded > lastLoadedBytes) {
+        lastLoadedBytes = ev.loaded;
+        resetInactivityTimer();
+      }
       if (!callbacks?.onUploadProgress) return;
       const total = ev.lengthComputable ? ev.total : file.size;
       if (total > 0) {
@@ -254,23 +344,25 @@ export async function uploadSessionFile(
     };
 
     xhr.upload.addEventListener("load", () => {
+      clearInactivityTimer();
       callbacks?.onUploadComplete?.();
     });
 
     xhr.onload = () => {
+      clearInactivityTimer();
       void (async () => {
         const status = xhr.status;
         const text = xhr.responseText ?? "";
 
         if (status >= 200 && status < 300) {
           if (!text.trim()) {
-            reject(new ApiError(500, "No response from server"));
+            rejectOnce(new ApiError(500, "No response from server"));
             return;
           }
           try {
-            resolve(JSON.parse(text) as ManualUploadResponse);
+            resolveOnce(JSON.parse(text) as ManualUploadResponse);
           } catch {
-            reject(new ApiError(500, "Invalid response from server"));
+            rejectOnce(new ApiError(500, "Invalid response from server"));
           }
           return;
         }
@@ -278,14 +370,32 @@ export async function uploadSessionFile(
         await notifyAuthExpired(false, status);
         const { message, code, retryAfterMs } = parseXhrErrorPayload(text);
         if (code === "PRO_REQUIRED") emitProRequiredEvent();
-        reject(new ApiError(status, message, code, retryAfterMs));
+        rejectOnce(new ApiError(status, message, code, retryAfterMs));
       })();
     };
 
     xhr.onerror = () => {
-      reject(new ApiError(0, "Connection lost. Please try again."));
+      rejectOnce(new ApiError(0, "Connection lost. Please try again."));
     };
 
+    xhr.onabort = () => {
+      rejectOnce(
+        new ApiError(
+          0,
+          "Upload canceled. Your selected file is ready to retry.",
+          "UPLOAD_CANCELED",
+        ),
+      );
+    };
+
+    if (options?.signal?.aborted) {
+      handleSignalAbort();
+      return;
+    }
+    options?.signal?.addEventListener("abort", handleSignalAbort, {
+      once: true,
+    });
+    resetInactivityTimer();
     xhr.send(formData);
   });
 }
