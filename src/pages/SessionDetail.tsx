@@ -12,10 +12,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { ApiError } from "@/lib/api/errors";
-import {
-  deleteManualActivity,
-  patchSessionCaption,
-} from "@/lib/api/manualAndUpload";
+import { deleteSession, patchSessionCaption } from "@/lib/api/manualAndUpload";
 import { COMPANY_NAME } from "@/lib/siteMeta";
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildPageTitle } from "@/lib/seo";
@@ -322,7 +319,6 @@ export default function SessionDetail() {
   const isOwner = user?.id != null && session.userId === user.id;
   const canEditSession = isOwner;
   const canEditCaption = isOwner;
-  const canManualExtras = isManual && isOwner;
   /** Auth is settled via ProtectedRoute; lock sectors for free viewers. */
   const sectorsLocked = !isPro || proFeaturesLocked;
 
@@ -470,21 +466,21 @@ export default function SessionDetail() {
     if (!sid) return;
 
     try {
-      await deleteManualActivity(sid);
+      await deleteSession(sid);
       invalidateSessionDerivedCaches(queryClient, {
         sessionId: sid,
         ownerUserId: session.userId ?? user?.id ?? null,
         removeSessionQueries: true,
       });
-      toast.success("Activity deleted", {
-        description: "The manual activity has been removed.",
+      toast.success("Session deleted", {
+        description: "The session has been removed.",
       });
       navigate(SESSIONS_PATH);
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : "Failed to delete activity. Please try again.";
+          : "Failed to delete session. Please try again.";
       throw new Error(message);
     }
   }
@@ -543,7 +539,7 @@ export default function SessionDetail() {
           trackImageUrl={session.trackImageUrl}
           sim={resolved.sim ?? session.sim ?? undefined}
           canEditSession={canEditSession}
-          canManualExtras={canManualExtras}
+          canDeleteSession={isOwner}
           likeCount={likeCount}
           commentCount={commentCount}
           likedByMe={likedByMe}
@@ -709,7 +705,7 @@ export default function SessionDetail() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        title="Delete this manual activity?"
+        title="Delete this session?"
         message="This cannot be undone."
       />
 

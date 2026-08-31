@@ -179,9 +179,9 @@ export default function Pricing() {
           </h1>
           <p className="mt-2 text-sm tracking-wide text-apex-on-surface-variant">
             {onBetaTrial
-              ? `You're on a 1-month free trial of full Pro access${
+              ? `You have complimentary full Pro access${
                   betaTrialEndsLabel ? ` (ends ${betaTrialEndsLabel})` : ""
-                }. Subscribe anytime — your trial ends when paid Pro starts.`
+                }. Subscribe anytime — complimentary access ends when paid Pro starts.`
               : "Start free. Upgrade to Pro for unlimited history, analytics, and more."}
           </p>
         </div>

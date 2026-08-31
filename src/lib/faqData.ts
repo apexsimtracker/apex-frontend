@@ -91,9 +91,9 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     id: "beta-free-trial",
     category: "Apex Pro",
-    question: "What is the Apex beta free trial?",
+    question: "How does complimentary Pro access work?",
     answer:
-      "Invited beta users receive a 1-month free trial of full Apex Pro access when they sign up. You can subscribe to a paid Pro plan anytime from Pricing; starting a paid subscription ends the free trial and continues Pro under your normal billing.",
+      "Invited users can receive complimentary Apex Pro access for a period set by an administrator. Access may begin immediately or when a new user signs up. You can subscribe to a paid Pro plan anytime from Pricing; starting a paid subscription ends complimentary access and continues Pro under normal billing.",
   },
   {
     id: "change-password",
