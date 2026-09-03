@@ -1,34 +1,51 @@
-import type { Package as RevenueCatPackage } from "@revenuecat/purchases-js";
 import type {
   BillingInterval,
   BillingPlansResponse,
 } from "@/lib/api/activityBilling";
+import type { BillingPackage } from "./billingPackage";
+import { proProductId, type StoreBillingPlatform } from "./storeProductIds";
 
 export type ResolvedPackages = {
-  monthly: RevenueCatPackage | null;
-  annual: RevenueCatPackage | null;
+  monthly: BillingPackage | null;
+  annual: BillingPackage | null;
 };
 
-function packageIdentifier(rcPackage: RevenueCatPackage): string {
+function packageIdentifier(rcPackage: BillingPackage): string {
   return rcPackage.identifier?.trim().toLowerCase() ?? "";
 }
 
 /** Store SKUs (Apple vs Play) live in `storeProductIds.ts`. */
-export function isAnnualPackage(rcPackage: RevenueCatPackage): boolean {
-  const id = packageIdentifier(rcPackage);
+export function isAnnualPackage(rcPackage: BillingPackage): boolean {
+  const id =
+    `${packageIdentifier(rcPackage)} ${rcPackage.productIdentifier}`.toLowerCase();
   return id.includes("annual") || id.includes("year");
 }
 
-export function isMonthlyPackage(rcPackage: RevenueCatPackage): boolean {
-  const id = packageIdentifier(rcPackage);
+export function isMonthlyPackage(rcPackage: BillingPackage): boolean {
+  const id =
+    `${packageIdentifier(rcPackage)} ${rcPackage.productIdentifier}`.toLowerCase();
   return id.includes("month") || id === "$rc_monthly";
 }
 
 export function resolvePackagesByInterval(
-  availablePackages: RevenueCatPackage[],
+  availablePackages: BillingPackage[],
+  platform: StoreBillingPlatform = "web",
 ): ResolvedPackages {
-  let monthly: RevenueCatPackage | null = null;
-  let annual: RevenueCatPackage | null = null;
+  if (platform !== "web") {
+    return {
+      monthly:
+        availablePackages.find(
+          (pkg) => pkg.productIdentifier === proProductId(platform, "monthly"),
+        ) ?? null,
+      annual:
+        availablePackages.find(
+          (pkg) => pkg.productIdentifier === proProductId(platform, "annual"),
+        ) ?? null,
+    };
+  }
+
+  let monthly: BillingPackage | null = null;
+  let annual: BillingPackage | null = null;
 
   for (const pkg of availablePackages) {
     if (!annual && isAnnualPackage(pkg)) annual = pkg;
@@ -49,7 +66,7 @@ export function pickDefaultInterval(
 export function packageForInterval(
   resolved: ResolvedPackages,
   interval: BillingInterval,
-): RevenueCatPackage | null {
+): BillingPackage | null {
   return interval === "ANNUAL" ? resolved.annual : resolved.monthly;
 }
 
@@ -68,21 +85,10 @@ export function computeAnnualSavingsPercent(
 }
 
 export function getPackagePriceLabel(
-  rcPackage: RevenueCatPackage,
+  rcPackage: BillingPackage,
   plans: BillingPlansResponse | undefined,
 ): string {
-  const product = rcPackage.webBillingProduct as unknown as
-    | Record<string, unknown>
-    | undefined;
-  const priceString =
-    typeof product?.priceString === "string"
-      ? product.priceString
-      : typeof product?.currentPriceString === "string"
-        ? product.currentPriceString
-        : typeof product?.formattedPrice === "string"
-          ? product.formattedPrice
-          : null;
-  if (priceString) return priceString;
+  if (rcPackage.priceString) return rcPackage.priceString;
 
   if (isAnnualPackage(rcPackage)) {
     return plans?.pro.annual.priceLabel ?? "Unavailable";
@@ -95,9 +101,11 @@ export function getPackagePriceLabel(
 }
 
 export function getPackageTitle(
-  rcPackage: RevenueCatPackage,
+  rcPackage: BillingPackage,
   plans: BillingPlansResponse | undefined,
 ): string {
+  if (rcPackage.sdk === "native" && rcPackage.title) return rcPackage.title;
+
   if (isAnnualPackage(rcPackage)) {
     return plans?.pro.annual.name ?? "Pro Annual";
   }
@@ -114,16 +122,7 @@ export function getPackageTitle(
       .join(" ");
   }
 
-  const product = rcPackage.webBillingProduct as unknown as
-    | Record<string, unknown>
-    | undefined;
-  const displayName =
-    typeof product?.displayName === "string"
-      ? product.displayName
-      : typeof product?.title === "string"
-        ? product.title
-        : null;
-  return displayName ?? plans?.pro.monthly.name ?? "Apex Pro";
+  return rcPackage.title ?? plans?.pro.monthly.name ?? "Apex Pro";
 }
 
 export function priceLabelForCatalogInterval(

@@ -20,6 +20,7 @@
 		"CAPBrowserPlugin",
 		"KeyboardPlugin",
 		"SplashScreenPlugin",
-		"StatusBarPlugin"
+		"StatusBarPlugin",
+		"PurchasesPlugin"
 	]
 }

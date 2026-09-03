@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-BhB9venu.js","assets/revenuecat-Dggh8cxb.js"])))=>i.map(i=>d[i]);
+import{r as o,_ as e,C as t}from"./revenuecat-Dggh8cxb.js";const a=o("Browser",{web:()=>e(()=>import("./web-BhB9venu.js"),__vite__mapDeps([0,1])).then(r=>new r.BrowserWeb)});async function n(r){if(t.isNativePlatform()){await a.open({url:r});return}window.location.assign(r)}export{n as o};

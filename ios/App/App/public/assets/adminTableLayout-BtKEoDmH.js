@@ -1,1 +1,0 @@
-const e="mx-auto min-w-0 max-w-6xl",o="min-w-0 overflow-hidden rounded-xl border border-white/10",a="overflow-x-auto overscroll-x-contain";function n(t){return`w-full ${t} text-left text-sm`}const s="whitespace-nowrap p-3",r="p-3 align-middle",i="whitespace-nowrap p-3 text-right align-middle";export{e as A,o as a,a as b,r as c,i as d,s as e,n as f};

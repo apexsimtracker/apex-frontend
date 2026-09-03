@@ -1,4 +1,3 @@
-import type { Package as RevenueCatPackage } from "@revenuecat/purchases-js";
 import { Loader2, Sparkles } from "lucide-react";
 import type {
   BillingConfigResponse,
@@ -17,6 +16,7 @@ import {
   priceLabelForCatalogInterval,
   type ResolvedPackages,
 } from "@/features/billing/packageMapping";
+import type { BillingPackage } from "@/features/billing/billingPackage";
 import { BillingIntervalToggle } from "./BillingIntervalToggle";
 import { PlanFeatureList } from "./PlanFeatureList";
 import { PricingAlerts } from "./PricingAlerts";
@@ -25,10 +25,12 @@ type ProPlanCardProps = {
   features: string[];
   plans: BillingPlansResponse | undefined;
   billingConfig: BillingConfigResponse | null | undefined;
+  isBillingEnabled: boolean;
+  isNative: boolean;
   resolvedPackages: ResolvedPackages;
   billingInterval: BillingInterval;
   onBillingIntervalChange: (interval: BillingInterval) => void;
-  selectedPackage: RevenueCatPackage | null;
+  selectedPackage: BillingPackage | null;
   annualSavingsPercent: number | null;
   isPro: boolean;
   /** Active code-level beta trial (has Pro access but not a paid subscription). */
@@ -38,6 +40,7 @@ type ProPlanCardProps = {
   authLoading: boolean;
   offeringsPending: boolean;
   isPurchasing: boolean;
+  isRestoringPurchases: boolean;
   isOpeningBillingPortal: boolean;
   isRefreshingSubscription: boolean;
   currentSubscriptionLabel: string | null;
@@ -48,6 +51,7 @@ type ProPlanCardProps = {
   warning: string | null;
   error: string | null;
   onSubscribe: () => void;
+  onRestorePurchases: () => void;
   onManageSubscription: () => void;
   onSignInToSubscribe: () => void;
   className?: string;
@@ -57,6 +61,8 @@ export function ProPlanCard({
   features,
   plans,
   billingConfig,
+  isBillingEnabled,
+  isNative,
   resolvedPackages,
   billingInterval,
   onBillingIntervalChange,
@@ -69,6 +75,7 @@ export function ProPlanCard({
   authLoading,
   offeringsPending,
   isPurchasing,
+  isRestoringPurchases,
   isOpeningBillingPortal,
   isRefreshingSubscription,
   currentSubscriptionLabel,
@@ -79,6 +86,7 @@ export function ProPlanCard({
   warning,
   error,
   onSubscribe,
+  onRestorePurchases,
   onManageSubscription,
   onSignInToSubscribe,
   className,
@@ -97,10 +105,7 @@ export function ProPlanCard({
   const showIntervalToggle =
     !isPro &&
     (showCatalogPricing ||
-      (isLoggedIn &&
-        billingConfig?.enabled &&
-        !offeringsPending &&
-        hasPackages));
+      (isLoggedIn && isBillingEnabled && !offeringsPending && hasPackages));
 
   const monthlyToggleAvailable = showCatalogPricing
     ? true
@@ -239,7 +244,7 @@ export function ProPlanCard({
           >
             Sign in to subscribe
           </Button>
-        ) : !billingConfig?.enabled ? (
+        ) : !isBillingEnabled ? (
           <p className="rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container p-3 font-apex-body text-sm text-apex-on-surface-variant">
             Billing is not configured for this environment yet.
           </p>
@@ -272,12 +277,30 @@ export function ProPlanCard({
           </p>
         )}
 
+        {isNative && isLoggedIn && !isPro && isBillingEnabled && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            disabled={isPurchasing || isRestoringPurchases}
+            onClick={onRestorePurchases}
+          >
+            {isRestoringPurchases ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              "Restore purchases"
+            )}
+          </Button>
+        )}
+
         <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
-          {!billingConfig
-            ? "Billing configuration is loading."
-            : billingConfig.mode === "sandbox"
-              ? "Sandbox billing mode is enabled. RevenueCat will use test-mode checkout."
-              : "Live billing mode is enabled. RevenueCat will use live checkout."}
+          {isNative
+            ? "Purchases are handled securely by the App Store or Google Play."
+            : !billingConfig
+              ? "Billing configuration is loading."
+              : billingConfig.mode === "sandbox"
+                ? "Sandbox billing mode is enabled. RevenueCat will use test-mode checkout."
+                : "Live billing mode is enabled. RevenueCat will use live checkout."}
         </p>
       </div>
     </div>
