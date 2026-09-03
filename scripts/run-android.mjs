@@ -3,7 +3,8 @@
  * Portable wrapper for `cap run android`.
  *
  * Env:
- *   JAVA_HOME — optional; defaults to Android Studio JBR on macOS when present
+ *   JAVA_HOME — optional JDK 21+; a JDK 17 JAVA_HOME is ignored in favor of
+ *     Android Studio JBR 21 on macOS (Capacitor 8 / AGP require Java 21)
  *   CAP_ANDROID_TARGET — optional AVD/device id passed to `--target`
  *
  * Args:
@@ -12,21 +13,8 @@
  */
 
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
-
-const MAC_ANDROID_STUDIO_JBR =
-  "/Applications/Android Studio.app/Contents/jbr/Contents/Home";
-
-function resolveJavaHome() {
-  if (process.env.JAVA_HOME?.trim()) {
-    return process.env.JAVA_HOME.trim();
-  }
-  if (process.platform === "darwin" && fs.existsSync(MAC_ANDROID_STUDIO_JBR)) {
-    return MAC_ANDROID_STUDIO_JBR;
-  }
-  return null;
-}
+import { missingJdk21Message, resolveJdk21Home } from "./resolveJdk21.mjs";
 
 function parseArgs(argv) {
   const liveReload = argv.includes("--live-reload");
@@ -44,7 +32,12 @@ function parseArgs(argv) {
 }
 
 const { liveReload, target } = parseArgs(process.argv.slice(2));
-const javaHome = resolveJavaHome();
+const javaHome = resolveJdk21Home();
+if (!javaHome) {
+  console.error(`[run-android] ${missingJdk21Message()}`);
+  process.exit(1);
+}
+console.log(`[run-android] using JDK 21+ at ${javaHome}`);
 
 const capArgs = ["exec", "cap", "run", "android"];
 if (liveReload) {

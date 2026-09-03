@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.apexsimtracker.app",
+        "paths": ["/sessions*", "/discussion*", "/challenge*"]
+      }
+    ]
+  }
+}
