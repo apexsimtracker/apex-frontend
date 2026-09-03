@@ -12,6 +12,12 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (8.0.2):
     - Capacitor
+  - PurchasesHybridCommon (18.32.1):
+    - RevenueCat (= 5.85.0)
+  - RevenueCat (5.85.0)
+  - RevenuecatPurchasesCapacitor (13.4.2):
+    - Capacitor
+    - PurchasesHybridCommon (= 18.32.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/.pnpm/@capacitor+ios@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/ios`)"
@@ -21,6 +27,12 @@ DEPENDENCIES:
   - "CapacitorKeyboard (from `../../node_modules/.pnpm/@capacitor+keyboard@8.0.3_@capacitor+core@8.0.2/node_modules/@capacitor/keyboard`)"
   - "CapacitorSplashScreen (from `../../node_modules/.pnpm/@capacitor+splash-screen@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/.pnpm/@capacitor+status-bar@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/status-bar`)"
+  - "RevenuecatPurchasesCapacitor (from `../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.4.2_@capacitor+core@8.0.2/node_modules/@revenuecat/purchases-capacitor`)"
+
+SPEC REPOS:
+  trunk:
+    - PurchasesHybridCommon
+    - RevenueCat
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -37,6 +49,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/.pnpm/@capacitor+splash-screen@8.0.1_@capacitor+core@8.0.2/node_modules/@capacitor/splash-screen"
   CapacitorStatusBar:
     :path: "../../node_modules/.pnpm/@capacitor+status-bar@8.0.2_@capacitor+core@8.0.2/node_modules/@capacitor/status-bar"
+  RevenuecatPurchasesCapacitor:
+    :path: "../../node_modules/.pnpm/@revenuecat+purchases-capacitor@13.4.2_@capacitor+core@8.0.2/node_modules/@revenuecat/purchases-capacitor"
 
 SPEC CHECKSUMS:
   Capacitor: cfc1ce4a70dbc19fdc4e66e17808937088029752
@@ -46,7 +60,10 @@ SPEC CHECKSUMS:
   CapacitorKeyboard: ad22f33de28070c8e16ecb119084af06915724e2
   CapacitorSplashScreen: 1281f7df4d9b4a72bccab8d03e6b2bbd17dff122
   CapacitorStatusBar: b692a4cf12b3fe3a7b7ece86da62106065d78fdc
+  PurchasesHybridCommon: 02cad5fb69b682309baa3ad4d6dcb7836c1543e0
+  RevenueCat: 2dec9f71800de36af31884c3cc73e9ffb4a41786
+  RevenuecatPurchasesCapacitor: c2c9c09dee64f0bdb4b0ab642e44086deee0569a
 
-PODFILE CHECKSUM: 0a46e280eae8b991b9660927a97d47a304340a69
+PODFILE CHECKSUM: 368add80c8a4086b3cedc333f59f96edafe53d16
 
 COCOAPODS: 1.16.2

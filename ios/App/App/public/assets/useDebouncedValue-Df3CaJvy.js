@@ -1,0 +1,1 @@
+import{r as e}from"./react-vendor-DiaD3UNg.js";function d(t,o,r){const[n,c]=e.useState(t),u=e.useRef(r);return e.useLayoutEffect(()=>{r!==void 0&&u.current!==r&&(u.current=r,c(t))},[r,t]),e.useEffect(()=>{const s=setTimeout(()=>c(t),o);return()=>clearTimeout(s)},[t,o]),n}export{d as u};

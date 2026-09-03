@@ -26,7 +26,6 @@ import {
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePlatform } from "@/hooks/usePlatform";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { cn } from "@/lib/utils";
 import { FreePlanCard } from "./pricing/FreePlanCard";
@@ -39,7 +38,6 @@ const description = `Compare Free and Apex Pro plans for sim racing telemetry, l
 
 export default function Pricing() {
   const { user, loading: authLoading } = useAuth();
-  const { isNative } = usePlatform();
   const navigate = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -55,10 +53,15 @@ export default function Pricing() {
 
   const {
     billingConfig,
+    billingPlatform,
+    isNative,
+    isBillingEnabled,
     availablePackages,
     offeringsQuery,
     purchasePackage,
     isPurchasing,
+    restorePurchases,
+    isRestoringPurchases,
     openBillingPortal,
     isOpeningBillingPortal,
     refreshSubscription,
@@ -83,8 +86,8 @@ export default function Pricing() {
   const accessUntilLabel = formatAccessUntilLabel(user?.currentPeriodEnd);
 
   const resolvedPackages = useMemo(
-    () => resolvePackagesByInterval(availablePackages),
-    [availablePackages],
+    () => resolvePackagesByInterval(availablePackages, billingPlatform),
+    [availablePackages, billingPlatform],
   );
 
   const annualSavingsPercent = useMemo(
@@ -136,7 +139,7 @@ export default function Pricing() {
       } else {
         setMessage("Welcome to Apex Pro! Your subscription is active.");
       }
-      setShowAgentCta(true);
+      setShowAgentCta(!isNative);
     } catch (err) {
       setMessage(null);
       setWarning(null);
@@ -152,26 +155,43 @@ export default function Pricing() {
       await openBillingPortal();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Could not open billing portal.",
+        err instanceof Error
+          ? err.message
+          : "Could not open subscription settings.",
+      );
+    }
+  }
+
+  async function handleRestorePurchases() {
+    try {
+      setMessage(null);
+      setWarning(null);
+      setError(null);
+      const outcome = await restorePurchases();
+      if (outcome.refreshErrorMessage) {
+        setMessage("Your store purchases were restored.");
+        setWarning(outcome.refreshErrorMessage);
+      } else {
+        setMessage(
+          "Purchases restored. Your subscription status is up to date.",
+        );
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not restore purchases.",
       );
     }
   }
 
   function handleSignInToSubscribe() {
     if (!user) {
-      navigate(
-        `${AUTH_PATHS.login}?next=${encodeURIComponent(PRICING_PATH)}`,
-      );
+      navigate(`${AUTH_PATHS.login}?next=${encodeURIComponent(PRICING_PATH)}`);
     }
   }
 
   return (
     <>
-      <PageMeta
-        title={title}
-        description={description}
-        path={PRICING_PATH}
-      />
+      <PageMeta title={title} description={description} path={PRICING_PATH} />
       <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-6 py-8">
         <div className="mb-10">
           <h1 className="font-apex-headline text-3xl font-bold tracking-tight text-apex-on-surface">
@@ -226,6 +246,8 @@ export default function Pricing() {
               features={plans?.pro.features ?? []}
               plans={plans}
               billingConfig={billingConfig}
+              isBillingEnabled={isBillingEnabled}
+              isNative={isNative}
               resolvedPackages={resolvedPackages}
               billingInterval={billingInterval}
               onBillingIntervalChange={setBillingInterval}
@@ -238,6 +260,7 @@ export default function Pricing() {
               authLoading={authLoading}
               offeringsPending={offeringsQuery.isLoading}
               isPurchasing={isPurchasing}
+              isRestoringPurchases={isRestoringPurchases}
               isOpeningBillingPortal={isOpeningBillingPortal}
               isRefreshingSubscription={isRefreshingSubscription}
               currentSubscriptionLabel={currentSubscriptionLabel}
@@ -248,6 +271,7 @@ export default function Pricing() {
               warning={warning}
               error={error}
               onSubscribe={() => void handlePurchase()}
+              onRestorePurchases={() => void handleRestorePurchases()}
               onManageSubscription={() => void handleManageSubscription()}
               onSignInToSubscribe={handleSignInToSubscribe}
             />

@@ -4,6 +4,9 @@
     "src/main.tsx",
     "src/App.tsx",
     "scripts/generate-sitemap.mjs",
+    "scripts/run-android.mjs",
+    "scripts/android-gradle.mjs",
+    "scripts/resolveJdk21.mjs",
     "playwright.config.ts",
     "vitest.config.ts"
   ],

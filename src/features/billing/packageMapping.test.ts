@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { Package as RevenueCatPackage } from "@revenuecat/purchases-js";
 import {
   computeAnnualSavingsPercent,
   isAnnualPackage,
@@ -8,10 +7,26 @@ import {
   resolvePackagesByInterval,
 } from "./packageMapping";
 import type { BillingPlansResponse } from "@/lib/api/activityBilling";
-import { APPLE_PRO_ANNUAL, APPLE_PRO_MONTHLY } from "./storeProductIds";
+import type { BillingPackage } from "./billingPackage";
+import {
+  APPLE_PRO_ANNUAL,
+  APPLE_PRO_MONTHLY,
+  PLAY_PRO_ANNUAL,
+} from "./storeProductIds";
 
-function mockPackage(identifier: string): RevenueCatPackage {
-  return { identifier } as RevenueCatPackage;
+function mockPackage(
+  identifier: string,
+  productIdentifier = identifier,
+  sdk: BillingPackage["sdk"] = "web",
+): BillingPackage {
+  return {
+    sdk,
+    identifier,
+    productIdentifier,
+    priceString: null,
+    title: null,
+    rawPackage: {},
+  } as BillingPackage;
 }
 
 const samplePlans: BillingPlansResponse = {
@@ -48,6 +63,28 @@ describe("packageMapping", () => {
     ]);
     expect(resolved.monthly?.identifier).toBe("$rc_monthly");
     expect(resolved.annual?.identifier).toBe("$rc_annual");
+  });
+
+  it("uses exact platform product IDs for native offerings", () => {
+    const packages = [
+      mockPackage("$rc_monthly", APPLE_PRO_MONTHLY, "native"),
+      mockPackage("$rc_annual", "apex_pro_annual", "native"),
+      mockPackage("$rc_annual", APPLE_PRO_ANNUAL, "native"),
+      mockPackage("$rc_annual", PLAY_PRO_ANNUAL, "native"),
+    ];
+
+    const apple = resolvePackagesByInterval(packages, "apple");
+    expect(apple.monthly?.productIdentifier).toBe(APPLE_PRO_MONTHLY);
+    expect(apple.annual?.productIdentifier).toBe(APPLE_PRO_ANNUAL);
+    expect(
+      resolvePackagesByInterval(
+        [mockPackage("$rc_annual", "apex_pro_annual", "native")],
+        "apple",
+      ).annual,
+    ).toBeNull();
+
+    const play = resolvePackagesByInterval(packages, "play");
+    expect(play.annual?.productIdentifier).toBe(PLAY_PRO_ANNUAL);
   });
 
   it("pickDefaultInterval prefers annual when available", () => {

@@ -11,6 +11,8 @@ import {
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
+import { currentBillingPlatform } from "@/features/billing/billingPlatform";
+import { openNativeSubscriptionManagement } from "@/features/billing/nativeSubscriptionManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   formatAccessUntilLabel,
@@ -22,12 +24,18 @@ import { cn } from "@/lib/utils";
 
 export function SubscriptionCard() {
   const { user } = useAuth();
+  const billingPlatform = currentBillingPlatform();
+  const isNative = billingPlatform !== "web";
   const onBetaTrial = isActiveBetaTrial(user);
   const isPaidPro = isPaidProUser(user);
   const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
 
   const portalMutation = useMutation({
     mutationFn: async () => {
+      if (isNative) {
+        await openNativeSubscriptionManagement(billingPlatform);
+        return null;
+      }
       const { url } = await createBillingPortalSession();
       await openExternalUrl(url);
       return url;

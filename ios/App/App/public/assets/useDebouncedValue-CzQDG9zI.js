@@ -1,1 +1,0 @@
-import{e as r}from"./react-vendor-8FlIWKjL.js";function d(t,o,e){const[n,c]=r.useState(t),u=r.useRef(e);return r.useLayoutEffect(()=>{e!==void 0&&u.current!==e&&(u.current=e,c(t))},[e,t]),r.useEffect(()=>{const s=setTimeout(()=>c(t),o);return()=>clearTimeout(s)},[t,o]),n}export{d as u};
