@@ -10,6 +10,8 @@ import {
   type SessionTimingMinima,
 } from "@/lib/sessionLapDisplay";
 import { type ApexAnalysisPayload } from "@/features/session-detail/apexAnalysisDisplay";
+import type { SectorTimingSource } from "@/lib/sectors";
+import { coerceSectorTimesMs } from "@/lib/sectors";
 
 export type RawLap = {
   lap: number;
@@ -23,6 +25,7 @@ export type RawLap = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorTimesMs?: (number | null)[];
   sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
@@ -37,6 +40,7 @@ export type NormalizedLap = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorTimesMs: (number | null)[];
   sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };
@@ -53,6 +57,7 @@ export function normalizeLaps(laps: RawLap[] | undefined): NormalizedLap[] {
     sector1Ms: l.sector1Ms,
     sector2Ms: l.sector2Ms,
     sector3Ms: l.sector3Ms,
+    sectorTimesMs: coerceSectorTimesMs(l.sectorTimesMs, l),
     sectorsEstimated: l.sectorsEstimated,
     highlights: l.highlights,
   }));
@@ -96,6 +101,7 @@ export type SessionDetail = {
   sessionTimingMinima?: SessionTimingMinima | null;
   idealLap?: {
     lapTimeMs: number;
+    sectorTimesMs?: (number | null)[];
     sector1Ms?: number;
     sector2Ms?: number;
     sector3Ms?: number;
@@ -134,6 +140,10 @@ export type SessionDetail = {
   userId?: string | null;
   /** Manual rows only: PRACTICE | QUALIFY | RACE */
   manualSessionKind?: string | null;
+  sectorCount?: number | null;
+  sectorStartsPct?: number[] | null;
+  sectorLayoutKey?: string | null;
+  sectorTimingSource?: SectorTimingSource | null;
 };
 
 type BackendLapLite = {
@@ -146,6 +156,7 @@ type BackendLapLite = {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorTimesMs?: (number | null)[];
   sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 };

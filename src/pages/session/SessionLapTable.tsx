@@ -17,6 +17,7 @@ type SessionLapTableProps = {
   onSelectLap?: (lapNumber: number) => void;
   /** When true, hide S1/S2/S3 and show Lap + Time + Δ only. */
   hideSectorColumns?: boolean;
+  sectorCount?: number;
 };
 
 function loveableHighlightClass(h: TimingHighlight): string {
@@ -39,8 +40,10 @@ export default function SessionLapTable({
   selectedLap = null,
   onSelectLap,
   hideSectorColumns = false,
+  sectorCount = 0,
 }: SessionLapTableProps) {
-  const colCount = hideSectorColumns ? 3 : 6;
+  const count = Math.max(0, sectorCount || laps[0]?.sectorTimesMs.length || 0);
+  const colCount = hideSectorColumns ? 3 : count + 3;
 
   return (
     <div className="overflow-hidden rounded-xl bg-apex-surface-container-low shadow-lg">
@@ -51,9 +54,9 @@ export default function SessionLapTable({
               <th className={HEADER_CELL}>Lap</th>
               {!hideSectorColumns ? (
                 <>
-                  <th className={HEADER_CELL}>S1</th>
-                  <th className={HEADER_CELL}>S2</th>
-                  <th className={HEADER_CELL}>S3</th>
+                  {Array.from({ length: count }, (_, index) => (
+                    <th key={index} className={HEADER_CELL}>S{index + 1}</th>
+                  ))}
                 </>
               ) : null}
               <th className={`${HEADER_CELL} text-right`}>Time</th>
@@ -111,32 +114,22 @@ export default function SessionLapTable({
                       ) : null}
                     </td>
                     {!hideSectorColumns ? (
-                      <>
-                        <td
-                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                            isFastest,
-                            rowHighlights.s1,
-                          )} ${loveableHighlightClass(rowHighlights.s1)}`}
-                        >
-                          {formatLapMs(row.sector1Ms)}
-                        </td>
-                        <td
-                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                            isFastest,
-                            rowHighlights.s2,
-                          )} ${loveableHighlightClass(rowHighlights.s2)}`}
-                        >
-                          {formatLapMs(row.sector2Ms)}
-                        </td>
-                        <td
-                          className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
-                            isFastest,
-                            rowHighlights.s3,
-                          )} ${loveableHighlightClass(rowHighlights.s3)}`}
-                        >
-                          {formatLapMs(row.sector3Ms)}
-                        </td>
-                      </>
+                      Array.from({ length: count }, (_, sectorIndex) => {
+                        const sectorMs = row.sectorTimesMs[sectorIndex] ?? null;
+                        const highlight =
+                          rowHighlights.sectors[sectorIndex] ?? "default";
+                        return (
+                          <td
+                            key={sectorIndex}
+                            className={`whitespace-nowrap px-2 py-3 ${sectorWeightClass(
+                              isFastest,
+                              highlight,
+                            )} ${loveableHighlightClass(highlight)}`}
+                          >
+                            {formatLapMs(sectorMs)}
+                          </td>
+                        );
+                      })
                     ) : null}
                     <td
                       className={`whitespace-nowrap px-2 py-3 text-right font-apex-headline font-bold ${

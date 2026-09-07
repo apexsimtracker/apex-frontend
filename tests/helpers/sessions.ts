@@ -82,6 +82,19 @@ export type SessionDetailApi = {
   carName?: string | null;
   proFeaturesLocked?: boolean;
   sim?: string | null;
+  sectorCount?: number;
+  sectorStartsPct?: number[];
+  sectorLayoutKey?: string | null;
+  sectorTimingSource?: string;
+  laps?: {
+    lap?: number;
+    timeMs?: number;
+    sectorTimesMs?: (number | null)[] | null;
+    sector1Ms?: number | null;
+    sector2Ms?: number | null;
+    sector3Ms?: number | null;
+    sectorsEstimated?: boolean;
+  }[];
 };
 
 type ManualUploadResponse = {
@@ -272,7 +285,8 @@ export type ManualActivityCreateInput = {
   position?: number;
   totalDrivers?: number;
   qualifyingPosition?: number;
-  laps?: { lapTimeMs: number }[];
+  sectorCount?: number;
+  laps?: { lapTimeMs: number; sectorTimesMs?: (number | null)[] }[];
   caption?: string;
 };
 
@@ -296,6 +310,7 @@ export async function createManualActivityViaApi(
       ...(input.qualifyingPosition != null
         ? { qualifyingPosition: input.qualifyingPosition }
         : {}),
+      ...(input.sectorCount != null ? { sectorCount: input.sectorCount } : {}),
       ...(input.laps?.length ? { laps: input.laps } : {}),
       ...(input.caption ? { caption: input.caption } : {}),
     },

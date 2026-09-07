@@ -34,6 +34,7 @@ type SessionTelemetryProps = {
   selectedLap: number | null;
   onSelectLap: (lapNumber: number) => void;
   bestLapLapNumber?: number | null;
+  sectorStartsPct?: number[] | null;
 };
 
 type TabId = "driving" | "fuel" | "tyres";
@@ -45,6 +46,7 @@ export default function SessionTelemetry({
   selectedLap,
   onSelectLap,
   bestLapLapNumber,
+  sectorStartsPct,
 }: SessionTelemetryProps) {
   const { loading: authLoading } = useAuth();
   const isPro = useIsProUser();
@@ -115,6 +117,7 @@ export default function SessionTelemetry({
       laps.map((l) => ({
         lap: l.lap,
         timeMs: l.timeMs,
+        sectorTimesMs: l.sectorTimesMs,
         sector1Ms: l.sector1Ms,
         sector2Ms: l.sector2Ms,
         sector3Ms: l.sector3Ms,
@@ -136,7 +139,7 @@ export default function SessionTelemetry({
         </p>
         <Link
           to="/pricing"
-          className="text-apex-on-primary mt-4 inline-flex rounded-full bg-apex-primary px-4 py-2 font-apex-body text-xs font-bold uppercase tracking-widest"
+          className="mt-4 inline-flex rounded-full bg-apex-primary px-4 py-2 font-apex-body text-xs font-bold uppercase tracking-widest text-apex-on-primary"
         >
           Upgrade to Pro
         </Link>
@@ -320,6 +323,7 @@ export default function SessionTelemetry({
                 onSelectLap={onSelectLap}
                 onSelectCompare={setCompareLap}
                 sectorTimes={sectorTimes}
+                sectorStartsPct={sectorStartsPct}
               />
             )}
           </div>

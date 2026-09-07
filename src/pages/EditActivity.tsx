@@ -36,7 +36,9 @@ export default function EditActivity() {
   } = useQuery({
     queryKey: ["sessions", "edit", sid],
     queryFn: async () => {
-      const data = await apiGet<SessionDetailForEdit>(`/api/sessions/${sid}`);
+      const data = await apiGet<SessionDetailForEdit>(
+        `/api/sessions/${sid}?forEdit=1`,
+      );
       return manualActivityInitialFromPublicDetail(data);
     },
     enabled: Boolean(sid),
