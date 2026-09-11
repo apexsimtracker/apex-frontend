@@ -11,8 +11,12 @@ import {
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
-import { currentBillingPlatform } from "@/features/billing/billingPlatform";
-import { openNativeSubscriptionManagement } from "@/features/billing/nativeSubscriptionManagement";
+import { normalizeBillingStores } from "@/features/billing/billingStore";
+import {
+  ALREADY_HAVE_PRO_MESSAGE,
+  resolveSubscriptionManageActions,
+  type SubscriptionManageAction,
+} from "@/features/billing/subscriptionManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   formatAccessUntilLabel,
@@ -24,17 +28,22 @@ import { cn } from "@/lib/utils";
 
 export function SubscriptionCard() {
   const { user } = useAuth();
-  const billingPlatform = currentBillingPlatform();
-  const isNative = billingPlatform !== "web";
   const onBetaTrial = isActiveBetaTrial(user);
   const isPaidPro = isPaidProUser(user);
   const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
+  const manageActions = resolveSubscriptionManageActions(
+    normalizeBillingStores(user?.billingStores),
+    { hasPaidPro: isPaidPro },
+  );
 
   const portalMutation = useMutation({
-    mutationFn: async () => {
-      if (isNative) {
-        await openNativeSubscriptionManagement(billingPlatform);
-        return null;
+    mutationFn: async (action: SubscriptionManageAction) => {
+      if (action.kind === "instructions") {
+        throw new Error(action.description);
+      }
+      if (action.kind === "external_url") {
+        await openExternalUrl(action.url);
+        return action.url;
       }
       const { url } = await createBillingPortalSession();
       await openExternalUrl(url);
@@ -65,9 +74,11 @@ export function SubscriptionCard() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-apex-on-surface-variant">
-        {onBetaTrial
-          ? "You have complimentary full Pro access. Subscribe on the pricing page anytime — complimentary access ends when paid Pro starts."
-          : "Manage your Apex Pro plan on the pricing page."}
+        {isPaidPro
+          ? ALREADY_HAVE_PRO_MESSAGE
+          : onBetaTrial
+            ? "You have complimentary full Pro access. Subscribe on the pricing page anytime — complimentary access ends when paid Pro starts."
+            : "Manage your Apex Pro plan on the pricing page."}
       </p>
       <div>
         <span className="text-xs text-apex-on-surface-variant">Plan</span>
@@ -110,23 +121,40 @@ export function SubscriptionCard() {
       )}
       {isPaidPro ? (
         <>
-          <Button
-            type="button"
-            data-testid="billing-manage-subscription"
-            variant="outline"
-            className={cn("mt-2", appOutlineButtonClassName)}
-            disabled={portalMutation.isPending}
-            onClick={() => {
-              portalMutation.reset();
-              portalMutation.mutate();
-            }}
-          >
-            {portalMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
+          {manageActions.map((action) =>
+            action.kind === "instructions" ? (
+              <p
+                key={action.id}
+                className="rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container px-3 py-2 text-sm text-apex-on-surface-variant"
+                data-testid="billing-manage-instructions"
+              >
+                {action.description}
+              </p>
             ) : (
-              "Manage subscription"
-            )}
-          </Button>
+              <div key={action.id} className="space-y-1">
+                <p className="text-xs text-apex-on-surface-variant">
+                  {action.description}
+                </p>
+                <Button
+                  type="button"
+                  data-testid={`billing-manage-${action.id}`}
+                  variant="outline"
+                  className={cn("mt-1", appOutlineButtonClassName)}
+                  disabled={portalMutation.isPending}
+                  onClick={() => {
+                    portalMutation.reset();
+                    portalMutation.mutate(action);
+                  }}
+                >
+                  {portalMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    action.label
+                  )}
+                </Button>
+              </div>
+            ),
+          )}
           {portalErrorMessage && (
             <p className="mt-2 rounded-apex-sm border border-apex-error/25 bg-apex-error/10 px-3 py-2 text-sm text-apex-error">
               {portalErrorMessage}

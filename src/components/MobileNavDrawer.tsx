@@ -260,7 +260,7 @@ export default function MobileNavDrawer({
           aria-describedby={undefined}
           className={cn(
             "apex-theme fixed inset-y-0 left-0 z-[80] flex w-[min(20rem,86vw)] flex-col border-r border-apex-outline-variant/15 bg-apex-surface-container-low text-apex-on-surface shadow-[8px_0_24px_rgba(0,0,0,0.35)] outline-none",
-            "pt-[env(safe-area-inset-top)] will-change-transform",
+            "pt-[var(--apex-safe-area-top)] will-change-transform",
             // Driven by `open` rather than the entered flag so the exit animation is in place in the
             // same commit as data-state=closed — Radix unmounts immediately otherwise.
             "data-[state=closed]:animate-drawer-out",

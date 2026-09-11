@@ -68,7 +68,32 @@ describe("betaTrial helpers", () => {
     ).toBe(false);
   });
 
-  it("isPaidProUser is hasPro without an active beta trial", () => {
+  it("isPaidProUser prefers explicit hasPaidPro over beta inference", () => {
+    expect(
+      isPaidProUser(
+        {
+          isBetaUser: true,
+          betaTrialExpiresAt: future,
+          hasPro: true,
+          hasPaidPro: true,
+        },
+        now,
+      ),
+    ).toBe(true);
+    expect(
+      isPaidProUser(
+        {
+          isBetaUser: false,
+          betaTrialExpiresAt: null,
+          hasPro: true,
+          hasPaidPro: false,
+        },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("isPaidProUser falls back to hasPro without an active beta trial", () => {
     expect(
       isPaidProUser(
         { isBetaUser: true, betaTrialExpiresAt: future, hasPro: true },

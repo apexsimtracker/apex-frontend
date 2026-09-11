@@ -2,7 +2,11 @@ import type { AuthUser } from "@/lib/api/authAndContact";
 
 type BetaTrialUserFields = Pick<
   AuthUser,
-  "isBetaUser" | "betaTrialStartedAt" | "betaTrialExpiresAt" | "hasPro"
+  | "isBetaUser"
+  | "betaTrialStartedAt"
+  | "betaTrialExpiresAt"
+  | "hasPro"
+  | "hasPaidPro"
 >;
 
 /** Open complimentary-access window: inclusive start and exclusive expiry. */
@@ -25,11 +29,16 @@ export function isActiveBetaTrial(
   return (startsAt == null || startsAt <= now) && now < expiresAt;
 }
 
-/** Paid Pro (RevenueCat), not trial-only access. */
+/**
+ * Paid Pro (store subscription), not complimentary beta-only access.
+ * Prefer explicit `hasPaidPro` from AuthUser / billing refresh when present.
+ */
 export function isPaidProUser(
   user: BetaTrialUserFields | null | undefined,
   now: number = Date.now(),
 ): boolean {
+  if (user?.hasPaidPro === true) return true;
+  if (user?.hasPaidPro === false) return false;
   return user?.hasPro === true && !isActiveBetaTrial(user, now);
 }
 

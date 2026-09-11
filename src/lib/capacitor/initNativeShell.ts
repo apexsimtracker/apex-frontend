@@ -17,5 +17,28 @@ export async function initNativeShell(): Promise<void> {
   await waitForFirstPaint();
   await SplashScreen.hide();
   await StatusBar.setStyle({ style: Style.Dark });
-  await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+
+  // Android has no setResizeMode implementation — it rejects UNIMPLEMENTED and
+  // takes the rest of this function down with it. Its resize behaviour comes
+  // from the native Keyboard config instead.
+  if (Capacitor.getPlatform() === "ios") {
+    await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+  }
+
+  await publishAndroidStatusBarInset();
+}
+
+/**
+ * iOS gets its top inset from `env(safe-area-inset-top)`. Android WebViews
+ * report 0 for that variable even though the page is laid out behind the status
+ * bar, so app chrome has to size itself from the measured height instead.
+ */
+async function publishAndroidStatusBarInset(): Promise<void> {
+  if (Capacitor.getPlatform() !== "android") return;
+
+  const { height } = await StatusBar.getInfo();
+  document.documentElement.style.setProperty(
+    "--apex-safe-area-top",
+    `${height}px`,
+  );
 }

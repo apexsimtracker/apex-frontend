@@ -177,7 +177,7 @@ function FormBlock({
     <section
       id={id}
       className={cn(
-        "rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5",
+        "min-w-0 rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5",
         className,
       )}
     >
@@ -189,7 +189,7 @@ function FormBlock({
           </p>
         ) : null}
       </header>
-      <div className="space-y-4">{children}</div>
+      <div className="min-w-0 space-y-4">{children}</div>
     </section>
   );
 }
@@ -1219,49 +1219,61 @@ export default function ManualActivityForm({
           title="Lap history"
           description={lapHistoryDescription}
         >
-          <FormField
-            control={form.control}
-            name="sectorCount"
-            render={({ field }) => (
-              <FormItem className="max-w-xs">
-                <FormLabel htmlFor="sectorCount" className={LABEL_CLASS}>
-                  Sectors per lap
-                </FormLabel>
-                <FormControl>
-                  <input
-                    {...field}
-                    id="sectorCount"
-                    type="number"
-                    min={sim === "IRACING" ? 0 : 3}
-                    max={sim === "IRACING" ? 64 : 3}
-                    inputMode="numeric"
-                    disabled={
-                      isSubmitting ||
-                      initialData?.sectorLayoutLocked === true ||
-                      (sim !== "" && sim !== "IRACING")
-                    }
-                    className={INPUT_CLASS}
-                    onChange={(event) => {
-                      const value = Number(event.target.value);
-                      if (Number.isInteger(value) && value >= 0 && value <= 64) {
-                        changeSectorCount(value);
-                      } else {
-                        field.onChange(event);
+          {sim === "IRACING" && (
+            <FormField
+              control={form.control}
+              name="sectorCount"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel htmlFor="sectorCount" className={LABEL_CLASS}>
+                    Sectors per lap
+                  </FormLabel>
+                  <FormControl>
+                    <input
+                      {...field}
+                      id="sectorCount"
+                      type="number"
+                      min={0}
+                      max={64}
+                      inputMode="numeric"
+                      disabled={
+                        isSubmitting ||
+                        initialData?.sectorLayoutLocked === true
                       }
-                    }}
-                  />
-                </FormControl>
-                <FormMessage className="text-xs text-apex-error" />
-                <p className="text-[11px] text-apex-on-surface-variant/60">
-                  {initialData?.sectorLayoutLocked
-                    ? "Recorded telemetry layout cannot be changed."
-                    : sim === "IRACING"
-                      ? "Use 0 for no sector data, or 1–64."
-                      : "F1 25 and LMU use three sectors."}
-                </p>
-              </FormItem>
-            )}
-          />
+                      className={INPUT_CLASS}
+                      onChange={(event) => {
+                        const raw = event.target.value;
+                        // Keep the controlled input empty while the user
+                        // backspaces. Applying 0 here can open the destructive
+                        // sector-removal confirmation and make the field seem
+                        // stuck at its previous value.
+                        if (raw === "") {
+                          field.onChange(event);
+                          return;
+                        }
+                        const value = Number(raw);
+                        if (
+                          Number.isInteger(value) &&
+                          value >= 0 &&
+                          value <= 64
+                        ) {
+                          changeSectorCount(value);
+                        } else {
+                          field.onChange(event);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs text-apex-error" />
+                  <p className="text-[11px] text-apex-on-surface-variant/60">
+                    {initialData?.sectorLayoutLocked
+                      ? "Recorded telemetry layout cannot be changed."
+                      : "Use 0 for no sector data, or 1–64."}
+                  </p>
+                </FormItem>
+              )}
+            />
+          )}
           {stackedLapLayout ? (
             // Phone: one card per lap. The six-column table cannot fit sector and
             // total times side by side at this width without squashing them.
@@ -1331,11 +1343,13 @@ export default function ManualActivityForm({
             </div>
           ) : (
             /* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */
-            <div className="overflow-x-auto rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
-              <table className="w-full min-w-max border-collapse text-left">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
+              <table className="w-max min-w-full border-collapse text-left">
                 <thead className="border-b border-apex-outline-variant/30 bg-white/5">
                   <tr className="font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
-                    <th className="w-[13%] px-2 py-2.5">Lap</th>
+                    <th className="sticky left-0 z-20 min-w-20 bg-apex-surface-container px-2 py-2.5">
+                      Lap
+                    </th>
                     {Array.from({ length: sectorCount }, (_, index) => (
                       <th key={index} className="min-w-24 px-1 py-2.5 text-center">
                         S{index + 1} <span className="font-normal opacity-50">(opt)</span>
@@ -1355,7 +1369,7 @@ export default function ManualActivityForm({
                           : "border-b border-apex-outline-variant/15 last:border-b-0"
                       }
                     >
-                      <td className="p-3 align-middle font-apex-headline text-sm font-bold text-apex-on-surface">
+                      <td className="sticky left-0 z-10 bg-apex-surface-container p-3 align-middle font-apex-headline text-sm font-bold text-apex-on-surface">
                         <span className="inline-flex flex-col gap-0.5">
                           {String(lap.index + 1).padStart(2, "0")}
                           {renderOutLapBadge(lap.isOutLap, lap.lockedOutLap)}

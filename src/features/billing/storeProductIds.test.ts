@@ -12,15 +12,17 @@ import {
 } from "./storeProductIds";
 
 describe("storeProductIds", () => {
-  it("keeps one standard pair; only Apple annual is _v2", () => {
+  it("maps the burned store-specific IDs to canonical plans", () => {
     expect(STORE_PRO_MONTHLY).toBe("apex_pro_monthly");
     expect(STORE_PRO_ANNUAL).toBe("apex_pro_annual");
 
-    expect(PLAY_PRO_MONTHLY).toBe(STORE_PRO_MONTHLY);
+    expect(PLAY_PRO_MONTHLY).toBe("apexsim_pro_monthly");
     expect(PLAY_PRO_ANNUAL).toBe(STORE_PRO_ANNUAL);
     expect(APPLE_PRO_MONTHLY).toBe(STORE_PRO_MONTHLY);
     expect(APPLE_PRO_ANNUAL).toBe("apex_pro_annual_v2");
 
+    expect(proProductId("play", "monthly")).toBe(PLAY_PRO_MONTHLY);
+    expect(proProductId("web", "monthly")).toBe(STORE_PRO_MONTHLY);
     expect(proProductId("play", "annual")).toBe(STORE_PRO_ANNUAL);
     expect(proProductId("web", "annual")).toBe(STORE_PRO_ANNUAL);
     expect(proProductId("apple", "annual")).toBe(APPLE_PRO_ANNUAL);

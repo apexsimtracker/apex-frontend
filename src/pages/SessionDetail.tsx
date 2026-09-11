@@ -452,14 +452,14 @@ export default function SessionDetail() {
     overviewRows.push({
       label: "Air temp",
       scope: "session",
-      value: `${telemetrySummary.sessionMeta.airTempC}°C`,
+      value: `${telemetrySummary.sessionMeta.airTempC.toFixed(1)}°C`,
     });
   }
   if (telemetrySummary?.sessionMeta?.trackTempC != null) {
     overviewRows.push({
       label: "Track temp",
       scope: "session",
-      value: `${telemetrySummary.sessionMeta.trackTempC}°C`,
+      value: `${telemetrySummary.sessionMeta.trackTempC.toFixed(1)}°C`,
     });
   }
 

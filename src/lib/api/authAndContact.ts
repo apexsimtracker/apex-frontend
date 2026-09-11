@@ -7,6 +7,7 @@ import {
 import { API_BASE } from "./config";
 import { ApiError } from "./errors";
 import type { SessionVisibility, InAppNotificationPrefs } from "./profile";
+import type { BillingStore } from "./activityBilling";
 
 // Auth — backend may return { id, email, displayName? } at top level (no user wrapper)
 export type AuthUser = {
@@ -17,6 +18,10 @@ export type AuthUser = {
   displayName?: string;
   name?: string;
   hasPro?: boolean;
+  /** Paid subscription Pro (not beta-trial-only). Prefer over inferring from hasPro. */
+  hasPaidPro?: boolean;
+  /** Active billing cashiers for this entitlement; do not infer from device. */
+  billingStores?: BillingStore[];
   effectivePlan?: "FREE" | "PRO";
   billingInterval?: "MONTHLY" | "ANNUAL" | null;
   subscriptionStatus?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";

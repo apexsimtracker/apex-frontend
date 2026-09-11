@@ -26,6 +26,7 @@ import ImpersonationExitFab from "./components/ImpersonationExitFab";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import ProductAppLayout from "./components/ProductAppLayout";
 import NativeDeepLinkListener from "./components/NativeDeepLinkListener";
+import NativeBillingIdentitySync from "./components/NativeBillingIdentitySync";
 import HomeRoute from "./pages/HomeRoute";
 import {
   prefetchAuthenticatedHomeData,
@@ -207,6 +208,7 @@ export default function App() {
       <AuthProvider>
         <TooltipProvider>
           <SessionDataCacheSync />
+          <NativeBillingIdentitySync />
           <Toaster theme="dark" />
           <BrowserRouter>
             <NativeDeepLinkListener />

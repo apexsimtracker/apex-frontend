@@ -17,6 +17,11 @@ import {
   type ResolvedPackages,
 } from "@/features/billing/packageMapping";
 import type { BillingPackage } from "@/features/billing/billingPackage";
+import {
+  paidProHeadline,
+  shouldShowNativeRestore,
+  type SubscriptionManageAction,
+} from "@/features/billing/subscriptionManagement";
 import { BillingIntervalToggle } from "./BillingIntervalToggle";
 import { PlanFeatureList } from "./PlanFeatureList";
 import { PricingAlerts } from "./PricingAlerts";
@@ -32,6 +37,7 @@ type ProPlanCardProps = {
   onBillingIntervalChange: (interval: BillingInterval) => void;
   selectedPackage: BillingPackage | null;
   annualSavingsPercent: number | null;
+  /** Paid Pro only — beta trial users still see subscribe UI. */
   isPro: boolean;
   /** Active code-level beta trial (has Pro access but not a paid subscription). */
   onBetaTrial?: boolean;
@@ -39,6 +45,9 @@ type ProPlanCardProps = {
   isLoggedIn: boolean;
   authLoading: boolean;
   offeringsPending: boolean;
+  eligibilityPending?: boolean;
+  eligibilityError?: string | null;
+  onRetryEligibility?: () => void;
   isPurchasing: boolean;
   isRestoringPurchases: boolean;
   isOpeningBillingPortal: boolean;
@@ -47,12 +56,13 @@ type ProPlanCardProps = {
   isCanceled: boolean;
   accessUntilLabel: string | null;
   entitlementBillingInterval: BillingInterval | null;
+  manageActions?: SubscriptionManageAction[];
   message: string | null;
   warning: string | null;
   error: string | null;
   onSubscribe: () => void;
   onRestorePurchases: () => void;
-  onManageSubscription: () => void;
+  onManageSubscription: (action: SubscriptionManageAction) => void;
   onSignInToSubscribe: () => void;
   className?: string;
 };
@@ -74,6 +84,9 @@ export function ProPlanCard({
   isLoggedIn,
   authLoading,
   offeringsPending,
+  eligibilityPending = false,
+  eligibilityError = null,
+  onRetryEligibility,
   isPurchasing,
   isRestoringPurchases,
   isOpeningBillingPortal,
@@ -82,6 +95,7 @@ export function ProPlanCard({
   isCanceled,
   accessUntilLabel,
   entitlementBillingInterval,
+  manageActions = [],
   message,
   warning,
   error,
@@ -114,6 +128,15 @@ export function ProPlanCard({
     ? true
     : resolvedPackages.annual != null;
 
+  const showRestore = shouldShowNativeRestore({
+    isNative,
+    isLoggedIn,
+    isBillingEnabled,
+  });
+
+  const checkoutBlocked =
+    Boolean(eligibilityError) || eligibilityPending || offeringsPending;
+
   return (
     <div
       className={cn(
@@ -139,7 +162,7 @@ export function ProPlanCard({
       {isPro ? (
         <div className="mt-3 space-y-1" data-testid="billing-pro-active">
           <p className="font-apex-body text-sm font-medium text-apex-on-surface">
-            You&apos;re on Apex Pro
+            {paidProHeadline(true)}
           </p>
           {currentSubscriptionLabel && (
             <p className="font-apex-body text-sm text-apex-on-surface-variant">
@@ -154,6 +177,24 @@ export function ProPlanCard({
                   : "Canceled — access continues until the end of your billing period."
                 : `Renews or ends ${accessUntilLabel}.`}
             </p>
+          )}
+          {manageActions.map((action) =>
+            action.kind === "instructions" ? (
+              <p
+                key={action.id}
+                className="font-apex-body text-sm text-apex-on-surface-variant"
+                data-testid="billing-manage-instructions"
+              >
+                {action.description}
+              </p>
+            ) : (
+              <p
+                key={`${action.id}-desc`}
+                className="font-apex-body text-sm text-apex-on-surface-variant"
+              >
+                {action.description}
+              </p>
+            ),
           )}
           {isRefreshingSubscription && (
             <p className="font-apex-body text-xs text-apex-on-surface-variant">
@@ -220,20 +261,25 @@ export function ProPlanCard({
                   : "Annual"}
               </p>
             )}
-            <Button
-              type="button"
-              data-testid="billing-manage-subscription"
-              variant="outline"
-              className={cn("w-full", appOutlineButtonClassName)}
-              disabled={isOpeningBillingPortal}
-              onClick={onManageSubscription}
-            >
-              {isOpeningBillingPortal ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                "Manage subscription"
-              )}
-            </Button>
+            {manageActions.map((action) =>
+              action.kind === "instructions" ? null : (
+                <Button
+                  key={action.id}
+                  type="button"
+                  data-testid={`billing-manage-${action.id}`}
+                  variant="outline"
+                  className={cn("w-full", appOutlineButtonClassName)}
+                  disabled={isOpeningBillingPortal}
+                  onClick={() => onManageSubscription(action)}
+                >
+                  {isOpeningBillingPortal ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    action.label
+                  )}
+                </Button>
+              ),
+            )}
           </>
         ) : !isLoggedIn ? (
           <Button
@@ -248,7 +294,27 @@ export function ProPlanCard({
           <p className="rounded-apex-sm border border-apex-outline-variant/15 bg-apex-surface-container p-3 font-apex-body text-sm text-apex-on-surface-variant">
             Billing is not configured for this environment yet.
           </p>
-        ) : isLoggedIn && offeringsPending ? (
+        ) : eligibilityError ? (
+          <div className="space-y-3">
+            <p
+              className="rounded-apex-sm border border-apex-error/25 bg-apex-error/10 px-3 py-2 font-apex-body text-sm text-apex-error"
+              data-testid="billing-eligibility-error"
+            >
+              {eligibilityError}
+            </p>
+            {onRetryEligibility && (
+              <Button
+                type="button"
+                variant="outline"
+                className={cn("w-full", appOutlineButtonClassName)}
+                onClick={onRetryEligibility}
+                data-testid="billing-eligibility-retry"
+              >
+                Retry sync
+              </Button>
+            )}
+          </div>
+        ) : checkoutBlocked ? (
           <div className="flex items-center justify-center rounded-apex-sm border border-apex-outline-variant/15 py-6">
             <Loader2 className="size-5 animate-spin text-apex-on-surface-variant" />
           </div>
@@ -277,13 +343,14 @@ export function ProPlanCard({
           </p>
         )}
 
-        {isNative && isLoggedIn && !isPro && isBillingEnabled && (
+        {showRestore && (
           <Button
             type="button"
             variant="ghost"
             className="w-full"
             disabled={isPurchasing || isRestoringPurchases}
             onClick={onRestorePurchases}
+            data-testid="billing-restore-purchases"
           >
             {isRestoringPurchases ? (
               <Loader2 className="size-4 animate-spin" />

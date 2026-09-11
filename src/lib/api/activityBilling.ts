@@ -1,6 +1,13 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./httpVerbs";
 import { resolveApiUrl } from "./config";
 
+export type BillingStore =
+  | "APP_STORE"
+  | "PLAY_STORE"
+  | "STRIPE"
+  | "REVENUECAT_WEB"
+  | "UNKNOWN";
+
 export type SessionsFilterType = "all" | "telemetry" | "manual";
 
 /** Default page size for GET /api/activity (must match server default). */
@@ -427,6 +434,10 @@ export type BillingRefreshResponse = {
     effectivePlan: EntitlementPlan;
     cancelAtPeriodEnd: boolean;
     lastSyncedAt: string | null;
+    /** Paid subscription Pro (not beta-trial-only). */
+    hasPaidPro?: boolean;
+    /** Active billing cashiers; do not infer from device. */
+    billingStores?: BillingStore[];
   };
 };
 

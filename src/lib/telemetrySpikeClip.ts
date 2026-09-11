@@ -33,13 +33,14 @@ type PedalSeries = {
 };
 
 /** Copy-on-write clip of pedal channels; leaves other fields on `series` as-is. */
-export function clipPedalChannels<T extends PedalSeries>(series: T): T {
-  const next = { ...series };
-  if (series.throttlePct) {
-    next.throttlePct = clipIsolatedPedalIslands(series.throttlePct);
+export function clipPedalChannels<T>(series: T): T {
+  const pedals = series as T & PedalSeries;
+  const next = { ...pedals };
+  if (pedals.throttlePct) {
+    next.throttlePct = clipIsolatedPedalIslands(pedals.throttlePct);
   }
-  if (series.brakePct) {
-    next.brakePct = clipIsolatedPedalIslands(series.brakePct);
+  if (pedals.brakePct) {
+    next.brakePct = clipIsolatedPedalIslands(pedals.brakePct);
   }
-  return next;
+  return next as T;
 }

@@ -17,13 +17,26 @@ import {
   currentBillingPlatform,
   nativeRevenueCatApiKey,
 } from "./billingPlatform";
-import { openNativeSubscriptionManagement } from "./nativeSubscriptionManagement";
+import {
+  assertPurchaseAllowed,
+  clearBillingEligibilityCache,
+  ensureBillingEligibility,
+} from "./billingEligibility";
+import { normalizeBillingStores } from "./billingStore";
+import { ensureNativeRevenueCatIdentity } from "./revenueCatNativeIdentity";
+import {
+  ALREADY_HAVE_PRO_MESSAGE,
+  BILLING_SYNC_RETRY_MESSAGE,
+  resolveSubscriptionManageActions,
+  type SubscriptionManageAction,
+} from "./subscriptionManagement";
+import { isPaidProUser } from "./betaTrial";
 
 const BILLING_CONFIG_QUERY_KEY = ["billing", "config"] as const;
+const BILLING_ELIGIBILITY_QUERY_KEY = ["billing", "eligibility"] as const;
 
 let configuredWebApiKey: string | null = null;
 let configuredWebAppUserId: string | null = null;
-let configuredNativeApiKey: string | null = null;
 
 export type PurchasePackageOutcome = {
   refreshErrorMessage: string | null;
@@ -46,7 +59,8 @@ function webProductDetails(rcPackage: WebRevenueCatPackage): {
   title: string | null;
 } {
   const product = rcPackage.webBillingProduct as unknown as
-    Record<string, unknown> | undefined;
+    | Record<string, unknown>
+    | undefined;
   const productIdentifier =
     typeof product?.identifier === "string"
       ? product.identifier
@@ -133,45 +147,6 @@ async function ensureWebRevenueCatReady(params: {
   return purchases;
 }
 
-async function ensureNativeRevenueCatReady(params: {
-  apiKey: string;
-  userId: string;
-  email?: string | null;
-}) {
-  const { apiKey, userId, email } = params;
-  const { Purchases, LOG_LEVEL } = await import(
-    /* webpackChunkName: "revenuecat-native" */ "@revenuecat/purchases-capacitor"
-  );
-  await Purchases.setLogLevel({ level: LOG_LEVEL.ERROR });
-
-  const { isConfigured } = await Purchases.isConfigured();
-  if (!isConfigured) {
-    await Purchases.configure({ apiKey, appUserID: userId });
-    configuredNativeApiKey = apiKey;
-  } else {
-    if (configuredNativeApiKey && configuredNativeApiKey !== apiKey) {
-      throw new Error(
-        "RevenueCat was already configured with a different native app key.",
-      );
-    }
-    configuredNativeApiKey = apiKey;
-    const { appUserID } = await Purchases.getAppUserID();
-    if (appUserID !== userId) {
-      await Purchases.logIn({ appUserID: userId });
-    }
-  }
-
-  if (email) {
-    try {
-      await Purchases.setEmail({ email });
-    } catch {
-      // Attribute sync is a best-effort enrichment for support/debugging.
-    }
-  }
-
-  return Purchases;
-}
-
 function useBillingConfigQuery(enabled: boolean) {
   return useQuery({
     queryKey: BILLING_CONFIG_QUERY_KEY,
@@ -183,7 +158,7 @@ function useBillingConfigQuery(enabled: boolean) {
 
 /** Loads the platform-appropriate RevenueCat SDK only when purchase UI mounts. */
 export function useRevenueCat() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const billingPlatform = currentBillingPlatform();
   const isNative = billingPlatform !== "web";
@@ -193,8 +168,39 @@ export function useRevenueCat() {
     ? Boolean(nativeApiKey)
     : Boolean(
         billingConfigQuery.data?.enabled &&
-        billingConfigQuery.data.revenueCatPublicApiKey,
+          billingConfigQuery.data.revenueCatPublicApiKey,
       );
+
+  const hasPaidProFromUser = isPaidProUser(user);
+  const billingStoresFromUser = normalizeBillingStores(user?.billingStores);
+
+  const eligibilityQuery = useQuery({
+    queryKey: [
+      ...BILLING_ELIGIBILITY_QUERY_KEY,
+      billingPlatform,
+      user?.id ?? null,
+    ],
+    queryFn: async () => {
+      if (!user?.id) {
+        throw new Error("Sign in to continue.");
+      }
+      return ensureBillingEligibility({
+        userId: user.id,
+        email: user.email ?? null,
+        identifyNative: isNative,
+        forceRefresh: false,
+      });
+    },
+    enabled: Boolean(user?.id) && isBillingEnabled,
+    staleTime: 60 * 1000,
+    retry: false,
+  });
+
+  const eligibilityReady = eligibilityQuery.isSuccess;
+  const eligibilityHasPaidPro =
+    eligibilityQuery.data?.hasPaidPro ?? hasPaidProFromUser;
+  const eligibilityBillingStores =
+    eligibilityQuery.data?.billingStores ?? billingStoresFromUser;
 
   const offeringsQuery = useQuery({
     queryKey: [
@@ -207,7 +213,7 @@ export function useRevenueCat() {
     ],
     queryFn: async (): Promise<BillingPackage[]> => {
       if (isNative) {
-        const purchases = await ensureNativeRevenueCatReady({
+        const purchases = await ensureNativeRevenueCatIdentity({
           apiKey: nativeApiKey as string,
           userId: user?.id as string,
           email: user?.email ?? null,
@@ -228,7 +234,12 @@ export function useRevenueCat() {
         offerings.current?.availablePackages.map(normalizeWebPackage) ?? []
       );
     },
-    enabled: Boolean(user?.id) && isBillingEnabled,
+    // Wait for identity + refresh preflight before loading checkout packages.
+    enabled:
+      Boolean(user?.id) &&
+      isBillingEnabled &&
+      eligibilityReady &&
+      !eligibilityHasPaidPro,
     staleTime: 60 * 1000,
     retry: false,
   });
@@ -250,12 +261,31 @@ export function useRevenueCat() {
     }
   }
 
+  async function runMandatoryPurchasePreflight(): Promise<void> {
+    if (!user?.id) {
+      throw new Error("Sign in to subscribe.");
+    }
+    const eligibility = await ensureBillingEligibility({
+      userId: user.id,
+      email: user.email ?? null,
+      identifyNative: isNative,
+      forceRefresh: true,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: BILLING_ELIGIBILITY_QUERY_KEY,
+    });
+    await refreshMe().catch(() => undefined);
+    assertPurchaseAllowed(eligibility);
+  }
+
   const purchaseMutation = useMutation({
     mutationFn: async (
       rcPackage: BillingPackage,
     ): Promise<PurchasePackageOutcome> => {
+      await runMandatoryPurchasePreflight();
+
       if (rcPackage.sdk === "native") {
-        const purchases = await ensureNativeRevenueCatReady({
+        const purchases = await ensureNativeRevenueCatIdentity({
           apiKey: nativeApiKey as string,
           userId: user?.id as string,
           email: user?.email ?? null,
@@ -284,7 +314,8 @@ export function useRevenueCat() {
           "Restore purchases is only available in the mobile app.",
         );
       }
-      const purchases = await ensureNativeRevenueCatReady({
+      // Restore stays independent of purchase eligibility preflight.
+      const purchases = await ensureNativeRevenueCatIdentity({
         apiKey: nativeApiKey,
         userId: user.id,
         email: user.email ?? null,
@@ -294,17 +325,47 @@ export function useRevenueCat() {
     },
   });
 
+  const manageActions = resolveSubscriptionManageActions(
+    eligibilityBillingStores,
+    { hasPaidPro: eligibilityHasPaidPro },
+  );
+
   const portalMutation = useMutation({
-    mutationFn: async () => {
-      if (isNative) {
-        await openNativeSubscriptionManagement(billingPlatform);
-        return null;
+    mutationFn: async (action?: SubscriptionManageAction) => {
+      const target =
+        action ??
+        (manageActions.length === 1 ? manageActions[0] : undefined);
+
+      if (!target) {
+        throw new Error(
+          manageActions.some((a) => a.kind === "instructions")
+            ? manageActions.find((a) => a.kind === "instructions")!.description
+            : "Choose a billing source to manage your subscription.",
+        );
       }
+
+      if (target.kind === "instructions") {
+        throw new Error(target.description);
+      }
+
+      if (target.kind === "external_url") {
+        await openExternalUrl(target.url);
+        return target.url;
+      }
+
       const { url } = await createBillingPortalSession();
       await openExternalUrl(url);
       return url;
     },
   });
+
+  async function retryEligibility(): Promise<void> {
+    clearBillingEligibilityCache();
+    await queryClient.invalidateQueries({
+      queryKey: BILLING_ELIGIBILITY_QUERY_KEY,
+    });
+    await eligibilityQuery.refetch();
+  }
 
   return {
     billingConfig: billingConfigQuery.data ?? null,
@@ -312,6 +373,19 @@ export function useRevenueCat() {
     billingPlatform,
     isNative,
     isBillingEnabled,
+    eligibilityQuery,
+    eligibilityReady,
+    eligibilityError:
+      eligibilityQuery.error instanceof Error
+        ? eligibilityQuery.error.message
+        : eligibilityQuery.isError
+          ? BILLING_SYNC_RETRY_MESSAGE
+          : null,
+    retryEligibility,
+    hasPaidPro: eligibilityHasPaidPro,
+    billingStores: eligibilityBillingStores,
+    manageActions,
+    alreadyHaveProMessage: ALREADY_HAVE_PRO_MESSAGE,
     offeringsQuery,
     availablePackages: offeringsQuery.data ?? [],
     purchasePackage: purchaseMutation.mutateAsync,
