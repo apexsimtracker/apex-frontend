@@ -28,8 +28,6 @@ import { cn } from "@/lib/utils";
 
 export function SubscriptionCard() {
   const { user } = useAuth();
-  const billingPlatform = currentBillingPlatform();
-  const isNative = billingPlatform !== "web";
   const onBetaTrial = isActiveBetaTrial(user);
   const isPaidPro = isPaidProUser(user);
   const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);

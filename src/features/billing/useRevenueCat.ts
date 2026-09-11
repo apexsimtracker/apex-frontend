@@ -147,45 +147,6 @@ async function ensureWebRevenueCatReady(params: {
   return purchases;
 }
 
-async function ensureNativeRevenueCatReady(params: {
-  apiKey: string;
-  userId: string;
-  email?: string | null;
-}) {
-  const { apiKey, userId, email } = params;
-  const { Purchases, LOG_LEVEL } = await import(
-    /* webpackChunkName: "revenuecat-native" */ "@revenuecat/purchases-capacitor"
-  );
-  await Purchases.setLogLevel({ level: LOG_LEVEL.ERROR });
-
-  const { isConfigured } = await Purchases.isConfigured();
-  if (!isConfigured) {
-    await Purchases.configure({ apiKey, appUserID: userId });
-    configuredNativeApiKey = apiKey;
-  } else {
-    if (configuredNativeApiKey && configuredNativeApiKey !== apiKey) {
-      throw new Error(
-        "RevenueCat was already configured with a different native app key.",
-      );
-    }
-    configuredNativeApiKey = apiKey;
-    const { appUserID } = await Purchases.getAppUserID();
-    if (appUserID !== userId) {
-      await Purchases.logIn({ appUserID: userId });
-    }
-  }
-
-  if (email) {
-    try {
-      await Purchases.setEmail({ email });
-    } catch {
-      // Attribute sync is a best-effort enrichment for support/debugging.
-    }
-  }
-
-  return Purchases;
-}
-
 function useBillingConfigQuery(enabled: boolean) {
   return useQuery({
     queryKey: BILLING_CONFIG_QUERY_KEY,
