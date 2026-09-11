@@ -42,6 +42,7 @@ export type UploadSessionFileOptions = {
 // Manual activity creation (no file upload)
 export type ManualActivityLapPayload = {
   lapTimeMs: number;
+  sectorTimesMs?: (number | null)[];
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -59,6 +60,8 @@ export type ManualActivityRequest = {
   qualifyingPosition?: number;
   /** Ordered laps (ms); optional sectors when provided. */
   laps?: ManualActivityLapPayload[];
+  /** 0 disables sectors; otherwise every lap carries this many ordered slots. */
+  sectorCount?: number;
   /** Public caption shown on activity/session cards. */
   caption?: string;
   /** Track weather conditions. */
@@ -85,6 +88,14 @@ export function buildManualActivityRequestBody(
     trackId: data.trackId,
     manualSessionKind: data.manualSessionKind,
   };
+  if (
+    data.sectorCount != null &&
+    Number.isInteger(data.sectorCount) &&
+    data.sectorCount >= 0 &&
+    data.sectorCount <= 64
+  ) {
+    body.sectorCount = data.sectorCount;
+  }
   if (data.carId != null && String(data.carId).trim() !== "") {
     body.carId = data.carId;
   }
@@ -124,6 +135,11 @@ export function buildManualActivityRequestBody(
           const row: ManualActivityLapPayload = {
             lapTimeMs: Math.round(l.lapTimeMs),
           };
+          if (Array.isArray(l.sectorTimesMs)) {
+            row.sectorTimesMs = l.sectorTimesMs.map((value) =>
+              value != null && Number.isFinite(value) ? Math.round(value) : null,
+            );
+          }
           if (l.sector1Ms != null && Number.isFinite(l.sector1Ms)) {
             row.sector1Ms = Math.round(l.sector1Ms);
           }

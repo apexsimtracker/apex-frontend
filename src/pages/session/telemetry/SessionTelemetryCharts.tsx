@@ -7,6 +7,7 @@ import {
   resampleChannelToGrid,
   DEFAULT_TELEMETRY_DOWNSAMPLE_TARGET,
 } from "@/lib/telemetryDownsample";
+import { clipPedalChannels } from "@/lib/telemetrySpikeClip";
 import UPlotReact from "./UPlotReact";
 
 const SYNC_KEY = "session-telemetry";
@@ -177,17 +178,19 @@ export default function SessionTelemetryCharts({
   const downsampled = useMemo(() => {
     // Drop any trailing distance wrap (e.g. LMU samples past start/finish that
     // reset Lap Dist to ~0) so uPlot's numeric x-axis stays monotonic.
-    const monotonic = clampToMonotonicDistance({
-      distanceM: traces.distanceM,
-      speedKmh: traces.speedKmh,
-      throttlePct: traces.throttlePct,
-      brakePct: traces.brakePct,
-      gear: traces.gear,
-      steeringDeg: traces.steeringDeg,
-      rpm: traces.rpm,
-      clutchPct: traces.clutchPct,
-      deltaMs: traces.deltaMs,
-    });
+    const monotonic = clipPedalChannels(
+      clampToMonotonicDistance({
+        distanceM: traces.distanceM,
+        speedKmh: traces.speedKmh,
+        throttlePct: traces.throttlePct,
+        brakePct: traces.brakePct,
+        gear: traces.gear,
+        steeringDeg: traces.steeringDeg,
+        rpm: traces.rpm,
+        clutchPct: traces.clutchPct,
+        deltaMs: traces.deltaMs,
+      }),
+    );
     return downsampleAlignedTelemetry(
       monotonic,
       DEFAULT_TELEMETRY_DOWNSAMPLE_TARGET,
@@ -203,16 +206,18 @@ export default function SessionTelemetryCharts({
   // overlays stay index-aligned with the primary series and the synced cursor.
   const compareAligned = useMemo(() => {
     if (!compareTraces) return null;
-    const mono = clampToMonotonicDistance({
-      distanceM: compareTraces.distanceM,
-      speedKmh: compareTraces.speedKmh,
-      throttlePct: compareTraces.throttlePct,
-      brakePct: compareTraces.brakePct,
-      gear: compareTraces.gear,
-      steeringDeg: compareTraces.steeringDeg,
-      rpm: compareTraces.rpm,
-      clutchPct: compareTraces.clutchPct,
-    });
+    const mono = clipPedalChannels(
+      clampToMonotonicDistance({
+        distanceM: compareTraces.distanceM,
+        speedKmh: compareTraces.speedKmh,
+        throttlePct: compareTraces.throttlePct,
+        brakePct: compareTraces.brakePct,
+        gear: compareTraces.gear,
+        steeringDeg: compareTraces.steeringDeg,
+        rpm: compareTraces.rpm,
+        clutchPct: compareTraces.clutchPct,
+      }),
+    );
     const target = downsampled.distanceM;
     const rs = (vals?: number[]) =>
       vals ? resampleChannelToGrid(mono.distanceM, vals, target) : undefined;
@@ -382,6 +387,8 @@ export default function SessionTelemetryCharts({
         stroke: C_GEAR,
         width: 1.5,
         points: { show: false },
+        // uPlot align 1 holds y until the next x, then steps — the change is
+        // drawn at the sample where gear was recorded (hold-last).
         paths: uPlot.paths.stepped!({ align: 1 }),
       },
     ];

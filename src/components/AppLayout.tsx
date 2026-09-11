@@ -3,6 +3,7 @@ import "@/styles/theme.css";
 import BetaWelcomeModal from "@/components/BetaWelcomeModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import ProRequiredBanner from "@/components/ProRequiredBanner";
+import { usePlatform } from "@/hooks/usePlatform";
 import { cn } from "@/lib/utils";
 import AppFooter from "./AppFooter";
 import MobileNavDrawer from "./MobileNavDrawer";
@@ -25,6 +26,7 @@ export default function AppLayout({
   showSiteFooter = true,
 }: AppLayoutProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { platform } = usePlatform();
 
   const closeMobileNav = useCallback(() => {
     setMobileNavOpen(false);
@@ -46,10 +48,18 @@ export default function AppLayout({
           className,
         )}
       >
+        {/* The phone header is not sticky, so page content scrolls up into the
+            Android status bar, which draws no background of its own. */}
+        {platform === "android" ? (
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[var(--apex-safe-area-top)] bg-apex-background"
+          />
+        ) : null}
         {topBar ? (
           <header
             className={cn(
-              "z-50 shrink-0 bg-apex-background pt-[env(safe-area-inset-top)]",
+              "z-50 shrink-0 bg-apex-background pt-[var(--apex-safe-area-top)]",
               bottomBar ? "lg:sticky lg:top-0" : "sticky top-0",
             )}
           >

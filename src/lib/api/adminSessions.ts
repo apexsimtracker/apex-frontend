@@ -8,6 +8,7 @@ import {
   type ManualActivityRequest,
   type ManualActivityResponse,
 } from "./manualAndUpload";
+import { coerceSectorTimesMs } from "@/lib/sectors";
 
 export type AdminSessionListRow = {
   id: string;
@@ -96,6 +97,7 @@ export type AdminSessionLapRow = {
   sector1Ms: number | null;
   sector2Ms: number | null;
   sector3Ms: number | null;
+  sectorTimesMs: (number | null)[];
   isValid: boolean;
   isBestLap: boolean;
   createdAt: string;
@@ -131,6 +133,10 @@ export type AdminSessionDetail = {
   commentCount: number;
   laps: AdminSessionLapRow[];
   sessionTimingMinima?: SessionTimingMinima | null;
+  sectorCount: number;
+  sectorStartsPct?: number[] | null;
+  sectorLayoutKey?: string | null;
+  sectorTimingSource?: string | null;
 };
 
 export async function fetchAdminSessionDetail(
@@ -140,12 +146,35 @@ export async function fetchAdminSessionDetail(
   const sp = new URLSearchParams();
   if (options?.includeTelemetry) sp.set("includeTelemetry", "true");
   const qs = sp.toString();
-  return fetchApi(
+  const detail = await fetchApi<AdminSessionDetail>(
     "GET",
     `/api/admin/sessions/${encodeURIComponent(sessionId)}${qs ? `?${qs}` : ""}`,
     undefined,
     false,
   );
+  const count = detail.sectorCount ?? 3;
+  return {
+    ...detail,
+    sectorCount: count,
+    laps: detail.laps.map((lap) => ({
+      ...lap,
+      sectorTimesMs: coerceSectorTimesMs(lap.sectorTimesMs, lap, count),
+    })),
+    sessionTimingMinima: detail.sessionTimingMinima
+      ? {
+          ...detail.sessionTimingMinima,
+          sectorTimesMs: coerceSectorTimesMs(
+            detail.sessionTimingMinima.sectorTimesMs,
+            {
+              sector1Ms: detail.sessionTimingMinima.s1Ms,
+              sector2Ms: detail.sessionTimingMinima.s2Ms,
+              sector3Ms: detail.sessionTimingMinima.s3Ms,
+            },
+            count,
+          ),
+        }
+      : null,
+  };
 }
 
 export type AdminSessionExportJob = {
@@ -247,6 +276,7 @@ export async function bulkDeleteAdminSessions(
 
 export type AdminLapPatchBody = {
   lapTimeMs?: number;
+  sectorTimesMs?: (number | null)[];
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -269,6 +299,7 @@ export async function patchAdminSessionLap(
 
 export type AdminLapCreateBody = {
   lapTimeMs: number;
+  sectorTimesMs?: (number | null)[];
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;

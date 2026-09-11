@@ -58,8 +58,18 @@ describe("manualActivityInitialFromPublicDetail", () => {
 
     expect(initial.lapsMs).toEqual([92_500, 95_000]);
     expect(initial.lapsSectorsMs).toEqual([
-      { sector1Ms: 29_100, sector2Ms: null, sector3Ms: 31_200 },
-      { sector1Ms: 30_000, sector2Ms: 31_000, sector3Ms: 34_000 },
+      {
+        sectorTimesMs: [29_100, null, 31_200],
+        sector1Ms: 29_100,
+        sector2Ms: null,
+        sector3Ms: 31_200,
+      },
+      {
+        sectorTimesMs: [30_000, 31_000, 34_000],
+        sector1Ms: 30_000,
+        sector2Ms: 31_000,
+        sector3Ms: 34_000,
+      },
     ]);
   });
 
@@ -74,7 +84,12 @@ describe("manualActivityInitialFromPublicDetail", () => {
 
     expect(initial.lapsMs).toEqual([90_000]);
     expect(initial.lapsSectorsMs).toEqual([
-      { sector1Ms: null, sector2Ms: null, sector3Ms: null },
+      {
+        sectorTimesMs: [null, null, null],
+        sector1Ms: null,
+        sector2Ms: null,
+        sector3Ms: null,
+      },
     ]);
   });
 

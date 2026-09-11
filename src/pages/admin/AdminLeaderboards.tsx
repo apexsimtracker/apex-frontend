@@ -333,8 +333,9 @@ export default function AdminLeaderboards() {
               (<code className="text-xs">SUM(lapCount)</code>) across eligible
               sessions of{" "}
               <strong className="text-foreground/90">all session types</strong>{" "}
-              (practice, qualifying, race, etc.), still under ingest and Pro
-              filters.
+              (practice, qualifying, race, etc.), still under ingest and
+              ingest-time eligibility filters (historical Pro sessions stay
+              ranked after expiry).
             </li>
             <li>
               The public site shows the top{" "}

@@ -67,10 +67,8 @@ export function isValidSectorTimeFormat(input: string): boolean {
 
 const appLapRowSchema = z.object({
   lapTime: z.string(),
-  /** Optional sector times mapped to Lap.sector1/2/3Ms on submit. */
-  s1: z.string(),
-  s2: z.string(),
-  s3: z.string(),
+  /** Ordered sector inputs; empty slots are submitted as null. */
+  sectors: z.array(z.string()).max(64),
 });
 
 export function createManualActivityFormSchema(
@@ -87,6 +85,7 @@ export function createManualActivityFormSchema(
       position: z.string(),
       totalDrivers: z.string(),
       qualifyingPosition: z.string(),
+      sectorCount: z.string(),
       laps: z.array(appLapRowSchema),
       caption: z.string().max(280, "Caption must be at most 280 characters."),
       /** Persisted as Session.conditions. */
@@ -119,15 +118,30 @@ export function createManualActivityFormSchema(
       }
 
       // Sector-time format validation (optional fields; empty is OK).
+      const count = Number(data.sectorCount);
+      if (!Number.isInteger(count) || count < 0 || count > 64) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Sector count must be an integer from 0 to 64.",
+          path: ["sectorCount"],
+        });
+      }
       data.laps.forEach((row, i) => {
-        (["s1", "s2", "s3"] as const).forEach((sector) => {
-          const raw = row[sector]?.trim() ?? "";
+        if (row.sectors.length !== count) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Expected ${count} sector values.`,
+            path: ["laps", i, "sectors"],
+          });
+        }
+        row.sectors.forEach((sector, sectorIndex) => {
+          const raw = sector?.trim() ?? "";
           if (!raw) return;
           if (!isValidSectorTimeFormat(raw)) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               message: SECTOR_FORMAT_MSG,
-              path: ["laps", i, sector],
+              path: ["laps", i, "sectors", sectorIndex],
             });
           }
         });

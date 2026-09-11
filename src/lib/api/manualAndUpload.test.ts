@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "./errors";
-import { uploadSessionFile } from "./manualAndUpload";
+import { buildManualActivityRequestBody, uploadSessionFile } from "./manualAndUpload";
 
 class MockUploadTarget extends EventTarget {
   onprogress: ((event: ProgressEvent) => void) | null = null;
@@ -48,6 +48,23 @@ function latestXhr(): MockXMLHttpRequest {
   if (!xhr) throw new Error("Expected an XMLHttpRequest instance");
   return xhr;
 }
+
+describe("buildManualActivityRequestBody", () => {
+  it("submits canonical sector count and partial arrays", () => {
+    expect(
+      buildManualActivityRequestBody({
+        sim: "IRACING",
+        trackId: "spa",
+        manualSessionKind: "PRACTICE",
+        sectorCount: 4,
+        laps: [{ lapTimeMs: 90_000, sectorTimesMs: [20_000, null, 30_000, 40_000] }],
+      }),
+    ).toMatchObject({
+      sectorCount: 4,
+      laps: [{ lapTimeMs: 90_000, sectorTimesMs: [20_000, null, 30_000, 40_000] }],
+    });
+  });
+});
 
 describe("uploadSessionFile", () => {
   beforeEach(() => {

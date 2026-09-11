@@ -7,6 +7,7 @@ type SessionDetailSectorBreakdownProps = {
   sessionMinima: SessionTimingMinima;
   idealLapMs: number | null | undefined;
   proFeaturesLocked?: boolean;
+  legacyEstimated?: boolean;
 };
 
 const CARD = "rounded-xl bg-apex-surface-container-low p-4 shadow-lg";
@@ -23,21 +24,18 @@ function SectorBreakdownBody({
   sessionMinima: SessionTimingMinima;
   idealLapMs: number | null | undefined;
 }) {
-  const sectorS1 = sessionMinima.s1Ms ?? null;
-  const sectorS2 = sessionMinima.s2Ms ?? null;
-  const sectorS3 = sessionMinima.s3Ms ?? null;
+  const sectorsMs =
+    sessionMinima.sectorTimesMs.length > 0
+      ? sessionMinima.sectorTimesMs
+      : [sessionMinima.s1Ms ?? null, sessionMinima.s2Ms ?? null, sessionMinima.s3Ms ?? null];
   const idealMs =
     idealLapMs != null && Number.isFinite(idealLapMs)
       ? idealLapMs
-      : sectorS1 != null && sectorS2 != null && sectorS3 != null
-        ? sectorS1 + sectorS2 + sectorS3
+      : sectorsMs.length > 0 && sectorsMs.every((value) => value != null)
+        ? (sectorsMs as number[]).reduce((sum, value) => sum + value, 0)
         : null;
 
-  const sectors = [
-    ["Sector 1", sectorS1],
-    ["Sector 2", sectorS2],
-    ["Sector 3", sectorS3],
-  ] as const;
+  const sectors = sectorsMs.map((value, index) => [`Sector ${index + 1}`, value] as const);
 
   const sectorValueClass = (ms: number | null) =>
     `font-apex-headline font-bold tabular-nums ${
@@ -77,7 +75,7 @@ function SectorBreakdownBody({
         ))}
       </div>
 
-      <div className="mb-4 hidden grid-cols-3 gap-4 sm:grid">
+      <div className="mb-4 hidden grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-4 sm:grid">
         {sectors.map(([label, ms]) => (
           <div key={label} className="min-w-0 space-y-1.5">
             <div className="h-1 overflow-hidden rounded-full bg-apex-surface-container-highest">
@@ -122,6 +120,7 @@ function SectorBreakdownBody({
 /** Placeholder minima so the locked card keeps layout while blurred. */
 const LOCKED_PREVIEW_MINIMA: SessionTimingMinima = {
   lapMs: 92_500,
+  sectorTimesMs: [28_400, 31_200, 32_900],
   s1Ms: 28_400,
   s2Ms: 31_200,
   s3Ms: 32_900,
@@ -131,12 +130,13 @@ export default function SessionDetailSectorBreakdown({
   sessionMinima,
   idealLapMs,
   proFeaturesLocked = false,
+  legacyEstimated = false,
 }: SessionDetailSectorBreakdownProps) {
   if (proFeaturesLocked) {
     return (
       <section className={`${CARD} relative overflow-hidden`}>
         <div
-          className="select-none blur-sm pointer-events-none"
+          className="pointer-events-none select-none blur-sm"
           aria-hidden
         >
           <SectorBreakdownBody
@@ -164,6 +164,14 @@ export default function SessionDetailSectorBreakdown({
 
   return (
     <section className={CARD}>
+      {legacyEstimated ? (
+        <div
+          className="mb-3 inline-flex rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300"
+          title="These boundaries were estimated from legacy iRacing telemetry and may not match native timing lines."
+        >
+          Legacy estimated sectors
+        </div>
+      ) : null}
       <SectorBreakdownBody
         sessionMinima={sessionMinima}
         idealLapMs={idealLapMs}

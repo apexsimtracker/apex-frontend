@@ -33,7 +33,12 @@ async function fillManualActivityBasics(page: Page): Promise<void> {
     .getByRole("group", { name: "Session type" })
     .getByRole("button", { name: "Practice" })
     .click();
-  await page.getByLabel(/^Lap 1$/).fill("1:45.000");
+  await page.getByLabel("Sectors per lap").fill("4");
+  await page.getByLabel("Lap 1 sector 1").fill("20.000");
+  await page.getByLabel("Lap 1 sector 2").fill("25.000");
+  await page.getByLabel("Lap 1 sector 3").fill("30.000");
+  await page.getByLabel("Lap 1 sector 4").fill("30.000");
+  await expect(page.getByLabel("Lap 1 total time")).toHaveValue("01:45.000");
 }
 
 test.describe("@sessions", () => {
@@ -56,7 +61,7 @@ test.describe("@sessions", () => {
     try {
       await gotoAuthenticated(page, auth, "/manual");
       await expect(
-        page.getByRole("heading", { name: "Log manual activity" }),
+        page.getByRole("heading", { name: "Manual Entry" }),
       ).toBeVisible();
 
       await fillManualActivityBasics(page);
@@ -67,7 +72,7 @@ test.describe("@sessions", () => {
           res.url().includes("/api/sessions/manual-activity") &&
           res.request().method() === "POST",
       );
-      await page.getByRole("button", { name: "Log activity" }).click();
+      await page.getByRole("button", { name: "Save session" }).click();
       const createRes = await createPost;
       expect(createRes.ok()).toBeTruthy();
       const createBody = (await createRes.json()) as { sessionId?: string };
@@ -79,11 +84,16 @@ test.describe("@sessions", () => {
       });
       await expect(page.getByText("Manual", { exact: true })).toBeVisible();
       await expect(
-        page.getByText("Total Laps").locator("..").getByText("1"),
+        page
+          .getByText("Laps", { exact: true })
+          .locator("..")
+          .getByRole("heading", { name: "1", exact: true }),
       ).toBeVisible();
 
-      await page.getByRole("button", { name: "Edit" }).click();
+      await page.getByRole("button", { name: "Edit session" }).click();
       await expect(page).toHaveURL(new RegExp(`/sessions/${sessionId}/edit$`));
+      await expect(page.getByLabel("Sectors per lap")).toHaveValue("4");
+      await expect(page.getByLabel("Lap 1 sector 4")).toHaveValue("00:30.000");
       await page.locator("#caption").fill("E2E manual updated");
 
       const updatePost = page.waitForResponse(
@@ -97,18 +107,20 @@ test.describe("@sessions", () => {
         timeout: 30_000,
       });
 
-      await page.getByRole("button", { name: "Delete" }).click();
+      await page.getByRole("button", { name: "Delete session" }).click();
       await expect(
-        page.getByRole("heading", { name: "Delete this manual activity?" }),
+        page.getByRole("heading", { name: "Delete this session?" }),
       ).toBeVisible();
       const deleteReq = page.waitForRequest(
         (req) =>
-          req.url().includes(`/api/sessions/manual-activity/${sessionId}`) &&
+          req.url().includes(`/api/sessions/${sessionId}`) &&
           req.method() === "DELETE",
       );
       await page.getByRole("button", { name: "Delete" }).last().click();
       await deleteReq;
-      await expect(page).toHaveURL(/\/$|\/profile/, { timeout: 30_000 });
+      await expect(page).toHaveURL(/\/$|\/profile|\/sessions$/, {
+        timeout: 30_000,
+      });
       sessionId = null;
     } finally {
       if (sessionId) {

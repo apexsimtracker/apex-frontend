@@ -22,7 +22,10 @@ export function useChallengeLiveState({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const crossedRef = useRef(false);
   const callbackRef = useRef(onBoundaryCrossed);
-  callbackRef.current = onBoundaryCrossed;
+
+  useEffect(() => {
+    callbackRef.current = onBoundaryCrossed;
+  }, [onBoundaryCrossed]);
 
   const countdownTargetIso = useMemo(() => {
     if (!status) return null;

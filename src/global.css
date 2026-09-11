@@ -96,6 +96,13 @@
 }
 
 @layer base {
+  :root {
+    /* Top inset for app chrome. Android WebViews lay the page out under the
+       status bar but still report 0 here, so initNativeShell overrides this
+       with the measured status bar height on Android only. */
+    --apex-safe-area-top: env(safe-area-inset-top, 0px);
+  }
+
   * {
     border-color: hsl(var(--border));
   }
@@ -140,6 +147,21 @@ input::-webkit-inner-spin-button {
 /* Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/*
+ * iOS Safari/WKWebView zooms the viewport when a focused form control renders
+ * below 16px, then may retain that scale after the keyboard closes. Keep the
+ * visual 16px floor on phone-sized WebKit without disabling user pinch zoom.
+ */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @keyframes loading-shimmer {

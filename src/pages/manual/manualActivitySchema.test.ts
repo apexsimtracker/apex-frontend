@@ -9,7 +9,8 @@ const EMPTY_FORM = {
   position: "",
   totalDrivers: "",
   qualifyingPosition: "",
-  laps: [{ lapTime: "", s1: "", s2: "", s3: "" }],
+  sectorCount: "3",
+  laps: [{ lapTime: "", sectors: ["", "", ""] }],
   caption: "",
   conditions: "DRY" as const,
 };
@@ -33,7 +34,7 @@ describe("manualActivityFormSchema", () => {
       ...EMPTY_FORM,
       sim: "iracing",
       trackId: "monza",
-      laps: [{ lapTime: "not a time", s1: "", s2: "", s3: "" }],
+      laps: [{ lapTime: "not a time", sectors: ["", "", ""] }],
     });
     expect(paths).toContain("laps.0.lapTime");
     expect(paths).not.toContain("laps");
@@ -44,8 +45,33 @@ describe("manualActivityFormSchema", () => {
       ...EMPTY_FORM,
       sim: "iracing",
       trackId: "monza",
-      laps: [{ lapTime: "1:32.456", s1: "", s2: "", s3: "" }],
+      laps: [{ lapTime: "1:32.456", sectors: ["", "", ""] }],
     });
     expect(paths).toEqual([]);
+  });
+
+  it.each([0, 3, 4, 7])("accepts %i configured sector slots", (count) => {
+    const paths = issuePaths({
+      ...EMPTY_FORM,
+      sim: "iracing",
+      trackId: "monza",
+      sectorCount: String(count),
+      laps: [{
+        lapTime: "1:32.456",
+        sectors: Array.from({ length: count }, () => ""),
+      }],
+    });
+    expect(paths).toEqual([]);
+  });
+
+  it("validates every populated slot in partial arrays", () => {
+    const paths = issuePaths({
+      ...EMPTY_FORM,
+      sim: "iracing",
+      trackId: "monza",
+      sectorCount: "4",
+      laps: [{ lapTime: "1:32.456", sectors: ["20.000", "", "bad", "30.000"] }],
+    });
+    expect(paths).toContain("laps.0.sectors.2");
   });
 });

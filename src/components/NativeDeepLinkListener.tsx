@@ -18,7 +18,10 @@ function openInApp(
 export default function NativeDeepLinkListener() {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
-  navigateRef.current = navigate;
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

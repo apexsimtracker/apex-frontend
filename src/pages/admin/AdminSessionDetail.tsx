@@ -229,18 +229,14 @@ export default function AdminSessionDetail() {
         const ms = parseRequiredManualLapMs(lapCreate.lapTimeMs);
         await createAdminSessionLap(id, {
           lapTimeMs: ms,
-          sector1Ms: parseOptionalSectorMs(lapCreate.s1),
-          sector2Ms: parseOptionalSectorMs(lapCreate.s2),
-          sector3Ms: parseOptionalSectorMs(lapCreate.s3),
+          sectorTimesMs: lapCreate.sectors.map(parseOptionalSectorMs),
           isValid: lapCreate.isValid,
         });
       } else {
         const ms = parseRequiredManualLapMs(lapEdit.lapTimeMs);
         await patchAdminSessionLap(id, lapDialog.lap.id, {
           lapTimeMs: ms,
-          sector1Ms: parseOptionalSectorMs(lapEdit.s1),
-          sector2Ms: parseOptionalSectorMs(lapEdit.s2),
-          sector3Ms: parseOptionalSectorMs(lapEdit.s3),
+          sectorTimesMs: lapEdit.sectors.map(parseOptionalSectorMs),
           isValid: lapEdit.isValid,
           isBestLap: lapEdit.isBestLap,
         });
@@ -266,18 +262,14 @@ export default function AdminSessionDetail() {
 
   const [lapEdit, setLapEdit] = useState({
     lapTimeMs: "",
-    s1: "",
-    s2: "",
-    s3: "",
+    sectors: [] as string[],
     isValid: true,
     isBestLap: false,
   });
 
   const [lapCreate, setLapCreate] = useState({
     lapTimeMs: "",
-    s1: "",
-    s2: "",
-    s3: "",
+    sectors: [] as string[],
     isValid: true,
   });
 
@@ -290,18 +282,14 @@ export default function AdminSessionDetail() {
         bestLapMs: null as number | null,
         rows: [] as Array<{
           lap: AdminSessionLapRow;
-          s1: number | null;
-          s2: number | null;
-          s3: number | null;
+          sectors: (number | null)[];
         }>,
       };
     }
     const laps = data.laps;
     const rows = laps.map((lap) => ({
       lap,
-      s1: lap.sector1Ms,
-      s2: lap.sector2Ms,
-      s3: lap.sector3Ms,
+      sectors: lap.sectorTimesMs,
     }));
     const finiteTimes = laps
       .map((l) => l.lapTimeMs)
@@ -320,10 +308,9 @@ export default function AdminSessionDetail() {
       }) ??
       new Map<number, LapTimingHighlights>();
     const idealLapMs =
-      sessionMinima.s1Ms != null &&
-      sessionMinima.s2Ms != null &&
-      sessionMinima.s3Ms != null
-        ? sessionMinima.s1Ms + sessionMinima.s2Ms + sessionMinima.s3Ms
+      sessionMinima.sectorTimesMs.length > 0 &&
+      sessionMinima.sectorTimesMs.every((value) => value != null)
+        ? (sessionMinima.sectorTimesMs as number[]).reduce((sum, value) => sum + value, 0)
         : sessionMinima.lapMs;
     return { idealLapMs, rows, bestLapMs, sessionMinima, highlightMap };
   }, [data]);
@@ -704,9 +691,7 @@ export default function AdminSessionDetail() {
                     lapSaveMutation.reset();
                     setLapCreate({
                       lapTimeMs: "",
-                      s1: "",
-                      s2: "",
-                      s3: "",
+                      sectors: Array.from({ length: data.sectorCount ?? 0 }, () => ""),
                       isValid: true,
                     });
                     setLapDialog({ mode: "create" });
@@ -717,39 +702,23 @@ export default function AdminSessionDetail() {
               </div>
 
               {adminLapsView.rows.length > 0 &&
-                (adminLapsView.sessionMinima?.s1Ms != null ||
-                  adminLapsView.sessionMinima?.s2Ms != null ||
-                  adminLapsView.sessionMinima?.s3Ms != null ||
+                (adminLapsView.sessionMinima?.sectorTimesMs.some((value) => value != null) ||
                   adminLapsView.idealLapMs != null) && (
                   <div className="border-b border-white/10 p-4">
                     <div className="mb-1.5 text-xs uppercase tracking-wider text-muted-foreground">
                       Ideal Lap
                     </div>
-                    <div className="grid grid-cols-2 items-end gap-3 sm:grid-cols-4 sm:gap-2">
-                      <div className="text-right">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                          S1
+                    <div className="flex flex-wrap items-end justify-end gap-3">
+                      {adminLapsView.sessionMinima?.sectorTimesMs.map((value, index) => (
+                        <div key={index} className="min-w-20 text-right">
+                          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                            S{index + 1}
+                          </div>
+                          <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
+                            {formatLapMs(value)}
+                          </div>
                         </div>
-                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                          {formatLapMs(adminLapsView.sessionMinima?.s1Ms ?? 0)}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                          S2
-                        </div>
-                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                          {formatLapMs(adminLapsView.sessionMinima?.s2Ms ?? 0)}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                          S3
-                        </div>
-                        <div className="mt-0.5 font-mono text-base font-semibold text-purple-400">
-                          {formatLapMs(adminLapsView.sessionMinima?.s3Ms ?? 0)}
-                        </div>
-                      </div>
+                      ))}
                       <div className="text-right">
                         <div className="text-xs uppercase tracking-wider text-muted-foreground">
                           Time
@@ -769,15 +738,11 @@ export default function AdminSessionDetail() {
                       <th className="p-2 text-left text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Lap
                       </th>
-                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
-                        S1
-                      </th>
-                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
-                        S2
-                      </th>
-                      <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
-                        S3
-                      </th>
+                      {Array.from({ length: data.sectorCount ?? 0 }, (_, index) => (
+                        <th key={index} className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
+                          S{index + 1}
+                        </th>
+                      ))}
                       <th className="p-2 text-right text-xs font-semibold uppercase tracking-wider sm:px-4 sm:py-3">
                         Time
                       </th>
@@ -800,7 +765,7 @@ export default function AdminSessionDetail() {
                     {adminLapsView.rows.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={10}
+                          colSpan={(data.sectorCount ?? 0) + 7}
                           className="px-2 py-10 text-center sm:px-4"
                         >
                           <div className="flex flex-col items-center gap-2">
@@ -817,7 +782,7 @@ export default function AdminSessionDetail() {
                         </td>
                       </tr>
                     ) : (
-                      adminLapsView.rows.map(({ lap, s1, s2, s3 }) => {
+                      adminLapsView.rows.map(({ lap, sectors }) => {
                         const fastest =
                           adminLapsView.bestLapMs != null &&
                           lap.lapTimeMs === adminLapsView.bestLapMs;
@@ -825,6 +790,7 @@ export default function AdminSessionDetail() {
                           lap.lapNumber,
                         ) ?? {
                           lap: "default" as const,
+                          sectors: [] as const,
                           s1: "default" as const,
                           s2: "default" as const,
                           s3: "default" as const,
@@ -863,21 +829,14 @@ export default function AdminSessionDetail() {
                                 )}
                               </span>
                             </td>
-                            <td
-                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s1)}`}
-                            >
-                              {formatLapMs(s1)}
-                            </td>
-                            <td
-                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s2)}`}
-                            >
-                              {formatLapMs(s2)}
-                            </td>
-                            <td
-                              className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.s3)}`}
-                            >
-                              {formatLapMs(s3)}
-                            </td>
+                            {Array.from({ length: data.sectorCount ?? sectors.length }, (_, index) => (
+                              <td
+                                key={index}
+                                className={`p-2 text-right align-middle font-mono text-sm tabular-nums sm:px-4 sm:py-3 ${timingHighlightClass(rowHighlights.sectors[index] ?? "default")}`}
+                              >
+                                {formatLapMs(sectors[index])}
+                              </td>
+                            ))}
                             <td className="p-2 text-right align-middle font-mono tabular-nums sm:px-4 sm:py-3">
                               <span
                                 className={timingHighlightClass(
@@ -931,18 +890,9 @@ export default function AdminSessionDetail() {
                                         lapTimeMs: formatMsToLapTime(
                                           lap.lapTimeMs,
                                         ),
-                                        s1:
-                                          lap.sector1Ms != null
-                                            ? formatMsToLapTime(lap.sector1Ms)
-                                            : "",
-                                        s2:
-                                          lap.sector2Ms != null
-                                            ? formatMsToLapTime(lap.sector2Ms)
-                                            : "",
-                                        s3:
-                                          lap.sector3Ms != null
-                                            ? formatMsToLapTime(lap.sector3Ms)
-                                            : "",
+                                        sectors: lap.sectorTimesMs.map((value) =>
+                                          value != null ? formatMsToLapTime(value) : "",
+                                        ),
                                         isValid: lap.isValid,
                                         isBestLap: lap.isBestLap,
                                       });
@@ -1203,43 +1153,24 @@ export default function AdminSessionDetail() {
                 }
               />
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              <label className="text-xs text-muted-foreground">
-                S1 <span className="text-muted-foreground/70">(optional)</span>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2">
+              {lapEdit.sectors.map((value, index) => (
+              <label key={index} className="text-xs text-muted-foreground">
+                S{index + 1} <span className="text-muted-foreground/70">(optional)</span>
                 <Input
                   className="mt-1 font-mono text-xs"
                   placeholder="0:28.500"
                   autoComplete="off"
-                  value={lapEdit.s1}
+                  value={value}
                   onChange={(e) =>
-                    setLapEdit((x) => ({ ...x, s1: e.target.value }))
+                    setLapEdit((x) => ({
+                      ...x,
+                      sectors: x.sectors.map((old, i) => i === index ? e.target.value : old),
+                    }))
                   }
                 />
               </label>
-              <label className="text-xs text-muted-foreground">
-                S2 <span className="text-muted-foreground/70">(optional)</span>
-                <Input
-                  className="mt-1 font-mono text-xs"
-                  placeholder="0:28.500"
-                  autoComplete="off"
-                  value={lapEdit.s2}
-                  onChange={(e) =>
-                    setLapEdit((x) => ({ ...x, s2: e.target.value }))
-                  }
-                />
-              </label>
-              <label className="text-xs text-muted-foreground">
-                S3 <span className="text-muted-foreground/70">(optional)</span>
-                <Input
-                  className="mt-1 font-mono text-xs"
-                  placeholder="0:28.500"
-                  autoComplete="off"
-                  value={lapEdit.s3}
-                  onChange={(e) =>
-                    setLapEdit((x) => ({ ...x, s3: e.target.value }))
-                  }
-                />
-              </label>
+              ))}
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -1277,43 +1208,24 @@ export default function AdminSessionDetail() {
                 }
               />
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              <label className="text-xs text-muted-foreground">
-                S1 <span className="text-muted-foreground/70">(optional)</span>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-2">
+              {lapCreate.sectors.map((value, index) => (
+              <label key={index} className="text-xs text-muted-foreground">
+                S{index + 1} <span className="text-muted-foreground/70">(optional)</span>
                 <Input
                   className="mt-1 font-mono text-xs"
                   placeholder="0:28.500"
                   autoComplete="off"
-                  value={lapCreate.s1}
+                  value={value}
                   onChange={(e) =>
-                    setLapCreate((x) => ({ ...x, s1: e.target.value }))
+                    setLapCreate((x) => ({
+                      ...x,
+                      sectors: x.sectors.map((old, i) => i === index ? e.target.value : old),
+                    }))
                   }
                 />
               </label>
-              <label className="text-xs text-muted-foreground">
-                S2 <span className="text-muted-foreground/70">(optional)</span>
-                <Input
-                  className="mt-1 font-mono text-xs"
-                  placeholder="0:28.500"
-                  autoComplete="off"
-                  value={lapCreate.s2}
-                  onChange={(e) =>
-                    setLapCreate((x) => ({ ...x, s2: e.target.value }))
-                  }
-                />
-              </label>
-              <label className="text-xs text-muted-foreground">
-                S3 <span className="text-muted-foreground/70">(optional)</span>
-                <Input
-                  className="mt-1 font-mono text-xs"
-                  placeholder="0:28.500"
-                  autoComplete="off"
-                  value={lapCreate.s3}
-                  onChange={(e) =>
-                    setLapCreate((x) => ({ ...x, s3: e.target.value }))
-                  }
-                />
-              </label>
+              ))}
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input

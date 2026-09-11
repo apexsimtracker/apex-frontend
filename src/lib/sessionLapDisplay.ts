@@ -3,32 +3,34 @@
  * Highlight/minima math is computed at ingest on the backend (`timingDisplayCache`).
  * Purple = absolute session minimum; default = normal. Legacy "green" coerces to default.
  */
+import { coerceSectorTimesMs } from "./sectors";
 
 export type TimingHighlight = "purple" | "default";
 
 export type SessionTimingMinima = {
   lapMs: number | null;
-  s1Ms: number | null;
-  s2Ms: number | null;
-  s3Ms: number | null;
+  sectorTimesMs: (number | null)[];
+  s1Ms?: number | null;
+  s2Ms?: number | null;
+  s3Ms?: number | null;
 };
 
 export type LapTimingHighlights = {
   lap: TimingHighlight;
-  s1: TimingHighlight;
-  s2: TimingHighlight;
-  s3: TimingHighlight;
+  sectors: TimingHighlight[];
+  s1?: TimingHighlight;
+  s2?: TimingHighlight;
+  s3?: TimingHighlight;
 };
 
 export const DEFAULT_LAP_TIMING_HIGHLIGHTS: LapTimingHighlights = {
   lap: "default",
-  s1: "default",
-  s2: "default",
-  s3: "default",
+  sectors: [],
 };
 
 export const EMPTY_SESSION_TIMING_MINIMA: SessionTimingMinima = {
   lapMs: null,
+  sectorTimesMs: [],
   s1Ms: null,
   s2Ms: null,
   s3Ms: null,
@@ -40,14 +42,19 @@ export function coerceTimingHighlight(raw: unknown): TimingHighlight {
 }
 
 function coerceLapHighlights(
-  raw: LapTimingHighlights | { lap: unknown; s1?: unknown; s2?: unknown; s3?: unknown } | null | undefined
+  raw: LapTimingHighlights | { lap: unknown; sectors?: unknown; s1?: unknown; s2?: unknown; s3?: unknown } | null | undefined
 ): LapTimingHighlights | null {
   if (!raw || raw.lap == null) return null;
+  const legacy = [raw.s1, raw.s2, raw.s3].map(coerceTimingHighlight);
+  const sectors = Array.isArray(raw.sectors)
+    ? raw.sectors.map(coerceTimingHighlight)
+    : legacy;
   return {
     lap: coerceTimingHighlight(raw.lap),
-    s1: "s1" in raw ? coerceTimingHighlight(raw.s1) : "default",
-    s2: "s2" in raw ? coerceTimingHighlight(raw.s2) : "default",
-    s3: "s3" in raw ? coerceTimingHighlight(raw.s3) : "default",
+    sectors,
+    s1: sectors[0] ?? "default",
+    s2: sectors[1] ?? "default",
+    s3: sectors[2] ?? "default",
   };
 }
 
@@ -64,6 +71,7 @@ export function coerceSessionDetailLaps(laps: unknown[]): {
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
+  sectorTimesMs: (number | null)[];
   sectorsEstimated?: boolean;
   highlights?: LapTimingHighlights | { lap: LapTimingHighlights["lap"] } | null;
 }[] {
@@ -88,6 +96,14 @@ export function coerceSessionDetailLaps(laps: unknown[]): {
         | null
         | undefined
     );
+    const sectorTimesMs = coerceSectorTimesMs(
+      l.sectorTimesMs,
+      {
+        sector1Ms: l.sector1Ms as number | null | undefined,
+        sector2Ms: l.sector2Ms as number | null | undefined,
+        sector3Ms: l.sector3Ms as number | null | undefined,
+      },
+    );
     return {
       lap: lapNumber,
       lapNumber,
@@ -100,6 +116,7 @@ export function coerceSessionDetailLaps(laps: unknown[]): {
       sector1Ms: (l.sector1Ms as number | null | undefined) ?? null,
       sector2Ms: (l.sector2Ms as number | null | undefined) ?? null,
       sector3Ms: (l.sector3Ms as number | null | undefined) ?? null,
+      sectorTimesMs,
       sectorsEstimated:
         typeof l.sectorsEstimated === "boolean"
           ? l.sectorsEstimated
@@ -122,7 +139,7 @@ export function timingHighlightClass(
 export function buildHighlightMapFromLaps(
   laps: {
     lap: number;
-    highlights?: LapTimingHighlights | { lap: unknown; s1?: unknown; s2?: unknown; s3?: unknown } | null;
+    highlights?: LapTimingHighlights | { lap: unknown; sectors?: unknown; s1?: unknown; s2?: unknown; s3?: unknown } | null;
   }[],
   opts?: { missingAsDefault?: boolean },
 ): Map<number, LapTimingHighlights> | null {

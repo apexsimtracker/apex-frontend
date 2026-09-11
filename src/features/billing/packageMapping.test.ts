@@ -12,6 +12,7 @@ import {
   APPLE_PRO_ANNUAL,
   APPLE_PRO_MONTHLY,
   PLAY_PRO_ANNUAL,
+  PLAY_PRO_MONTHLY,
 } from "./storeProductIds";
 
 function mockPackage(
@@ -68,6 +69,7 @@ describe("packageMapping", () => {
   it("uses exact platform product IDs for native offerings", () => {
     const packages = [
       mockPackage("$rc_monthly", APPLE_PRO_MONTHLY, "native"),
+      mockPackage("$rc_monthly", PLAY_PRO_MONTHLY, "native"),
       mockPackage("$rc_annual", "apex_pro_annual", "native"),
       mockPackage("$rc_annual", APPLE_PRO_ANNUAL, "native"),
       mockPackage("$rc_annual", PLAY_PRO_ANNUAL, "native"),
@@ -84,7 +86,14 @@ describe("packageMapping", () => {
     ).toBeNull();
 
     const play = resolvePackagesByInterval(packages, "play");
+    expect(play.monthly?.productIdentifier).toBe(PLAY_PRO_MONTHLY);
     expect(play.annual?.productIdentifier).toBe(PLAY_PRO_ANNUAL);
+    expect(
+      resolvePackagesByInterval(
+        [mockPackage("$rc_monthly", APPLE_PRO_MONTHLY, "native")],
+        "play",
+      ).monthly,
+    ).toBeNull();
   });
 
   it("pickDefaultInterval prefers annual when available", () => {

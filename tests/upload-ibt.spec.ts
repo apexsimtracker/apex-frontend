@@ -43,7 +43,7 @@ test.describe("@upload-ibt", () => {
     await gotoAuthenticated(page, freeAuth, "/upload");
 
     await expect(
-      page.getByText(/Manual \.ibt upload is an Apex Pro feature/i),
+      page.getByText(/Manual telemetry upload is an Apex Pro feature/i),
     ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.getByRole("button", { name: /Upgrade to Pro/i }),
@@ -95,7 +95,7 @@ test.describe("@upload-ibt", () => {
 
     // Pro should not see the free-tier upgrade banner
     await expect(
-      page.getByText(/Manual \.ibt upload is an Apex Pro feature/i),
+      page.getByText(/Manual telemetry upload is an Apex Pro feature/i),
     ).toHaveCount(0);
 
     await page.locator('input[type="file"][accept=".ibt"]').setInputFiles(IBT_PATH);
@@ -160,16 +160,44 @@ test.describe("@upload-ibt", () => {
     expect(Number.isFinite(createdAtMs)).toBe(true);
     expect(Math.abs(Date.now() - createdAtMs)).toBeLessThan(15 * 60 * 1000);
 
-    const laps = await fetchSessionLaps(request, auth, sessionId!);
-    const realSectors = laps.filter(
-      (l) =>
-        l.sector1Ms != null &&
-        l.sector2Ms != null &&
-        l.sector3Ms != null &&
-        Math.abs(l.sector1Ms - l.sector2Ms) > 2 &&
-        l.sectorsEstimated !== true,
-    );
+    expect(detail.sectorCount).toBe(4);
+    expect(detail.sectorStartsPct).toEqual([
+      0,
+      0.167875,
+      0.442307,
+      0.787105,
+    ]);
+    expect(detail.sectorTimingSource).toBe("IRACING_NATIVE");
+
+    const laps = detail.laps ?? await fetchSessionLaps(request, auth, sessionId!);
+    const realSectors = laps.filter((l) => {
+      const sectors = l.sectorTimesMs;
+      if (
+        !sectors ||
+        sectors.length !== detail.sectorCount ||
+        !sectors.every((sector) => sector != null && sector > 0)
+      ) {
+        return false;
+      }
+      const sectorTotal = sectors.reduce<number>(
+        (sum, sector) => sum + (sector ?? 0),
+        0,
+      );
+      return (
+        Math.abs(sectorTotal - (l.timeMs ?? 0)) <=
+          Math.max(100, Math.round((l.timeMs ?? 0) * 0.02)) &&
+        l.sectorsEstimated !== true
+      );
+    });
     expect(realSectors.length).toBeGreaterThan(0);
+    expect(
+      realSectors.every(
+        (lap) =>
+          lap.sector1Ms == null &&
+          lap.sector2Ms == null &&
+          lap.sector3Ms == null,
+      ),
+    ).toBe(true);
 
     const telemetrySummary = await fetchTelemetrySummary(request, auth, sessionId!);
     expect(telemetrySummary.eligible).toBe(true);
@@ -184,13 +212,17 @@ test.describe("@upload-ibt", () => {
     expect(speedMax - speedMin).toBeGreaterThan(1);
 
     // --- UI: sectors (Pro legend / formatted times) ---
-    await expect(page.getByText("Session best")).toBeVisible();
+    for (const label of ["S1", "S2", "S3", "S4"]) {
+      await expect(
+        page.getByRole("columnheader", { name: label, exact: true }),
+      ).toBeVisible();
+    }
     // At least one sector cell should show a formatted time (contains ':' or '.')
     const sectorCells = page.locator("td, th").filter({ hasText: /\d+:\d+\.\d+/ });
     await expect(sectorCells.first()).toBeVisible({ timeout: 30_000 });
 
     // Highlight colors when Pro: purple for session best
-    const purpleBest = page.locator(".text-purple-400");
+    const purpleBest = page.locator(".text-purple-400:visible");
     await expect(purpleBest.first()).toBeVisible({ timeout: 15_000 });
 
     // --- UI: telemetry charts (not agent-only empty state) ---
@@ -201,21 +233,20 @@ test.describe("@upload-ibt", () => {
     await expect(page.getByText("Telemetry Analysis").first()).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByRole("button", { name: /^Driving$/i })).toBeVisible({
+    await expect(page.getByRole("tab", { name: /^Driving$/i })).toBeVisible({
       timeout: 30_000,
     });
 
-    await expect(page.getByTestId("telemetry-driving-chart")).toBeVisible({
+    await expect(page.getByTestId("telemetry-driving-charts")).toBeVisible({
       timeout: 60_000,
     });
-    await expect(
-      page.getByTestId("telemetry-driving-chart").locator("svg").first(),
-    ).toBeVisible({ timeout: 30_000 });
   });
 });
 
 type ApiLap = {
   lap?: number;
+  timeMs?: number;
+  sectorTimesMs?: (number | null)[] | null;
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;

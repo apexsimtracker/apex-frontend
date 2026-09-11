@@ -25,6 +25,7 @@ import {
   isActiveBetaTrial,
   isPaidProUser,
 } from "@/features/billing/betaTrial";
+import type { SubscriptionManageAction } from "@/features/billing/subscriptionManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,9 @@ export default function Pricing() {
     isBillingEnabled,
     availablePackages,
     offeringsQuery,
+    eligibilityQuery,
+    eligibilityError,
+    retryEligibility,
     purchasePackage,
     isPurchasing,
     restorePurchases,
@@ -66,11 +70,13 @@ export default function Pricing() {
     isOpeningBillingPortal,
     refreshSubscription,
     isRefreshingSubscription,
+    hasPaidPro,
+    manageActions,
   } = useRevenueCat();
 
   const onBetaTrial = isActiveBetaTrial(user);
-  const isPaidPro = isPaidProUser(user);
-  const hasProAccess = user?.hasPro === true;
+  const isPaidPro = hasPaidPro || isPaidProUser(user);
+  const hasProAccess = user?.hasPro === true || isPaidPro;
   const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
   const currentSubscriptionLabel = formatCurrentSubscriptionLabel(
     user
@@ -147,12 +153,12 @@ export default function Pricing() {
     }
   }
 
-  async function handleManageSubscription() {
+  async function handleManageSubscription(action: SubscriptionManageAction) {
     try {
       setMessage(null);
       setWarning(null);
       setError(null);
-      await openBillingPortal();
+      await openBillingPortal(action);
     } catch (err) {
       setError(
         err instanceof Error
@@ -198,11 +204,13 @@ export default function Pricing() {
             Choose your plan
           </h1>
           <p className="mt-2 text-sm tracking-wide text-apex-on-surface-variant">
-            {onBetaTrial
-              ? `You have complimentary full Pro access${
-                  betaTrialEndsLabel ? ` (ends ${betaTrialEndsLabel})` : ""
-                }. Subscribe anytime — complimentary access ends when paid Pro starts.`
-              : "Start free. Upgrade to Pro for unlimited history, analytics, and more."}
+            {isPaidPro
+              ? "You already have Pro. Manage your subscription from the store that billed you."
+              : onBetaTrial
+                ? `You have complimentary full Pro access${
+                    betaTrialEndsLabel ? ` (ends ${betaTrialEndsLabel})` : ""
+                  }. Subscribe anytime — complimentary access ends when paid Pro starts.`
+                : "Start free. Upgrade to Pro for unlimited history, analytics, and more."}
           </p>
         </div>
 
@@ -259,6 +267,17 @@ export default function Pricing() {
               isLoggedIn={Boolean(user)}
               authLoading={authLoading}
               offeringsPending={offeringsQuery.isLoading}
+              eligibilityPending={
+                Boolean(user) &&
+                isBillingEnabled &&
+                (eligibilityQuery.isPending || eligibilityQuery.isFetching)
+              }
+              eligibilityError={
+                Boolean(user) && isBillingEnabled ? eligibilityError : null
+              }
+              onRetryEligibility={() => {
+                void retryEligibility();
+              }}
               isPurchasing={isPurchasing}
               isRestoringPurchases={isRestoringPurchases}
               isOpeningBillingPortal={isOpeningBillingPortal}
@@ -267,12 +286,15 @@ export default function Pricing() {
               isCanceled={isCanceled}
               accessUntilLabel={accessUntilLabel}
               entitlementBillingInterval={userBillingInterval}
+              manageActions={manageActions}
               message={showAgentCta ? null : message}
               warning={warning}
               error={error}
               onSubscribe={() => void handlePurchase()}
               onRestorePurchases={() => void handleRestorePurchases()}
-              onManageSubscription={() => void handleManageSubscription()}
+              onManageSubscription={(action) =>
+                void handleManageSubscription(action)
+              }
               onSignInToSubscribe={handleSignInToSubscribe}
             />
           </div>

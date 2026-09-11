@@ -9,6 +9,7 @@ import { effectiveQualifyingPosition } from "@/lib/sessionKind";
 import type { AdminSessionDetail } from "@/lib/api/adminSessions";
 
 export type ManualActivityLapSectorsMs = {
+  sectorTimesMs?: (number | null)[];
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -21,6 +22,12 @@ export type ManualActivityEditInitialData = ManualActivityInitialData & {
   lapsIsOutLap?: boolean[] | null;
   /** Out-laps are editable only when all real sectors and driving telemetry exist. */
   lapsCanEditOutLap?: boolean[] | null;
+  sectorCount?: number;
+  sectorTimingSource?: string | null;
+  sectorStartsPct?: number[] | null;
+  sectorLayoutKey?: string | null;
+  /** Recorded layouts are immutable; manual iRacing layouts may be changed. */
+  sectorLayoutLocked?: boolean;
 };
 
 /** Session GET `/api/sessions/:id` payload used by EditActivity (subset). */
@@ -51,8 +58,13 @@ export type PublicSessionDetailForEdit = {
     sector1Ms?: number | null;
     sector2Ms?: number | null;
     sector3Ms?: number | null;
+    sectorTimesMs?: (number | null)[];
   }>;
   lapCount?: number | null;
+  sectorCount?: number | null;
+  sectorTimingSource?: string | null;
+  sectorStartsPct?: number[] | null;
+  sectorLayoutKey?: string | null;
 };
 
 /**
@@ -83,6 +95,13 @@ export function manualActivityInitialFromPublicDetail(
 
   const lapsMs = orderedLaps.map((l) => Number(l.timeMs ?? l.lapTimeMs));
   const lapsSectorsMs: ManualActivityLapSectorsMs[] = orderedLaps.map((l) => ({
+    sectorTimesMs: Array.isArray(l.sectorTimesMs)
+      ? l.sectorTimesMs.map(finiteOrNull)
+      : [
+          finiteOrNull(l.sector1Ms),
+          finiteOrNull(l.sector2Ms),
+          finiteOrNull(l.sector3Ms),
+        ],
     sector1Ms: finiteOrNull(l.sector1Ms),
     sector2Ms: finiteOrNull(l.sector2Ms),
     sector3Ms: finiteOrNull(l.sector3Ms),
@@ -141,6 +160,14 @@ export function manualActivityInitialFromPublicDetail(
     lapsSectorsMs: lapsMs.length > 0 ? lapsSectorsMs : undefined,
     lapsIsOutLap: lapsMs.length > 0 ? lapsIsOutLap : undefined,
     lapsCanEditOutLap: lapsMs.length > 0 ? lapsCanEditOutLap : undefined,
+    sectorCount:
+      typeof data.sectorCount === "number"
+        ? data.sectorCount
+        : lapsSectorsMs[0]?.sectorTimesMs?.length ?? 3,
+    sectorTimingSource: data.sectorTimingSource,
+    sectorStartsPct: data.sectorStartsPct,
+    sectorLayoutKey: data.sectorLayoutKey,
+    sectorLayoutLocked: !isManualSession,
     bestLapMs: lapsMs.length === 0 ? data.bestLapMs : undefined,
     caption: data.caption,
     conditions:
@@ -158,7 +185,7 @@ export function manualActivityInitialFromPublicDetail(
 
 export function manualActivityInitialFromAdminDetail(
   d: AdminSessionDetail,
-): ManualActivityInitialData {
+): ManualActivityEditInitialData {
   const lapsMs = d.laps
     .slice()
     .sort((a, b) => a.lapNumber - b.lapNumber)
@@ -196,6 +223,15 @@ export function manualActivityInitialFromAdminDetail(
     totalDrivers: d.totalDrivers,
     qualifyingPosition: d.qualifyingPosition,
     lapsMs: lapsMs.length > 0 ? lapsMs : undefined,
+    lapsSectorsMs:
+      lapsMs.length > 0
+        ? d.laps.map((lap) => ({ sectorTimesMs: lap.sectorTimesMs }))
+        : undefined,
+    sectorCount: d.sectorCount ?? 0,
+    sectorTimingSource: d.sectorTimingSource,
+    sectorStartsPct: d.sectorStartsPct,
+    sectorLayoutKey: d.sectorLayoutKey,
+    sectorLayoutLocked: String(d.sessionType).toUpperCase() !== "MANUAL_ACTIVITY",
     caption: d.caption,
     telemetryMinLapRows,
   };

@@ -177,7 +177,7 @@ function FormBlock({
     <section
       id={id}
       className={cn(
-        "rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5",
+        "min-w-0 rounded-lg border border-apex-outline-variant/10 bg-apex-surface-container-low p-4 sm:p-5",
         className,
       )}
     >
@@ -189,7 +189,7 @@ function FormBlock({
           </p>
         ) : null}
       </header>
-      <div className="space-y-4">{children}</div>
+      <div className="min-w-0 space-y-4">{children}</div>
     </section>
   );
 }
@@ -224,6 +224,7 @@ const FIELD_ORDER = [
   "position",
   "totalDrivers",
   "qualifyingPosition",
+  "sectorCount",
   "laps",
   "caption",
 ] as const;
@@ -265,7 +266,7 @@ function collectFormIssues(
       const index = Number(key);
       if (!Number.isInteger(index) || !rowError || typeof rowError !== "object")
         continue;
-      for (const cell of ["lapTime", "s1", "s2", "s3"] as const) {
+      for (const cell of ["lapTime", "sectors"] as const) {
         const message = fieldErrorMessage(
           (rowError as Record<string, unknown>)[cell],
         );
@@ -348,19 +349,24 @@ function buildDefaults(
   if (initial?.lapsMs && initial.lapsMs.length > 0) {
     laps = initial.lapsMs.map((ms, index) => {
       const sectors = initial.lapsSectorsMs?.[index] ?? null;
+      const count = initial.sectorCount ?? sectors?.sectorTimesMs?.length ?? 3;
+      const values =
+        sectors?.sectorTimesMs ??
+        [sectors?.sector1Ms ?? null, sectors?.sector2Ms ?? null, sectors?.sector3Ms ?? null];
       return {
         lapTime: formatMsToInput(ms),
-        s1: formatMsToInput(sectors?.sector1Ms),
-        s2: formatMsToInput(sectors?.sector2Ms),
-        s3: formatMsToInput(sectors?.sector3Ms),
+        sectors: Array.from({ length: count }, (_, i) => formatMsToInput(values[i])),
       };
     });
   } else if (initial?.bestLapMs != null && Number.isFinite(initial.bestLapMs)) {
     laps = [
-      { lapTime: formatMsToInput(initial.bestLapMs), s1: "", s2: "", s3: "" },
+      {
+        lapTime: formatMsToInput(initial.bestLapMs),
+        sectors: Array.from({ length: initial.sectorCount ?? 3 }, () => ""),
+      },
     ];
   } else {
-    laps = [{ lapTime: "", s1: "", s2: "", s3: "" }];
+    laps = [{ lapTime: "", sectors: ["", "", ""] }];
   }
   const kindRaw = initial?.manualSessionKind?.trim().toUpperCase();
   const manualSessionKind =
@@ -380,6 +386,7 @@ function buildDefaults(
       initial?.qualifyingPosition != null
         ? String(initial.qualifyingPosition)
         : "",
+    sectorCount: String(initial?.sectorCount ?? 3),
     laps,
     caption: initial?.caption ?? "",
     conditions:
@@ -443,6 +450,7 @@ export default function ManualActivityForm({
   const stackedLapLayout = useStackedLapLayout();
 
   const sim = form.watch("sim") as ManualActivitySim | "";
+  const sectorCount = Math.max(0, Math.min(64, Number(form.watch("sectorCount")) || 0));
   const sessionKind = form.watch("manualSessionKind");
   const conditions = form.watch("conditions");
   const lapsWatch = useWatch({ control: form.control, name: "laps" });
@@ -461,7 +469,7 @@ export default function ManualActivityForm({
   }, [initialData]);
 
   /**
-   * Keep Total in step with the three sectors as they are typed. Only ever
+   * Keep Total in step with all configured sectors as they are typed. Only ever
    * touches a Total this form filled in, so a hand-typed or prefilled value
    * survives until the sectors themselves produce a complete lap.
    */
@@ -470,15 +478,15 @@ export default function ManualActivityForm({
     const row = form.getValues(`laps.${index}`);
     if (!row) return;
 
-    const s1Ms = parseSectorTimeToMs(row.s1 ?? "");
-    const s2Ms = parseSectorTimeToMs(row.s2 ?? "");
-    const s3Ms = parseSectorTimeToMs(row.s3 ?? "");
+    const parsed = row.sectors.map((value) => parseSectorTimeToMs(value ?? ""));
     const current = row.lapTime ?? "";
-    const complete = s1Ms != null && s2Ms != null && s3Ms != null;
+    const complete = parsed.length > 0 && parsed.every((value) => value != null);
 
     if (!complete && !autoFilledTotalsRef.current.has(index)) return;
 
-    const next = complete ? formatMsToLapTime(s1Ms + s2Ms + s3Ms) : "";
+    const next = complete
+      ? formatMsToLapTime((parsed as number[]).reduce((sum, value) => sum + value, 0))
+      : "";
     if (complete) autoFilledTotalsRef.current.add(index);
     else autoFilledTotalsRef.current.delete(index);
 
@@ -557,6 +565,30 @@ export default function ManualActivityForm({
     remove(index);
   }
 
+  function changeSectorCount(nextCount: number) {
+    if (initialData?.sectorLayoutLocked) return;
+    const currentCount = sectorCount;
+    if (
+      nextCount < currentCount &&
+      form
+        .getValues("laps")
+        .some((row) => row.sectors.slice(nextCount).some((value) => value.trim()))
+    ) {
+      if (!window.confirm("Reducing the sector count will discard removed sector values. Continue?")) {
+        return;
+      }
+    }
+    form.setValue("sectorCount", String(nextCount), { shouldDirty: true, shouldValidate: true });
+    form.getValues("laps").forEach((row, index) => {
+      form.setValue(
+        `laps.${index}.sectors`,
+        Array.from({ length: nextCount }, (_, sectorIndex) => row.sectors[sectorIndex] ?? ""),
+        { shouldDirty: true, shouldValidate: form.formState.isSubmitted },
+      );
+      syncTotalFromSectors(index);
+    });
+  }
+
   const {
     tracks,
     cars,
@@ -612,9 +644,7 @@ export default function ManualActivityForm({
         if (lapTimeMs == null) return null;
         return {
           lapTimeMs,
-          sector1Ms: parseSectorTimeToMs(r.s1),
-          sector2Ms: parseSectorTimeToMs(r.s2),
-          sector3Ms: parseSectorTimeToMs(r.s3),
+          sectorTimesMs: r.sectors.map(parseSectorTimeToMs),
         };
       })
       .filter(
@@ -622,9 +652,7 @@ export default function ManualActivityForm({
           row,
         ): row is {
           lapTimeMs: number;
-          sector1Ms: number | null;
-          sector2Ms: number | null;
-          sector3Ms: number | null;
+          sectorTimesMs: (number | null)[];
         } => row != null,
       );
 
@@ -648,6 +676,7 @@ export default function ManualActivityForm({
           ? qualiNum
           : undefined,
       laps: lapsOut,
+      sectorCount,
       caption: values.caption.trim(),
       conditions: values.conditions,
     });
@@ -671,10 +700,10 @@ export default function ManualActivityForm({
       lockedOutLap,
       totalInvalid: !lockedOutLap && rawTotal !== "" && totalMs === null,
       totalValid: !lockedOutLap && totalMs !== null,
-      sectors: (["s1", "s2", "s3"] as const).map((name) => {
-        const raw = (row?.[name] ?? "").trim();
+      sectors: Array.from({ length: sectorCount }, (_, sectorIndex) => {
+        const raw = (row?.sectors?.[sectorIndex] ?? "").trim();
         return {
-          name,
+          index: sectorIndex,
           invalid: !lockedOutLap && raw !== "" && !isValidSectorTimeFormat(raw),
         };
       }),
@@ -705,19 +734,19 @@ export default function ManualActivityForm({
 
   function renderSectorField(
     index: number,
-    sector: "s1" | "s2" | "s3",
+    sectorIndex: number,
     options: { disabled: boolean; invalid: boolean },
   ) {
     return (
       <FormField
         control={form.control}
-        name={`laps.${index}.${sector}`}
+        name={`laps.${index}.sectors.${sectorIndex}`}
         render={({ field }) => (
           <LapTableCellField
             field={field}
             displayClassName={CELL_SECTOR_CLASS}
             placeholder="--.---"
-            ariaLabel={`Lap ${index + 1} sector ${sector.toUpperCase()}`}
+            ariaLabel={`Lap ${index + 1} sector ${sectorIndex + 1}`}
             disabled={options.disabled}
             invalid={options.invalid}
             onUserChange={() => syncTotalFromSectors(index)}
@@ -771,7 +800,12 @@ export default function ManualActivityForm({
       <button
         type="button"
         disabled={isSubmitting || !canAddLap}
-        onClick={() => append({ lapTime: "", s1: "", s2: "", s3: "" })}
+        onClick={() =>
+          append({
+            lapTime: "",
+            sectors: Array.from({ length: sectorCount }, () => ""),
+          })
+        }
         className={cn(
           className,
           "font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant transition-colors hover:text-apex-on-surface disabled:opacity-40",
@@ -858,6 +892,7 @@ export default function ManualActivityForm({
                     onChange={(e) => {
                       const v = e.target.value;
                       field.onChange(v);
+                      if (v === "F1_25" || v === "LMU") changeSectorCount(3);
                       form.setValue("trackId", "");
                       form.setValue("carId", "");
                       setPendingRecent(null);
@@ -1184,6 +1219,61 @@ export default function ManualActivityForm({
           title="Lap history"
           description={lapHistoryDescription}
         >
+          {sim === "IRACING" && (
+            <FormField
+              control={form.control}
+              name="sectorCount"
+              render={({ field }) => (
+                <FormItem className="max-w-xs">
+                  <FormLabel htmlFor="sectorCount" className={LABEL_CLASS}>
+                    Sectors per lap
+                  </FormLabel>
+                  <FormControl>
+                    <input
+                      {...field}
+                      id="sectorCount"
+                      type="number"
+                      min={0}
+                      max={64}
+                      inputMode="numeric"
+                      disabled={
+                        isSubmitting ||
+                        initialData?.sectorLayoutLocked === true
+                      }
+                      className={INPUT_CLASS}
+                      onChange={(event) => {
+                        const raw = event.target.value;
+                        // Keep the controlled input empty while the user
+                        // backspaces. Applying 0 here can open the destructive
+                        // sector-removal confirmation and make the field seem
+                        // stuck at its previous value.
+                        if (raw === "") {
+                          field.onChange(event);
+                          return;
+                        }
+                        const value = Number(raw);
+                        if (
+                          Number.isInteger(value) &&
+                          value >= 0 &&
+                          value <= 64
+                        ) {
+                          changeSectorCount(value);
+                        } else {
+                          field.onChange(event);
+                        }
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs text-apex-error" />
+                  <p className="text-[11px] text-apex-on-surface-variant/60">
+                    {initialData?.sectorLayoutLocked
+                      ? "Recorded telemetry layout cannot be changed."
+                      : "Use 0 for no sector data, or 1–64."}
+                  </p>
+                </FormItem>
+              )}
+            />
+          )}
           {stackedLapLayout ? (
             // Phone: one card per lap. The six-column table cannot fit sector and
             // total times side by side at this width without squashing them.
@@ -1218,13 +1308,13 @@ export default function ManualActivityForm({
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {lap.sectors.map((sector) => (
                       <div
-                        key={sector.name}
+                        key={sector.index}
                         className="rounded-lg border border-apex-outline-variant/20 bg-apex-surface-container-low px-2 py-1.5"
                       >
                         <span className="mb-1 block text-center font-apex-headline text-[9px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
-                          {sector.name.toUpperCase()}
+                          S{sector.index + 1}
                         </span>
-                        {renderSectorField(lap.index, sector.name, {
+                        {renderSectorField(lap.index, sector.index, {
                           disabled: isSubmitting || lap.lockedOutLap,
                           invalid: sector.invalid,
                         })}
@@ -1253,20 +1343,18 @@ export default function ManualActivityForm({
             </div>
           ) : (
             /* Loveable-style monospace lap table: Lap | S1 | S2 | S3 | Total. */
-            <div className="overflow-hidden rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
-              <table className="w-full table-fixed border-collapse text-left">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-apex-outline-variant/30 bg-apex-surface-container">
+              <table className="w-max min-w-full border-collapse text-left">
                 <thead className="border-b border-apex-outline-variant/30 bg-white/5">
                   <tr className="font-apex-headline text-[10px] font-bold uppercase tracking-widest text-apex-on-surface-variant">
-                    <th className="w-[13%] px-2 py-2.5">Lap</th>
-                    <th className="px-1 py-2.5 text-center">
-                      S1 <span className="font-normal opacity-50">(opt)</span>
+                    <th className="sticky left-0 z-20 min-w-20 bg-apex-surface-container px-2 py-2.5">
+                      Lap
                     </th>
-                    <th className="px-1 py-2.5 text-center">
-                      S2 <span className="font-normal opacity-50">(opt)</span>
-                    </th>
-                    <th className="px-1 py-2.5 text-center">
-                      S3 <span className="font-normal opacity-50">(opt)</span>
-                    </th>
+                    {Array.from({ length: sectorCount }, (_, index) => (
+                      <th key={index} className="min-w-24 px-1 py-2.5 text-center">
+                        S{index + 1} <span className="font-normal opacity-50">(opt)</span>
+                      </th>
+                    ))}
                     <th className="px-2 py-2.5 text-right">Total</th>
                     {canRemoveLap && <th className="w-[9%] px-1 py-2.5" />}
                   </tr>
@@ -1281,15 +1369,15 @@ export default function ManualActivityForm({
                           : "border-b border-apex-outline-variant/15 last:border-b-0"
                       }
                     >
-                      <td className="p-3 align-middle font-apex-headline text-sm font-bold text-apex-on-surface">
+                      <td className="sticky left-0 z-10 bg-apex-surface-container p-3 align-middle font-apex-headline text-sm font-bold text-apex-on-surface">
                         <span className="inline-flex flex-col gap-0.5">
                           {String(lap.index + 1).padStart(2, "0")}
                           {renderOutLapBadge(lap.isOutLap, lap.lockedOutLap)}
                         </span>
                       </td>
-                      {lap.sectors.map((sector) => (
-                        <td key={sector.name} className="p-3 align-middle">
-                          {renderSectorField(lap.index, sector.name, {
+                    {lap.sectors.map((sector) => (
+                      <td key={sector.index} className="p-3 align-middle">
+                          {renderSectorField(lap.index, sector.index, {
                             disabled: isSubmitting || lap.lockedOutLap,
                             invalid: sector.invalid,
                           })}
@@ -1343,13 +1431,9 @@ export default function ManualActivityForm({
               `laps.${index}.lapTime`,
               formState,
             ).error;
-            const sectorErr = (["s1", "s2", "s3"] as const)
-              .map(
-                (sector) =>
-                  form.getFieldState(`laps.${index}.${sector}`, formState).error
-                    ?.message,
-              )
-              .find((m): m is string => typeof m === "string");
+            const sectorErr = fieldErrorMessage(
+              form.getFieldState(`laps.${index}.sectors`, formState).error,
+            );
             const message =
               (typeof totalErr?.message === "string" && totalErr.message) ||
               sectorErr;

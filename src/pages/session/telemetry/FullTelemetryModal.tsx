@@ -20,6 +20,7 @@ const MODAL_CHART_HEIGHT = 200;
 export type SectorLapTimes = {
   lap: number;
   timeMs: number;
+  sectorTimesMs: (number | null)[];
   sector1Ms?: number | null;
   sector2Ms?: number | null;
   sector3Ms?: number | null;
@@ -47,6 +48,8 @@ type FullTelemetryModalProps = {
   onSelectLap: (lapNumber: number) => void;
   onSelectCompare: (lapNumber: number | null) => void;
   sectorTimes: SectorLapTimes[];
+  /** Session native split starts (iRacing SplitTimeInfo). Empty → duration fallback. */
+  sectorStartsPct?: number[] | null;
 };
 
 export default function FullTelemetryModal({
@@ -60,6 +63,7 @@ export default function FullTelemetryModal({
   onSelectLap,
   onSelectCompare,
   sectorTimes,
+  sectorStartsPct,
 }: FullTelemetryModalProps) {
   // Which stacked traces are currently shown. Deferred so rapid pill toggling
   // stays responsive while the (heavier) uPlot work catches up.
@@ -86,9 +90,8 @@ export default function FullTelemetryModal({
     isOpen && compareLap != null,
   );
 
-  // Derive sector-band distances (km) from the selected lap's real data. Uses
-  // the same clamped distance domain the charts plot, and returns null when the
-  // reconstruction cannot be trusted (bands are simply omitted then).
+  // Native SplitTimeInfo starts map onto the plotted distance domain. Missing
+  // or invalid starts fall back to duration reconstruction (never 33/66).
   const sectorBandsKm = useMemo(() => {
     if (selectedLap == null) return null;
     const lap = sectorTimes.find((l) => l.lap === selectedLap);
@@ -101,14 +104,16 @@ export default function FullTelemetryModal({
       mono.distanceM,
       mono.speedKmh ?? [],
       {
+        sectorTimesMs: lap.sectorTimesMs,
         sector1Ms: lap.sector1Ms,
         sector2Ms: lap.sector2Ms,
         sector3Ms: lap.sector3Ms,
         lapTimeMs: lap.timeMs || traces.lapTimeMs,
       },
+      { sectorStartsPct },
     );
     return boundariesM ? boundariesM.map((m) => m / 1000) : null;
-  }, [selectedLap, sectorTimes, traces]);
+  }, [selectedLap, sectorTimes, traces, sectorStartsPct]);
 
   function toggle(id: DrivingChartId) {
     setVisible((prev) => {

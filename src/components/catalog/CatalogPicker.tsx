@@ -194,7 +194,7 @@ const CatalogPicker = forwardRef<HTMLButtonElement, CatalogPickerProps>(
                 role="option"
                 aria-selected={false}
                 onClick={() => select("")}
-                className="flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm text-apex-on-surface-variant hover:bg-apex-surface-container-high"
+                className="flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm text-apex-on-surface-variant transition-colors hover:bg-apex-primary/10 hover:text-apex-primary focus-visible:bg-apex-primary/10 focus-visible:text-apex-primary focus-visible:outline-none"
               >
                 Clear selection
               </button>
@@ -238,7 +238,7 @@ const CatalogPicker = forwardRef<HTMLButtonElement, CatalogPickerProps>(
                   onClick={() => select(option.id)}
                   className={cn(
                     "flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 text-left text-sm text-apex-on-surface transition-colors",
-                    "hover:bg-apex-surface-container-high focus:bg-apex-surface-container-high focus:outline-none",
+                    "hover:bg-apex-primary/10 hover:text-apex-primary focus:bg-apex-primary/10 focus:text-apex-primary focus:outline-none",
                     isSelected && "bg-apex-primary/10",
                   )}
                 >

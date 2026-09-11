@@ -65,6 +65,7 @@ import {
   telemetryOverviewFromTraces,
 } from "./session/telemetry/telemetryOverviewHelpers";
 import SessionTelemetrySkeleton from "./session/telemetry/SessionTelemetrySkeleton";
+import { coerceSectorTimesMs, isLegacyEstimatedSectorSource } from "@/lib/sectors";
 
 const SessionTelemetry = lazy(() =>
   import(
@@ -203,10 +204,22 @@ export default function SessionDetail() {
       .sort((a, b) => a.lap - b.lap);
   }, [session]);
 
-  const sessionMinima = useMemo(
-    () => session?.sessionTimingMinima ?? EMPTY_SESSION_TIMING_MINIMA,
-    [session?.sessionTimingMinima],
-  );
+  const sessionMinima = useMemo(() => {
+    const raw = session?.sessionTimingMinima;
+    if (!raw) return EMPTY_SESSION_TIMING_MINIMA;
+    return {
+      ...raw,
+      sectorTimesMs: coerceSectorTimesMs(
+        raw.sectorTimesMs,
+        {
+          sector1Ms: raw.s1Ms,
+          sector2Ms: raw.s2Ms,
+          sector3Ms: raw.s3Ms,
+        },
+        session?.sectorCount,
+      ),
+    };
+  }, [session?.sessionTimingMinima, session?.sectorCount]);
 
   const lapHighlights = useMemo(() => {
     if (laps.length === 0) return new Map();
@@ -222,11 +235,13 @@ export default function SessionDetail() {
     const fromApi = session.idealLap?.lapTimeMs;
     if (fromApi != null && Number.isFinite(fromApi)) return fromApi;
     if (
-      sessionMinima.s1Ms != null &&
-      sessionMinima.s2Ms != null &&
-      sessionMinima.s3Ms != null
+      sessionMinima.sectorTimesMs.length > 0 &&
+      sessionMinima.sectorTimesMs.every((value) => value != null)
     ) {
-      return sessionMinima.s1Ms + sessionMinima.s2Ms + sessionMinima.s3Ms;
+      return (sessionMinima.sectorTimesMs as number[]).reduce(
+        (sum, value) => sum + value,
+        0,
+      );
     }
     return sessionMinima.lapMs;
   }, [session, sessionMinima]);
@@ -437,14 +452,14 @@ export default function SessionDetail() {
     overviewRows.push({
       label: "Air temp",
       scope: "session",
-      value: `${telemetrySummary.sessionMeta.airTempC}°C`,
+      value: `${telemetrySummary.sessionMeta.airTempC.toFixed(1)}°C`,
     });
   }
   if (telemetrySummary?.sessionMeta?.trackTempC != null) {
     overviewRows.push({
       label: "Track temp",
       scope: "session",
-      value: `${telemetrySummary.sessionMeta.trackTempC}°C`,
+      value: `${telemetrySummary.sessionMeta.trackTempC.toFixed(1)}°C`,
     });
   }
 
@@ -574,6 +589,7 @@ export default function SessionDetail() {
           sessionMinima={sessionMinima}
           idealLapMs={idealLapMs}
           proFeaturesLocked={sectorsLocked}
+          legacyEstimated={isLegacyEstimatedSectorSource(session.sectorTimingSource)}
         />
 
         {!sessionHydrated ? (
@@ -609,6 +625,7 @@ export default function SessionDetail() {
             selectedLap={selectedLap}
             onSelectLap={onSelectLap}
             hideSectorColumns={sectorsLocked}
+            sectorCount={session.sectorCount ?? 0}
           />
         </section>
 
@@ -634,6 +651,7 @@ export default function SessionDetail() {
             selectedLap={selectedLap}
             onSelectLap={onSelectLap}
             bestLapLapNumber={session.bestLapLapNumber}
+            sectorStartsPct={session.sectorStartsPct}
           />
         </PageSuspense>
 
