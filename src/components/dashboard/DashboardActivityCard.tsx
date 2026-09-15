@@ -27,6 +27,10 @@ import SessionSocialActionBar from "@/pages/session/SessionSocialActionBar";
 import { useSessionLike } from "@/hooks/useSessionLike";
 import { preloadSessionDetail } from "@/routes/routePreload";
 import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
+import {
+  parseApexFeedHeadline,
+  type ApexAnalysisV2FeedPayload,
+} from "@/features/session-detail/apexAnalysisDisplay";
 
 const UNKNOWN_CAR_LABEL = "Unknown";
 
@@ -284,6 +288,7 @@ export type DashboardActivityCardProps = {
   timestamp: string;
   profileUserId?: string | null;
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  apexAnalysisV2?: ApexAnalysisV2FeedPayload | null;
   caption?: string | null;
   likeCount?: number;
   commentCount?: number;
@@ -314,6 +319,7 @@ export default memo(function DashboardActivityCard(
     timestamp,
     profileUserId,
     apexAnalysis,
+    apexAnalysisV2,
     caption,
     likeCount = 0,
     commentCount = 0,
@@ -338,8 +344,9 @@ export default memo(function DashboardActivityCard(
       manualSessionKind: props.manualSessionKind,
     });
 
-  const embeddedInsight =
-    isPro && apexAnalysis?.insights?.length ? apexAnalysis.insights[0] : null;
+  const embeddedInsight = isPro
+    ? parseApexFeedHeadline(apexAnalysisV2, apexAnalysis)
+    : null;
 
   const warmDetail = useCallback(() => {
     void preloadSessionDetail();

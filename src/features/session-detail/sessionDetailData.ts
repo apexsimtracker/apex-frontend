@@ -9,7 +9,11 @@ import {
   type LapTimingHighlights,
   type SessionTimingMinima,
 } from "@/lib/sessionLapDisplay";
-import { type ApexAnalysisPayload } from "@/features/session-detail/apexAnalysisDisplay";
+import {
+  type ApexAnalysisPayload,
+  type ApexAnalysisV2Payload,
+  parseApexAnalysisV2Payload,
+} from "@/features/session-detail/apexAnalysisDisplay";
 import type { SectorTimingSource } from "@/lib/sectors";
 import { coerceSectorTimesMs } from "@/lib/sectors";
 
@@ -172,6 +176,8 @@ type SessionDetailResponse =
       sim?: string | null;
       proFeaturesLocked?: boolean;
       ingestPath?: string | null;
+      apexAnalysis?: unknown;
+      apexAnalysisV2?: unknown;
     };
 
 export type ParsedSessionDetail = {
@@ -179,6 +185,8 @@ export type ParsedSessionDetail = {
   proFeaturesLocked: boolean;
   /** Null when the viewer is not the session owner. */
   apexAnalysis: ApexAnalysisPayload | null;
+  /** Additive structured coaching payload; null for non-owners or invalid data. */
+  apexAnalysisV2: ApexAnalysisV2Payload | null;
 };
 
 function attachNormalizedLaps(
@@ -259,12 +267,17 @@ export function parseSessionDetailApiResponse(
         (d as { proFeaturesLocked?: boolean }).proFeaturesLocked,
       ),
       apexAnalysis: apexRaw,
+      apexAnalysisV2: parseApexAnalysisV2Payload(
+        (d as { apexAnalysisV2?: unknown }).apexAnalysisV2 ??
+          (mergedSession as { apexAnalysisV2?: unknown }).apexAnalysisV2,
+      ),
     };
   }
 
   const flat = data as SessionDetail & {
     proFeaturesLocked?: boolean;
     apexAnalysis?: unknown;
+    apexAnalysisV2?: unknown;
     ingestPath?: string | null;
     laps?: unknown[];
   };
@@ -273,6 +286,7 @@ export function parseSessionDetailApiResponse(
     session: attachNormalizedLaps(flat, flatLaps),
     proFeaturesLocked: Boolean(flat.proFeaturesLocked),
     apexAnalysis: normalizeApexAnalysisPayload(flat.apexAnalysis),
+    apexAnalysisV2: parseApexAnalysisV2Payload(flat.apexAnalysisV2),
   };
 }
 

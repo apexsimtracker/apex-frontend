@@ -11,6 +11,7 @@ import { bumpSessionCommentCountInCaches } from "@/lib/sessionSocialCache";
 import { sessionDetailQueryKey } from "@/lib/sessions/sessionDetailPrefetch";
 import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildSessionShareText } from "@/lib/sessionShareText";
+import type { ApexAnalysisV2FeedPayload } from "@/features/session-detail/apexAnalysisDisplay";
 
 const SessionShareModal = lazy(() =>
   import(
@@ -33,6 +34,7 @@ export type ActivityFeedSession = SessionItem & {
   carName?: string | null;
   trackName?: string | null;
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  apexAnalysisV2?: ApexAnalysisV2FeedPayload | null;
 };
 
 function getActivityFeedItemKey(item: ActivityFeedItem): string {
@@ -135,6 +137,9 @@ function renderActivityCard(
       timestamp={timeAgo(session.createdAt)}
       apexAnalysis={
         isCurrentUsersSession ? (session.apexAnalysis ?? null) : null
+      }
+      apexAnalysisV2={
+        isCurrentUsersSession ? (session.apexAnalysisV2 ?? null) : null
       }
       caption={session.caption ?? null}
       likeCount={session.likeCount ?? 0}

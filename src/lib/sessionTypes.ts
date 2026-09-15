@@ -1,3 +1,5 @@
+import type { ApexAnalysisV2FeedPayload } from "@/features/session-detail/apexAnalysisDisplay";
+
 /** Shared feed row type for activity/session cards and weekend display helpers. */
 export type SessionItem = {
   id: string;
@@ -44,6 +46,8 @@ export type SessionItem = {
   totalTimeMs?: number | null;
   /** Gated Apex Analysis insights from home feed (Pro viewers only). */
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  /** Concise structured analysis summary for the owning Pro user. */
+  apexAnalysisV2?: ApexAnalysisV2FeedPayload | null;
   /** Public owner/admin caption shown on cards. */
   caption?: string | null;
 };

@@ -165,6 +165,7 @@ export default function SessionDetail() {
 
   const session = sessionPayload?.session ?? null;
   const apexAnalysis = sessionPayload?.apexAnalysis ?? null;
+  const apexAnalysisV2 = sessionPayload?.apexAnalysisV2 ?? null;
   const proFeaturesLocked = sessionPayload?.proFeaturesLocked ?? false;
   /** Seeded list rows omit laps; full GET always includes a laps array. */
   const sessionHydrated = Array.isArray(session?.laps);
@@ -337,18 +338,13 @@ export default function SessionDetail() {
   /** Auth is settled via ProtectedRoute; lock sectors for free viewers. */
   const sectorsLocked = !isPro || proFeaturesLocked;
 
-  const apexDisplay = parseApexAnalysisDisplay(apexAnalysis);
-  const apexLocked = apexDisplay.locked;
-  const apexTitle = apexLocked
-    ? "Pro insight"
-    : apexDisplay.insights.length > 0
-      ? "Session insight"
-      : "No analysis yet";
-  const apexBody = apexLocked
-    ? (apexDisplay.message ?? "Upgrade to Apex Pro to unlock Apex Analysis.")
-    : apexDisplay.insights.length > 0
-      ? apexDisplay.insights.join(" ")
-      : "Apex Analysis will appear here once insights are available for this session.";
+  const apexDisplay = parseApexAnalysisDisplay(
+    apexAnalysis,
+    apexAnalysisV2,
+  );
+  const canFocusApexTargetLap =
+    apexDisplay.targetLapNumber != null &&
+    laps.some((lap) => lap.lap === apexDisplay.targetLapNumber);
 
   const bestLapMsFromLaps = sessionMinima.lapMs ?? session.bestLapMs ?? null;
   const visibleLaps = showAllLaps ? laps : laps.slice(0, 6);
@@ -630,9 +626,7 @@ export default function SessionDetail() {
         </section>
 
         <SessionDetailAnalysisGrid
-          apexTitle={apexTitle}
-          apexBody={apexBody}
-          apexLocked={apexLocked}
+          apexAnalysis={apexDisplay}
           apexConsistencyText={consistencyText}
           tireWearText={
             wearPct != null ? `${Math.round(wearPct)}%` : "—"
@@ -641,6 +635,12 @@ export default function SessionDetail() {
           overviewLapNumber={overviewLap}
           showTelemetryOverview={hasTelemetryOverviewData}
           showApexAnalysis={isOwner}
+          canFocusTargetLap={canFocusApexTargetLap}
+          onFocusTargetLap={() => {
+            if (apexDisplay.targetLapNumber != null) {
+              setSelectedLap(apexDisplay.targetLapNumber);
+            }
+          }}
         />
 
         <PageSuspense fallback={<SessionTelemetrySkeleton />}>

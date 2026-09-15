@@ -204,6 +204,11 @@ export default memo(function BundledActivityCard({
               ? (sessionAny.apexAnalysis ?? null)
               : null
           }
+          apexAnalysisV2={
+            currentHeader.isCurrentUsersSession
+              ? (sessionAny.apexAnalysisV2 ?? null)
+              : null
+          }
           caption={sessionAny.caption ?? null}
           likeCount={currentSession.likeCount ?? 0}
           commentCount={currentSession.commentCount ?? 0}
