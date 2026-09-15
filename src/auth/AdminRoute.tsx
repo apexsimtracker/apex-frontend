@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AuthRedirectState } from "./authRedirect";
+import { isImpersonating } from "@/lib/impersonation";
 
 type AdminRouteProps = {
   /** Shown on the login page after redirect */
@@ -24,7 +25,7 @@ export default function AdminRoute({ message }: AdminRouteProps) {
     return <Navigate to="/login" replace state={state} />;
   }
 
-  if (user.role !== "ADMIN") {
+  if (isImpersonating() || user.role !== "ADMIN") {
     return <Navigate to="/" replace />;
   }
 

@@ -21,16 +21,9 @@ import {
   postAdminUserSetPassword,
   type AdminUserDetailResponse,
 } from "@/lib/api";
-import { postAdminSubscriptionSync } from "@/lib/api/adminSubscriptions";
-import {
-  APEX_TOKEN_ADMIN_KEY,
-  LEGACY_SESSION_ADMIN_BACKUP_KEY,
-} from "@/lib/impersonation";
-import {
-  APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
-  APEX_SESSION_TOKEN_KEY,
-  persistSessionTokenFromAuthPayload,
-} from "@/auth/token";
+import { postAdminSubscriptionSync, createAdminBetaAccess } from "@/lib/api/adminSubscriptions";
+import { backupAdminCredentialsForImpersonation } from "@/lib/impersonation";
+import { persistSessionTokenFromAuthPayload } from "@/auth/token";
 import { ApiError } from "@/lib/api/errors";
 import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
@@ -149,9 +142,17 @@ function CopyableId({ label, value }: { label: string; value: string | null }) {
 
 function AdminUserSubscriptionSection({
   userId,
+  userEmail,
+  isBetaUser,
+  betaTrialStartedAt,
+  betaTrialExpiresAt,
   subscription,
 }: {
   userId: string;
+  userEmail: string;
+  isBetaUser: boolean;
+  betaTrialStartedAt: string | null;
+  betaTrialExpiresAt: string | null;
   subscription: AdminUserDetailResponse["user"]["subscription"];
 }) {
   const queryClient = useQueryClient();
@@ -161,12 +162,29 @@ function AdminUserSubscriptionSection({
     staleTime: 300_000,
   });
 
+  const grantMutation = useMutation({
+    mutationFn: () =>
+      createAdminBetaAccess({ email: userEmail, durationDays: 30 }),
+    onSuccess: async () => {
+      toast.success("Complimentary Pro granted (30 days)");
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "users", "detail", userId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["admin", "subscriptions"],
+      });
+    },
+    onError: (e) => {
+      toast.error(e instanceof ApiError ? e.message : "Grant failed");
+    },
+  });
+
   const syncMutation = useMutation({
     mutationFn: () => postAdminSubscriptionSync(userId),
     onSuccess: async () => {
       toast.success("Subscription synced from RevenueCat");
       await queryClient.invalidateQueries({
-        queryKey: ["admin", "user", userId],
+        queryKey: ["admin", "users", "detail", userId],
       });
       await queryClient.invalidateQueries({
         queryKey: ["admin", "subscriptions"],
@@ -208,6 +226,18 @@ function AdminUserSubscriptionSection({
             )}
             Sync from RevenueCat
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={grantMutation.isPending}
+            onClick={() => grantMutation.mutate()}
+          >
+            {grantMutation.isPending ? (
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+            ) : null}
+            Grant 30-day Pro
+          </Button>
         </div>
       </div>
 
@@ -222,9 +252,29 @@ function AdminUserSubscriptionSection({
         <BillingIntervalChip interval={subscription.billingInterval} />
         <CancelAtPeriodEndBadge active={subscription.cancelAtPeriodEnd} />
         <StaleSyncBadge stale={subscription.isSyncStale} />
+        {isBetaUser ? (
+          <span className="inline-flex rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-100">
+            Complimentary / beta
+          </span>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <p className={LABEL}>Complimentary window</p>
+          <p className="mt-1 text-sm text-foreground">
+            {isBetaUser
+              ? betaTrialExpiresAt
+                ? `Until ${new Date(betaTrialExpiresAt).toLocaleString()}`
+                : "Flagged (no expiry on file)"
+              : "—"}
+          </p>
+          {betaTrialStartedAt ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Started {new Date(betaTrialStartedAt).toLocaleString()}
+            </p>
+          ) : null}
+        </div>
         <div>
           <p className={LABEL}>Access until</p>
           <p className="mt-1 text-sm text-foreground">
@@ -280,8 +330,14 @@ function AdminUserSubscriptionSection({
         </p>
       ) : (
         <p className="mt-4 text-xs text-muted-foreground">
-          No Stripe customer id on file. Use RevenueCat dashboard with the app
-          user id above.
+          Complimentary Pro is granted from this page or{" "}
+          <Link
+            to="/admin/subscriptions"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Subscriptions
+          </Link>
+          . Paid entitlements are synced from RevenueCat.
         </p>
       )}
     </div>
@@ -658,34 +714,12 @@ export default function AdminUserDetail() {
     setModError(null);
     try {
       const res = await postAdminUserImpersonate(targetId);
-      const cur =
-        typeof localStorage !== "undefined"
-          ? localStorage.getItem("apex_token")
-          : null;
-      if (cur) localStorage.setItem(APEX_TOKEN_ADMIN_KEY, cur);
-      try {
-        sessionStorage.removeItem(LEGACY_SESSION_ADMIN_BACKUP_KEY);
-      } catch {
-        /* ignore */
-      }
+      backupAdminCredentialsForImpersonation();
       localStorage.setItem("apex_token", res.token);
-      const curSession =
-        typeof localStorage !== "undefined"
-          ? localStorage.getItem(APEX_SESSION_TOKEN_KEY)
-          : null;
-      if (curSession?.trim()) {
-        localStorage.setItem(
-          APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY,
-          curSession.trim(),
-        );
-      } else {
-        localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
-      }
       persistSessionTokenFromAuthPayload({});
-      window.dispatchEvent(
-        new CustomEvent("apex:auth", { detail: { impersonation: true } }),
-      );
-      navigate("/", { replace: true });
+      // Full document load: a SPA navigation would leave already-mounted query observers holding
+      // the admin's data, so parts of the UI would keep rendering the wrong identity.
+      window.location.assign("/");
     } catch (e) {
       setModError(
         e instanceof ApiError ? e.message : "Could not start impersonation",
@@ -1023,6 +1057,10 @@ export default function AdminUserDetail() {
 
           <AdminUserSubscriptionSection
             userId={u.id}
+            userEmail={u.email}
+            isBetaUser={Boolean(u.isBetaUser)}
+            betaTrialStartedAt={u.betaTrialStartedAt ?? null}
+            betaTrialExpiresAt={u.betaTrialExpiresAt ?? null}
             subscription={u.subscription}
           />
 
@@ -1221,16 +1259,16 @@ export default function AdminUserDetail() {
                   title="View as this user"
                   description="Browse the product as this member. Your admin recovery token is stored in the browser."
                   hint={
-                    u.role === "ADMIN"
-                      ? "Impersonation is off for staff admin accounts."
-                      : isSelf(u.id)
-                        ? "You cannot impersonate yourself."
-                        : u.suspendedAt
-                          ? "Suspended accounts cannot be impersonated."
+                    isSelf(u.id)
+                      ? "You cannot impersonate yourself."
+                      : u.suspendedAt
+                        ? "Suspended accounts cannot be impersonated."
+                        : u.role === "ADMIN"
+                          ? "You will browse the product as this admin. Admin APIs stay blocked until you stop."
                           : undefined
                   }
                   tooltipLabel="About impersonation"
-                  tooltipBody="Issues a short-lived session as this user. Use Back to admin when finished."
+                  tooltipBody="Issues a short-lived session as this user. Use Stop impersonating in the banner when finished."
                 >
                   <Button
                     type="button"
@@ -1239,7 +1277,6 @@ export default function AdminUserDetail() {
                     disabled={
                       impersonateBusy ||
                       Boolean(u.suspendedAt) ||
-                      u.role === "ADMIN" ||
                       isSelf(u.id)
                     }
                     onClick={() => startImpersonation(id)}
@@ -1281,11 +1318,11 @@ export default function AdminUserDetail() {
                     <Info className="size-3.5" />
                   </span>
                   <p className="min-w-0 flex-1">
-                    When you open a support session, use the floating{" "}
+                    When you open a support session, use the sticky{" "}
                     <strong className="font-medium text-foreground/95">
-                      Back to admin
+                      Stop impersonating
                     </strong>{" "}
-                    control (bottom-right) to return to this console.
+                    banner to return to this console without signing in again.
                   </p>
                 </div>
               </div>

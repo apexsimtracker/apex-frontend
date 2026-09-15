@@ -1,10 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { clearGuestSession, gotoAuthenticated } from "./helpers/auth";
 import {
   fetchAdminSubscriptionListViaApi,
   fetchOpenModerationFlagsViaAdminApi,
   lookupAdminUserByEmail,
   patchSystemFeatureViaAdminApi,
+  patchUserRoleViaAdminApi,
   patchUserStatusViaAdminApi,
   postManualUploadJsonViaApi,
   syncSubscriptionViaAdminApi,
@@ -17,6 +18,20 @@ import { getE2eEnv, isBillingConfigured } from "./helpers/env";
 import { ensureProSeedHasPro } from "./helpers/billing";
 import { loginPersona } from "./helpers/personas";
 import { uploadSessionJsonViaApi } from "./helpers/sessions";
+
+/** Resolves once the SPA loads GET /api/auth/me as `userId` (identity actually switched). */
+function waitForAuthMeIdentity(page: Page, userId: string): Promise<unknown> {
+  return page.waitForResponse(
+    async (res) => {
+      if (!res.url().includes("/api/auth/me") || !res.ok()) return false;
+      const body = (await res.json().catch(() => null)) as {
+        id?: string;
+      } | null;
+      return body?.id === userId;
+    },
+    { timeout: 30_000 },
+  );
+}
 
 const METRIC_SECTIONS = [
   "Accounts",
@@ -412,12 +427,18 @@ test.describe("@admin", () => {
         res.request().method() === "POST" &&
         res.ok(),
     );
+    const meAsTarget = waitForAuthMeIdentity(page, standardUser!.id);
     await page.getByRole("button", { name: "Open session" }).click();
     await impersonatePost;
 
     await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
     await expect(
-      page.getByRole("button", { name: "Back to admin" }),
+      page.getByText(/You are currently impersonating/i),
+    ).toBeVisible();
+    // The app must run as the target, not just show the banner.
+    await meAsTarget;
+    await expect(
+      page.getByRole("button", { name: "Stop impersonating" }),
     ).toBeVisible();
 
     const impToken = await page.evaluate(
@@ -432,11 +453,62 @@ test.describe("@admin", () => {
     );
     expect(adminProbe.status()).toBe(403);
 
-    await page.getByRole("button", { name: "Back to admin" }).click();
+    await page.getByRole("button", { name: "Stop impersonating" }).click();
     await expect(page).toHaveURL(/\/admin\/users$/, { timeout: 30_000 });
     await expect(
-      page.getByRole("button", { name: "Back to admin" }),
+      page.getByRole("button", { name: "Stop impersonating" }),
     ).toHaveCount(0);
+  });
+
+  test("I7b — admin can impersonate another admin and revert", async ({
+    page,
+    request,
+  }) => {
+    const env = getE2eEnv();
+    const adminAuth = await loginPersona(request, "admin");
+    const targetEmail = env.personas.sacrificial;
+
+    const target = await lookupAdminUserByEmail(
+      request,
+      adminAuth,
+      targetEmail,
+    );
+    expect(target).toBeTruthy();
+
+    await patchUserRoleViaAdminApi(request, adminAuth, target!.id, "ADMIN");
+    try {
+      await gotoAuthenticated(
+        page,
+        adminAuth,
+        `/admin/users/${target!.id}`,
+      );
+      await expect(
+        page.getByRole("button", { name: "Open session" }),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Open session" })).toBeEnabled();
+
+      const impersonatePost = page.waitForResponse(
+        (res) =>
+          res.url().includes(`/api/admin/users/${target!.id}/impersonate`) &&
+          res.request().method() === "POST" &&
+          res.ok(),
+      );
+      const meAsTarget = waitForAuthMeIdentity(page, target!.id);
+      await page.getByRole("button", { name: "Open session" }).click();
+      await impersonatePost;
+
+      await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
+      await expect(
+        page.getByText(/You are currently impersonating/i),
+      ).toBeVisible();
+      await meAsTarget;
+      await expect(page).not.toHaveURL(/\/admin\//);
+
+      await page.getByRole("button", { name: "Stop impersonating" }).click();
+      await expect(page).toHaveURL(/\/admin\/users$/, { timeout: 30_000 });
+    } finally {
+      await patchUserRoleViaAdminApi(request, adminAuth, target!.id, "USER");
+    }
   });
 
   test("Optional — uploaded session visible in admin sessions", async ({

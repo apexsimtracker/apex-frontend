@@ -100,6 +100,7 @@ export default function AdminUsers() {
   const [riskFilter, setRiskFilter] = useState<string>("");
   const [planFilter, setPlanFilter] = useState("");
   const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState("");
+  const [billingIntervalFilter, setBillingIntervalFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [scanDialogOpen, setScanDialogOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
@@ -113,6 +114,7 @@ export default function AdminUsers() {
     riskFilter,
     planFilter,
     subscriptionStatusFilter,
+    billingIntervalFilter,
   ]);
 
   const listParams = useMemo((): AdminUserListParams => {
@@ -144,6 +146,12 @@ export default function AdminUsers() {
               | "EXPIRED",
           }
         : {}),
+      ...(billingIntervalFilter === "MONTHLY" ||
+      billingIntervalFilter === "ANNUAL"
+        ? {
+            billingInterval: billingIntervalFilter as "MONTHLY" | "ANNUAL",
+          }
+        : {}),
     };
   }, [
     page,
@@ -153,6 +161,7 @@ export default function AdminUsers() {
     riskFilter,
     planFilter,
     subscriptionStatusFilter,
+    billingIntervalFilter,
   ]);
 
   const { data, isPending, isError, error } = useQuery({
@@ -430,6 +439,19 @@ export default function AdminUsers() {
                   <option value="PAST_DUE">Past due</option>
                   <option value="EXPIRED">Expired</option>
                 </select>
+                <select
+                  className="w-full rounded-md border border-white/10 bg-card px-3 py-2 text-sm sm:w-auto"
+                  value={billingIntervalFilter}
+                  onChange={(e) => {
+                    setPage(1);
+                    setBillingIntervalFilter(e.target.value);
+                  }}
+                  aria-label="Billing interval"
+                >
+                  <option value="">All intervals</option>
+                  <option value="MONTHLY">Monthly</option>
+                  <option value="ANNUAL">Annual</option>
+                </select>
                 <Button
                   type="button"
                   variant="outline"
@@ -472,7 +494,8 @@ export default function AdminUsers() {
                   statusFilter ||
                   riskFilter ||
                   planFilter ||
-                  subscriptionStatusFilter) && (
+                  subscriptionStatusFilter ||
+                  billingIntervalFilter) && (
                   <button
                     type="button"
                     className="mt-4 text-sm text-primary underline-offset-4 hover:underline"
@@ -483,6 +506,7 @@ export default function AdminUsers() {
                       setRiskFilter("");
                       setPlanFilter("");
                       setSubscriptionStatusFilter("");
+                      setBillingIntervalFilter("");
                       setPage(1);
                     }}
                   >
@@ -523,6 +547,23 @@ export default function AdminUsers() {
                             <span className="break-all text-xs text-muted-foreground sm:break-normal">
                               {r.email}
                             </span>
+                            {r.emailVerified === false ? (
+                              <span className="inline-flex rounded-full border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                Unverified
+                              </span>
+                            ) : null}
+                            {r.emailStatus && r.emailStatus !== "VALID" ? (
+                              <span className="inline-flex rounded-full border border-amber-500/45 bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-100">
+                                {r.emailStatus === "DISPOSABLE"
+                                  ? "Disposable"
+                                  : "Risky"}
+                              </span>
+                            ) : null}
+                            {r.isBetaUser ? (
+                              <span className="inline-flex rounded-full border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-[10px] font-medium text-sky-100">
+                                Beta
+                              </span>
+                            ) : null}
                             {r.isSuspicious ? <SuspiciousBadge /> : null}
                           </div>
                         </td>

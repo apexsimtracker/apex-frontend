@@ -44,7 +44,7 @@ export default function AppLayout({
     <AppNavContext.Provider value={navContextValue}>
       <div
         className={cn(
-          "apex-theme flex min-h-[100dvh] flex-col bg-apex-background text-apex-on-surface",
+          "apex-theme flex min-h-[calc(100dvh-var(--apex-impersonation-banner-h,0px))] flex-col bg-apex-background text-apex-on-surface",
           className,
         )}
       >
@@ -60,7 +60,9 @@ export default function AppLayout({
           <header
             className={cn(
               "z-50 shrink-0 bg-apex-background pt-[var(--apex-safe-area-top)]",
-              bottomBar ? "lg:sticky lg:top-0" : "sticky top-0",
+              bottomBar
+                ? "lg:sticky lg:top-[var(--apex-impersonation-banner-h,0px)]"
+                : "sticky top-[var(--apex-impersonation-banner-h,0px)]",
             )}
           >
             {topBar}

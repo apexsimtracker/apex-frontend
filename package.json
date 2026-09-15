@@ -14,7 +14,7 @@
     "build:mobile:staging": "vite build --mode staging && node scripts/sync-native-version.mjs && LANG=en_US.UTF-8 pnpm exec cap sync && node scripts/patch-ios-info-plist.mjs && node scripts/assert-baked-capacitor-config.mjs",
     "build:mobile:dev": "vite build --mode mobile && node scripts/sync-native-version.mjs && LANG=en_US.UTF-8 pnpm exec cap sync && node scripts/patch-ios-info-plist.mjs && node scripts/assert-baked-capacitor-config.mjs",
     "cap:add": "LANG=en_US.UTF-8 pnpm exec cap add ios --packagemanager CocoaPods && LANG=en_US.UTF-8 pnpm exec cap add android",
-    "assets:generate": "pnpm exec capacitor-assets generate --ios --android --logoSplashTargetWidth 700 --iconBackgroundColor '#070915' --iconBackgroundColorDark '#070915' --splashBackgroundColor '#070915' --splashBackgroundColorDark '#070915'",
+    "assets:generate": "pnpm exec capacitor-assets generate --ios --android --logoSplashTargetWidth 700 --iconBackgroundColor '#0e0e0e' --iconBackgroundColorDark '#0e0e0e' --splashBackgroundColor '#0e0e0e' --splashBackgroundColorDark '#0e0e0e'",
     "dev:ios": "node scripts/run-ios.mjs",
     "dev:ios:local": "node scripts/run-ios.mjs --mode mobile",
     "cap:run:ios": "LANG=en_US.UTF-8 pnpm exec cap run ios --target-name \"iPhone 15 Pro\"",
@@ -104,7 +104,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.2",
     "vite": "^7.3.6",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   },
   "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }
