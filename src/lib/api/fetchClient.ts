@@ -9,6 +9,13 @@ import {
 } from "@/auth/token";
 import { ApiError, ProRequiredError } from "./errors";
 import { recordApiTiming } from "@/lib/apexRum";
+import {
+  applyRestoredAdminCredentials,
+  dispatchExitImpersonation,
+  isImpersonating,
+  readAdminSessionBackup,
+  restoreAdminCredentialsFromBackup,
+} from "@/lib/impersonation";
 
 // Auth expiry handler registration (e.g. AuthProvider: re-fetch /api/auth/me or clear user).
 let authExpiredHandler: (() => void | Promise<void>) | null = null;
@@ -109,6 +116,10 @@ export type FetchApiOptions = {
   credentials?: RequestCredentials;
   /** Internal: this call already retried after a token refresh. */
   didRetryAfterRefresh?: boolean;
+  /** Extra request headers (e.g. impersonation restore session). */
+  extraHeaders?: Record<string, string>;
+  /** Skip admin restore on 401 (the stop-impersonation call itself). */
+  skipImpersonationRestore?: boolean;
 };
 
 type RefreshOutcome =
@@ -132,6 +143,57 @@ function storedAccessToken(): string | null {
 
 function isAuthRefreshPath(path: string): boolean {
   return path.includes(AUTH_REFRESH_PATH);
+}
+
+function isImpersonationStopPath(path: string): boolean {
+  return path.includes("/api/auth/impersonation/stop");
+}
+
+let impersonationRestoreInFlight: Promise<boolean> | null = null;
+
+async function restoreAdminAfterImpersonation401(): Promise<boolean> {
+  if (impersonationRestoreInFlight) return impersonationRestoreInFlight;
+  impersonationRestoreInFlight = (async () => {
+    const backupSession = readAdminSessionBackup();
+    const token = storedAccessToken();
+    if (token) {
+      try {
+        const headers: Record<string, string> = {
+          Authorization: `Bearer ${token}`,
+        };
+        if (backupSession) {
+          headers["X-Apex-Impersonator-Session"] = backupSession;
+        }
+        const res = await fetch(`${getApiBase()}/api/auth/impersonation/stop`, {
+          method: "POST",
+          headers,
+        });
+        if (res.ok) {
+          const data = (await res.json()) as {
+            token?: string;
+            sessionToken?: string;
+            refreshToken?: string;
+          };
+          if (typeof data?.token === "string" && data.token.trim()) {
+            applyRestoredAdminCredentials({
+              token: data.token.trim(),
+              sessionToken: data.sessionToken,
+              refreshToken: data.refreshToken,
+            });
+            return true;
+          }
+        }
+      } catch {
+        // Fall back to localStorage backups.
+      }
+    }
+    return restoreAdminCredentialsFromBackup();
+  })();
+  try {
+    return await impersonationRestoreInFlight;
+  } finally {
+    impersonationRestoreInFlight = null;
+  }
 }
 
 async function performRefresh(
@@ -246,6 +308,7 @@ export async function fetchApi<T>(
     // Only when we send a body: Fastify rejects Content-Type: application/json with an empty body.
     ...(hasJsonBody ? { "Content-Type": "application/json" } : {}),
     ...buildApiAuthHeaders(),
+    ...(opts.extraHeaders ?? {}),
   };
 
   const url = path.startsWith("http")
@@ -278,6 +341,29 @@ export async function fetchApi<T>(
   if (code === "PRO_REQUIRED") {
     emitProRequiredEvent();
     throw new ProRequiredError(message);
+  }
+
+  const shouldTryImpersonationRestore =
+    res.status === 401 &&
+    !opts.skipImpersonationRestore &&
+    !skipAuthExpiredCheck &&
+    !isAuthRefreshPath(path) &&
+    !isImpersonationStopPath(path) &&
+    isImpersonating();
+
+  if (shouldTryImpersonationRestore) {
+    const restored = await restoreAdminAfterImpersonation401();
+    if (restored) {
+      // Never replay the request with the restored admin credentials: the caller asked for the
+      // impersonated user's data and would silently render the admin's response instead.
+      dispatchExitImpersonation();
+      throw new ApiError(
+        res.status,
+        "Impersonation ended — you are back in your admin account.",
+        code,
+        retryAfterMs,
+      );
+    }
   }
 
   const canRefresh =

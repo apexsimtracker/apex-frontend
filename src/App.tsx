@@ -22,7 +22,7 @@ import AdminRoute from "./auth/AdminRoute";
 import WebOnlyRoute from "./auth/WebOnlyRoute";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary";
 import SessionDataCacheSync from "./components/SessionDataCacheSync";
-import ImpersonationExitFab from "./components/ImpersonationExitFab";
+import ImpersonationBanner from "./components/ImpersonationBanner";
 import AppLoadingScreen from "./components/AppLoadingScreen";
 import ProductAppLayout from "./components/ProductAppLayout";
 import NativeDeepLinkListener from "./components/NativeDeepLinkListener";
@@ -161,7 +161,7 @@ function AppShell({ children }: { children: ReactNode }) {
   return (
     <>
       <ScrollToTop />
-      <ImpersonationExitFab />
+      <ImpersonationBanner />
       <GlobalErrorBoundary
         fallback={AppErrorBoundaryFallback}
         resetKey={location.pathname}
@@ -183,7 +183,7 @@ function AdminRouteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <ScrollToTop />
-      <ImpersonationExitFab />
+      <ImpersonationBanner />
       <GlobalErrorBoundary resetKey="admin">{children}</GlobalErrorBoundary>
     </>
   );

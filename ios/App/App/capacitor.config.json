@@ -10,7 +10,7 @@
 	},
 	"plugins": {
 		"SplashScreen": {
-			"backgroundColor": "#070915",
+			"backgroundColor": "#0e0e0e",
 			"showSpinner": false,
 			"androidScaleType": "CENTER_CROP"
 		}

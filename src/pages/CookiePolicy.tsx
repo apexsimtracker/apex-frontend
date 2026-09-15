@@ -81,7 +81,8 @@ const strictlyNecessaryKeys: StorageKeyRow[] = [
     keyNode: (
       <>
         <code className={codeClassName}>apex_token_admin</code>,{" "}
-        <code className={codeClassName}>apex_session_token_admin</code>
+        <code className={codeClassName}>apex_session_token_admin</code>,{" "}
+        <code className={codeClassName}>apex_refresh_token_admin</code>
       </>
     ),
     storage: "localStorage",

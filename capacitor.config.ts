@@ -14,8 +14,8 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Matches the generated splash artwork background, so there is no flash before the WebView paints.
-      backgroundColor: "#070915",
+      // Matches app theme `--apex-background` / `#0e0e0e` and generated splash artwork.
+      backgroundColor: "#0e0e0e",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
     },

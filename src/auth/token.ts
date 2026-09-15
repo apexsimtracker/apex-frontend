@@ -3,8 +3,30 @@ const TOKEN_KEY = "apex_token";
 /** Server-side AuthSession token (paired with JWT); sent as X-Apex-Session for tracking/revoke. */
 export const APEX_SESSION_TOKEN_KEY = "apex_session_token";
 
+/** Admin JWT saved while viewing as another user; restored on exit. */
+export const APEX_TOKEN_ADMIN_KEY = "apex_token_admin";
+
 /** Saved next to `apex_token_admin` while impersonating so exit restores admin browser session. */
 export const APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY = "apex_session_token_admin";
+
+/** Saved next to `apex_token_admin` so exit can silent-refresh the restored admin JWT. */
+export const APEX_REFRESH_TOKEN_ADMIN_BACKUP_KEY = "apex_refresh_token_admin";
+
+/** Legacy sessionStorage copy of the admin JWT; no longer written. */
+export const LEGACY_SESSION_ADMIN_BACKUP_KEY = "apex_token_admin_backup";
+
+/** Drop impersonation restore material so a later `/api/auth/refresh` cannot mint admin tokens. */
+export function clearAdminCredentialBackups(): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.removeItem(APEX_TOKEN_ADMIN_KEY);
+  localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
+  localStorage.removeItem(APEX_REFRESH_TOKEN_ADMIN_BACKUP_KEY);
+  try {
+    sessionStorage.removeItem(LEGACY_SESSION_ADMIN_BACKUP_KEY);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function getToken(): string | null {
   if (typeof localStorage === "undefined") return null;
@@ -45,7 +67,7 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(APEX_SESSION_TOKEN_KEY);
   localStorage.removeItem(APEX_REFRESH_TOKEN_KEY);
-  localStorage.removeItem(APEX_SESSION_TOKEN_ADMIN_BACKUP_KEY);
+  clearAdminCredentialBackups();
   // Same-tab storage changes do not fire `storage` events; AuthContext listens for this to sync
   // hasTokenState and clear cached session data (see contexts/AuthContext.tsx).
   if (typeof window !== "undefined") {

@@ -16,6 +16,10 @@ export type AdminUserListRow = {
   emailStatus?: "VALID" | "DISPOSABLE" | "RISKY";
   emailRiskScore?: number;
   lastValidatedAt?: string | null;
+  emailVerified?: boolean;
+  isBetaUser?: boolean;
+  betaTrialStartedAt?: string | null;
+  betaTrialExpiresAt?: string | null;
   createdAt: string;
   plan: "FREE" | "PRO";
   effectivePlan: "FREE" | "PRO";
@@ -135,6 +139,9 @@ export type AdminUserDetailResponse = {
     suspicionReason: string | null;
     isDeleted: boolean;
     deletedAt: string | null;
+    isBetaUser?: boolean;
+    betaTrialStartedAt?: string | null;
+    betaTrialExpiresAt?: string | null;
     /** ISO */
     createdAt: string;
     privateProfile: boolean;

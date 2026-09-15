@@ -17,6 +17,10 @@ export async function initNativeShell(): Promise<void> {
   await waitForFirstPaint();
   await SplashScreen.hide();
   await StatusBar.setStyle({ style: Style.Dark });
+  if (Capacitor.getPlatform() === "android") {
+    // Match theme background so the system bars never flash the old navy splash color.
+    await StatusBar.setBackgroundColor({ color: "#0e0e0e" });
+  }
 
   // Android has no setResizeMode implementation — it rejects UNIMPLEMENTED and
   // takes the rest of this function down with it. Its resize behaviour comes

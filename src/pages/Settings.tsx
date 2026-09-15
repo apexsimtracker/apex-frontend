@@ -60,7 +60,7 @@ import SettingsDeleteDialog from "./settings/SettingsDeleteDialog";
 import SettingsPasswordSection from "./settings/SettingsPasswordSection";
 import SettingsNotificationsSection from "./settings/SettingsNotificationsSection";
 import SettingsAccountActionsSection from "./settings/SettingsAccountActionsSection";
-import SettingsLegalLinks from "./settings/SettingsLegalLinks";
+import SettingsImpersonationSection from "./settings/SettingsImpersonationSection";
 import SettingsWeeklyGoalsSection from "./settings/SettingsWeeklyGoalsSection";
 import { SettingsSectionChrome } from "./settings/SettingsSectionChrome";
 import { SubscriptionCard } from "./settings/SubscriptionCard";
@@ -713,7 +713,7 @@ export default function Settings() {
               onDeleteAccount={() => setDeleteDialogOpen(true)}
             />
 
-            <SettingsLegalLinks />
+            <SettingsImpersonationSection />
           </div>
         </div>
       </div>

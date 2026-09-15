@@ -44,6 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [hasTokenState, setHasTokenState] = useState(readHasToken);
   const [error, setError] = useState<string | null>(null);
   const [meRefetching, setMeRefetching] = useState(false);
+  // Re-render after an identity swap: queryClient.clear() destroys the query this provider's
+  // observer is attached to, and the observer only re-attaches to the rebuilt query on render.
+  const [, bumpIdentityEpoch] = useState(0);
   const handlingExpiry = useRef(false);
 
   const syncTokenFromStorage = useCallback(() => {
@@ -94,18 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           impersonation?: boolean;
         }>
       ).detail;
-      // Impersonation start/exit swaps JWTs without a full reload. Drop every cached query so
-      // billing, settings, activity, etc. from the prior identity cannot leak across the switch.
+      // An impersonation swap can land here without a document reload (e.g. fetchApi restoring the
+      // admin after a 401). Drop every cached query so billing, settings, activity, etc. from the
+      // prior identity cannot leak across the switch.
       if (detail?.exitImpersonation || detail?.impersonation) {
         syncTokenFromStorage();
+        queryClient.clear();
         if (!readHasToken()) {
           queryClient.setQueryData(AUTH_ME_QUERY_KEY, null);
-          queryClient.removeQueries({ queryKey: AUTH_ME_QUERY_KEY });
-          queryClient.clear();
-          return;
+        } else {
+          // invalidateQueries cannot reach a cleared cache, so fetch /api/auth/me directly with
+          // the swapped JWT instead of leaving the previous identity on screen. The rejection is
+          // swallowed here because the observer below renders the error state.
+          void queryClient
+            .fetchQuery({ queryKey: AUTH_ME_QUERY_KEY, queryFn: authMe })
+            .catch(() => undefined);
         }
-        queryClient.clear();
-        void queryClient.invalidateQueries({ queryKey: AUTH_ME_QUERY_KEY });
+        bumpIdentityEpoch((n) => n + 1);
         return;
       }
       applyTokenStorageToQueryClient();

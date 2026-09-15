@@ -87,6 +87,26 @@ export async function patchUserStatusViaAdminApi(
   }
 }
 
+export async function patchUserRoleViaAdminApi(
+  request: APIRequestContext,
+  auth: AuthSession,
+  userId: string,
+  role: "USER" | "ADMIN",
+): Promise<void> {
+  const { apiUrl } = getE2eEnv();
+  const res = await request.patch(
+    `${apiUrl}/api/admin/users/${encodeURIComponent(userId)}/role`,
+    {
+      headers: authHeaders(auth.token, auth.sessionToken),
+      data: { role },
+    },
+  );
+  if (!res.ok()) {
+    const text = await res.text();
+    throw new Error(`PATCH user role failed (${res.status()}): ${text}`);
+  }
+}
+
 export async function patchSystemFeatureViaAdminApi(
   request: APIRequestContext,
   auth: AuthSession,
