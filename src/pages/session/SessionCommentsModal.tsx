@@ -52,6 +52,7 @@ type SessionCommentsModalProps = {
   onCommentAdded: () => void;
   onCommentDeleted?: (countDelta: number) => void;
   onRefreshSession?: () => void;
+  targetCommentId?: string | null;
 };
 
 export function SessionCommentsModal({
@@ -61,6 +62,7 @@ export function SessionCommentsModal({
   onCommentAdded,
   onCommentDeleted,
   onRefreshSession,
+  targetCommentId,
 }: SessionCommentsModalProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -128,6 +130,15 @@ export function SessionCommentsModal({
   });
 
   const comments = commentsPage?.comments ?? [];
+
+  useEffect(() => {
+    if (!isOpen || !commentsPage || !targetCommentId) return;
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`comment-${targetCommentId}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+    });
+  }, [commentsPage, isOpen, targetCommentId]);
   const total = commentsPage?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / COMMENTS_MODAL_LIMIT) || 1);
   const range =
@@ -330,9 +341,7 @@ export function SessionCommentsModal({
                   : r,
               ),
             })),
-        total: removesThread
-          ? Math.max(0, pageData.total - 1)
-          : pageData.total,
+        total: removesThread ? Math.max(0, pageData.total - 1) : pageData.total,
       }));
       return { previous, countDelta };
     },

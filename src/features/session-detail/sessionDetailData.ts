@@ -142,6 +142,12 @@ export type SessionDetail = {
     precipitation?: string | null;
   } | null;
   userId?: string | null;
+  /** Role of the session owner, when included by the public detail API. */
+  authorRole?: "USER" | "ADMIN";
+  /** Backward-compatible alias used by some session detail payloads. */
+  userRole?: "USER" | "ADMIN";
+  /** Challenge linkage for user-submitted session entries. */
+  challengeId?: string | null;
   /** Manual rows only: PRACTICE | QUALIFY | RACE */
   manualSessionKind?: string | null;
   sectorCount?: number | null;

@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ type SettingsAccountSectionProps = {
   avatarError: string | null;
   onAvatarFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onClearAvatarSelection: () => void;
+  children?: ReactNode;
 };
 
 export default function SettingsAccountSection({
@@ -50,6 +51,7 @@ export default function SettingsAccountSection({
   avatarError,
   onAvatarFileChange,
   onClearAvatarSelection,
+  children,
 }: SettingsAccountSectionProps) {
   const displayName =
     user.displayName?.trim() || user.email?.trim() || "Driver";
@@ -195,6 +197,7 @@ export default function SettingsAccountSection({
           </div>
         </form>
       </Form>
+      {children}
     </SettingsSectionChrome>
   );
 }

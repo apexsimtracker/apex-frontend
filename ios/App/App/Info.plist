@@ -52,5 +52,7 @@
 	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Apex uses photos you pick from your library for your profile picture or community posts. Nothing is uploaded until you choose a file.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Apex uses the camera only if the user chooses Take Photo for a profile picture or community image. Nothing is uploaded until they confirm.</string>
 </dict>
 </plist>

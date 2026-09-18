@@ -13,7 +13,6 @@ import { PasswordInput } from "@/components/ui/password-input";
 import type { WithRootError } from "@/lib/formWithRootError";
 import type { SettingsChangePasswordValues } from "@/lib/validation/settingsForms";
 import { PASSWORD_MIN, PASSWORD_MAX } from "@/lib/validation/settingsForms";
-import { SettingsSectionChrome } from "./SettingsSectionChrome";
 import {
   appInputClassName,
   appPrimaryButtonClassName,
@@ -54,7 +53,10 @@ export default function SettingsPasswordSection({
   onFieldChange,
 }: SettingsPasswordSectionProps) {
   return (
-    <SettingsSectionChrome title="Password & security">
+    <div className="mt-8 border-t border-apex-outline-variant/15 pt-6">
+      <h3 className="mb-2 font-apex-headline text-[10px] uppercase tracking-[0.2em] text-apex-on-surface-variant">
+        Password & security
+      </h3>
       <p className="mb-4 text-xs text-apex-on-surface-variant">
         Enter your current password and a new password ({PASSWORD_MIN}–
         {PASSWORD_MAX} characters).
@@ -155,6 +157,6 @@ export default function SettingsPasswordSection({
           </Button>
         </form>
       </Form>
-    </SettingsSectionChrome>
+    </div>
   );
 }

@@ -48,6 +48,9 @@ export const AdminCommunityDiscussionDetail = lazy(() =>
     /* webpackChunkName: "admin-community-discussion" */ "@/pages/admin/AdminCommunityDiscussionDetail"
   ),
 );
+export const AdminReports = lazy(() =>
+  import(/* webpackChunkName: "admin-reports" */ "@/pages/admin/AdminReports"),
+);
 export const AdminLeaderboards = lazy(() =>
   import(
     /* webpackChunkName: "admin-leaderboards" */ "@/pages/admin/AdminLeaderboards"

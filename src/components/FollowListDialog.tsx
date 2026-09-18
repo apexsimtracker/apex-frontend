@@ -17,6 +17,8 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
 import { appInputClassName } from "@/components/app-ui/appButtonClasses";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -49,6 +51,7 @@ function FollowRow({
   onNavigate: () => void;
   profileLinkBase: string;
 }) {
+  const { user } = useAuth();
   const name = f.displayName?.trim() || "—";
   const initials =
     name && name.length >= 2
@@ -56,11 +59,11 @@ function FollowRow({
       : name.slice(0, 1).toUpperCase() || "?";
 
   return (
-    <li>
+    <li className="flex items-center gap-2 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-3 py-2 transition-colors hover:bg-apex-surface-container">
       <Link
         to={`${profileLinkBase}/${encodeURIComponent(f.id)}`}
         onClick={onNavigate}
-        className="flex items-center gap-3 rounded-apex-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-3 py-2 transition-colors hover:bg-apex-surface-container"
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
         <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-apex-surface-container-highest text-xs font-semibold text-apex-on-surface-variant">
           {resolveApiUrl(f.avatarUrl) ? (
@@ -84,6 +87,11 @@ function FollowRow({
           )}
         </div>
       </Link>
+      <UgcOverflowMenu
+        signedIn={Boolean(user)}
+        isOwn={Boolean(user?.id && user.id === f.id)}
+        authorId={f.id}
+      />
     </li>
   );
 }
@@ -193,7 +201,9 @@ export function FollowListDialog({
             ))}
           </ul>
         ) : errMsg ? (
-          <p className="py-4 font-apex-body text-sm text-apex-error">{errMsg}</p>
+          <p className="py-4 font-apex-body text-sm text-apex-error">
+            {errMsg}
+          </p>
         ) : items.length === 0 ? (
           <p className="py-4 font-apex-body text-sm text-apex-on-surface-variant">
             {debouncedSearch.trim()

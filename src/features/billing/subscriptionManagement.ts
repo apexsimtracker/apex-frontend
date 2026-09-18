@@ -3,6 +3,7 @@ import { normalizeBillingStores } from "./billingStore";
 import {
   nativeSubscriptionManagementUrl,
 } from "./nativeSubscriptionManagement";
+import type { StoreBillingPlatform } from "./storeProductIds";
 
 export const ALREADY_HAVE_PRO_MESSAGE = "You already have Pro";
 
@@ -107,6 +108,19 @@ export function resolveSubscriptionManageActions(
 
 export function paidProHeadline(hasPaidPro: boolean): string {
   return hasPaidPro ? ALREADY_HAVE_PRO_MESSAGE : "You're on Apex Pro";
+}
+
+/** Name only the store that can actually take the purchase on this device. */
+export function nativePurchaseDisclosure(
+  platform: StoreBillingPlatform,
+): string | null {
+  if (platform === "apple") {
+    return "Purchases are handled securely by the App Store.";
+  }
+  if (platform === "play") {
+    return "Purchases are handled securely by Google Play.";
+  }
+  return null;
 }
 
 /** Restore stays useful on native for receipts / new devices, including paid Pro. */

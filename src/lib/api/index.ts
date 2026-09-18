@@ -34,3 +34,5 @@ export * from "./adminEmailOps";
 export * from "./adminSystem";
 export * from "./broadcasts";
 export * from "./impersonationAuth";
+export * from "./ugcModeration";
+export * from "./adminReports";

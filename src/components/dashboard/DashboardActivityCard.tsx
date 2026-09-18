@@ -12,7 +12,6 @@ import {
   getPodiumTrophyClassName,
 } from "@/components/dashboard/dashboardPodiumColors";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
-import { useIsProUser } from "@/contexts/AuthContext";
 import { formatLapMs, formatCarName, cn } from "@/lib/utils";
 import { resolveApiUrl } from "@/lib/api/config";
 import {
@@ -24,6 +23,9 @@ import {
 } from "@/lib/sessionKind";
 import SessionCaption from "@/components/sessions/SessionCaption";
 import SessionSocialActionBar from "@/pages/session/SessionSocialActionBar";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { sessionModerationTargets } from "@/components/ugc/sessionModerationTargets";
+import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { useSessionLike } from "@/hooks/useSessionLike";
 import { preloadSessionDetail } from "@/routes/routePreload";
 import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
@@ -330,12 +332,9 @@ export default memo(function DashboardActivityCard(
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isPro = useIsProUser();
-  const { toggleLike, likePending } = useSessionLike(
-    id,
-    likedByMe,
-    likeCount,
-  );
+  const { toggleLike, likePending } = useSessionLike(id, likedByMe, likeCount);
   const isManual = isManualSessionItem(props);
   const isPractice =
     !hasFinishDataForLayout(props) &&
@@ -519,13 +518,23 @@ export default memo(function DashboardActivityCard(
               </>
             )}
           </div>
-          {disciplineLogo ? (
-            <img
-              src={disciplineLogo}
-              alt=""
-              className="h-5 w-auto max-w-[3.5rem] shrink-0 object-contain opacity-90 sm:h-7 sm:max-w-none"
+          <div className="flex shrink-0 items-center gap-1">
+            {disciplineLogo ? (
+              <img
+                src={disciplineLogo}
+                alt=""
+                className="h-5 w-auto max-w-[3.5rem] object-contain opacity-90 sm:h-7 sm:max-w-none"
+              />
+            ) : null}
+            <UgcOverflowMenu
+              signedIn={Boolean(user)}
+              isOwn={Boolean(
+                user?.id && profileUserId && user.id === profileUserId,
+              )}
+              authorId={profileUserId}
+              hide={sessionModerationTargets({ sessionId: id }).hide}
             />
-          ) : null}
+          </div>
         </div>
 
         <div className="space-y-2">

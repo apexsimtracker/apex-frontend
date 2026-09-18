@@ -43,7 +43,10 @@ import { invalidateSessionDerivedCaches } from "@/lib/profileQueryKeys";
 import { toast } from "sonner";
 import PageMeta from "@/components/PageMeta";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal";
-import { useTelemetrySummary, useTelemetryTraces } from "@/features/telemetry-analysis/useSessionTelemetry";
+import {
+  useTelemetrySummary,
+  useTelemetryTraces,
+} from "@/features/telemetry-analysis/useSessionTelemetry";
 import { isAgentOnlyTelemetryGate } from "@/features/telemetry-analysis/telemetryEligibility";
 import { PageSuspense } from "@/routes/PageSuspense";
 import SessionDetailBadges from "./session/SessionDetailBadges";
@@ -60,23 +63,30 @@ import SessionDetailSkeleton, {
 } from "./session/SessionDetailSkeleton";
 import SessionLapTable from "./session/SessionLapTable";
 import { SessionCommentsModal } from "./session/SessionCommentsModal";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { sessionModerationTargets } from "@/components/ugc/sessionModerationTargets";
 import {
   aggregateTyreWearPct,
   telemetryOverviewFromTraces,
 } from "./session/telemetry/telemetryOverviewHelpers";
 import SessionTelemetrySkeleton from "./session/telemetry/SessionTelemetrySkeleton";
-import { coerceSectorTimesMs, isLegacyEstimatedSectorSource } from "@/lib/sectors";
+import {
+  coerceSectorTimesMs,
+  isLegacyEstimatedSectorSource,
+} from "@/lib/sectors";
 
-const SessionTelemetry = lazy(() =>
-  import(
-    /* webpackChunkName: "telemetry-charts" */ "./session/telemetry/SessionTelemetry"
-  ),
+const SessionTelemetry = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "telemetry-charts" */ "./session/telemetry/SessionTelemetry"
+    ),
 );
 
-const SessionShareModal = lazy(() =>
-  import(
-    /* webpackChunkName: "session-share" */ "@/components/SessionShareModal"
-  ),
+const SessionShareModal = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "session-share" */ "@/components/SessionShareModal"
+    ),
 );
 
 const SESSIONS_PATH = "/sessions";
@@ -134,8 +144,7 @@ export default function SessionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const fromHome =
-    (location.state as SessionNavState)?.from === "home";
+  const fromHome = (location.state as SessionNavState)?.from === "home";
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const isPro = useIsProUser();
@@ -149,6 +158,13 @@ export default function SessionDetail() {
 
   const sid = id?.trim() ?? "";
   const detailPath = sid ? `/sessions/${sid}` : SESSIONS_PATH;
+  const targetCommentId = location.hash.startsWith("#comment-")
+    ? decodeURIComponent(location.hash.slice("#comment-".length))
+    : null;
+
+  useEffect(() => {
+    if (targetCommentId) setCommentsOpen(true);
+  }, [targetCommentId]);
 
   const {
     data: sessionPayload,
@@ -260,12 +276,12 @@ export default function SessionDetail() {
     null;
   const canLoadOverviewTraces = Boolean(
     telemetryEnabled &&
-      telemetrySummary?.eligible &&
-      telemetrySummary.hasProAccess &&
-      overviewLap != null &&
-      telemetrySummary.laps.some(
-        (l) => l.lapNumber === overviewLap && l.hasTraces,
-      ),
+    telemetrySummary?.eligible &&
+    telemetrySummary.hasProAccess &&
+    overviewLap != null &&
+    telemetrySummary.laps.some(
+      (l) => l.lapNumber === overviewLap && l.hasTraces,
+    ),
   );
   const { data: overviewTraces } = useTelemetryTraces(
     sid,
@@ -338,10 +354,7 @@ export default function SessionDetail() {
   /** Auth is settled via ProtectedRoute; lock sectors for free viewers. */
   const sectorsLocked = !isPro || proFeaturesLocked;
 
-  const apexDisplay = parseApexAnalysisDisplay(
-    apexAnalysis,
-    apexAnalysisV2,
-  );
+  const apexDisplay = parseApexAnalysisDisplay(apexAnalysis, apexAnalysisV2);
   const canFocusApexTargetLap =
     apexDisplay.targetLapNumber != null &&
     laps.some((lap) => lap.lap === apexDisplay.targetLapNumber);
@@ -352,12 +365,7 @@ export default function SessionDetail() {
 
   const lapTimes = sanitizeLapTimesForConsistency(
     laps
-      .filter(
-        (l) =>
-          l.lap > 1 &&
-          l.isOutLap !== true &&
-          l.isValid !== false,
-      )
+      .filter((l) => l.lap > 1 && l.isOutLap !== true && l.isValid !== false)
       .map((l) => l.timeMs),
   );
   const realConsistency =
@@ -365,20 +373,13 @@ export default function SessionDetail() {
     Number.isFinite(session.consistencyScore)
       ? Math.round(session.consistencyScore)
       : calcConsistencyScore(lapTimes);
-  const consistencyText =
-    realConsistency != null ? `${realConsistency}%` : "—";
-  const consistencyVisual = buildConsistencyVisual(
-    lapTimes,
-    bestLapMsFromLaps,
-  );
+  const consistencyText = realConsistency != null ? `${realConsistency}%` : "—";
+  const consistencyVisual = buildConsistencyVisual(lapTimes, bestLapMsFromLaps);
 
   // Baseline = first competitive lap from Lap 2 onwards (not standing start / out-lap).
   const baselineLap = laps.find(
     (l) =>
-      l.lap > 1 &&
-      l.isOutLap !== true &&
-      l.timeMs > 0 &&
-      l.isValid !== false,
+      l.lap > 1 && l.isOutLap !== true && l.timeMs > 0 && l.isValid !== false,
   );
   const improvementMs =
     baselineLap != null &&
@@ -399,8 +400,7 @@ export default function SessionDetail() {
       : `P${session.position}`
     : null;
   const showQualiGrid =
-    session.qualifyingPosition != null &&
-    session.qualifyingPosition > 0;
+    session.qualifyingPosition != null && session.qualifyingPosition > 0;
   const qualiGridLabel = showQualiGrid
     ? session.totalDrivers != null && session.totalDrivers > 0
       ? `P${session.qualifyingPosition} / ${session.totalDrivers}`
@@ -560,6 +560,14 @@ export default function SessionDetail() {
           onShare={() => setShareModalOpen(true)}
           onEdit={() => navigate(`/sessions/${sid}/edit`)}
           onDelete={() => setShowDeleteModal(true)}
+          overflowMenu={
+            <UgcOverflowMenu
+              signedIn={Boolean(user)}
+              isOwn={isOwner}
+              authorId={session.userId}
+              hide={sessionModerationTargets({ sessionId: sid }).hide}
+            />
+          }
         />
 
         <SessionDetailHeroStats
@@ -585,128 +593,131 @@ export default function SessionDetail() {
           sessionMinima={sessionMinima}
           idealLapMs={idealLapMs}
           proFeaturesLocked={sectorsLocked}
-          legacyEstimated={isLegacyEstimatedSectorSource(session.sectorTimingSource)}
+          legacyEstimated={isLegacyEstimatedSectorSource(
+            session.sectorTimingSource,
+          )}
         />
 
         {!sessionHydrated ? (
           <SessionDetailBodySkeleton />
         ) : (
           <>
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
-              Lap history
-            </h2>
-            {laps.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-apex-body text-[11px] text-apex-on-surface-variant">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="font-mono font-semibold text-purple-400">
-                    ●
-                  </span>
-                  Session best
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="font-mono">●</span>
-                  Normal
-                </span>
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
+                  Lap history
+                </h2>
+                {laps.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-apex-body text-[11px] text-apex-on-surface-variant">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-mono font-semibold text-purple-400">
+                        ●
+                      </span>
+                      Session best
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-mono">●</span>
+                      Normal
+                    </span>
+                  </div>
+                )}
               </div>
+              <SessionLapTable
+                laps={visibleLaps}
+                lapHighlights={lapHighlights}
+                bestLapMsFromLaps={bestLapMsFromLaps}
+                canShowMore={canShowMoreLaps}
+                onShowMore={() => setShowAllLaps(true)}
+                selectedLap={selectedLap}
+                onSelectLap={onSelectLap}
+                hideSectorColumns={sectorsLocked}
+                sectorCount={session.sectorCount ?? 0}
+              />
+            </section>
+
+            <SessionDetailAnalysisGrid
+              apexAnalysis={apexDisplay}
+              apexConsistencyText={consistencyText}
+              tireWearText={wearPct != null ? `${Math.round(wearPct)}%` : "—"}
+              overviewRows={overviewRows}
+              overviewLapNumber={overviewLap}
+              showTelemetryOverview={hasTelemetryOverviewData}
+              showApexAnalysis={isOwner}
+              canFocusTargetLap={canFocusApexTargetLap}
+              onFocusTargetLap={() => {
+                if (apexDisplay.targetLapNumber != null) {
+                  setSelectedLap(apexDisplay.targetLapNumber);
+                }
+              }}
+            />
+
+            <PageSuspense fallback={<SessionTelemetrySkeleton />}>
+              <SessionTelemetry
+                sessionId={sid}
+                ingestPath={session.ingestPath}
+                laps={laps}
+                selectedLap={selectedLap}
+                onSelectLap={onSelectLap}
+                bestLapLapNumber={session.bestLapLapNumber}
+                sectorStartsPct={session.sectorStartsPct}
+              />
+            </PageSuspense>
+
+            <SessionDetailLapConsistency
+              consistencyText={consistencyText}
+              dots={consistencyVisual.dots}
+              narrative={consistencyVisual.narrative}
+            />
+
+            {session.compareToPrevious && (
+              <section className="rounded-xl bg-apex-surface-container-low p-4 shadow-lg">
+                <h2 className="mb-2 font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
+                  vs previous session
+                </h2>
+                <div className="flex flex-wrap gap-4 font-apex-body text-xs text-apex-on-surface-variant">
+                  {session.compareToPrevious.bestLapDiffMs != null && (
+                    <span>
+                      Best lap{" "}
+                      <strong className="text-apex-on-surface">
+                        {session.compareToPrevious.bestLapDiffMs < 0
+                          ? "faster "
+                          : "slower "}
+                        {formatLapDelta(
+                          Math.abs(session.compareToPrevious.bestLapDiffMs),
+                        )}
+                      </strong>
+                    </span>
+                  )}
+                  {session.compareToPrevious.medianLapDiffMs != null && (
+                    <span>
+                      Median{" "}
+                      <strong className="text-apex-on-surface">
+                        {session.compareToPrevious.medianLapDiffMs < 0
+                          ? "faster "
+                          : "slower "}
+                        {formatLapDelta(
+                          Math.abs(session.compareToPrevious.medianLapDiffMs),
+                        )}
+                      </strong>
+                    </span>
+                  )}
+                  {session.compareToPrevious.consistencyDiffPct != null && (
+                    <span>
+                      Consistency{" "}
+                      <strong className="text-apex-on-surface">
+                        {session.compareToPrevious.consistencyDiffPct > 0
+                          ? "+"
+                          : ""}
+                        {session.compareToPrevious.consistencyDiffPct.toFixed(
+                          1,
+                        )}{" "}
+                        pts
+                      </strong>
+                    </span>
+                  )}
+                </div>
+              </section>
             )}
-          </div>
-          <SessionLapTable
-            laps={visibleLaps}
-            lapHighlights={lapHighlights}
-            bestLapMsFromLaps={bestLapMsFromLaps}
-            canShowMore={canShowMoreLaps}
-            onShowMore={() => setShowAllLaps(true)}
-            selectedLap={selectedLap}
-            onSelectLap={onSelectLap}
-            hideSectorColumns={sectorsLocked}
-            sectorCount={session.sectorCount ?? 0}
-          />
-        </section>
-
-        <SessionDetailAnalysisGrid
-          apexAnalysis={apexDisplay}
-          apexConsistencyText={consistencyText}
-          tireWearText={
-            wearPct != null ? `${Math.round(wearPct)}%` : "—"
-          }
-          overviewRows={overviewRows}
-          overviewLapNumber={overviewLap}
-          showTelemetryOverview={hasTelemetryOverviewData}
-          showApexAnalysis={isOwner}
-          canFocusTargetLap={canFocusApexTargetLap}
-          onFocusTargetLap={() => {
-            if (apexDisplay.targetLapNumber != null) {
-              setSelectedLap(apexDisplay.targetLapNumber);
-            }
-          }}
-        />
-
-        <PageSuspense fallback={<SessionTelemetrySkeleton />}>
-          <SessionTelemetry
-            sessionId={sid}
-            ingestPath={session.ingestPath}
-            laps={laps}
-            selectedLap={selectedLap}
-            onSelectLap={onSelectLap}
-            bestLapLapNumber={session.bestLapLapNumber}
-            sectorStartsPct={session.sectorStartsPct}
-          />
-        </PageSuspense>
-
-        <SessionDetailLapConsistency
-          consistencyText={consistencyText}
-          dots={consistencyVisual.dots}
-          narrative={consistencyVisual.narrative}
-        />
-
-        {session.compareToPrevious && (
-          <section className="rounded-xl bg-apex-surface-container-low p-4 shadow-lg">
-            <h2 className="mb-2 font-apex-headline text-lg font-bold tracking-tight text-apex-on-surface">
-              vs previous session
-            </h2>
-            <div className="flex flex-wrap gap-4 font-apex-body text-xs text-apex-on-surface-variant">
-              {session.compareToPrevious.bestLapDiffMs != null && (
-                <span>
-                  Best lap{" "}
-                  <strong className="text-apex-on-surface">
-                    {session.compareToPrevious.bestLapDiffMs < 0
-                      ? "faster "
-                      : "slower "}
-                    {formatLapDelta(
-                      Math.abs(session.compareToPrevious.bestLapDiffMs),
-                    )}
-                  </strong>
-                </span>
-              )}
-              {session.compareToPrevious.medianLapDiffMs != null && (
-                <span>
-                  Median{" "}
-                  <strong className="text-apex-on-surface">
-                    {session.compareToPrevious.medianLapDiffMs < 0
-                      ? "faster "
-                      : "slower "}
-                    {formatLapDelta(
-                      Math.abs(session.compareToPrevious.medianLapDiffMs),
-                    )}
-                  </strong>
-                </span>
-              )}
-              {session.compareToPrevious.consistencyDiffPct != null && (
-                <span>
-                  Consistency{" "}
-                  <strong className="text-apex-on-surface">
-                    {session.compareToPrevious.consistencyDiffPct > 0
-                      ? "+"
-                      : ""}
-                    {session.compareToPrevious.consistencyDiffPct.toFixed(1)} pts
-                  </strong>
-                </span>
-              )}
-            </div>
-          </section>
-        )}
           </>
         )}
 
@@ -744,6 +755,7 @@ export default function SessionDetail() {
             queryKey: sessionDetailQueryKey(sid),
           });
         }}
+        targetCommentId={targetCommentId}
       />
 
       {shareModalOpen ? (

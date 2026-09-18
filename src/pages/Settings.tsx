@@ -62,6 +62,12 @@ import SettingsNotificationsSection from "./settings/SettingsNotificationsSectio
 import SettingsAccountActionsSection from "./settings/SettingsAccountActionsSection";
 import SettingsImpersonationSection from "./settings/SettingsImpersonationSection";
 import SettingsWeeklyGoalsSection from "./settings/SettingsWeeklyGoalsSection";
+import BlockedUsersModal, {
+  SettingsBlockedUsersSection,
+} from "./settings/SettingsBlockedUsersSection";
+import HiddenContentModal, {
+  SettingsHiddenContentSection,
+} from "./settings/SettingsHiddenContentSection";
 import { SettingsSectionChrome } from "./settings/SettingsSectionChrome";
 import { SubscriptionCard } from "./settings/SubscriptionCard";
 
@@ -94,6 +100,8 @@ export default function Settings() {
   const [cooldownMs, setCooldownMs] = useState<number | null>(null);
   const exportPollRef = useRef<number | null>(null);
   const [privacySaving, setPrivacySaving] = useState(false);
+  const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
+  const [hiddenContentOpen, setHiddenContentOpen] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
 
   const { accountForm, changePasswordForm, deleteAccountForm } =
@@ -658,7 +666,22 @@ export default function Settings() {
               avatarError={avatarError}
               onAvatarFileChange={handleAvatarFileChange}
               onClearAvatarSelection={clearAvatarSelection}
-            />
+            >
+              <SettingsPasswordSection
+                changePasswordForm={changePasswordForm}
+                onChangePassword={onChangePassword}
+                changePwWatch={changePwWatch}
+                trimmedNewPw={trimmedNewPw}
+                currentPasswordValid={currentPasswordValid}
+                newPasswordValid={newPasswordValid}
+                newPasswordTooLong={newPasswordTooLong}
+                passwordsSameAsCurrent={passwordsSameAsCurrent}
+                updatePasswordDisabled={updatePasswordDisabled}
+                changePwSubmitting={changePwSubmitting}
+                changePwSuccess={changePwSuccess}
+                onFieldChange={handlePasswordFieldChange}
+              />
+            </SettingsAccountSection>
 
             <SettingsPrivacySection
               settings={settings}
@@ -683,20 +706,23 @@ export default function Settings() {
               <SubscriptionCard />
             </SettingsSectionChrome>
 
-            <SettingsPasswordSection
-              changePasswordForm={changePasswordForm}
-              onChangePassword={onChangePassword}
-              changePwWatch={changePwWatch}
-              trimmedNewPw={trimmedNewPw}
-              currentPasswordValid={currentPasswordValid}
-              newPasswordValid={newPasswordValid}
-              newPasswordTooLong={newPasswordTooLong}
-              passwordsSameAsCurrent={passwordsSameAsCurrent}
-              updatePasswordDisabled={updatePasswordDisabled}
-              changePwSubmitting={changePwSubmitting}
-              changePwSuccess={changePwSuccess}
-              onFieldChange={handlePasswordFieldChange}
-            />
+            <SettingsSectionChrome title="Blocked users">
+              <p className="mb-4 font-apex-body text-sm text-apex-on-surface-variant">
+                Hidden people no longer appear in your community, comments, or activity feed.
+              </p>
+              <SettingsBlockedUsersSection
+                onManage={() => setBlockedUsersOpen(true)}
+              />
+            </SettingsSectionChrome>
+
+            <SettingsSectionChrome title="Hidden content">
+              <p className="mb-4 font-apex-body text-sm text-apex-on-surface-variant">
+                Review individual sessions, discussions, and comments you have hidden.
+              </p>
+              <SettingsHiddenContentSection
+                onManage={() => setHiddenContentOpen(true)}
+              />
+            </SettingsSectionChrome>
 
             <SettingsWeeklyGoalsSection />
 
@@ -718,6 +744,14 @@ export default function Settings() {
         </div>
       </div>
 
+      <BlockedUsersModal
+        open={blockedUsersOpen}
+        onOpenChange={setBlockedUsersOpen}
+      />
+      <HiddenContentModal
+        open={hiddenContentOpen}
+        onOpenChange={setHiddenContentOpen}
+      />
       <SettingsDeleteDialog
         open={deleteDialogOpen}
         onOpenChange={handleDeleteDialogOpenChange}

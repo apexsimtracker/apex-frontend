@@ -40,6 +40,8 @@ export type SessionItem = {
   authorId?: string | null;
   authorName?: string | null;
   authorAvatarUrl?: string | null;
+  authorRole?: "USER" | "ADMIN";
+  challengeId?: string | null;
   // Optional fields for aggregation
   iRatingChange?: number | null;
   incidentCount?: number | null;

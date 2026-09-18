@@ -49,6 +49,7 @@ import {
   AdminContactDetail,
   AdminCommunity,
   AdminCommunityDiscussionDetail,
+  AdminReports,
   AdminLeaderboards,
   AdminNotifications,
   AdminBroadcastDetail,
@@ -256,6 +257,7 @@ export default function App() {
                     path="community/:discussionId"
                     element={<AdminCommunityDiscussionDetail />}
                   />
+                  <Route path="reports" element={<AdminReports />} />
                   <Route path="leaderboards" element={<AdminLeaderboards />} />
                   <Route
                     path="notifications"

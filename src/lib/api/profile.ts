@@ -227,7 +227,9 @@ export type UserPublicProfile = {
   followRelationship: FollowRelationship;
   /** Set when viewerHasAccess is true — used for race history empty-state copy. */
   sessionVisibility: SessionVisibility | null;
+  role: "USER" | "ADMIN";
   isPro: boolean;
+  blockedByMe?: boolean;
   /** Visible badge count (excludes challenges the user is banned from). */
   challengeBadgeCount?: number;
   challengeBadges?: {

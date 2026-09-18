@@ -192,6 +192,16 @@ export default function DiscussionDetail() {
   const discussion = discussionQuery.data ?? null;
   const comments: DiscussionComment[] = commentsQuery.data?.items ?? [];
 
+  useEffect(() => {
+    if (!commentsQuery.data || !location.hash.startsWith("#comment-")) return;
+    const targetId = decodeURIComponent(location.hash.slice(1));
+    requestAnimationFrame(() => {
+      const target = document.getElementById(targetId);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+    });
+  }, [commentsQuery.data, location.hash]);
+
   const discussionError = discussionQuery.isError
     ? discussionLoadErrorMessage(discussionQuery.error)
     : null;
@@ -729,6 +739,7 @@ export default function DiscussionDetail() {
           isOwner={isOwner}
           alreadyEdited={alreadyEdited}
           showEditedBadge={showEditedBadge}
+          signedIn={Boolean(user)}
           onPostAvatarError={() => setPostAvatarFailed(true)}
           onLikeClick={handleLikeClick}
           likePending={likeMutation.isPending}

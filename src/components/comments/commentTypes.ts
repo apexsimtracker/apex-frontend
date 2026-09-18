@@ -2,6 +2,7 @@ export type ThreadCommentAuthor = {
   id?: string;
   displayName?: string | null;
   avatarUrl?: string | null;
+  role?: "USER" | "ADMIN";
 };
 
 export type ThreadComment = {

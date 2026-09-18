@@ -15,6 +15,9 @@ import {
   type ProfileSummary,
 } from "@/lib/api/profile";
 import { followUser, unfollowUser } from "@/lib/api/followAndLeaderboards";
+import { unblockUser } from "@/lib/api/ugcModeration";
+import { invalidateAfterUgcModeration } from "@/lib/ugcModerationCache";
+import { toast } from "sonner";
 import { profileKeys, prefetchFollowList } from "@/lib/profileQueryKeys";
 import ProfileSkeleton from "@/pages/profile/ProfileSkeleton";
 import PageMeta from "@/components/PageMeta";
@@ -76,6 +79,7 @@ export default function UserProfile() {
     null,
   );
   const [followLoading, setFollowLoading] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
   const [followActionError, setFollowActionError] = useState<string | null>(
     null,
   );
@@ -183,6 +187,25 @@ export default function UserProfile() {
     setFollowLoading,
     setFollowActionError,
   ]);
+
+  const handleUnblockUser = useCallback(async () => {
+    if (!currentUser || !id) return;
+    setBlockLoading(true);
+    setFollowActionError(null);
+    try {
+      await unblockUser(id);
+      toast.success("User unblocked");
+      invalidateAfterUgcModeration(queryClient);
+      const pub = await getUserPublicProfile(id);
+      queryClient.setQueryData(profileKeys.publicPreview(id), pub);
+    } catch (e) {
+      setFollowActionError(
+        e instanceof Error ? e.message : "Could not unblock this user.",
+      );
+    } finally {
+      setBlockLoading(false);
+    }
+  }, [currentUser, id, queryClient]);
 
   if (!id) {
     return (
@@ -349,6 +372,10 @@ export default function UserProfile() {
           targetPrivateProfile={preview.privateProfile}
           followLoading={followLoading}
           onToggleFollow={showFollowUi ? handleToggleFollow : undefined}
+          blockedByMe={Boolean(preview.blockedByMe)}
+          canBlockUser={showFollowUi}
+          onUnblockUser={showFollowUi ? handleUnblockUser : undefined}
+          blockLoading={blockLoading}
           onOpenFollowers={
             viewerHasAccess ? () => setOpenList("followers") : undefined
           }

@@ -18,10 +18,12 @@ import {
 } from "@/features/billing/packageMapping";
 import type { BillingPackage } from "@/features/billing/billingPackage";
 import {
+  nativePurchaseDisclosure,
   paidProHeadline,
   shouldShowNativeRestore,
   type SubscriptionManageAction,
 } from "@/features/billing/subscriptionManagement";
+import type { StoreBillingPlatform } from "@/features/billing/storeProductIds";
 import { BillingIntervalToggle } from "./BillingIntervalToggle";
 import { PlanFeatureList } from "./PlanFeatureList";
 import { PricingAlerts } from "./PricingAlerts";
@@ -32,6 +34,7 @@ type ProPlanCardProps = {
   billingConfig: BillingConfigResponse | null | undefined;
   isBillingEnabled: boolean;
   isNative: boolean;
+  billingPlatform: StoreBillingPlatform;
   resolvedPackages: ResolvedPackages;
   billingInterval: BillingInterval;
   onBillingIntervalChange: (interval: BillingInterval) => void;
@@ -73,6 +76,7 @@ export function ProPlanCard({
   billingConfig,
   isBillingEnabled,
   isNative,
+  billingPlatform,
   resolvedPackages,
   billingInterval,
   onBillingIntervalChange,
@@ -133,6 +137,11 @@ export function ProPlanCard({
     isLoggedIn,
     isBillingEnabled,
   });
+
+  const storeDisclosure = isNative
+    ? (nativePurchaseDisclosure(billingPlatform) ??
+      "Purchases are handled securely by your device's app store.")
+    : null;
 
   const checkoutBlocked =
     Boolean(eligibilityError) || eligibilityPending || offeringsPending;
@@ -361,8 +370,8 @@ export function ProPlanCard({
         )}
 
         <p className="text-center font-apex-body text-xs text-apex-on-surface-variant">
-          {isNative
-            ? "Purchases are handled securely by the App Store or Google Play."
+          {storeDisclosure
+            ? storeDisclosure
             : !billingConfig
               ? "Billing configuration is loading."
               : billingConfig.mode === "sandbox"

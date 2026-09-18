@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ALREADY_HAVE_PRO_MESSAGE,
+  nativePurchaseDisclosure,
   paidProHeadline,
   resolveSubscriptionManageActions,
   shouldShowNativeRestore,
@@ -118,5 +119,20 @@ describe("paid Pro vs restore helpers", () => {
         isBillingEnabled: true,
       }),
     ).toBe(false);
+  });
+});
+
+describe("nativePurchaseDisclosure", () => {
+  it("names only the store for the current device", () => {
+    expect(nativePurchaseDisclosure("apple")).toBe(
+      "Purchases are handled securely by the App Store.",
+    );
+    expect(nativePurchaseDisclosure("play")).toBe(
+      "Purchases are handled securely by Google Play.",
+    );
+  });
+
+  it("mentions no store on web", () => {
+    expect(nativePurchaseDisclosure("web")).toBeNull();
   });
 });

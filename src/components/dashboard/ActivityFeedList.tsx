@@ -13,10 +13,11 @@ import { publicSessionUrl } from "@/lib/siteMeta";
 import { buildSessionShareText } from "@/lib/sessionShareText";
 import type { ApexAnalysisV2FeedPayload } from "@/features/session-detail/apexAnalysisDisplay";
 
-const SessionShareModal = lazy(() =>
-  import(
-    /* webpackChunkName: "session-share" */ "@/components/SessionShareModal"
-  ),
+const SessionShareModal = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "session-share" */ "@/components/SessionShareModal"
+    ),
 );
 
 type ActivityOwner = {
@@ -30,6 +31,8 @@ export type ActivityFeedSession = SessionItem & {
   authorId?: string | null;
   authorName?: string | null;
   authorAvatarUrl?: string | null;
+  authorRole?: "USER" | "ADMIN";
+  challengeId?: string | null;
   owner?: ActivityOwner;
   carName?: string | null;
   trackName?: string | null;
@@ -211,9 +214,7 @@ export default function ActivityFeedList({
                   if (segment.type === "single") {
                     const s = segment.session as ActivityFeedSession;
                     return (
-                      <div key={s.id}>
-                        {renderActivityCard(s, cardOptions)}
-                      </div>
+                      <div key={s.id}>{renderActivityCard(s, cardOptions)}</div>
                     );
                   }
 

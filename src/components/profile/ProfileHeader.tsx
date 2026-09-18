@@ -9,6 +9,8 @@ import {
 import { formatSimEnum } from "@/lib/enumFormat";
 import ProfileChallengeBadgesModal from "@/components/profile/ProfileChallengeBadgesModal";
 import { ProfileChallengeBadgesSkeleton } from "@/components/profile/ProfileChallengeBadgesSkeleton";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type ProfileHeaderBadge = {
   challengeId: string;
@@ -37,6 +39,10 @@ type ProfileHeaderProps = {
   onEditProfile?: () => void;
   streakDays: number;
   isPro?: boolean;
+  blockedByMe?: boolean;
+  canBlockUser?: boolean;
+  onUnblockUser?: () => void;
+  blockLoading?: boolean;
   profileUserId: string;
   challengeBadges?: ProfileHeaderBadge[];
   challengeBadgeCount?: number;
@@ -68,11 +74,16 @@ export function ProfileHeader({
   onEditProfile,
   streakDays,
   isPro = false,
+  blockedByMe = false,
+  canBlockUser = false,
+  onUnblockUser,
+  blockLoading = false,
   profileUserId,
   challengeBadges,
   challengeBadgeCount,
   challengeBadgesLoading = false,
 }: ProfileHeaderProps) {
+  const { user } = useAuth();
   const [badgesModalOpen, setBadgesModalOpen] = useState(false);
   const showAvatarImg = Boolean(avatarSrc && String(avatarSrc).trim());
 
@@ -188,7 +199,7 @@ export function ProfileHeader({
             {bioText}
           </p>
 
-          {!isCurrentUser && onToggleFollow && (
+          {!isCurrentUser && onToggleFollow && !blockedByMe && (
             <button
               type="button"
               onClick={onToggleFollow}
@@ -212,6 +223,23 @@ export function ProfileHeader({
               )}
             </button>
           )}
+          {!isCurrentUser && blockedByMe && onUnblockUser ? (
+            <button
+              type="button"
+              onClick={onUnblockUser}
+              disabled={blockLoading}
+              className="mt-2 inline-flex min-w-[7.5rem] items-center justify-center rounded-full border border-apex-outline-variant/30 bg-apex-surface-container-low px-3 py-1 text-xs font-medium text-apex-on-surface transition-colors hover:bg-apex-surface-container disabled:opacity-80"
+            >
+              {blockLoading ? "Unblocking…" : "Unblock"}
+            </button>
+          ) : null}
+          <UgcOverflowMenu
+            className="mt-2 inline-flex"
+            signedIn={Boolean(user)}
+            isOwn={Boolean(isCurrentUser)}
+            authorId={profileUserId}
+            showBlock={canBlockUser && !blockedByMe}
+          />
         </div>
       </div>
 
