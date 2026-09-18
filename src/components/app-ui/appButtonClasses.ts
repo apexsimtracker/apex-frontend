@@ -74,7 +74,7 @@ export const appAccountFieldValueClassName =
   "font-apex-headline text-sm font-bold text-apex-on-surface break-words";
 
 export const appDropdownContentClassName = cn(
-  "!rounded-md !border-[#484847]/65 !bg-[#0e0e0e] text-white shadow-md",
+  "z-[100] !rounded-md !border-[#484847]/65 !bg-[#0e0e0e] text-white shadow-md",
 );
 
 /** Default item hover — light red highlight (no bold/icon stroke). */

@@ -62,6 +62,17 @@ export default function AdminCommunityDiscussionDetail() {
     enabled: Boolean(discussionId),
   });
 
+  useEffect(() => {
+    if (!data || !window.location.hash.startsWith("#comment-")) return;
+    requestAnimationFrame(() => {
+      const target = document.getElementById(
+        decodeURIComponent(window.location.hash.slice(1)),
+      );
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.focus({ preventScroll: true });
+    });
+  }, [data]);
+
   const d = data?.discussion;
 
   useEffect(() => {
@@ -375,7 +386,12 @@ export default function AdminCommunityDiscussionDetail() {
                 </thead>
                 <tbody>
                   {(data?.comments.items ?? []).map((c) => (
-                    <tr key={c.id} className="border-b border-white/5">
+                    <tr
+                      key={c.id}
+                      id={`comment-${c.id}`}
+                      tabIndex={-1}
+                      className="scroll-mt-24 border-b border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
                       <td className="p-3">
                         <Link
                           to={`/admin/users/${encodeURIComponent(c.userId)}`}

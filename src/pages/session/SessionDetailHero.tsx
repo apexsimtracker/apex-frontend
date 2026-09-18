@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatTrackName } from "@/lib/tracks";
@@ -23,6 +24,7 @@ type SessionDetailHeroProps = {
   onShare: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  overflowMenu?: ReactNode;
 };
 
 export default function SessionDetailHero({
@@ -40,6 +42,7 @@ export default function SessionDetailHero({
   onShare,
   onEdit,
   onDelete,
+  overflowMenu,
 }: SessionDetailHeroProps) {
   const title = formatTrackName(trackName) || "Unknown track";
   const [imageFailed, setImageFailed] = useState(false);
@@ -117,6 +120,7 @@ export default function SessionDetailHero({
             </button>
           )}
           <SessionShareButton onShare={onShare} />
+          {overflowMenu}
         </div>
       </div>
 

@@ -8,6 +8,8 @@ import { resolveApiUrl } from "@/lib/api/config";
 import type { ThreadComment } from "./commentTypes";
 import CommentEditHistoryModal from "./CommentEditHistoryModal";
 import { canEditThreadComment, deletedCommentCopy } from "./commentUi";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { commentModerationTargets } from "./commentModerationTargets";
 
 function authorInitials(name: string): string {
   return (
@@ -59,6 +61,12 @@ export default function CommentItem({
   const canEdit = canEditThreadComment(comment, isMine);
   const canDelete = (isMine || isAdmin) && !comment.deletedAt;
   const avatarSrc = resolveApiUrl(comment.author?.avatarUrl);
+  const moderationTargets = commentModerationTargets({
+    variant,
+    commentId: comment.id,
+    authorId,
+    deleted: Boolean(comment.deletedAt),
+  });
 
   const goToAuthor = () => {
     if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
@@ -66,8 +74,10 @@ export default function CommentItem({
 
   return (
     <article
+      id={`comment-${comment.id}`}
+      tabIndex={-1}
       className={cn(
-        "relative",
+        "relative scroll-mt-24 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apex-primary",
         isReply
           ? "rounded-lg border-l-2 border-l-apex-outline-variant/40 bg-apex-surface-container-low/40 p-3 sm:p-4"
           : variant === "discussion"
@@ -100,12 +110,21 @@ export default function CommentItem({
             </button>
           ) : null}
         </div>
-      ) : null}
+      ) : (
+        <UgcOverflowMenu
+          className="absolute right-3 top-3 sm:right-4 sm:top-4"
+          signedIn={signedIn}
+          isOwn={isMine}
+          authorId={authorId || null}
+          report={moderationTargets.report ?? null}
+          hide={moderationTargets.hide}
+        />
+      )}
 
       <div
         className={cn(
           "mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4",
-          (canEdit || canDelete) && "pr-16",
+          (canEdit || canDelete || signedIn) && "pr-16",
         )}
       >
         {variant === "discussion" ? (

@@ -13,6 +13,7 @@ export type UserDiscoverHit = {
   bio: string | null;
   followRelationship: "following" | "pending" | "none";
   privateProfile: boolean;
+  role?: "USER" | "ADMIN";
 };
 
 export type UserDiscoverPageResult = {

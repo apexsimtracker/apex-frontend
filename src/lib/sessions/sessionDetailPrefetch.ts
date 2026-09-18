@@ -81,6 +81,7 @@ function seedPayloadFromInput(input: SessionDetailSeedInput): ParsedSessionDetai
     session,
     proFeaturesLocked: false,
     apexAnalysis: { locked: false, insights: [] },
+    apexAnalysisV2: null,
   };
 }
 

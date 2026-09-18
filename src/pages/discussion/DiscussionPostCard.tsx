@@ -24,6 +24,7 @@ import {
 } from "@/components/app-ui/appButtonClasses";
 import DiscussionCategoryBadge from "@/pages/discussion/DiscussionCategoryBadge";
 import type { Discussion } from "@/lib/api/community";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
 
 type DiscussionPostCardProps = {
   discussion: Discussion;
@@ -36,6 +37,7 @@ type DiscussionPostCardProps = {
   isOwner: boolean;
   alreadyEdited: boolean;
   showEditedBadge: boolean;
+  signedIn?: boolean;
   onPostAvatarError: () => void;
   onLikeClick: () => void;
   likePending: boolean;
@@ -55,6 +57,7 @@ export default function DiscussionPostCard({
   isOwner,
   alreadyEdited,
   showEditedBadge,
+  signedIn = false,
   onPostAvatarError,
   onLikeClick,
   likePending,
@@ -79,7 +82,7 @@ export default function DiscussionPostCard({
         aria-hidden
       />
 
-      {isOwner && (
+      {isOwner ? (
         <div className="absolute right-3 top-4 z-10 sm:right-4 sm:top-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -116,14 +119,29 @@ export default function DiscussionPostCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      ) : (
+        <UgcOverflowMenu
+          className="absolute right-3 top-4 sm:right-4 sm:top-5"
+          signedIn={signedIn}
+          isOwn={false}
+          authorId={authorId}
+          hide={{
+            contentType: "DISCUSSION",
+            targetContentId: discussion.id,
+          }}
+        />
       )}
 
-      <div className={cn("mb-4 flex items-center gap-2", isOwner && "pr-10")}>
+      <div
+        className={cn(
+          "mb-4 flex items-center gap-2",
+          (isOwner || signedIn) && "pr-10",
+        )}
+      >
         <button
           type="button"
           onClick={() => {
-            if (authorId)
-              navigate(`/user/${encodeURIComponent(authorId)}`);
+            if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
           }}
           className="group flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
         >

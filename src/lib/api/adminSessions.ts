@@ -318,6 +318,18 @@ export async function createAdminSessionLap(
   );
 }
 
+export async function deleteAdminSessionComment(
+  sessionId: string,
+  commentId: string,
+): Promise<void> {
+  await fetchApi(
+    "DELETE",
+    `/api/admin/sessions/${encodeURIComponent(sessionId)}/comments/${encodeURIComponent(commentId)}`,
+    undefined,
+    false,
+  );
+}
+
 export async function deleteAdminSessionLap(
   sessionId: string,
   lapId: string,

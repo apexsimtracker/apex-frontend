@@ -35,6 +35,10 @@ type ProfileViewProps = {
   onPrefetchFollowers?: () => void;
   onPrefetchFollowing?: () => void;
   onEditProfile?: () => void;
+  blockedByMe?: boolean;
+  canBlockUser?: boolean;
+  onUnblockUser?: () => void;
+  blockLoading?: boolean;
   /** When true, paint header but skeleton key stats / weekly / disciplines. */
   summaryLoading?: boolean;
   raceHistoryPagination?: {
@@ -83,6 +87,10 @@ export function ProfileView({
   onPrefetchFollowers,
   onPrefetchFollowing,
   onEditProfile,
+  blockedByMe = false,
+  canBlockUser = false,
+  onUnblockUser,
+  blockLoading = false,
   summaryLoading = false,
   raceHistoryPagination,
   raceHistoryForbiddenCode,
@@ -188,6 +196,10 @@ export function ProfileView({
           onPrefetchFollowers={onPrefetchFollowers}
           onPrefetchFollowing={onPrefetchFollowing}
           onEditProfile={onEditProfile}
+          blockedByMe={blockedByMe}
+          canBlockUser={canBlockUser}
+          onUnblockUser={onUnblockUser}
+          blockLoading={blockLoading}
           streakDays={summaryLoading ? 0 : (profile.user.streakDays ?? 0)}
           isPro={isPro}
           profileUserId={profileUserId}
@@ -195,6 +207,12 @@ export function ProfileView({
           challengeBadgeCount={challengeBadgeCount}
           challengeBadgesLoading={challengeBadgesLoading}
         />
+
+        {blockedByMe ? (
+          <p className="mt-4 rounded-lg border border-apex-outline-variant/15 bg-apex-surface-container-low px-4 py-3 font-apex-body text-sm text-apex-on-surface-variant">
+            You blocked this user. Their posts, comments, and activity are hidden from you.
+          </p>
+        ) : null}
 
         {summaryLoading && !profileLocked ? (
           <>

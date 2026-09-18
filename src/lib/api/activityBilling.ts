@@ -2,11 +2,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from "./httpVerbs";
 import { resolveApiUrl } from "./config";
 
 export type BillingStore =
-  | "APP_STORE"
-  | "PLAY_STORE"
-  | "STRIPE"
-  | "REVENUECAT_WEB"
-  | "UNKNOWN";
+  "APP_STORE" | "PLAY_STORE" | "STRIPE" | "REVENUECAT_WEB" | "UNKNOWN";
 
 export type SessionsFilterType = "all" | "telemetry" | "manual";
 
@@ -230,6 +226,7 @@ export type SessionCommentAuthor = {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  role?: "USER" | "ADMIN";
 };
 
 export type SessionCommentFilter = "all" | "mine" | "owner";

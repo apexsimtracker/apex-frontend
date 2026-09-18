@@ -20,6 +20,7 @@ import {
   Activity,
   Bell,
   Car,
+  Flag,
   Inbox,
   LayoutDashboard,
   ListOrdered,
@@ -115,6 +116,12 @@ const navGroups: { title: string; items: NavItem[] }[] = [
         label: "Community & discussions",
         icon: MessageSquare,
         to: "/admin/community",
+      },
+      {
+        key: "reports",
+        label: "Reports",
+        icon: Flag,
+        to: "/admin/reports",
       },
       {
         key: "leaderboards",

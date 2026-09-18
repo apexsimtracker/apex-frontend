@@ -17,6 +17,7 @@ import {
 import type { Discussion } from "@/lib/api/community";
 import { warmDiscussionDetailNavigation } from "@/lib/community/discussionDetailPrefetch";
 import DiscussionCategoryBadge from "@/pages/discussion/DiscussionCategoryBadge";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
 
 interface DiscussionCardProps {
   id: string;
@@ -94,52 +95,55 @@ export default function DiscussionCard({
   };
 
   return (
-    <Link
-      to={`/discussion/${id}`}
-      className="block"
-      onPointerEnter={warmDetail}
-      onFocus={warmDetail}
-      onPointerDown={warmDetail}
+    <article
+      className={cn(
+        "rounded-xl border-l-2 border-l-apex-primary/50 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container",
+        className,
+      )}
     >
-      <article
-        className={cn(
-          "cursor-pointer rounded-xl border-l-2 border-l-apex-primary/50 bg-apex-surface-container-low p-4 transition-colors hover:bg-apex-surface-container",
-          className,
-        )}
-      >
-        <div className="mb-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (authorId)
-                navigate(`/user/${encodeURIComponent(authorId)}`);
-            }}
-            className="group flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
-          >
-            {showAvatar ? (
-              <img
-                src={avatarSrc!}
-                alt=""
-                className="size-8 shrink-0 rounded-full object-cover"
-                onError={() => setAvatarLoadFailed(true)}
-              />
-            ) : (
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-apex-surface-container-high font-apex-body text-xs font-bold text-apex-on-surface">
-                {initials}
-              </span>
-            )}
-            <span className="truncate font-apex-body text-sm font-semibold text-apex-on-surface group-hover:underline">
-              {authorDisplay}
+      <div className="mb-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (authorId) navigate(`/user/${encodeURIComponent(authorId)}`);
+          }}
+          className="group flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
+        >
+          {showAvatar ? (
+            <img
+              src={avatarSrc!}
+              alt=""
+              className="size-8 shrink-0 rounded-full object-cover"
+              onError={() => setAvatarLoadFailed(true)}
+            />
+          ) : (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-apex-surface-container-high font-apex-body text-xs font-bold text-apex-on-surface">
+              {initials}
             </span>
-          </button>
-          <DiscussionCategoryBadge
-            categoryKey={categoryKey}
-            isPinned={isPinned}
-          />
-        </div>
+          )}
+          <span className="truncate font-apex-body text-sm font-semibold text-apex-on-surface group-hover:underline">
+            {authorDisplay}
+          </span>
+        </button>
+        <DiscussionCategoryBadge
+          categoryKey={categoryKey}
+          isPinned={isPinned}
+        />
+        <UgcOverflowMenu
+          signedIn={Boolean(user)}
+          isOwn={Boolean(user?.id && authorId && user.id === authorId)}
+          authorId={authorId}
+          hide={{ contentType: "DISCUSSION", targetContentId: id }}
+        />
+      </div>
 
+      <Link
+        to={`/discussion/${id}`}
+        className="block"
+        onPointerEnter={warmDetail}
+        onFocus={warmDetail}
+        onPointerDown={warmDetail}
+      >
         <h3 className="mb-1 font-apex-display text-base font-bold text-apex-on-surface">
           {title}
           {wasEdited ? (
@@ -166,7 +170,7 @@ export default function DiscussionCard({
             {formatCompactCount(views)}
           </span>
         </div>
-      </article>
-    </Link>
+      </Link>
+    </article>
   );
 }

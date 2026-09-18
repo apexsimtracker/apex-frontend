@@ -24,11 +24,12 @@ export function getDiscussionCategoryLabel(key: string): string {
 }
 
 // Author object for community discussions/comments, returned directly by the backend.
-// Shape: { id, displayName, avatarUrl }
+// Shape: { id, displayName, avatarUrl, role }
 export type DiscussionAuthor = {
   id: string;
   displayName?: string | null;
   avatarUrl?: string | null;
+  role?: "USER" | "ADMIN";
 };
 
 export type Discussion = {
@@ -63,11 +64,7 @@ export type Discussion = {
 export const DISCUSSIONS_PAGE_DEFAULT_LIMIT = 12;
 
 export type DiscussionListSort =
-  | "newest"
-  | "oldest"
-  | "mostLikes"
-  | "mostViews"
-  | "mostReplies";
+  "newest" | "oldest" | "mostLikes" | "mostViews" | "mostReplies";
 
 export const DISCUSSION_LIST_SORT_OPTIONS: {
   value: DiscussionListSort;

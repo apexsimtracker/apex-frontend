@@ -256,6 +256,7 @@ export default function Pricing() {
               billingConfig={billingConfig}
               isBillingEnabled={isBillingEnabled}
               isNative={isNative}
+              billingPlatform={billingPlatform}
               resolvedPackages={resolvedPackages}
               billingInterval={billingInterval}
               onBillingIntervalChange={setBillingInterval}

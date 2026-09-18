@@ -12,7 +12,6 @@ import {
   getPodiumTrophyClassName,
 } from "@/components/dashboard/dashboardPodiumColors";
 import { getDisciplineLogoSrc } from "@/components/profile/profileDisciplineAssets";
-import { useIsProUser } from "@/contexts/AuthContext";
 import { formatLapMs, formatCarName, cn } from "@/lib/utils";
 import { resolveApiUrl } from "@/lib/api/config";
 import {
@@ -24,9 +23,16 @@ import {
 } from "@/lib/sessionKind";
 import SessionCaption from "@/components/sessions/SessionCaption";
 import SessionSocialActionBar from "@/pages/session/SessionSocialActionBar";
+import UgcOverflowMenu from "@/components/ugc/UgcOverflowMenu";
+import { sessionModerationTargets } from "@/components/ugc/sessionModerationTargets";
+import { useAuth, useIsProUser } from "@/contexts/AuthContext";
 import { useSessionLike } from "@/hooks/useSessionLike";
 import { preloadSessionDetail } from "@/routes/routePreload";
 import { seedSessionDetailFromListItem } from "@/lib/sessions/sessionDetailPrefetch";
+import {
+  parseApexFeedHeadline,
+  type ApexAnalysisV2FeedPayload,
+} from "@/features/session-detail/apexAnalysisDisplay";
 
 const UNKNOWN_CAR_LABEL = "Unknown";
 
@@ -284,6 +290,7 @@ export type DashboardActivityCardProps = {
   timestamp: string;
   profileUserId?: string | null;
   apexAnalysis?: { locked: false; insights: string[] } | null;
+  apexAnalysisV2?: ApexAnalysisV2FeedPayload | null;
   caption?: string | null;
   likeCount?: number;
   commentCount?: number;
@@ -314,6 +321,7 @@ export default memo(function DashboardActivityCard(
     timestamp,
     profileUserId,
     apexAnalysis,
+    apexAnalysisV2,
     caption,
     likeCount = 0,
     commentCount = 0,
@@ -324,12 +332,9 @@ export default memo(function DashboardActivityCard(
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isPro = useIsProUser();
-  const { toggleLike, likePending } = useSessionLike(
-    id,
-    likedByMe,
-    likeCount,
-  );
+  const { toggleLike, likePending } = useSessionLike(id, likedByMe, likeCount);
   const isManual = isManualSessionItem(props);
   const isPractice =
     !hasFinishDataForLayout(props) &&
@@ -338,8 +343,9 @@ export default memo(function DashboardActivityCard(
       manualSessionKind: props.manualSessionKind,
     });
 
-  const embeddedInsight =
-    isPro && apexAnalysis?.insights?.length ? apexAnalysis.insights[0] : null;
+  const embeddedInsight = isPro
+    ? parseApexFeedHeadline(apexAnalysisV2, apexAnalysis)
+    : null;
 
   const warmDetail = useCallback(() => {
     void preloadSessionDetail();
@@ -512,13 +518,23 @@ export default memo(function DashboardActivityCard(
               </>
             )}
           </div>
-          {disciplineLogo ? (
-            <img
-              src={disciplineLogo}
-              alt=""
-              className="h-5 w-auto max-w-[3.5rem] shrink-0 object-contain opacity-90 sm:h-7 sm:max-w-none"
+          <div className="flex shrink-0 items-center gap-1">
+            {disciplineLogo ? (
+              <img
+                src={disciplineLogo}
+                alt=""
+                className="h-5 w-auto max-w-[3.5rem] object-contain opacity-90 sm:h-7 sm:max-w-none"
+              />
+            ) : null}
+            <UgcOverflowMenu
+              signedIn={Boolean(user)}
+              isOwn={Boolean(
+                user?.id && profileUserId && user.id === profileUserId,
+              )}
+              authorId={profileUserId}
+              hide={sessionModerationTargets({ sessionId: id }).hide}
             />
-          ) : null}
+          </div>
         </div>
 
         <div className="space-y-2">

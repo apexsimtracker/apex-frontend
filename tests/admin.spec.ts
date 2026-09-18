@@ -51,6 +51,7 @@ const ADMIN_PANELS = [
   { path: "/admin/tracks", heading: "Tracks & catalogs" },
   { path: "/admin/challenges", heading: "Challenges" },
   { path: "/admin/community", heading: "Community" },
+  { path: "/admin/reports", heading: "Reports" },
   { path: "/admin/leaderboards", heading: "Global leaderboards" },
   { path: "/admin/notifications", heading: "Notifications" },
   { path: "/admin/follows", heading: "Follow graph" },
