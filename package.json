@@ -1,7 +1,7 @@
 {
   "name": "apex-frontend",
   "version": "1.0.0",
-  "nativeBuildNumber": 2,
+  "nativeBuildNumber": 3,
   "private": true,
   "type": "module",
   "scripts": {

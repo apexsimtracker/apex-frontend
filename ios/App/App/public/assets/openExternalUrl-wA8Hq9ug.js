@@ -1,1 +1,0 @@
-import{C as a}from"./revenuecat-Bm1_3KZT.js";import{br as r}from"./index-DolyCxFm.js";async function n(o){if(a.isNativePlatform()){await r.open({url:o});return}window.location.assign(o)}export{n as o};

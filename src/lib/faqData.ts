@@ -93,7 +93,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: "Apex Pro",
     question: "How does complimentary Pro access work?",
     answer:
-      "Invited users can receive complimentary Apex Pro access for a period set by an administrator. Access may begin immediately or when a new user signs up. You can subscribe to a paid Pro plan anytime from Pricing; starting a paid subscription ends complimentary access and continues Pro under normal billing.",
+      "Every new account receives 10 days of full Apex Pro access when its email is first verified. No payment details are required. This automatic trial is separate from complimentary access that an administrator may grant to invited beta users. You can subscribe anytime from Pricing; starting a paid subscription ends active complimentary access and continues Pro under normal billing.",
   },
   {
     id: "change-password",

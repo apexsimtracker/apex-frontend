@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { createBillingPortalSession, getBillingPlans } from "@/lib/api";
 import { formatCurrentSubscriptionLabel } from "@/features/billing/subscriptionDisplay";
 import {
+  complimentaryAccessExpiresAt,
   formatBetaTrialEndsLabel,
   isActiveBetaTrial,
+  isActiveSignupTrial,
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import { openExternalUrl } from "@/lib/capacitor/openExternalUrl";
@@ -20,6 +22,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   formatAccessUntilLabel,
+  hasExpiredSubscriptionHistory,
+  previousSubscriptionLabel,
   subscriptionPeriodEndLabel,
   subscriptionStatusLabel,
 } from "@/features/billing/subscriptionStatusDisplay";
@@ -29,8 +33,12 @@ import { cn } from "@/lib/utils";
 export function SubscriptionCard() {
   const { user } = useAuth();
   const onBetaTrial = isActiveBetaTrial(user);
+  const onSignupTrial = isActiveSignupTrial(user);
+  const onComplimentaryAccess = onBetaTrial || onSignupTrial;
   const isPaidPro = isPaidProUser(user);
-  const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
+  const complimentaryEndsLabel = formatBetaTrialEndsLabel(
+    complimentaryAccessExpiresAt(user),
+  );
   const manageActions = resolveSubscriptionManageActions(
     normalizeBillingStores(user?.billingStores),
     { hasPaidPro: isPaidPro },
@@ -70,14 +78,19 @@ export function SubscriptionCard() {
 
   const billingInterval = user?.billingInterval ?? null;
   const accessUntilLabel = formatAccessUntilLabel(user?.currentPeriodEnd);
+  const hasExpiredPro = hasExpiredSubscriptionHistory(user);
 
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-apex-on-surface-variant">
         {isPaidPro
           ? ALREADY_HAVE_PRO_MESSAGE
-          : onBetaTrial
-            ? "You have complimentary full Pro access. Subscribe on the pricing page anytime — complimentary access ends when paid Pro starts."
+          : hasExpiredPro
+            ? "Your previous Apex Pro subscription has expired. Resubscribe on the pricing page to restore Pro access."
+          : onSignupTrial
+            ? "Your 10-day Pro trial includes every Pro feature. Subscribe on the pricing page anytime to keep access afterward."
+            : onBetaTrial
+              ? "You have complimentary full Pro access. Subscribe on the pricing page anytime to keep access afterward."
             : "Manage your Apex Pro plan on the pricing page."}
       </p>
       <div>
@@ -91,13 +104,33 @@ export function SubscriptionCard() {
           </p>
         )}
       </div>
-      {onBetaTrial && betaTrialEndsLabel && (
+      {hasExpiredPro && (
+        <>
+          <div>
+            <span className="text-xs text-apex-on-surface-variant">
+              Previous subscription
+            </span>
+            <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
+              {previousSubscriptionLabel(user)}
+            </p>
+          </div>
+          <div>
+            <span className="text-xs text-apex-on-surface-variant">
+              Expired
+            </span>
+            <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
+              {accessUntilLabel ?? "Subscription ended"}
+            </p>
+          </div>
+        </>
+      )}
+      {onComplimentaryAccess && complimentaryEndsLabel && (
         <div>
           <span className="text-xs text-apex-on-surface-variant">
-            Complimentary access ends
+            {onSignupTrial ? "Trial ends" : "Complimentary access ends"}
           </span>
           <p className="mt-0.5 font-apex-headline text-sm font-bold text-apex-on-surface">
-            {betaTrialEndsLabel}
+            {complimentaryEndsLabel}
           </p>
         </div>
       )}
@@ -167,11 +200,17 @@ export function SubscriptionCard() {
           variant="outline"
           className={cn("mt-2", appOutlineButtonClassName)}
           data-testid={
-            onBetaTrial ? "billing-view-pro-plans" : "billing-upgrade-to-pro"
+            onComplimentaryAccess
+              ? "billing-view-pro-plans"
+              : "billing-upgrade-to-pro"
           }
         >
           <Link to={"/pricing"}>
-            {onBetaTrial ? "View Pro plans" : "Upgrade to Pro"}
+            {onComplimentaryAccess
+              ? "View Pro plans"
+              : hasExpiredPro
+                ? "Resubscribe to Pro"
+                : "Upgrade to Pro"}
           </Link>
         </Button>
       )}

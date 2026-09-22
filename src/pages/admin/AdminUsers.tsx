@@ -564,6 +564,12 @@ export default function AdminUsers() {
                                 Beta
                               </span>
                             ) : null}
+                            {r.signupTrialExpiresAt &&
+                            Date.parse(r.signupTrialExpiresAt) > Date.now() ? (
+                              <span className="inline-flex rounded-full border border-apex-primary/40 bg-apex-primary/10 px-2 py-0.5 text-[10px] font-medium text-apex-primary">
+                                Signup trial
+                              </span>
+                            ) : null}
                             {r.isSuspicious ? <SuspiciousBadge /> : null}
                           </div>
                         </td>

@@ -18,14 +18,18 @@ export type AuthUser = {
   displayName?: string;
   name?: string;
   hasPro?: boolean;
+  /** True when a historical or current Subscription row exists. */
+  hasSubscriptionHistory?: boolean;
   /** Paid subscription Pro (not beta-trial-only). Prefer over inferring from hasPro. */
   hasPaidPro?: boolean;
   /** Active billing cashiers for this entitlement; do not infer from device. */
   billingStores?: BillingStore[];
   effectivePlan?: "FREE" | "PRO";
   billingInterval?: "MONTHLY" | "ANNUAL" | null;
+  planDisplayName?: string | null;
   subscriptionStatus?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED";
   cancelAtPeriodEnd?: boolean;
+  currentPeriodStart?: string | null;
   currentPeriodEnd?: string | null;
   /** Beta cohort; may remain true after trial ends. */
   isBetaUser?: boolean;
@@ -40,6 +44,10 @@ export type AuthUser = {
     | "UPDATED"
     | null;
   betaAccessPreviousExpiresAt?: string | null;
+  /** Automatic 10-day Pro trial started on first successful email verification. */
+  signupTrialStartedAt?: string | null;
+  signupTrialExpiresAt?: string | null;
+  hasSeenSignupTrialWelcomeModal?: boolean;
   avatarUrl?: string | null;
   tagline?: string | null;
   bio?: string | null;
@@ -90,6 +98,11 @@ export async function updateMe(body: UpdateMeBody): Promise<AuthUser> {
 
 /** POST /api/auth/me/beta-welcome — mark beta welcome modal as seen. Returns updated user. */
 export async function dismissBetaWelcome(): Promise<AuthUser> {
+  return dismissComplimentaryWelcome();
+}
+
+/** Mark any active automatic/admin complimentary welcome notices as seen. */
+export async function dismissComplimentaryWelcome(): Promise<AuthUser> {
   const data = await fetchApi<AuthUser | { user?: AuthUser }>(
     "POST",
     "/api/auth/me/beta-welcome",

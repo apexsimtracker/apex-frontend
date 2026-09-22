@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 const TIER_CLASS_NAMES: Record<PlanTier, string> = {
   PRO: "bg-[#E10600] text-white",
   BETA: "border border-[#8ff5ff]/40 bg-[#8ff5ff]/10 text-[#8ff5ff]",
+  TRIAL: "border border-apex-primary/40 bg-apex-primary/10 text-apex-primary",
   FREE: "bg-apex-surface-container-highest text-apex-on-surface-variant",
 };
 

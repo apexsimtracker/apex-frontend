@@ -18,11 +18,14 @@ import {
 } from "@/features/billing/packageMapping";
 import {
   formatAccessUntilLabel,
+  hasExpiredSubscriptionHistory,
   isSubscriptionCanceled,
 } from "@/features/billing/subscriptionStatusDisplay";
 import {
+  complimentaryAccessExpiresAt,
   formatBetaTrialEndsLabel,
   isActiveBetaTrial,
+  isActiveSignupTrial,
   isPaidProUser,
 } from "@/features/billing/betaTrial";
 import type { SubscriptionManageAction } from "@/features/billing/subscriptionManagement";
@@ -75,9 +78,17 @@ export default function Pricing() {
   } = useRevenueCat();
 
   const onBetaTrial = isActiveBetaTrial(user);
+  const onSignupTrial = isActiveSignupTrial(user);
+  const complimentaryAccessKind = onBetaTrial
+    ? "beta"
+    : onSignupTrial
+      ? "signup"
+      : null;
   const isPaidPro = hasPaidPro || isPaidProUser(user);
   const hasProAccess = user?.hasPro === true || isPaidPro;
-  const betaTrialEndsLabel = formatBetaTrialEndsLabel(user?.betaTrialExpiresAt);
+  const complimentaryEndsLabel = formatBetaTrialEndsLabel(
+    complimentaryAccessExpiresAt(user),
+  );
   const currentSubscriptionLabel = formatCurrentSubscriptionLabel(
     user
       ? {
@@ -90,6 +101,7 @@ export default function Pricing() {
   const userBillingInterval = user?.billingInterval ?? null;
   const isCanceled = isSubscriptionCanceled(user);
   const accessUntilLabel = formatAccessUntilLabel(user?.currentPeriodEnd);
+  const hasExpiredPro = hasExpiredSubscriptionHistory(user);
 
   const resolvedPackages = useMemo(
     () => resolvePackagesByInterval(availablePackages, billingPlatform),
@@ -206,10 +218,20 @@ export default function Pricing() {
           <p className="mt-2 text-sm tracking-wide text-apex-on-surface-variant">
             {isPaidPro
               ? "You already have Pro. Manage your subscription from the store that billed you."
-              : onBetaTrial
-                ? `You have complimentary full Pro access${
-                    betaTrialEndsLabel ? ` (ends ${betaTrialEndsLabel})` : ""
-                  }. Subscribe anytime — complimentary access ends when paid Pro starts.`
+              : hasExpiredPro
+                ? `Your Apex Pro subscription expired${
+                    accessUntilLabel ? ` on ${accessUntilLabel}` : ""
+                  }. Subscribe again to restore Pro access.`
+              : complimentaryAccessKind
+                ? `You have ${
+                    complimentaryAccessKind === "signup"
+                      ? "a 10-day Pro trial"
+                      : "complimentary full Pro access"
+                  }${
+                    complimentaryEndsLabel
+                      ? ` (ends ${complimentaryEndsLabel})`
+                      : ""
+                  }. Subscribe anytime to keep Pro afterward.`
                 : "Start free. Upgrade to Pro for unlimited history, analytics, and more."}
           </p>
         </div>
@@ -263,8 +285,9 @@ export default function Pricing() {
               selectedPackage={selectedPackage}
               annualSavingsPercent={annualSavingsPercent}
               isPro={isPaidPro}
-              onBetaTrial={onBetaTrial}
-              betaTrialEndsLabel={betaTrialEndsLabel}
+              isExpiredSubscriber={hasExpiredPro}
+              complimentaryAccessKind={complimentaryAccessKind}
+              complimentaryEndsLabel={complimentaryEndsLabel}
               isLoggedIn={Boolean(user)}
               authLoading={authLoading}
               offeringsPending={offeringsQuery.isLoading}

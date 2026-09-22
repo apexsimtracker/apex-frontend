@@ -7,6 +7,8 @@ type BetaTrialUserFields = Pick<
   | "betaTrialExpiresAt"
   | "hasPro"
   | "hasPaidPro"
+  | "signupTrialStartedAt"
+  | "signupTrialExpiresAt"
 >;
 
 /** Open complimentary-access window: inclusive start and exclusive expiry. */
@@ -29,6 +31,25 @@ export function isActiveBetaTrial(
   return (startsAt == null || startsAt <= now) && now < expiresAt;
 }
 
+/** Automatic signup trial: inclusive start and exclusive expiry. */
+export function isActiveSignupTrial(
+  user: BetaTrialUserFields | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (!user?.signupTrialStartedAt || !user.signupTrialExpiresAt) return false;
+  const startsAt = Date.parse(user.signupTrialStartedAt);
+  const expiresAt = Date.parse(user.signupTrialExpiresAt);
+  if (Number.isNaN(startsAt) || Number.isNaN(expiresAt)) return false;
+  return startsAt <= now && now < expiresAt;
+}
+
+export function isActiveComplimentaryAccess(
+  user: BetaTrialUserFields | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  return isActiveBetaTrial(user, now) || isActiveSignupTrial(user, now);
+}
+
 /**
  * Paid Pro (store subscription), not complimentary beta-only access.
  * Prefer explicit `hasPaidPro` from AuthUser / billing refresh when present.
@@ -39,7 +60,7 @@ export function isPaidProUser(
 ): boolean {
   if (user?.hasPaidPro === true) return true;
   if (user?.hasPaidPro === false) return false;
-  return user?.hasPro === true && !isActiveBetaTrial(user, now);
+  return user?.hasPro === true && !isActiveComplimentaryAccess(user, now);
 }
 
 export function formatBetaTrialEndsLabel(
@@ -49,6 +70,24 @@ export function formatBetaTrialEndsLabel(
   const date = new Date(expiresAt);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+export function complimentaryAccessExpiresAt(
+  user: BetaTrialUserFields | null | undefined,
+  now: number = Date.now(),
+): string | null {
+  const expiries: string[] = [];
+  if (isActiveBetaTrial(user, now) && user?.betaTrialExpiresAt) {
+    expiries.push(user.betaTrialExpiresAt);
+  }
+  if (isActiveSignupTrial(user, now) && user?.signupTrialExpiresAt) {
+    expiries.push(user.signupTrialExpiresAt);
+  }
+  return (
+    expiries
+      .filter((value) => !Number.isNaN(Date.parse(value)))
+      .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null
+  );
 }
 
 export function betaAccessDurationDays(

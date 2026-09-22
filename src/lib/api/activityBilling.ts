@@ -450,6 +450,28 @@ export async function refreshBillingSubscription(): Promise<BillingRefreshRespon
   return apiPost<BillingRefreshResponse>("/api/billing/refresh", {});
 }
 
+export type SubscriptionExpiryReminderClaim = {
+  visible: boolean;
+  expiredAt: string | null;
+  reminderEndsAt: string | null;
+};
+
+export async function claimSubscriptionExpiryReminder(): Promise<SubscriptionExpiryReminderClaim> {
+  return apiPost<SubscriptionExpiryReminderClaim>(
+    "/api/billing/expiry-reminder/claim",
+    {},
+  );
+}
+
+export async function updateSubscriptionExpiryReminder(
+  action: "REMIND_LATER" | "DISMISS",
+): Promise<{ success: boolean }> {
+  return apiPost<{ success: boolean }>(
+    "/api/billing/expiry-reminder/action",
+    { action },
+  );
+}
+
 export async function createBillingPortalSession(): Promise<{ url: string }> {
   return apiPost<{ url: string }>("/api/billing/portal", {});
 }

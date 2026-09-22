@@ -146,6 +146,8 @@ function AdminUserSubscriptionSection({
   isBetaUser,
   betaTrialStartedAt,
   betaTrialExpiresAt,
+  signupTrialStartedAt,
+  signupTrialExpiresAt,
   subscription,
 }: {
   userId: string;
@@ -153,6 +155,8 @@ function AdminUserSubscriptionSection({
   isBetaUser: boolean;
   betaTrialStartedAt: string | null;
   betaTrialExpiresAt: string | null;
+  signupTrialStartedAt: string | null;
+  signupTrialExpiresAt: string | null;
   subscription: AdminUserDetailResponse["user"]["subscription"];
 }) {
   const queryClient = useQueryClient();
@@ -257,6 +261,11 @@ function AdminUserSubscriptionSection({
             Complimentary / beta
           </span>
         ) : null}
+        {signupTrialExpiresAt ? (
+          <span className="inline-flex rounded-full border border-apex-primary/40 bg-apex-primary/10 px-2 py-0.5 text-xs font-medium text-apex-primary">
+            Signup trial
+          </span>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -282,6 +291,19 @@ function AdminUserSubscriptionSection({
               ? new Date(subscription.currentPeriodEnd).toLocaleString()
               : "—"}
           </p>
+        </div>
+        <div>
+          <p className={LABEL}>Automatic signup trial</p>
+          <p className="mt-1 text-sm text-foreground">
+            {signupTrialExpiresAt
+              ? `Until ${new Date(signupTrialExpiresAt).toLocaleString()}`
+              : "—"}
+          </p>
+          {signupTrialStartedAt ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Started {new Date(signupTrialStartedAt).toLocaleString()}
+            </p>
+          ) : null}
         </div>
         <div>
           <p className={LABEL}>Period started</p>
@@ -1061,6 +1083,8 @@ export default function AdminUserDetail() {
             isBetaUser={Boolean(u.isBetaUser)}
             betaTrialStartedAt={u.betaTrialStartedAt ?? null}
             betaTrialExpiresAt={u.betaTrialExpiresAt ?? null}
+            signupTrialStartedAt={u.signupTrialStartedAt ?? null}
+            signupTrialExpiresAt={u.signupTrialExpiresAt ?? null}
             subscription={u.subscription}
           />
 

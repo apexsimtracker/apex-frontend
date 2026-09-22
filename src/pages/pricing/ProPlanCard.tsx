@@ -40,11 +40,11 @@ type ProPlanCardProps = {
   onBillingIntervalChange: (interval: BillingInterval) => void;
   selectedPackage: BillingPackage | null;
   annualSavingsPercent: number | null;
-  /** Paid Pro only — beta trial users still see subscribe UI. */
+  /** Paid Pro only — complimentary users still see subscribe UI. */
   isPro: boolean;
-  /** Active code-level beta trial (has Pro access but not a paid subscription). */
-  onBetaTrial?: boolean;
-  betaTrialEndsLabel?: string | null;
+  isExpiredSubscriber?: boolean;
+  complimentaryAccessKind?: "signup" | "beta" | null;
+  complimentaryEndsLabel?: string | null;
   isLoggedIn: boolean;
   authLoading: boolean;
   offeringsPending: boolean;
@@ -83,8 +83,9 @@ export function ProPlanCard({
   selectedPackage,
   annualSavingsPercent,
   isPro,
-  onBetaTrial = false,
-  betaTrialEndsLabel = null,
+  isExpiredSubscriber = false,
+  complimentaryAccessKind = null,
+  complimentaryEndsLabel = null,
   isLoggedIn,
   authLoading,
   offeringsPending,
@@ -239,15 +240,20 @@ export function ProPlanCard({
           >
             {`Billed annually · save ${annualSavingsPercent ?? 0}% vs paying monthly`}
           </p>
-          {onBetaTrial ? (
+          {complimentaryAccessKind ? (
             <p
               className="mt-3 font-apex-body text-sm text-apex-on-surface"
-              data-testid="billing-beta-trial-note"
+              data-testid="billing-complimentary-access-note"
             >
-              Your complimentary Pro access is active
-              {betaTrialEndsLabel ? ` until ${betaTrialEndsLabel}` : ""}.
-              Subscribe now to keep Pro afterward — complimentary access ends
-              when paid Pro starts.
+              Your{" "}
+              {complimentaryAccessKind === "signup"
+                ? "10-day Pro trial"
+                : "complimentary Pro access"}{" "}
+              is active
+              {complimentaryEndsLabel
+                ? ` until ${complimentaryEndsLabel}`
+                : ""}
+              . Subscribe now to keep Pro afterward.
             </p>
           ) : null}
         </>
@@ -340,7 +346,11 @@ export function ProPlanCard({
             {isPurchasing ? (
               <Loader2 className="size-4 animate-spin" />
             ) : isLoggedIn ? (
-              "Subscribe to Pro"
+              isExpiredSubscriber ? (
+                "Resubscribe to Pro"
+              ) : (
+                "Subscribe to Pro"
+              )
             ) : (
               "Sign in to subscribe"
             )}
