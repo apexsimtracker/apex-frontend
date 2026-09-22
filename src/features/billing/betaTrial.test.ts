@@ -3,7 +3,9 @@ import {
   betaAccessDurationDays,
   formatBetaAccessDuration,
   formatBetaTrialEndsLabel,
+  isActiveComplimentaryAccess,
   isActiveBetaTrial,
+  isActiveSignupTrial,
   isPaidProUser,
 } from "./betaTrial";
 
@@ -42,6 +44,39 @@ describe("betaTrial helpers", () => {
       ),
     ).toBe(false);
     expect(isActiveBetaTrial(undefined, now)).toBe(false);
+  });
+
+  it("recognizes the separate automatic signup trial window", () => {
+    expect(
+      isActiveSignupTrial(
+        {
+          signupTrialStartedAt: "2026-08-30T00:00:00.000Z",
+          signupTrialExpiresAt: "2026-09-09T00:00:00.000Z",
+        },
+        Date.parse("2026-09-01T00:00:00.000Z"),
+      ),
+    ).toBe(true);
+    expect(
+      isActiveSignupTrial(
+        {
+          signupTrialStartedAt: "2026-08-30T00:00:00.000Z",
+          signupTrialExpiresAt: "2026-09-09T00:00:00.000Z",
+        },
+        Date.parse("2026-09-09T00:00:00.000Z"),
+      ),
+    ).toBe(false);
+  });
+
+  it("treats either admin beta or signup trial as complimentary", () => {
+    expect(
+      isActiveComplimentaryAccess(
+        {
+          signupTrialStartedAt: "2026-08-30T00:00:00.000Z",
+          signupTrialExpiresAt: "2026-09-09T00:00:00.000Z",
+        },
+        Date.parse("2026-09-01T00:00:00.000Z"),
+      ),
+    ).toBe(true);
   });
 
   it("treats expiry equal to now as ended (exclusive)", () => {

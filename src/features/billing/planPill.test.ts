@@ -35,6 +35,22 @@ describe("planTierForUser", () => {
     ).toBe("BETA");
   });
 
+  it("returns TRIAL for an active automatic signup trial", () => {
+    expect(
+      planTierForUser(
+        {
+          isBetaUser: false,
+          betaTrialExpiresAt: null,
+          signupTrialStartedAt: "2026-08-01T00:00:00.000Z",
+          signupTrialExpiresAt: future,
+          hasPro: true,
+        },
+        now,
+      ),
+    ).toBe("TRIAL");
+    expect(planTierLabel("TRIAL")).toBe("Trial");
+  });
+
   it("falls back to FREE once the trial has ended without a purchase", () => {
     expect(
       planTierForUser(

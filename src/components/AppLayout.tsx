@@ -3,6 +3,7 @@ import "@/styles/theme.css";
 import BetaWelcomeModal from "@/components/BetaWelcomeModal";
 import BroadcastBanner from "@/components/BroadcastBanner";
 import ProRequiredBanner from "@/components/ProRequiredBanner";
+import SubscriptionExpiryReminderBanner from "@/components/SubscriptionExpiryReminderBanner";
 import { usePlatform } from "@/hooks/usePlatform";
 import { cn } from "@/lib/utils";
 import AppFooter from "./AppFooter";
@@ -69,6 +70,7 @@ export default function AppLayout({
           </header>
         ) : null}
         <ProRequiredBanner />
+        <SubscriptionExpiryReminderBanner />
         <BroadcastBanner />
         <BetaWelcomeModal />
         <main

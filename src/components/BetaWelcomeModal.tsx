@@ -4,11 +4,15 @@ import { Sparkles } from "lucide-react";
 import { AppBaseModal } from "@/components/app-ui/AppBaseModal";
 import { appPrimaryButtonClassName } from "@/components/app-ui/appButtonClasses";
 import { AUTH_ME_QUERY_KEY, useAuth } from "@/contexts/AuthContext";
-import { dismissBetaWelcome, type AuthUser } from "@/lib/api/authAndContact";
+import {
+  dismissComplimentaryWelcome,
+  type AuthUser,
+} from "@/lib/api/authAndContact";
 import {
   formatBetaAccessDuration,
   formatBetaTrialEndsLabel,
   isActiveBetaTrial,
+  isActiveSignupTrial,
 } from "@/features/billing/betaTrial";
 import { cn } from "@/lib/utils";
 
@@ -58,20 +62,37 @@ export function betaAccessNoticeCopy(user: AuthUser): {
   }
 }
 
+export function signupTrialNoticeCopy(user: AuthUser): {
+  title: string;
+  description: string;
+} {
+  const endsAt = formatBetaTrialEndsLabel(user.signupTrialExpiresAt);
+  return {
+    title: "Your 10-day Apex Pro trial is active",
+    description: `You now have full Pro access — unlimited history, analytics, and agent uploads.${endsAt ? ` Your trial runs until ${endsAt}.` : ""}`,
+  };
+}
+
 export default function BetaWelcomeModal() {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
   const [locallyDismissed, setLocallyDismissed] = useState(false);
   const [dismissing, setDismissing] = useState(false);
 
-  const needsWelcome =
+  const needsBetaWelcome =
     !loading &&
     user != null &&
     user.isBetaUser === true &&
     isActiveBetaTrial(user) &&
     user.hasSeenBetaWelcomeModal === false;
+  const needsSignupWelcome =
+    !loading &&
+    user != null &&
+    isActiveSignupTrial(user) &&
+    user.hasSeenSignupTrialWelcomeModal === false;
 
-  const isOpen = needsWelcome && !locallyDismissed;
+  const isOpen =
+    (needsBetaWelcome || needsSignupWelcome) && !locallyDismissed;
 
   const persistDismiss = useCallback(async () => {
     if (!user || locallyDismissed) return;
@@ -81,11 +102,12 @@ export default function BetaWelcomeModal() {
     const optimistic: AuthUser = {
       ...user,
       hasSeenBetaWelcomeModal: true,
+      hasSeenSignupTrialWelcomeModal: true,
     };
     queryClient.setQueryData(AUTH_ME_QUERY_KEY, optimistic);
 
     try {
-      const updated = await dismissBetaWelcome();
+      const updated = await dismissComplimentaryWelcome();
       queryClient.setQueryData(AUTH_ME_QUERY_KEY, updated);
     } catch {
       queryClient.setQueryData(AUTH_ME_QUERY_KEY, optimistic);
@@ -98,7 +120,9 @@ export default function BetaWelcomeModal() {
     return null;
   }
 
-  const notice = betaAccessNoticeCopy(user);
+  const notice = needsBetaWelcome
+    ? betaAccessNoticeCopy(user)
+    : signupTrialNoticeCopy(user);
 
   return (
     <AppBaseModal

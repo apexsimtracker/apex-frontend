@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { AuthUser } from "@/lib/api/authAndContact";
-import { betaAccessNoticeCopy } from "./BetaWelcomeModal";
+import {
+  betaAccessNoticeCopy,
+  signupTrialNoticeCopy,
+} from "./BetaWelcomeModal";
 
 const sixtyDayUser: AuthUser = {
   id: "user-1",
@@ -38,5 +41,18 @@ describe("beta access notice copy", () => {
 
     expect(restored.title).toBe("Your Pro access was restored");
     expect(welcome.title).toBe("Welcome to Apex Pro");
+  });
+
+  it("uses automatic 10-day trial copy without admin language", () => {
+    const copy = signupTrialNoticeCopy({
+      id: "signup-user",
+      email: "signup@example.com",
+      signupTrialStartedAt: "2026-09-21T00:00:00.000Z",
+      signupTrialExpiresAt: "2026-10-01T00:00:00.000Z",
+    });
+
+    expect(copy.title).toContain("10-day");
+    expect(copy.description).toContain("full Pro access");
+    expect(copy.description).not.toContain("administrator");
   });
 });

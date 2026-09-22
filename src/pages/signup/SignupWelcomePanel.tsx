@@ -55,7 +55,8 @@ export default function SignupWelcomePanel() {
         </span>
       </h1>
       <p className="mt-3 max-w-md font-apex-body text-sm leading-relaxed text-apex-on-surface-variant">
-        Join {COMPANY_NAME} — sim racing sessions, leaderboards, and community.
+        Join {COMPANY_NAME} and unlock every Apex Pro feature free for 10 days
+        after verifying your email. No payment details required.
       </p>
 
       <ul className="mt-8 space-y-4">

@@ -20,6 +20,8 @@ export type AdminUserListRow = {
   isBetaUser?: boolean;
   betaTrialStartedAt?: string | null;
   betaTrialExpiresAt?: string | null;
+  signupTrialStartedAt?: string | null;
+  signupTrialExpiresAt?: string | null;
   createdAt: string;
   plan: "FREE" | "PRO";
   effectivePlan: "FREE" | "PRO";
@@ -142,6 +144,8 @@ export type AdminUserDetailResponse = {
     isBetaUser?: boolean;
     betaTrialStartedAt?: string | null;
     betaTrialExpiresAt?: string | null;
+    signupTrialStartedAt?: string | null;
+    signupTrialExpiresAt?: string | null;
     /** ISO */
     createdAt: string;
     privateProfile: boolean;

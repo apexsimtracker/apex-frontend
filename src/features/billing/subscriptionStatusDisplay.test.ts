@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   formatAccessUntilLabel,
+  hasExpiredSubscriptionHistory,
   isSubscriptionCanceled,
+  previousSubscriptionLabel,
   subscriptionPeriodEndLabel,
   subscriptionStatusLabel,
 } from "./subscriptionStatusDisplay";
@@ -22,6 +24,31 @@ describe("subscriptionStatusDisplay", () => {
         cancelAtPeriodEnd: true,
       }),
     ).toBe(true);
+  });
+
+  it("distinguishes expired Pro history from a never-subscribed free user", () => {
+    expect(
+      hasExpiredSubscriptionHistory({
+        hasPro: false,
+        hasSubscriptionHistory: true,
+        subscriptionStatus: "EXPIRED",
+      }),
+    ).toBe(true);
+    expect(
+      hasExpiredSubscriptionHistory({
+        hasPro: false,
+        hasSubscriptionHistory: false,
+        subscriptionStatus: "EXPIRED",
+      }),
+    ).toBe(false);
+    expect(
+      previousSubscriptionLabel({
+        hasPro: false,
+        hasSubscriptionHistory: true,
+        subscriptionStatus: "EXPIRED",
+        billingInterval: "MONTHLY",
+      }),
+    ).toBe("Apex Pro Monthly");
   });
 
   it("formats canceled status and access-until labels", () => {
@@ -66,5 +93,16 @@ describe("subscriptionStatusDisplay", () => {
         betaTrialExpiresAt: past,
       }),
     ).toBe("Pro (active)");
+  });
+
+  it("labels automatic signup access as a 10-day trial", () => {
+    const now = Date.now();
+    expect(
+      subscriptionStatusLabel({
+        hasPro: true,
+        signupTrialStartedAt: new Date(now - 1_000).toISOString(),
+        signupTrialExpiresAt: new Date(now + 60_000).toISOString(),
+      }),
+    ).toBe("Pro (10-day trial)");
   });
 });
